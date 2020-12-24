@@ -1,13 +1,13 @@
 #[derive(Clone, Debug, PartialEq)]
 pub struct EventInstance {
-    startTS: usize,
-    endTS: usize,
-    busy: bool,
+    pub start_ts: isize,
+    pub end_ts: isize,
+    pub busy: bool,
 }
 
 impl EventInstance {
     pub fn has_overlap(instance1: &Self, instance2: &Self) -> bool {
-        instance1.startTS <= instance2.endTS && instance1.endTS >= instance2.startTS
+        instance1.start_ts <= instance2.end_ts && instance1.end_ts >= instance2.start_ts
     }
 
     pub fn can_merge(instance1: &Self, instance2: &Self) -> bool {
@@ -20,8 +20,8 @@ impl EventInstance {
         }
         // todo: check for can merge and overlap
         Some(Self {
-            startTS: std::cmp::min(instance1.startTS, instance2.startTS),
-            endTS: std::cmp::max(instance1.endTS, instance2.endTS),
+            start_ts: std::cmp::min(instance1.start_ts, instance2.start_ts),
+            end_ts: std::cmp::max(instance1.end_ts, instance2.end_ts),
             busy: instance1.busy,
         })
     }
@@ -31,38 +31,38 @@ impl EventInstance {
             return vec![free_instance.clone()];
         }
 
-        if busy_instance.startTS <= free_instance.startTS
-            && busy_instance.endTS >= free_instance.endTS
+        if busy_instance.start_ts <= free_instance.start_ts
+            && busy_instance.end_ts >= free_instance.end_ts
         {
             return vec![];
         }
 
-        if busy_instance.startTS > free_instance.startTS
-            && busy_instance.endTS < free_instance.endTS
+        if busy_instance.start_ts > free_instance.start_ts
+            && busy_instance.end_ts < free_instance.end_ts
         {
             let free_instance_1 = Self {
-                startTS: free_instance.startTS,
-                endTS: busy_instance.startTS,
+                start_ts: free_instance.start_ts,
+                end_ts: busy_instance.start_ts,
                 busy: false,
             };
             let free_instance_2 = Self {
-                startTS: busy_instance.endTS,
-                endTS: free_instance.endTS,
+                start_ts: busy_instance.end_ts,
+                end_ts: free_instance.end_ts,
                 busy: false,
             };
             return vec![free_instance_1, free_instance_2];
         }
 
-        if free_instance.startTS >= busy_instance.startTS {
+        if free_instance.start_ts >= busy_instance.start_ts {
             return vec![Self {
-                startTS: busy_instance.endTS,
-                endTS: free_instance.endTS,
+                start_ts: busy_instance.end_ts,
+                end_ts: free_instance.end_ts,
                 busy: false,
             }];
         } else {
             return vec![Self {
-                startTS: free_instance.startTS,
-                endTS: busy_instance.startTS,
+                start_ts: free_instance.start_ts,
+                end_ts: busy_instance.start_ts,
                 busy: false,
             }];
         }
@@ -70,8 +70,8 @@ impl EventInstance {
 }
 
 fn sort_and_merge_instances(instances: &mut Vec<&mut EventInstance>) -> Vec<EventInstance> {
-    // sort with least startTS first
-    instances.sort_by(|i1, i2| i1.startTS.cmp(&i2.startTS));
+    // sort with least start_ts first
+    instances.sort_by(|i1, i2| i1.start_ts.cmp(&i2.start_ts));
 
     let mut sorted = vec![];
 
@@ -100,18 +100,18 @@ fn remove_busy_from_free_instance(
 
     let mut confict = false;
     for (busy_pos, busy_instance) in busy_instances.iter().enumerate() {
-        if busy_instance.startTS >= free_instance.endTS {
+        if busy_instance.start_ts >= free_instance.end_ts {
             break;
         }
         if EventInstance::has_overlap(&free_instance, &busy_instance) {
             let mut free_events = EventInstance::remove_busy_event(&free_instance, &busy_instance);
 
-            // If remove busy events split results in a free event that has startTS later than endTS of busy_instance,
+            // If remove busy events split results in a free event that has start_ts later than end_ts of busy_instance,
             // we sneed to check that free event does not conflict with any
             // of the other later busy events.
             if busy_pos < busy_instances.len() - 1
                 && !free_events.is_empty()
-                && free_events.last().unwrap().startTS >= busy_instance.endTS
+                && free_events.last().unwrap().start_ts >= busy_instance.end_ts
             {
                 let last_free_event = vec![free_events.last().unwrap().clone()];
                 let last_free_events =
@@ -174,14 +174,14 @@ mod test {
         #[test]
         fn no_overlap() {
             let e1 = EventInstance {
-                startTS: 0,
-                endTS: 4,
+                start_ts: 0,
+                end_ts: 4,
                 busy: false,
             };
 
             let e2 = EventInstance {
-                startTS: 5,
-                endTS: 10,
+                start_ts: 5,
+                end_ts: 10,
                 busy: false,
             };
 
@@ -192,14 +192,14 @@ mod test {
         #[test]
         fn overlap_without_extending() {
             let e1 = EventInstance {
-                startTS: 1,
-                endTS: 10,
+                start_ts: 1,
+                end_ts: 10,
                 busy: false,
             };
 
             let e2 = EventInstance {
-                startTS: 5,
-                endTS: 7,
+                start_ts: 5,
+                end_ts: 7,
                 busy: false,
             };
 
@@ -211,14 +211,14 @@ mod test {
         #[test]
         fn overlap_with_extending() {
             let e1 = EventInstance {
-                startTS: 1,
-                endTS: 10,
+                start_ts: 1,
+                end_ts: 10,
                 busy: false,
             };
 
             let e2 = EventInstance {
-                startTS: 5,
-                endTS: 15,
+                start_ts: 5,
+                end_ts: 15,
                 busy: false,
             };
 
@@ -227,8 +227,8 @@ mod test {
             assert_eq!(
                 res.unwrap(),
                 EventInstance {
-                    startTS: 1,
-                    endTS: 15,
+                    start_ts: 1,
+                    end_ts: 15,
                     busy: false
                 }
             );
@@ -237,14 +237,14 @@ mod test {
         #[test]
         fn remove_busy_from_free_no_overlap() {
             let e1 = EventInstance {
-                startTS: 0,
-                endTS: 4,
+                start_ts: 0,
+                end_ts: 4,
                 busy: false,
             };
 
             let e2 = EventInstance {
-                startTS: 5,
-                endTS: 10,
+                start_ts: 5,
+                end_ts: 10,
                 busy: true,
             };
 
@@ -256,14 +256,14 @@ mod test {
         #[test]
         fn remove_busy_from_free_complete_overlap() {
             let e1 = EventInstance {
-                startTS: 0,
-                endTS: 4,
+                start_ts: 0,
+                end_ts: 4,
                 busy: false,
             };
 
             let e2 = EventInstance {
-                startTS: 0,
-                endTS: 10,
+                start_ts: 0,
+                end_ts: 10,
                 busy: true,
             };
 
@@ -274,14 +274,14 @@ mod test {
         #[test]
         fn remove_busy_from_free_complete_partial_split_in_1() {
             let mut e1 = EventInstance {
-                startTS: 0,
-                endTS: 4,
+                start_ts: 0,
+                end_ts: 4,
                 busy: false,
             };
 
             let mut e2 = EventInstance {
-                startTS: 3,
-                endTS: 10,
+                start_ts: 3,
+                end_ts: 10,
                 busy: true,
             };
 
@@ -290,8 +290,8 @@ mod test {
             assert_eq!(
                 res,
                 vec![EventInstance {
-                    startTS: 0,
-                    endTS: 3,
+                    start_ts: 0,
+                    end_ts: 3,
                     busy: false
                 }]
             );
@@ -305,8 +305,8 @@ mod test {
             assert_eq!(
                 res,
                 vec![EventInstance {
-                    startTS: 4,
-                    endTS: 10,
+                    start_ts: 4,
+                    end_ts: 10,
                     busy: false
                 }]
             );
@@ -315,14 +315,14 @@ mod test {
         #[test]
         fn remove_busy_from_free_complete_partial_split_in_2() {
             let mut e1 = EventInstance {
-                startTS: 2,
-                endTS: 14,
+                start_ts: 2,
+                end_ts: 14,
                 busy: false,
             };
 
             let mut e2 = EventInstance {
-                startTS: 3,
-                endTS: 10,
+                start_ts: 3,
+                end_ts: 10,
                 busy: true,
             };
 
@@ -332,13 +332,13 @@ mod test {
                 res,
                 vec![
                     EventInstance {
-                        startTS: 2,
-                        endTS: 3,
+                        start_ts: 2,
+                        end_ts: 3,
                         busy: false
                     },
                     EventInstance {
-                        startTS: 10,
-                        endTS: 14,
+                        start_ts: 10,
+                        end_ts: 14,
                         busy: false
                     }
                 ]
@@ -356,24 +356,24 @@ mod test {
     #[test]
     fn remove_busy_from_free_test_1() {
         let free1 = EventInstance {
-            startTS: 5,
-            endTS: 100,
+            start_ts: 5,
+            end_ts: 100,
             busy: false,
         };
 
         let busy1 = EventInstance {
-            startTS: 2,
-            endTS: 40,
+            start_ts: 2,
+            end_ts: 40,
             busy: false,
         };
         let busy2 = EventInstance {
-            startTS: 50,
-            endTS: 70,
+            start_ts: 50,
+            end_ts: 70,
             busy: false,
         };
         let busy3 = EventInstance {
-            startTS: 72,
-            endTS: 75,
+            start_ts: 72,
+            end_ts: 75,
             busy: false,
         };
         let res = remove_busy_from_free(&vec![free1], &vec![busy1, busy2, busy3]);
@@ -381,24 +381,24 @@ mod test {
         assert_eq!(
             res[0],
             EventInstance {
-                startTS: 40,
-                endTS: 50,
+                start_ts: 40,
+                end_ts: 50,
                 busy: false
             }
         );
         assert_eq!(
             res[1],
             EventInstance {
-                startTS: 70,
-                endTS: 72,
+                start_ts: 70,
+                end_ts: 72,
                 busy: false
             }
         );
         assert_eq!(
             res[2],
             EventInstance {
-                startTS: 75,
-                endTS: 100,
+                start_ts: 75,
+                end_ts: 100,
                 busy: false
             }
         );
@@ -407,34 +407,34 @@ mod test {
     #[test]
     fn remove_busy_from_free_test_2() {
         let free1 = EventInstance {
-            startTS: 0,
-            endTS: 71,
+            start_ts: 0,
+            end_ts: 71,
             busy: false,
         };
         let free2 = EventInstance {
-            startTS: 72,
-            endTS: 74,
+            start_ts: 72,
+            end_ts: 74,
             busy: false,
         };
         let free3 = EventInstance {
-            startTS: 100,
-            endTS: 140,
+            start_ts: 100,
+            end_ts: 140,
             busy: false,
         };
 
         let busy1 = EventInstance {
-            startTS: 2,
-            endTS: 40,
+            start_ts: 2,
+            end_ts: 40,
             busy: false,
         };
         let busy2 = EventInstance {
-            startTS: 50,
-            endTS: 70,
+            start_ts: 50,
+            end_ts: 70,
             busy: false,
         };
         let busy3 = EventInstance {
-            startTS: 72,
-            endTS: 75,
+            start_ts: 72,
+            end_ts: 75,
             busy: false,
         };
         let res = remove_busy_from_free(&vec![free1, free2, free3], &vec![busy1, busy2, busy3]);
@@ -442,32 +442,32 @@ mod test {
         assert_eq!(
             res[0],
             EventInstance {
-                startTS: 0,
-                endTS: 2,
+                start_ts: 0,
+                end_ts: 2,
                 busy: false
             }
         );
         assert_eq!(
             res[1],
             EventInstance {
-                startTS: 40,
-                endTS: 50,
+                start_ts: 40,
+                end_ts: 50,
                 busy: false
             }
         );
         assert_eq!(
             res[2],
             EventInstance {
-                startTS: 70,
-                endTS: 71,
+                start_ts: 70,
+                end_ts: 71,
                 busy: false
             }
         );
         assert_eq!(
             res[3],
             EventInstance {
-                startTS: 100,
-                endTS: 140,
+                start_ts: 100,
+                end_ts: 140,
                 busy: false
             }
         );
@@ -481,8 +481,8 @@ mod test {
     #[test]
     fn sort_and_merge_instances_test_2() {
         let mut e1 = EventInstance {
-            startTS: 0,
-            endTS: 2,
+            start_ts: 0,
+            end_ts: 2,
             busy: false,
         };
         let res = sort_and_merge_instances(&mut vec![&mut e1]);
@@ -492,13 +492,13 @@ mod test {
     #[test]
     fn sort_and_merge_instances_test_3() {
         let mut e1 = EventInstance {
-            startTS: 0,
-            endTS: 2,
+            start_ts: 0,
+            end_ts: 2,
             busy: false,
         };
         let mut e2 = EventInstance {
-            startTS: 0,
-            endTS: 2,
+            start_ts: 0,
+            end_ts: 2,
             busy: false,
         };
         let res = sort_and_merge_instances(&mut vec![&mut e1, &mut e2]);
@@ -508,13 +508,13 @@ mod test {
     #[test]
     fn sort_and_merge_instances_test_4() {
         let mut e1 = EventInstance {
-            startTS: 0,
-            endTS: 2,
+            start_ts: 0,
+            end_ts: 2,
             busy: false,
         };
         let mut e2 = EventInstance {
-            startTS: 5,
-            endTS: 10,
+            start_ts: 5,
+            end_ts: 10,
             busy: false,
         };
         let res = sort_and_merge_instances(&mut vec![&mut e1, &mut e2]);
@@ -526,33 +526,33 @@ mod test {
     #[test]
     fn sort_and_merge_instances_test_5() {
         let mut e1 = EventInstance {
-            startTS: 5,
-            endTS: 10,
+            start_ts: 5,
+            end_ts: 10,
             busy: false,
         };
         let mut e2 = EventInstance {
-            startTS: 1,
-            endTS: 7,
+            start_ts: 1,
+            end_ts: 7,
             busy: false,
         };
         let mut e3 = EventInstance {
-            startTS: 6,
-            endTS: 14,
+            start_ts: 6,
+            end_ts: 14,
             busy: false,
         };
         let mut e4 = EventInstance {
-            startTS: 20,
-            endTS: 30,
+            start_ts: 20,
+            end_ts: 30,
             busy: false,
         };
         let mut e5 = EventInstance {
-            startTS: 24,
-            endTS: 40,
+            start_ts: 24,
+            end_ts: 40,
             busy: false,
         };
         let mut e6 = EventInstance {
-            startTS: 44,
-            endTS: 50,
+            start_ts: 44,
+            end_ts: 50,
             busy: false,
         };
         let res = sort_and_merge_instances(&mut vec![
@@ -562,16 +562,16 @@ mod test {
         assert_eq!(
             res[0],
             EventInstance {
-                startTS: 1,
-                endTS: 14,
+                start_ts: 1,
+                end_ts: 14,
                 busy: false
             }
         );
         assert_eq!(
             res[1],
             EventInstance {
-                startTS: 20,
-                endTS: 40,
+                start_ts: 20,
+                end_ts: 40,
                 busy: false
             }
         );
@@ -581,28 +581,28 @@ mod test {
     #[test]
     fn sort_and_merge_instances_test_6() {
         let mut e1 = EventInstance {
-            startTS: 5,
-            endTS: 10,
+            start_ts: 5,
+            end_ts: 10,
             busy: false,
         };
         let mut e2 = EventInstance {
-            startTS: 1,
-            endTS: 7,
+            start_ts: 1,
+            end_ts: 7,
             busy: false,
         };
         let mut e3 = EventInstance {
-            startTS: 6,
-            endTS: 14,
+            start_ts: 6,
+            end_ts: 14,
             busy: false,
         };
         let mut e4 = EventInstance {
-            startTS: 20,
-            endTS: 30,
+            start_ts: 20,
+            end_ts: 30,
             busy: false,
         };
         let mut e5 = EventInstance {
-            startTS: 24,
-            endTS: 40,
+            start_ts: 24,
+            end_ts: 40,
             busy: false,
         };
         let res = sort_and_merge_instances(&mut vec![&mut e1, &mut e2, &mut e3, &mut e4, &mut e5]);
@@ -610,16 +610,16 @@ mod test {
         assert_eq!(
             res[0],
             EventInstance {
-                startTS: 1,
-                endTS: 14,
+                start_ts: 1,
+                end_ts: 14,
                 busy: false
             }
         );
         assert_eq!(
             res[1],
             EventInstance {
-                startTS: 20,
-                endTS: 40,
+                start_ts: 20,
+                end_ts: 40,
                 busy: false
             }
         );
@@ -628,8 +628,8 @@ mod test {
     #[test]
     fn single_event() {
         let e1 = EventInstance {
-            startTS: 0,
-            endTS: 10,
+            start_ts: 0,
+            end_ts: 10,
             busy: false,
         };
 
@@ -642,8 +642,8 @@ mod test {
     #[test]
     fn no_free_event() {
         let e1 = EventInstance {
-            startTS: 0,
-            endTS: 10,
+            start_ts: 0,
+            end_ts: 10,
             busy: true,
         };
 
@@ -655,14 +655,14 @@ mod test {
     #[test]
     fn simple_freebusy() {
         let e1 = EventInstance {
-            startTS: 0,
-            endTS: 10,
+            start_ts: 0,
+            end_ts: 10,
             busy: false,
         };
 
         let e2 = EventInstance {
-            startTS: 3,
-            endTS: 5,
+            start_ts: 3,
+            end_ts: 5,
             busy: true,
         };
 
@@ -673,13 +673,13 @@ mod test {
             freebusy,
             vec![
                 EventInstance {
-                    startTS: 0,
-                    endTS: 3,
+                    start_ts: 0,
+                    end_ts: 3,
                     busy: false
                 },
                 EventInstance {
-                    startTS: 5,
-                    endTS: 10,
+                    start_ts: 5,
+                    end_ts: 10,
                     busy: false
                 }
             ]
