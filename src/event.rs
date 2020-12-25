@@ -2,26 +2,29 @@ use crate::event_instance::EventInstance;
 use chrono::prelude::*;
 use chrono_tz::{Tz, UTC};
 use rrule::{Frequenzy, ParsedOptions, RRule, RRuleSet};
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug)]
-struct RRuleOptions {
-    pub freq: Frequenzy,
-    pub interval: usize,
-    pub count: Option<u32>,
-    pub until: Option<usize>,
-    pub tzid: Tz,
-    pub wkst: usize,
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct RRuleOptions {
+    pub freq: isize,
+    pub interval: isize,
+    pub count: Option<i32>,
+    pub until: Option<isize>,
+    pub tzid: String,
+    pub wkst: isize,
     pub bysetpos: Vec<isize>,
-    pub byweekday: Vec<usize>,
+    pub byweekday: Vec<isize>,
     pub bynweekday: Vec<Vec<isize>>,
 }
 
-struct CalendarEvent {
-    start_ts: isize,
-    duration: isize,
-    end_ts: Option<isize>,
-    recurrence: Option<RRuleOptions>,
-    exdates: Vec<isize>,
+pub struct CalendarEvent {
+    pub start_ts: i64,
+    pub duration: i64,
+    pub end_ts: Option<i64>,
+    pub recurrence: Option<RRuleOptions>,
+    pub exdates: Vec<isize>,
+    pub calendar_id: String,
+    pub user_id: String,
 }
 
 impl CalendarEvent {
@@ -32,33 +35,37 @@ impl CalendarEvent {
             end_ts: None,
             recurrence: None,
             exdates: vec![],
+            calendar_id: String::from(""),
+            user_id: String::from(""),
         }
+    }
+
+    pub fn set_reccurrence(&mut self, reccurence: RRuleOptions) {
+        self.recurrence = Some(reccurence);
+        self.get_rrule_options();
     }
 
     pub fn expand(&self) -> Vec<EventInstance> {
         if self.recurrence.is_some() {
             let rrule_options = self.get_rrule_options();
             println!("Opts: {:?}", rrule_options);
-            let mut rrule = RRule::new(rrule_options);
-            println!("rr: {:?}", rrule.all());
+
             let mut rrule_set = RRuleSet::new();
-            rrule_set.rrule(rrule);
             for exdate in &self.exdates {
-                let exdate = self
-                    .recurrence
-                    .clone()
-                    .unwrap()
-                    .tzid
-                    .timestamp(*exdate as i64 / 1000, 0);
+                let exdate = rrule_options.tzid.timestamp(*exdate as i64 / 1000, 0);
                 rrule_set.exdate(exdate);
             }
+
+            let mut rrule = RRule::new(rrule_options);
+            println!("rr: {:?}", rrule.all());
+            rrule_set.rrule(rrule);
 
             rrule_set
                 .all()
                 .iter()
                 .map(|occurence| {
                     println!("Occurence: {:?}", occurence);
-                    let start_ts = occurence.timestamp() as isize;
+                    let start_ts = occurence.timestamp();
 
                     return EventInstance {
                         start_ts,
@@ -76,23 +83,42 @@ impl CalendarEvent {
         }
     }
 
+    fn freq_convert(freq: isize) -> Frequenzy {
+        match freq {
+            1 => Frequenzy::Yearly,
+            2 => Frequenzy::Monthly,
+            3 => Frequenzy::Weekly,
+            4 => Frequenzy::Daily,
+            _ => Frequenzy::Weekly,
+        }
+    }
+
     fn get_rrule_options(&self) -> ParsedOptions {
         let options = self.recurrence.clone().unwrap();
 
+        let tzid: Tz = options.tzid.parse().unwrap();
         let until = match options.until {
-            Some(ts) => Some(options.tzid.timestamp(ts as i64 / 1000, 0)),
+            Some(ts) => Some(tzid.timestamp(ts as i64 / 1000, 0)),
             None => None,
         };
 
-        let dtstart = options.tzid.timestamp(self.start_ts as i64 / 1000, 0);
-        println!("Dtstart: {:?}", dtstart);
+        let dtstart = tzid.timestamp(self.start_ts as i64 / 1000, 0);
+
+        let count = match options.count {
+            Some(c) => Some(c as u32),
+            None => None,
+        };
 
         return ParsedOptions {
-            freq: options.freq.clone(),
-            count: options.count,
+            freq: Self::freq_convert(options.freq),
+            count,
             bymonth: vec![],
             dtstart,
-            byweekday: options.byweekday.clone(), // ! todo
+            byweekday: options
+                .byweekday
+                .iter()
+                .map(|d| d.clone() as usize)
+                .collect(),
             byhour: vec![dtstart.hour() as usize],
             bysetpos: options.bysetpos,
             byweekno: vec![],
@@ -103,9 +129,9 @@ impl CalendarEvent {
             bynweekday: options.bynweekday.clone(),
             bynmonthday: vec![],
             until,
-            wkst: options.wkst,
-            tzid: options.tzid,
-            interval: options.interval,
+            wkst: options.wkst as usize,
+            tzid,
+            interval: options.interval as usize,
             byeaster: None,
         };
     }
@@ -144,6 +170,8 @@ mod test {
             }),
             end_ts: None,
             exdates: vec![1521317491239],
+            calendar_id: String::from(""),
+            user_id: String::from(""),
         };
 
         let oc = event.expand();

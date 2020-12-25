@@ -1,7 +1,7 @@
 #[derive(Clone, Debug, PartialEq)]
 pub struct EventInstance {
-    pub start_ts: isize,
-    pub end_ts: isize,
+    pub start_ts: i64,
+    pub end_ts: i64,
     pub busy: bool,
 }
 
