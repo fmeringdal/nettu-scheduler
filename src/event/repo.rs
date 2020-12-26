@@ -1,7 +1,7 @@
 use crate::event::domain::event::CalendarEvent;
 use async_trait::async_trait;
 use mongodb::{
-    bson::{doc, from_bson, Bson, oid::ObjectId, to_bson, Bson::Int64, Document},
+    bson::{doc, from_bson, oid::ObjectId, to_bson, Bson, Bson::Int64, Document},
     Collection, Database,
 };
 use std::error::Error;
@@ -101,10 +101,9 @@ fn to_persistence(e: &CalendarEvent) -> Document {
 }
 
 fn to_domain(raw: Document) -> CalendarEvent {
-    
     let id = match raw.get("_id").unwrap() {
         Bson::ObjectId(oid) => oid.to_string(),
-        _ => unreachable!("This should not happen")
+        _ => unreachable!("This should not happen"),
     };
 
     let mut e = CalendarEvent {

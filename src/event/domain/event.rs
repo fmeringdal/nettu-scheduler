@@ -77,7 +77,7 @@ impl CalendarEvent {
                 .iter()
                 .map(|occurence| {
                     // println!("Occurence: {:?}", occurence);
-                    let start_ts = occurence.timestamp()*1000;
+                    let start_ts = occurence.timestamp() * 1000;
 
                     return EventInstance {
                         start_ts,
