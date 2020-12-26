@@ -17,7 +17,7 @@ pub struct EventRepo {
     collection: RwLock<Collection>,
 }
 
-// RWLock is SEND + SYNC
+// RwLock is Send + Sync
 unsafe impl Send for EventRepo {}
 unsafe impl Sync for EventRepo {}
 
