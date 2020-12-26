@@ -9,10 +9,11 @@ mod db;
 mod event;
 mod event_instance;
 
-use crate::api::{post_event, Context};
+use crate::api::{configure_routes, Context};
 use actix_web::{
     get, middleware, post, web, web::Data, App, HttpRequest, HttpResponse, HttpServer,
 };
+use env_logger::Env;
 use std::sync::{Arc, RwLock};
 
 #[get("/")]
@@ -33,6 +34,7 @@ async fn get_events(data: Data<Arc<Context>>, event_id: web::Path<String>) -> &'
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_server=info,actix_web=info");
+    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
 
     let ctx = Arc::new(Context::new().await.unwrap());
     HttpServer::new(move || {
@@ -42,8 +44,8 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             .service(status)
             .service(get_events)
-            .service(post_event)
             .data(Arc::clone(&ctx))
+            .configure(|cfg| configure_routes(cfg, Arc::clone(&ctx.repos.event_repo)))
     })
     .bind("0.0.0.0:5000")?
     .workers(1)

@@ -1,5 +1,6 @@
 use super::calendar::Calendar;
 use super::event::CalendarEvent;
+use async_trait::async_trait;
 use mongodb::bson::oid::ObjectId;
 use mongodb::bson::Bson::Int64;
 use mongodb::bson::{doc, from_bson, to_bson, Document, Timestamp};
@@ -8,13 +9,18 @@ use mongodb::results::*;
 use mongodb::Collection;
 use mongodb::Database;
 
-pub trait IEventRepo {
-    fn create(&self, e: Calendar) -> Result<(), Box<dyn std::error::Error>>;
+#[async_trait]
+pub trait IEventRepo: Send + Sync {
+    async fn insert(&self, e: &CalendarEvent) -> Result<(), Box<dyn std::error::Error>>;
+    async fn find(&self, event_id: &str) -> Option<CalendarEvent>;
 }
 
 pub struct EventRepo {
     collection: Collection,
 }
+
+unsafe impl Send for EventRepo {}
+unsafe impl Sync for EventRepo {}
 
 impl EventRepo {
     pub fn new(db: &Database) -> Self {
@@ -23,11 +29,20 @@ impl EventRepo {
         }
     }
 
-    pub async fn insert(&self, e: &CalendarEvent) -> () {
+    pub async fn get_all(&self) -> Vec<String> {
+        let r = self.collection.find(None, None).await;
+        vec![]
+    }
+}
+
+#[async_trait]
+impl IEventRepo for EventRepo {
+    async fn insert(&self, e: &CalendarEvent) -> Result<(), Box<dyn std::error::Error>> {
         self.collection.insert_one(to_persistence(e), None).await;
+        Ok(())
     }
 
-    pub async fn find(&self, event_id: &str) -> Option<CalendarEvent> {
+    async fn find(&self, event_id: &str) -> Option<CalendarEvent> {
         let filter = doc! {
             "_id": ObjectId::with_string(event_id).unwrap()
         };
@@ -39,11 +54,6 @@ impl EventRepo {
             }
             _ => None,
         }
-    }
-
-    pub async fn get_all(&self) -> Vec<String> {
-        let r = self.collection.find(None, None).await;
-        vec![]
     }
 }
 
@@ -73,12 +83,4 @@ fn to_domain(raw: Document) -> CalendarEvent {
         e.set_reccurrence(from_bson(rrule_opts_bson.clone()).unwrap());
     };
     e
-}
-
-impl IEventRepo for EventRepo {
-    fn create(&self, e: Calendar) -> Result<(), Box<dyn std::error::Error>> {
-        //self.collection.insert_one(to_persistence(e), None);
-
-        Ok(())
-    }
 }

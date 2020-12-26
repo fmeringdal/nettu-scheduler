@@ -158,9 +158,9 @@ mod test {
             start_ts: 1521317491239,
             duration: 1000 * 60 * 60,
             recurrence: Some(RRuleOptions {
-                freq: Frequenzy::Daily,
+                freq: 4,
                 interval: 1,
-                tzid: UTC,
+                tzid: UTC.to_string(),
                 wkst: 0,
                 until: None,
                 count: Some(4),
