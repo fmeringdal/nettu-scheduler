@@ -3,13 +3,14 @@ extern crate chrono_tz;
 extern crate mongodb;
 extern crate rrule;
 
-mod api;
+// mod api;
 mod calendar;
-mod db;
 mod event;
-mod event_instance;
+mod shared;
+mod api;
 
-use crate::api::{configure_routes, Context};
+use crate::api::Context;
+use crate::event::rest::configure_routes;
 use actix_web::{
     get, middleware, post, web, web::Data, App, HttpRequest, HttpResponse, HttpServer,
 };
