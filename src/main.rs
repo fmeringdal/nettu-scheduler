@@ -44,8 +44,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             .service(status)
             .service(get_events)
-            .data(Arc::clone(&ctx))
-            .configure(|cfg| configure_routes(cfg, Arc::clone(&ctx.repos.event_repo)))
+            .configure(|cfg| configure_routes(cfg, Arc::clone(&ctx)))
     })
     .bind("0.0.0.0:5000")?
     .workers(4)

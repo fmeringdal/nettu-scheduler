@@ -8,23 +8,24 @@ use crate::shared::usecase::UseCase;
 use serde::Deserialize;
 use actix_web::{web, Responder};
 use std::sync::Arc;
+use crate::api::Context;
 
-pub fn configure_routes(cfg: &mut web::ServiceConfig, event_repo: Arc<dyn IEventRepo>) {
+pub fn configure_routes(cfg: &mut web::ServiceConfig, ctx: Arc<Context>) {
     // Add usecases to actix data
     let create_event_usecase = CreateEventUseCase {
-        event_repo: Arc::clone(&event_repo),
+        event_repo: Arc::clone(&ctx.repos.event_repo),
     };
     let update_event_usecase = UpdateEventUseCase {
-        event_repo: Arc::clone(&event_repo),
+        event_repo: Arc::clone(&ctx.repos.event_repo),
     };
     let delete_event_usecase = DeleteEventUseCase {
-        event_repo: Arc::clone(&event_repo),
+        event_repo: Arc::clone(&ctx.repos.event_repo),
     };
     let get_event_usecase = GetEventUseCase {
-        event_repo: Arc::clone(&event_repo),
+        event_repo: Arc::clone(&ctx.repos.event_repo),
     };
     let get_event_instances_usecase = GetEventInstancesUseCase {
-        event_repo: Arc::clone(&event_repo),
+        event_repo: Arc::clone(&ctx.repos.event_repo),
     };
 
     cfg.app_data(web::Data::new(create_event_usecase));
