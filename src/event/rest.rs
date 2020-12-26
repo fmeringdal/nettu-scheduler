@@ -1,9 +1,9 @@
-use actix_web::{web, Responder};
-use crate::shared::usecase::UseCase;
-use super::usecases::create_event::CreateEventUseCase;
-use std::sync::Arc;
-use super::usecases::create_event::CreateEventReq;
 use super::repo::IEventRepo;
+use super::usecases::create_event::CreateEventReq;
+use super::usecases::create_event::CreateEventUseCase;
+use crate::shared::usecase::UseCase;
+use actix_web::{web, Responder};
+use std::sync::Arc;
 
 pub fn configure_routes(cfg: &mut web::ServiceConfig, event_repo: Arc<dyn IEventRepo>) {
     let create_event_usecase = CreateEventUseCase {

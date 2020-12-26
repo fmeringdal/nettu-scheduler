@@ -3,11 +3,10 @@ extern crate chrono_tz;
 extern crate mongodb;
 extern crate rrule;
 
-// mod api;
+mod api;
 mod calendar;
 mod event;
 mod shared;
-mod api;
 
 use crate::api::Context;
 use crate::event::rest::configure_routes;
@@ -49,7 +48,7 @@ async fn main() -> std::io::Result<()> {
             .configure(|cfg| configure_routes(cfg, Arc::clone(&ctx.repos.event_repo)))
     })
     .bind("0.0.0.0:5000")?
-    .workers(1)
+    .workers(4)
     .run()
     .await
 }

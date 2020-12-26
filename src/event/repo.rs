@@ -1,41 +1,39 @@
 use crate::event::domain::event::CalendarEvent;
 use async_trait::async_trait;
-use mongodb::bson::oid::ObjectId;
-use mongodb::bson::Bson::{Int64};
-use mongodb::bson::{doc, from_bson, to_bson, Document};
-use mongodb::Collection;
-use mongodb::Database;
+use mongodb::{
+    bson::{doc, from_bson, oid::ObjectId, to_bson, Bson::Int64, Document},
+    Collection, Database,
+};
+use std::error::Error;
+use tokio::sync::RwLock;
 
 #[async_trait]
 pub trait IEventRepo: Send + Sync {
-    async fn insert(&self, e: &CalendarEvent) -> Result<(), Box<dyn std::error::Error>>;
+    async fn insert(&self, e: &CalendarEvent) -> Result<(), Box<dyn Error>>;
     async fn find(&self, event_id: &str) -> Option<CalendarEvent>;
 }
 
 pub struct EventRepo {
-    collection: Collection,
+    collection: RwLock<Collection>,
 }
 
+// RWLock is SEND + SYNC
 unsafe impl Send for EventRepo {}
 unsafe impl Sync for EventRepo {}
 
 impl EventRepo {
     pub fn new(db: &Database) -> Self {
         Self {
-            collection: db.collection("calendar-events"),
+            collection: RwLock::new(db.collection("calendar-events")),
         }
-    }
-
-    pub async fn get_all(&self) -> Vec<String> {
-        let r = self.collection.find(None, None).await;
-        vec![]
     }
 }
 
 #[async_trait]
 impl IEventRepo for EventRepo {
-    async fn insert(&self, e: &CalendarEvent) -> Result<(), Box<dyn std::error::Error>> {
-        self.collection.insert_one(to_persistence(e), None).await;
+    async fn insert(&self, e: &CalendarEvent) -> Result<(), Box<dyn Error>> {
+        let coll = self.collection.read().await;
+        let res = coll.insert_one(to_persistence(e), None).await;
         Ok(())
     }
 
@@ -43,7 +41,8 @@ impl IEventRepo for EventRepo {
         let filter = doc! {
             "_id": ObjectId::with_string(event_id).unwrap()
         };
-        let res = self.collection.find_one(filter, None).await;
+        let coll = self.collection.read().await;
+        let res = coll.find_one(filter, None).await;
         match res {
             Ok(doc) if doc.is_some() => {
                 let event = to_domain(doc.unwrap());

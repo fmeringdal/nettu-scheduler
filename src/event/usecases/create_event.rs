@@ -1,10 +1,10 @@
-use serde::{Serialize, Deserialize};
-use std::error::Error;
-use crate::shared::usecase::UseCase;
-use crate::event::domain::event::{RRuleOptions, CalendarEvent};
-use std::sync::Arc;
-use async_trait::async_trait;
+use crate::event::domain::event::{CalendarEvent, RRuleOptions};
 use crate::event::repo::IEventRepo;
+use crate::shared::usecase::UseCase;
+use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
+use std::error::Error;
+use std::sync::Arc;
 
 #[derive(Serialize, Deserialize)]
 pub struct CreateEventReq {
@@ -12,7 +12,6 @@ pub struct CreateEventReq {
     duration: i64,
     rrule_options: Option<RRuleOptions>,
 }
-
 
 pub struct CreateEventUseCase {
     pub event_repo: Arc<dyn IEventRepo>,
