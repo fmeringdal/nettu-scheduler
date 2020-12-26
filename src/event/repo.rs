@@ -61,8 +61,8 @@ fn to_persistence(e: &CalendarEvent) -> Document {
         "start_ts": Int64(e.start_ts),
         "duration": Int64(e.duration),
         "end_ts": Int64(e.end_ts.unwrap_or(max_timestamp)),
-        "user_id": e.user_id,
-        "calendar_id": e.calendar_id,
+        "user_id": e.user_id.clone(),
+        "calendar_id": e.calendar_id.clone(),
     };
     if let Some(recurrence) = &e.recurrence {
         d.insert("recurrence", to_bson(recurrence).unwrap());
