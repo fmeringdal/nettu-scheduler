@@ -31,6 +31,7 @@ pub enum GetEventInstancesErrors {
     NotFoundError,
 }
 
+#[derive(Serialize)]
 pub struct GetEventInstancesResponse {
     pub event: CalendarEvent,
     pub instances: Vec<EventInstance>,
@@ -48,7 +49,6 @@ impl UseCase<GetEventInstancesReq, Result<GetEventInstancesResponse, GetEventIns
         match e {
             Some(event) => {
                 let instances = event.expand();
-
                 Ok(GetEventInstancesResponse { event, instances })
             }
             None => Err(GetEventInstancesErrors::NotFoundError {}),

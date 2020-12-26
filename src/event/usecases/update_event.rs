@@ -36,6 +36,7 @@ pub enum UpdateEventErrors {
 impl UseCase<UpdateEventReq, Result<(), UpdateEventErrors>> for UpdateEventUseCase {
     async fn execute(&self, event_update_req: UpdateEventReq) -> Result<(), UpdateEventErrors> {
         let e = self.event_repo.find(&event_update_req.event_id).await;
+        println!("Event found: {:?}", e);
         if e.is_none() {
             return Err(UpdateEventErrors::NotFoundError {});
         }

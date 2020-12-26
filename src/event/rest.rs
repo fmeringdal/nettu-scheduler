@@ -6,7 +6,7 @@ use super::usecases::update_event::{UpdateEventReq, UpdateEventUseCase};
 use super::{domain::event::RRuleOptions, repo::IEventRepo};
 use crate::api::Context;
 use crate::shared::usecase::UseCase;
-use actix_web::{web, Responder};
+use actix_web::{web, Responder, HttpResponse};
 use serde::Deserialize;
 use std::sync::Arc;
 
@@ -36,14 +36,14 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig, ctx: Arc<Context>) {
 
     // Hookup Routes to usecases
     cfg.route("/events", web::post().to(create_event_controller));
-    cfg.route("/events/{eventId}", web::get().to(get_event_controller));
-    cfg.route("/events/{eventId}", web::put().to(update_event_controller));
+    cfg.route("/events/{event_id}", web::get().to(get_event_controller));
+    cfg.route("/events/{event_id}", web::put().to(update_event_controller));
     cfg.route(
-        "/events/{eventId}",
+        "/events/{event_id}",
         web::delete().to(delete_event_controller),
     );
     cfg.route(
-        "/events/{eventId}/instances",
+        "/events/{event_id}/instances",
         web::get().to(get_event_instances_controller),
     );
 }
@@ -91,7 +91,10 @@ async fn delete_event_controller(
         event_id: params.event_id.clone(),
     };
     let res = delete_event_usecase.execute(req).await;
-    "Hello, from create event we are up and running!\r\n"
+    return match res {
+        Ok(_) => HttpResponse::Ok().body("Event deleted"),
+        Err(_) => HttpResponse::NoContent().finish()
+    }
 }
 
 async fn get_event_controller(
@@ -102,7 +105,10 @@ async fn get_event_controller(
         event_id: params.event_id.clone(),
     };
     let res = get_event_usecase.execute(req).await;
-    "Hello, from create event we are up and running!\r\n"
+    return match res {
+        Ok(r) => HttpResponse::Ok().json(r),
+        Err(_) => HttpResponse::NoContent().finish()
+    }
 }
 
 async fn get_event_instances_controller(
@@ -113,5 +119,10 @@ async fn get_event_instances_controller(
         event_id: params.event_id.clone(),
     };
     let res = get_event_instances_usecase.execute(req).await;
-    "Hello, from create event we are up and running!\r\n"
+    
+
+    return match res {
+        Ok(r) => HttpResponse::Ok().json(r),
+        Err(_) => HttpResponse::NoContent().finish()
+    }
 }

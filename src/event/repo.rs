@@ -1,7 +1,7 @@
 use crate::event::domain::event::CalendarEvent;
 use async_trait::async_trait;
 use mongodb::{
-    bson::{doc, from_bson, oid::ObjectId, to_bson, Bson::Int64, Document},
+    bson::{doc, from_bson, Bson, oid::ObjectId, to_bson, Bson::Int64, Document},
     Collection, Database,
 };
 use std::error::Error;
@@ -41,10 +41,14 @@ impl IEventRepo for EventRepo {
 
     async fn save(&self, e: &CalendarEvent) -> Result<(), Box<dyn Error>> {
         let coll = self.collection.read().await;
+        println!("Id i got: {}", e.id);
+        println!("Update: {:?}", e);
         let filter = doc! {
-            "_id": ObjectId::with_string(&e.id).unwrap()
+            "_id": ObjectId::with_string(&e.id)?
         };
+        println!("Update beofre");
         let res = coll.update_one(filter, to_persistence(e), None).await;
+        println!("Update res: {:?}", res);
         Ok(())
     }
 
@@ -97,8 +101,14 @@ fn to_persistence(e: &CalendarEvent) -> Document {
 }
 
 fn to_domain(raw: Document) -> CalendarEvent {
+    
+    let id = match raw.get("_id").unwrap() {
+        Bson::ObjectId(oid) => oid.to_string(),
+        _ => unreachable!("This should not happen")
+    };
+
     let mut e = CalendarEvent {
-        id: from_bson(raw.get("_id").unwrap().clone()).unwrap(),
+        id,
         start_ts: from_bson(raw.get("start_ts").unwrap().clone()).unwrap(),
         duration: from_bson(raw.get("duration").unwrap().clone()).unwrap(),
         recurrence: None,

@@ -20,15 +20,6 @@ async fn status() -> &'static str {
     "Hello world!\r\n"
 }
 
-#[get("/events/{eventId}")]
-async fn get_events(data: web::Data<Arc<Context>>, event_id: web::Path<String>) -> &'static str {
-    let res = data.repos.event_repo.find(&event_id).await;
-    if let Some(e) = res {
-        println!("All of that: {:?}", e.expand());
-    }
-    "Hello, yes we are up and running!\r\n"
-}
-
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_server=info,actix_web=info");
@@ -41,7 +32,6 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::Compress::default())
             .wrap(middleware::Logger::default())
             .service(status)
-            .service(get_events)
             .configure(|cfg| configure_routes(cfg, Arc::clone(&ctx)))
     })
     .bind("0.0.0.0:5000")?

@@ -16,7 +16,7 @@ pub struct RRuleOptions {
     pub byweekday: Vec<isize>,
     pub bynweekday: Vec<Vec<isize>>,
 }
-
+#[derive(Serialize, Debug)]
 pub struct CalendarEvent {
     pub id: String,
     pub start_ts: i64,
@@ -45,7 +45,7 @@ impl CalendarEvent {
     pub fn set_reccurrence(&mut self, reccurence: RRuleOptions) {
         self.recurrence = Some(reccurence);
         let opts = self.get_rrule_options();
-        if opts.count.is_some() || opts.until.is_some() {
+        if (opts.count.is_some() && opts.count.unwrap() > 0) || opts.until.is_some() {
             let expand = self.expand();
             if let Some(last_occurence) = expand.last() {
                 self.end_ts = Some(last_occurence.end_ts);
@@ -68,16 +68,16 @@ impl CalendarEvent {
                 rrule_set.exdate(exdate);
             }
 
-            let mut rrule = RRule::new(rrule_options);
-            println!("rr: {:?}", rrule.all());
+            let rrule = RRule::new(rrule_options);
+            // println!("rr: {:?}", rrule.all());
             rrule_set.rrule(rrule);
 
             rrule_set
                 .all()
                 .iter()
                 .map(|occurence| {
-                    println!("Occurence: {:?}", occurence);
-                    let start_ts = occurence.timestamp();
+                    // println!("Occurence: {:?}", occurence);
+                    let start_ts = occurence.timestamp()*1000;
 
                     return EventInstance {
                         start_ts,
@@ -117,7 +117,7 @@ impl CalendarEvent {
         let dtstart = tzid.timestamp(self.start_ts as i64 / 1000, 0);
 
         let count = match options.count {
-            Some(c) => Some(c as u32),
+            Some(c) => Some(std::cmp::max(c, 0) as u32),
             None => None,
         };
 
