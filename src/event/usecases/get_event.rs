@@ -27,19 +27,19 @@ impl std::fmt::Display for NotFoundError {
 }
 
 pub enum GetEventErrors {
-    NotFoundError
+    NotFoundError,
 }
 
 #[async_trait(?Send)]
 impl UseCase<GetEventReq, Result<CalendarEvent, GetEventErrors>> for GetEventUseCase {
-    async fn execute(&self, event_update_req: GetEventReq) -> Result<CalendarEvent, GetEventErrors> {
+    async fn execute(
+        &self,
+        event_update_req: GetEventReq,
+    ) -> Result<CalendarEvent, GetEventErrors> {
         let e = self.event_repo.find(&event_update_req.event_id).await;
         match e {
-            Some(event) => {
-                Ok(event)
-            }
-            None => Err(GetEventErrors::NotFoundError {})
+            Some(event) => Ok(event),
+            None => Err(GetEventErrors::NotFoundError {}),
         }
-        
     }
 }

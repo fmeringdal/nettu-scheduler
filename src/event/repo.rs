@@ -12,7 +12,7 @@ pub trait IEventRepo: Send + Sync {
     async fn insert(&self, e: &CalendarEvent) -> Result<(), Box<dyn Error>>;
     async fn save(&self, e: &CalendarEvent) -> Result<(), Box<dyn Error>>;
     async fn find(&self, event_id: &str) -> Option<CalendarEvent>;
-    async fn delete(&self, event_id: &str)  -> Option<CalendarEvent>;
+    async fn delete(&self, event_id: &str) -> Option<CalendarEvent>;
 }
 
 pub struct EventRepo {
@@ -44,7 +44,7 @@ impl IEventRepo for EventRepo {
         let filter = doc! {
             "_id": ObjectId::with_string(&e.id).unwrap()
         };
-        let res = coll.update_one(filter,to_persistence(e), None).await;
+        let res = coll.update_one(filter, to_persistence(e), None).await;
         Ok(())
     }
 
@@ -63,8 +63,7 @@ impl IEventRepo for EventRepo {
         }
     }
 
-
-    async fn delete(&self, event_id: &str)  -> Option<CalendarEvent> {
+    async fn delete(&self, event_id: &str) -> Option<CalendarEvent> {
         let filter = doc! {
             "_id": ObjectId::with_string(event_id).unwrap()
         };

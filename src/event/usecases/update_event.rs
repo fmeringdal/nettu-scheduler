@@ -29,7 +29,7 @@ impl std::fmt::Display for NotFoundError {
 }
 
 pub enum UpdateEventErrors {
-    NotFoundError
+    NotFoundError,
 }
 
 #[async_trait(?Send)]
@@ -50,15 +50,12 @@ impl UseCase<UpdateEventReq, Result<(), UpdateEventErrors>> for UpdateEventUseCa
             should_update_endtime = true;
         }
 
-        
         if let Some(rrule_opts) = event_update_req.rrule_options.clone() {
             e.set_reccurrence(rrule_opts);
-        }
-        else if should_update_endtime  && e.recurrence.is_some() {
+        } else if should_update_endtime && e.recurrence.is_some() {
             e.set_reccurrence(e.recurrence.clone().unwrap());
         }
-        
-        
+
         self.event_repo.save(&e).await;
         Ok(())
     }

@@ -26,7 +26,7 @@ impl std::fmt::Display for NotFoundError {
 }
 
 pub enum DeleteEventErrors {
-    NotFoundError
+    NotFoundError,
 }
 
 #[async_trait(?Send)]
@@ -38,8 +38,7 @@ impl UseCase<DeleteEventReq, Result<(), DeleteEventErrors>> for DeleteEventUseCa
                 self.event_repo.delete(&event.id).await;
                 Ok(())
             }
-            None => Err(DeleteEventErrors::NotFoundError {})
+            None => Err(DeleteEventErrors::NotFoundError {}),
         }
-        
     }
 }

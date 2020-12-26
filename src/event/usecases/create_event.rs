@@ -2,10 +2,10 @@ use crate::event::domain::event::{CalendarEvent, RRuleOptions};
 use crate::event::repo::IEventRepo;
 use crate::shared::usecase::UseCase;
 use async_trait::async_trait;
+use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::sync::Arc;
-use mongodb::bson::oid::ObjectId;
 
 #[derive(Serialize, Deserialize)]
 pub struct CreateEventReq {

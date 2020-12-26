@@ -28,29 +28,30 @@ impl std::fmt::Display for NotFoundError {
 }
 
 pub enum GetEventInstancesErrors {
-    NotFoundError
+    NotFoundError,
 }
 
 pub struct GetEventInstancesResponse {
     pub event: CalendarEvent,
-    pub instances: Vec<EventInstance>
+    pub instances: Vec<EventInstance>,
 }
 
 #[async_trait(?Send)]
-impl UseCase<GetEventInstancesReq, Result<GetEventInstancesResponse, GetEventInstancesErrors>> for GetEventInstancesUseCase {
-    async fn execute(&self, event_update_req: GetEventInstancesReq) -> Result<GetEventInstancesResponse, GetEventInstancesErrors> {
+impl UseCase<GetEventInstancesReq, Result<GetEventInstancesResponse, GetEventInstancesErrors>>
+    for GetEventInstancesUseCase
+{
+    async fn execute(
+        &self,
+        event_update_req: GetEventInstancesReq,
+    ) -> Result<GetEventInstancesResponse, GetEventInstancesErrors> {
         let e = self.event_repo.find(&event_update_req.event_id).await;
         match e {
             Some(event) => {
                 let instances = event.expand();
-                
-                Ok(GetEventInstancesResponse {
-                    event,
-                    instances
-                })
+
+                Ok(GetEventInstancesResponse { event, instances })
             }
-            None => Err(GetEventInstancesErrors::NotFoundError {})
+            None => Err(GetEventInstancesErrors::NotFoundError {}),
         }
-        
     }
 }

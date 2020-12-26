@@ -10,11 +10,9 @@ mod shared;
 
 use crate::api::Context;
 use crate::event::rest::configure_routes;
-use actix_web::{
-    get, middleware, post, web, web::Data, App, HttpRequest, HttpResponse, HttpServer,
-};
+use actix_web::{get, middleware, web, App, HttpServer};
 use env_logger::Env;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 #[get("/")]
 async fn status() -> &'static str {
@@ -23,7 +21,7 @@ async fn status() -> &'static str {
 }
 
 #[get("/events/{eventId}")]
-async fn get_events(data: Data<Arc<Context>>, event_id: web::Path<String>) -> &'static str {
+async fn get_events(data: web::Data<Arc<Context>>, event_id: web::Path<String>) -> &'static str {
     let res = data.repos.event_repo.find(&event_id).await;
     if let Some(e) = res {
         println!("All of that: {:?}", e.expand());

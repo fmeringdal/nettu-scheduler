@@ -1,14 +1,14 @@
-use super::{domain::event::RRuleOptions, repo::IEventRepo};
 use super::usecases::create_event::{CreateEventReq, CreateEventUseCase};
-use super::usecases::update_event::{UpdateEventReq, UpdateEventUseCase};
 use super::usecases::delete_event::{DeleteEventReq, DeleteEventUseCase};
 use super::usecases::get_event::{GetEventReq, GetEventUseCase};
 use super::usecases::get_event_instances::{GetEventInstancesReq, GetEventInstancesUseCase};
-use crate::shared::usecase::UseCase;
-use serde::Deserialize;
-use actix_web::{web, Responder};
-use std::sync::Arc;
+use super::usecases::update_event::{UpdateEventReq, UpdateEventUseCase};
+use super::{domain::event::RRuleOptions, repo::IEventRepo};
 use crate::api::Context;
+use crate::shared::usecase::UseCase;
+use actix_web::{web, Responder};
+use serde::Deserialize;
+use std::sync::Arc;
 
 pub fn configure_routes(cfg: &mut web::ServiceConfig, ctx: Arc<Context>) {
     // Add usecases to actix data
@@ -34,14 +34,18 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig, ctx: Arc<Context>) {
     cfg.app_data(web::Data::new(get_event_usecase));
     cfg.app_data(web::Data::new(get_event_instances_usecase));
 
-
-
     // Hookup Routes to usecases
     cfg.route("/events", web::post().to(create_event_controller));
     cfg.route("/events/{eventId}", web::get().to(get_event_controller));
     cfg.route("/events/{eventId}", web::put().to(update_event_controller));
-    cfg.route("/events/{eventId}", web::delete().to(delete_event_controller));
-    cfg.route("/events/{eventId}/instances", web::get().to(get_event_instances_controller));
+    cfg.route(
+        "/events/{eventId}",
+        web::delete().to(delete_event_controller),
+    );
+    cfg.route(
+        "/events/{eventId}/instances",
+        web::get().to(get_event_instances_controller),
+    );
 }
 
 async fn create_event_controller(
@@ -52,7 +56,6 @@ async fn create_event_controller(
     "Hello, from create event we are up and running!\r\n"
 }
 
-
 #[derive(Deserialize)]
 struct UpdateEventBody {
     start_ts: Option<i64>,
@@ -62,7 +65,7 @@ struct UpdateEventBody {
 
 #[derive(Deserialize)]
 struct EventPathParams {
-    event_id: String
+    event_id: String,
 }
 
 async fn update_event_controller(
@@ -74,20 +77,18 @@ async fn update_event_controller(
         duration: body.duration,
         start_ts: body.start_ts,
         rrule_options: body.rrule_options.clone(),
-        event_id: params.event_id.clone()
+        event_id: params.event_id.clone(),
     };
     let res = update_event_usecase.execute(req).await;
     "Hello, from create event we are up and running!\r\n"
 }
-
-
 
 async fn delete_event_controller(
     delete_event_usecase: web::Data<DeleteEventUseCase>,
     params: web::Path<EventPathParams>,
 ) -> impl Responder {
     let req = DeleteEventReq {
-        event_id: params.event_id.clone()
+        event_id: params.event_id.clone(),
     };
     let res = delete_event_usecase.execute(req).await;
     "Hello, from create event we are up and running!\r\n"
@@ -98,7 +99,7 @@ async fn get_event_controller(
     params: web::Path<EventPathParams>,
 ) -> impl Responder {
     let req = GetEventReq {
-        event_id: params.event_id.clone()
+        event_id: params.event_id.clone(),
     };
     let res = get_event_usecase.execute(req).await;
     "Hello, from create event we are up and running!\r\n"
@@ -109,7 +110,7 @@ async fn get_event_instances_controller(
     params: web::Path<GetEventInstancesReq>,
 ) -> impl Responder {
     let req = GetEventInstancesReq {
-        event_id: params.event_id.clone()
+        event_id: params.event_id.clone(),
     };
     let res = get_event_instances_usecase.execute(req).await;
     "Hello, from create event we are up and running!\r\n"
