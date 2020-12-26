@@ -10,7 +10,9 @@ use tokio::sync::RwLock;
 #[async_trait]
 pub trait IEventRepo: Send + Sync {
     async fn insert(&self, e: &CalendarEvent) -> Result<(), Box<dyn Error>>;
+    async fn save(&self, e: &CalendarEvent) -> Result<(), Box<dyn Error>>;
     async fn find(&self, event_id: &str) -> Option<CalendarEvent>;
+    async fn delete(&self, event_id: &str)  -> Option<CalendarEvent>;
 }
 
 pub struct EventRepo {
@@ -37,6 +39,15 @@ impl IEventRepo for EventRepo {
         Ok(())
     }
 
+    async fn save(&self, e: &CalendarEvent) -> Result<(), Box<dyn Error>> {
+        let coll = self.collection.read().await;
+        let filter = doc! {
+            "_id": ObjectId::with_string(&e.id).unwrap()
+        };
+        let res = coll.update_one(filter,to_persistence(e), None).await;
+        Ok(())
+    }
+
     async fn find(&self, event_id: &str) -> Option<CalendarEvent> {
         let filter = doc! {
             "_id": ObjectId::with_string(event_id).unwrap()
@@ -51,12 +62,29 @@ impl IEventRepo for EventRepo {
             _ => None,
         }
     }
+
+
+    async fn delete(&self, event_id: &str)  -> Option<CalendarEvent> {
+        let filter = doc! {
+            "_id": ObjectId::with_string(event_id).unwrap()
+        };
+        let coll = self.collection.read().await;
+        let res = coll.find_one_and_delete(filter, None).await;
+        match res {
+            Ok(doc) if doc.is_some() => {
+                let event = to_domain(doc.unwrap());
+                Some(event)
+            }
+            _ => None,
+        }
+    }
 }
 
 fn to_persistence(e: &CalendarEvent) -> Document {
     let max_timestamp = 9999999999;
 
     let mut d = doc! {
+        "_id": ObjectId::with_string(&e.id).unwrap(),
         "start_ts": Int64(e.start_ts),
         "duration": Int64(e.duration),
         "end_ts": Int64(e.end_ts.unwrap_or(max_timestamp)),
@@ -71,6 +99,7 @@ fn to_persistence(e: &CalendarEvent) -> Document {
 
 fn to_domain(raw: Document) -> CalendarEvent {
     let mut e = CalendarEvent {
+        id: from_bson(raw.get("_id").unwrap().clone()).unwrap(),
         start_ts: from_bson(raw.get("start_ts").unwrap().clone()).unwrap(),
         duration: from_bson(raw.get("duration").unwrap().clone()).unwrap(),
         recurrence: None,

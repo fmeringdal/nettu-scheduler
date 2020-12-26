@@ -18,6 +18,7 @@ pub struct RRuleOptions {
 }
 
 pub struct CalendarEvent {
+    pub id: String,
     pub start_ts: i64,
     pub duration: i64,
     pub end_ts: Option<i64>,
@@ -30,6 +31,7 @@ pub struct CalendarEvent {
 impl CalendarEvent {
     pub fn new() -> Self {
         Self {
+            id: String::from(""),
             start_ts: 0,
             duration: 0,
             end_ts: None,
@@ -165,6 +167,7 @@ mod test {
     #[test]
     fn daily_calendar_event() {
         let event = CalendarEvent {
+            id: String::from("dsa"),
             start_ts: 1521317491239,
             duration: 1000 * 60 * 60,
             recurrence: Some(RRuleOptions {

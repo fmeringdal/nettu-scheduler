@@ -5,6 +5,7 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::sync::Arc;
+use mongodb::bson::oid::ObjectId;
 
 #[derive(Serialize, Deserialize)]
 pub struct CreateEventReq {
@@ -21,6 +22,7 @@ pub struct CreateEventUseCase {
 impl UseCase<CreateEventReq, Result<(), Box<dyn Error>>> for CreateEventUseCase {
     async fn execute(&self, event: CreateEventReq) -> Result<(), Box<dyn Error>> {
         let mut e = CalendarEvent {
+            id: ObjectId::new().to_string(),
             start_ts: event.start_ts,
             duration: event.duration,
             recurrence: None,
@@ -48,7 +50,13 @@ mod test {
         async fn insert(&self, e: &CalendarEvent) -> Result<(), Box<dyn std::error::Error>> {
             Ok(())
         }
+        async fn save(&self, e: &CalendarEvent) -> Result<(), Box<dyn std::error::Error>> {
+            Ok(())
+        }
         async fn find(&self, event_id: &str) -> Option<CalendarEvent> {
+            None
+        }
+        async fn delete(&self, event_id: &str) -> Option<CalendarEvent> {
             None
         }
     }
