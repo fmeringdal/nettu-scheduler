@@ -42,7 +42,17 @@ impl CalendarEvent {
 
     pub fn set_reccurrence(&mut self, reccurence: RRuleOptions) {
         self.recurrence = Some(reccurence);
-        self.get_rrule_options();
+        let opts = self.get_rrule_options();
+        if opts.count.is_some() || opts.until.is_some() {
+            let expand = self.expand();
+            if let Some(last_occurence) = expand.last() {
+                self.end_ts = Some(last_occurence.end_ts);
+            } else {
+                self.end_ts = None;
+            }
+        } else {
+            self.end_ts = None;
+        }
     }
 
     pub fn expand(&self) -> Vec<EventInstance> {

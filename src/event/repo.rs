@@ -1,7 +1,7 @@
 use crate::event::domain::event::CalendarEvent;
 use async_trait::async_trait;
 use mongodb::bson::oid::ObjectId;
-use mongodb::bson::Bson::Int64;
+use mongodb::bson::Bson::{Int64};
 use mongodb::bson::{doc, from_bson, to_bson, Document};
 use mongodb::Collection;
 use mongodb::Database;
@@ -55,10 +55,14 @@ impl IEventRepo for EventRepo {
 }
 
 fn to_persistence(e: &CalendarEvent) -> Document {
+    let max_timestamp = 9999999999;
+
     let mut d = doc! {
         "start_ts": Int64(e.start_ts),
         "duration": Int64(e.duration),
-        "end_ts": Int64(e.end_ts.unwrap_or(999999999)),
+        "end_ts": Int64(e.end_ts.unwrap_or(max_timestamp)),
+        "user_id": e.user_id,
+        "calendar_id": e.calendar_id,
     };
     if let Some(recurrence) = &e.recurrence {
         d.insert("recurrence", to_bson(recurrence).unwrap());
