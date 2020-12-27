@@ -1,5 +1,6 @@
 use crate::event::domain::event::{CalendarEvent, RRuleOptions};
 use crate::event::repo::IEventRepo;
+use crate::shared::errors::NotFoundError;
 use crate::shared::usecase::UseCase;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
@@ -16,16 +17,6 @@ pub struct UpdateEventReq {
 
 pub struct UpdateEventUseCase {
     pub event_repo: Arc<dyn IEventRepo>,
-}
-#[derive(Debug)]
-struct NotFoundError;
-
-impl Error for NotFoundError {}
-
-impl std::fmt::Display for NotFoundError {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "Oh no, something bad went down")
-    }
 }
 
 pub enum UpdateEventErrors {
