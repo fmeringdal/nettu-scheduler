@@ -19,7 +19,7 @@ pub struct CreateCalendarUseCase {
 #[async_trait(?Send)]
 impl UseCase<CreateCalendarReq, Result<(), Box<dyn Error>>> for CreateCalendarUseCase {
     async fn execute(&self, req: CreateCalendarReq) -> Result<(), Box<dyn Error>> {
-        let mut calendar = Calendar {
+        let calendar = Calendar {
             id: ObjectId::new().to_string(),
             user_id: req.user_id,
         };

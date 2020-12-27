@@ -11,6 +11,7 @@ use std::sync::Arc;
 pub struct UpdateEventReq {
     pub event_id: String,
     pub start_ts: Option<i64>,
+    pub busy: Option<bool>,
     pub duration: Option<i64>,
     pub rrule_options: Option<RRuleOptions>,
 }
@@ -27,10 +28,11 @@ pub enum UpdateEventErrors {
 impl UseCase<UpdateEventReq, Result<(), UpdateEventErrors>> for UpdateEventUseCase {
     async fn execute(&self, event_update_req: UpdateEventReq) -> Result<(), UpdateEventErrors> {
         let e = self.event_repo.find(&event_update_req.event_id).await;
-        println!("Event found: {:?}", e);
+
         if e.is_none() {
             return Err(UpdateEventErrors::NotFoundError {});
         }
+
         let mut should_update_endtime = false;
         let mut e = e.unwrap();
         if let Some(start_ts) = event_update_req.start_ts {
@@ -40,6 +42,9 @@ impl UseCase<UpdateEventReq, Result<(), UpdateEventErrors>> for UpdateEventUseCa
         if let Some(duration) = event_update_req.duration {
             e.duration = duration;
             should_update_endtime = true;
+        }
+        if let Some(busy) = event_update_req.busy {
+            e.busy = busy;
         }
 
         if let Some(rrule_opts) = event_update_req.rrule_options.clone() {
@@ -57,6 +62,8 @@ impl UseCase<UpdateEventReq, Result<(), UpdateEventErrors>> for UpdateEventUseCa
 mod test {
     use mongodb::results::DeleteResult;
     use std::error::Error;
+
+    use crate::calendar::domain::calendar_view::CalendarView;
 
     use super::*;
 
@@ -76,6 +83,7 @@ mod test {
         async fn find_by_calendar(
             &self,
             calendar_id: &str,
+            cal_view: Option<&CalendarView>,
         ) -> Result<Vec<CalendarEvent>, Box<dyn Error>> {
             Ok(vec![])
         }
@@ -99,6 +107,7 @@ mod test {
                 start_ts: Some(500),
                 duration: Some(800),
                 rrule_options: None,
+                busy: Some(false),
             })
             .await;
         assert!(res.is_err());

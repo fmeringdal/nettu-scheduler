@@ -1,3 +1,5 @@
+use crate::calendar::domain::calendar_view::CalendarView;
+
 use super::event_instance::EventInstance;
 use chrono::prelude::*;
 use chrono_tz::{Tz, UTC};
@@ -21,6 +23,7 @@ pub struct CalendarEvent {
     pub id: String,
     pub start_ts: i64,
     pub duration: i64,
+    pub busy: bool,
     pub end_ts: Option<i64>,
     pub recurrence: Option<RRuleOptions>,
     pub exdates: Vec<isize>,
@@ -37,6 +40,7 @@ impl CalendarEvent {
             end_ts: None,
             recurrence: None,
             exdates: vec![],
+            busy: false,
             calendar_id: String::from(""),
             user_id: String::from(""),
         }
@@ -45,7 +49,7 @@ impl CalendarEvent {
     fn update_endtime(&mut self) {
         let opts = self.get_rrule_options();
         if (opts.count.is_some() && opts.count.unwrap() > 0) || opts.until.is_some() {
-            let expand = self.expand();
+            let expand = self.expand(None);
             if let Some(last_occurence) = expand.last() {
                 self.end_ts = Some(last_occurence.end_ts);
             } else {
@@ -63,23 +67,30 @@ impl CalendarEvent {
         }
     }
 
-    pub fn expand(&self) -> Vec<EventInstance> {
+    pub fn expand(&self, view: Option<&CalendarView>) -> Vec<EventInstance> {
         if self.recurrence.is_some() {
             let rrule_options = self.get_rrule_options();
             println!("Opts: {:?}", rrule_options);
 
+            let tzid = rrule_options.tzid.clone();
             let mut rrule_set = RRuleSet::new();
             for exdate in &self.exdates {
-                let exdate = rrule_options.tzid.timestamp(*exdate as i64 / 1000, 0);
+                let exdate = tzid.timestamp(*exdate as i64 / 1000, 0);
                 rrule_set.exdate(exdate);
             }
-
             let rrule = RRule::new(rrule_options);
             // println!("rr: {:?}", rrule.all());
             rrule_set.rrule(rrule);
 
-            rrule_set
-                .all()
+            let instances = match view {
+                Some(view) => {
+                    let view = view.as_datetime(&tzid);
+                    rrule_set.between(view.start, view.end, true)
+                }
+                None => rrule_set.all(),
+            };
+
+            instances
                 .iter()
                 .map(|occurence| {
                     // println!("Occurence: {:?}", occurence);
@@ -175,6 +186,7 @@ mod test {
         let event = CalendarEvent {
             id: String::from("dsa"),
             start_ts: 1521317491239,
+            busy: false,
             duration: 1000 * 60 * 60,
             recurrence: Some(RRuleOptions {
                 freq: 4,
@@ -193,7 +205,7 @@ mod test {
             user_id: String::from(""),
         };
 
-        let oc = event.expand();
+        let oc = event.expand(None);
         assert_eq!(oc.len(), 3);
     }
 }

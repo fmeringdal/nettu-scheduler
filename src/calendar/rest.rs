@@ -2,7 +2,9 @@ use super::repo::ICalendarRepo;
 use super::usecases::create_calendar::{CreateCalendarReq, CreateCalendarUseCase};
 use super::usecases::delete_calendar::{DeleteCalendarReq, DeleteCalendarUseCase};
 use super::usecases::get_calendar::{GetCalendarReq, GetCalendarUseCase};
-use super::usecases::get_calendar_events::{GetCalendarEventsReq, GetCalendarEventsUseCase};
+use super::usecases::get_calendar_events::{
+    GetCalendarEventsErrors, GetCalendarEventsReq, GetCalendarEventsUseCase,
+};
 use crate::api::Context;
 use crate::event::repo::IEventRepo;
 use crate::shared::usecase::UseCase;
@@ -53,6 +55,7 @@ async fn create_calendar_controller(
     create_calendar_usecase: web::Data<CreateCalendarUseCase>,
     req: web::Json<CreateCalendarReq>,
 ) -> impl Responder {
+    println!("got here?");
     let res = create_calendar_usecase.execute(req.0).await;
     "Hello, from create event we are up and running!\r\n"
 }
@@ -72,7 +75,7 @@ async fn delete_calendar_controller(
     let res = delete_calendar_usecase.execute(req).await;
     return match res {
         Ok(_) => HttpResponse::Ok().body("Calendar deleted"),
-        Err(_) => HttpResponse::NoContent().finish(),
+        Err(_) => HttpResponse::NotFound().finish(),
     };
 }
 
@@ -86,23 +89,35 @@ async fn get_event_controller(
     let res = get_calendar_usecase.execute(req).await;
     return match res {
         Ok(r) => HttpResponse::Ok().json(r),
-        Err(_) => HttpResponse::NoContent().finish(),
+        Err(_) => HttpResponse::NotFound().finish(),
     };
+}
+
+#[derive(Debug, Deserialize)]
+struct GetCalendarEventReq {
+    pub start_ts: i64,
+    pub end_ts: i64,
 }
 
 async fn get_calendar_events_controller(
     get_calendar_events_usecase: web::Data<GetCalendarEventsUseCase>,
-    params: web::Path<GetCalendarEventsReq>,
+    body: web::Json<GetCalendarEventReq>,
+    params: web::Path<CalendarPathParams>,
 ) -> impl Responder {
     let req = GetCalendarEventsReq {
         calendar_id: params.calendar_id.clone(),
-        start_ts: 0,
-        end_ts: 0,
+        start_ts: body.start_ts,
+        end_ts: body.end_ts,
     };
     let res = get_calendar_events_usecase.execute(req).await;
 
-    return match res {
+    match res {
         Ok(r) => HttpResponse::Ok().json(r),
-        Err(_) => HttpResponse::NoContent().finish(),
-    };
+        Err(e) => match e {
+            GetCalendarEventsErrors::InvalidTimespanError => {
+                HttpResponse::UnprocessableEntity().finish()
+            }
+            GetCalendarEventsErrors::NotFoundError => HttpResponse::NotFound().finish(),
+        },
+    }
 }

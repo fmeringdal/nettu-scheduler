@@ -1,8 +1,13 @@
-use super::usecases::create_event::{CreateEventReq, CreateEventUseCase};
 use super::usecases::delete_event::{DeleteEventReq, DeleteEventUseCase};
 use super::usecases::get_event::{GetEventReq, GetEventUseCase};
-use super::usecases::get_event_instances::{GetEventInstancesReq, GetEventInstancesUseCase};
+use super::usecases::get_event_instances::{
+    GetEventInstancesErrors, GetEventInstancesReq, GetEventInstancesUseCase,
+};
 use super::usecases::update_event::{UpdateEventReq, UpdateEventUseCase};
+use super::usecases::{
+    create_event::{CreateEventReq, CreateEventUseCase},
+    get_event_instances::GetEventInstancesReqView,
+};
 use super::{domain::event::RRuleOptions, repo::IEventRepo};
 use crate::api::Context;
 use crate::shared::usecase::UseCase;
@@ -14,6 +19,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig, ctx: Arc<Context>) {
     // Add usecases to actix data
     let create_event_usecase = CreateEventUseCase {
         event_repo: Arc::clone(&ctx.repos.event_repo),
+        calendar_repo: Arc::clone(&ctx.repos.calendar_repo),
     };
     let update_event_usecase = UpdateEventUseCase {
         event_repo: Arc::clone(&ctx.repos.event_repo),
@@ -60,6 +66,7 @@ async fn create_event_controller(
 struct UpdateEventBody {
     start_ts: Option<i64>,
     duration: Option<i64>,
+    busy: Option<bool>,
     rrule_options: Option<RRuleOptions>,
 }
 
@@ -78,6 +85,7 @@ async fn update_event_controller(
         start_ts: body.start_ts,
         rrule_options: body.rrule_options.clone(),
         event_id: params.event_id.clone(),
+        busy: body.busy,
     };
     let res = update_event_usecase.execute(req).await;
     "Hello, from create event we are up and running!\r\n"
@@ -93,7 +101,7 @@ async fn delete_event_controller(
     let res = delete_event_usecase.execute(req).await;
     return match res {
         Ok(_) => HttpResponse::Ok().body("Event deleted"),
-        Err(_) => HttpResponse::NoContent().finish(),
+        Err(_) => HttpResponse::NotFound().finish(),
     };
 }
 
@@ -107,21 +115,28 @@ async fn get_event_controller(
     let res = get_event_usecase.execute(req).await;
     return match res {
         Ok(r) => HttpResponse::Ok().json(r),
-        Err(_) => HttpResponse::NoContent().finish(),
+        Err(_) => HttpResponse::NotFound().finish(),
     };
 }
 
 async fn get_event_instances_controller(
     get_event_instances_usecase: web::Data<GetEventInstancesUseCase>,
     params: web::Path<GetEventInstancesReq>,
+    query_params: web::Query<GetEventInstancesReqView>,
 ) -> impl Responder {
     let req = GetEventInstancesReq {
         event_id: params.event_id.clone(),
+        view: query_params.0,
     };
     let res = get_event_instances_usecase.execute(req).await;
 
     return match res {
         Ok(r) => HttpResponse::Ok().json(r),
-        Err(_) => HttpResponse::NoContent().finish(),
+        Err(e) => match e {
+            GetEventInstancesErrors::InvalidTimespanError => {
+                HttpResponse::UnprocessableEntity().finish()
+            }
+            GetEventInstancesErrors::NotFoundError => HttpResponse::NotFound().finish(),
+        },
     };
 }

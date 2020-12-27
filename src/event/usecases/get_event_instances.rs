@@ -1,8 +1,8 @@
-use crate::event::domain::event::CalendarEvent;
 use crate::event::domain::event_instance::EventInstance;
 use crate::event::repo::IEventRepo;
 use crate::shared::errors::NotFoundError;
 use crate::shared::usecase::UseCase;
+use crate::{calendar::domain::calendar_view::CalendarView, event::domain::event::CalendarEvent};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
@@ -11,6 +11,13 @@ use std::sync::Arc;
 #[derive(Serialize, Deserialize)]
 pub struct GetEventInstancesReq {
     pub event_id: String,
+    pub view: GetEventInstancesReqView,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct GetEventInstancesReqView {
+    start_ts: i64,
+    end_ts: i64,
 }
 
 pub struct GetEventInstancesUseCase {
@@ -19,6 +26,7 @@ pub struct GetEventInstancesUseCase {
 
 pub enum GetEventInstancesErrors {
     NotFoundError,
+    InvalidTimespanError,
 }
 
 #[derive(Serialize)]
@@ -33,12 +41,16 @@ impl UseCase<GetEventInstancesReq, Result<GetEventInstancesResponse, GetEventIns
 {
     async fn execute(
         &self,
-        event_update_req: GetEventInstancesReq,
+        req: GetEventInstancesReq,
     ) -> Result<GetEventInstancesResponse, GetEventInstancesErrors> {
-        let e = self.event_repo.find(&event_update_req.event_id).await;
+        let e = self.event_repo.find(&req.event_id).await;
         match e {
             Some(event) => {
-                let instances = event.expand();
+                let view = CalendarView::create(req.view.start_ts, req.view.end_ts);
+                if view.is_err() {
+                    return Err(GetEventInstancesErrors::InvalidTimespanError);
+                }
+                let instances = event.expand(Some(&view.unwrap()));
                 Ok(GetEventInstancesResponse { event, instances })
             }
             None => Err(GetEventInstancesErrors::NotFoundError {}),

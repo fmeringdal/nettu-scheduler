@@ -1,4 +1,4 @@
-use crate::calendar::domain::calendar::Calendar;
+use crate::calendar::domain::{calendar::Calendar, calendar_view::CalendarView};
 use crate::calendar::repo::ICalendarRepo;
 use crate::event::domain::event::CalendarEvent;
 use crate::event::domain::event_instance::EventInstance;
@@ -18,10 +18,6 @@ pub struct GetCalendarEventsReq {
 pub struct GetCalendarEventsUseCase {
     pub event_repo: Arc<dyn IEventRepo>,
     pub calendar_repo: Arc<dyn ICalendarRepo>,
-}
-
-pub enum GetCalendarEventsErrors {
-    NotFoundError,
 }
 
 #[derive(Serialize)]
@@ -45,16 +41,23 @@ impl UseCase<GetCalendarEventsReq, Result<GetCalendarEventsResponse, GetCalendar
         req: GetCalendarEventsReq,
     ) -> Result<GetCalendarEventsResponse, GetCalendarEventsErrors> {
         let calendar = self.calendar_repo.find(&req.calendar_id).await;
+
+        let view = CalendarView::create(req.start_ts, req.end_ts);
+        if view.is_err() {
+            return Err(GetCalendarEventsErrors::InvalidTimespanError);
+        }
+        let view = view.unwrap();
+
         match calendar {
             Some(calendar) => {
                 let events = self
                     .event_repo
-                    .find_by_calendar(&calendar.id)
+                    .find_by_calendar(&calendar.id, Some(&view))
                     .await
                     .unwrap()
                     .into_iter()
                     .map(|event| {
-                        let instances = event.expand();
+                        let instances = event.expand(Some(&view));
                         EventWithInstances { event, instances }
                     })
                     .collect();
@@ -62,6 +65,25 @@ impl UseCase<GetCalendarEventsReq, Result<GetCalendarEventsResponse, GetCalendar
                 Ok(GetCalendarEventsResponse { calendar, events })
             }
             None => Err(GetCalendarEventsErrors::NotFoundError {}),
+        }
+    }
+}
+
+// ERRORS
+
+#[derive(Debug)]
+pub enum GetCalendarEventsErrors {
+    NotFoundError,
+    InvalidTimespanError,
+}
+
+impl std::fmt::Display for GetCalendarEventsErrors {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match *self {
+            GetCalendarEventsErrors::NotFoundError => write!(f, "The calendar was not found"),
+            GetCalendarEventsErrors::InvalidTimespanError => {
+                write!(f, "The provided timestamp was invalid.")
+            }
         }
     }
 }

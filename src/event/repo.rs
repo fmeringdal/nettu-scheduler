@@ -1,8 +1,8 @@
-use crate::event::domain::event::CalendarEvent;
+use crate::{calendar::domain::calendar_view::CalendarView, event::domain::event::CalendarEvent};
 use async_trait::async_trait;
 use futures::stream::StreamExt;
 use mongodb::{
-    bson::{doc, from_bson, oid::ObjectId, to_bson, Bson, Bson::Int64, Document},
+    bson::{doc, from_bson, oid::ObjectId, to_bson, Bson, Document},
     results::DeleteResult,
     Collection, Database,
 };
@@ -17,6 +17,7 @@ pub trait IEventRepo: Send + Sync {
     async fn find_by_calendar(
         &self,
         calendar_id: &str,
+        view: Option<&CalendarView>,
     ) -> Result<Vec<CalendarEvent>, Box<dyn Error>>;
     async fn delete(&self, event_id: &str) -> Option<CalendarEvent>;
     async fn delete_by_calendar(&self, calendar_id: &str) -> Result<DeleteResult, Box<dyn Error>>;
@@ -48,14 +49,11 @@ impl IEventRepo for EventRepo {
 
     async fn save(&self, e: &CalendarEvent) -> Result<(), Box<dyn Error>> {
         let coll = self.collection.read().await;
-        println!("Id i got: {}", e.id);
-        println!("Update: {:?}", e);
+
         let filter = doc! {
             "_id": ObjectId::with_string(&e.id)?
         };
-        println!("Update beofre");
         let res = coll.update_one(filter, to_persistence(e), None).await;
-        println!("Update res: {:?}", res);
         Ok(())
     }
 
@@ -77,11 +75,29 @@ impl IEventRepo for EventRepo {
     async fn find_by_calendar(
         &self,
         calendar_id: &str,
+        view: Option<&CalendarView>,
     ) -> Result<Vec<CalendarEvent>, Box<dyn Error>> {
-        let filter = doc! {
+        let coll = self.collection.read().await;
+        let mut filter = doc! {
             "calendar_id": calendar_id
         };
-        let coll = self.collection.read().await;
+        if let Some(view) = view {
+            filter = doc! {
+                "calendar_id": calendar_id,
+                "$and": [
+                    {
+                        "start_ts": {
+                            "$lte": view.get_end()
+                        }
+                    },
+                    {
+                        "end_ts": {
+                            "$gte": view.get_start()
+                        }
+                    }
+                ]
+            };
+        }
         let res = coll.find(filter, None).await;
 
         match res {
@@ -136,9 +152,10 @@ fn to_persistence(e: &CalendarEvent) -> Document {
 
     let mut d = doc! {
         "_id": ObjectId::with_string(&e.id).unwrap(),
-        "start_ts": Int64(e.start_ts),
-        "duration": Int64(e.duration),
-        "end_ts": Int64(e.end_ts.unwrap_or(max_timestamp)),
+        "start_ts": Bson::Int64(e.start_ts),
+        "duration": Bson::Int64(e.duration),
+        "busy": Bson::Boolean(e.busy),
+        "end_ts": Bson::Int64(e.end_ts.unwrap_or(max_timestamp)),
         "user_id": e.user_id.clone(),
         "calendar_id": e.calendar_id.clone(),
     };
@@ -159,10 +176,11 @@ fn to_domain(raw: Document) -> CalendarEvent {
         start_ts: from_bson(raw.get("start_ts").unwrap().clone()).unwrap(),
         duration: from_bson(raw.get("duration").unwrap().clone()).unwrap(),
         recurrence: None,
-        end_ts: None,
+        end_ts: from_bson(raw.get("end_ts").unwrap().clone()).unwrap(),
+        busy: from_bson(raw.get("busy").unwrap().clone()).unwrap(),
         exdates: vec![],
-        calendar_id: String::from("1"),
-        user_id: String::from("2"),
+        calendar_id: from_bson(raw.get("calendar_id").unwrap().clone()).unwrap(),
+        user_id: from_bson(raw.get("user_id").unwrap().clone()).unwrap(),
     };
     if let Some(rrule_opts_bson) = raw.get("recurrence") {
         e.set_reccurrence(from_bson(rrule_opts_bson.clone()).unwrap(), false);
