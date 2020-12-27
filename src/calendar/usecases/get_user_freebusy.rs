@@ -13,6 +13,7 @@ use std::sync::Arc;
 #[derive(Serialize, Deserialize)]
 pub struct GetUserFreeBusyReq {
     pub user_id: String,
+    pub calendar_ids: Option<Vec<String>>,
     pub start_ts: i64,
     pub end_ts: i64,
 }
@@ -41,27 +42,32 @@ impl UseCase<GetUserFreeBusyReq, Result<GetUserFreeBusyResponse, GetUserFreeBusy
         }
         let view = view.unwrap();
 
-        let calendars = self.calendar_repo.find_by_user(&req.user_id).await;
+        let mut calendars = self.calendar_repo.find_by_user(&req.user_id).await;
+        if let Some(calendar_ids) = req.calendar_ids {
+            calendars = calendars
+                .into_iter()
+                .filter(|cal| calendar_ids.contains(&cal.id))
+                .collect();
+        }
 
         let all_events_futures = calendars
             .iter()
             .map(|calendar| self.event_repo.find_by_calendar(&calendar.id, Some(&view)));
-        let all_events = join_all(all_events_futures).await;
-        let mut all_events_instances = all_events
+        let mut all_events_instances = join_all(all_events_futures)
+            .await
             .into_iter()
             .map(|events_res| events_res.unwrap_or(vec![]))
             .map(|events| {
                 events
                     .into_iter()
                     .map(|event| event.expand(Some(&view)))
-                    // Also it is possible that there are no instances in the expanded event, should remove them
+                    // It is possible that there are no instances in the expanded event, should remove them
                     .filter(|instances| !instances.is_empty())
-                    .collect::<Vec<_>>()
             })
             .flatten()
             .flatten()
             .collect::<Vec<_>>();
-        println!("All instances: {:?}", all_events_instances);
+        // println!("All instances: {:?}", all_events_instances);
         let freebusy = get_free_busy(&mut all_events_instances);
 
         Ok(GetUserFreeBusyResponse { free: freebusy })

@@ -5,7 +5,9 @@ use super::usecases::get_calendar::{GetCalendarReq, GetCalendarUseCase};
 use super::usecases::get_calendar_events::{
     GetCalendarEventsErrors, GetCalendarEventsReq, GetCalendarEventsUseCase,
 };
-use super::usecases::get_user_freebusy::{GetUserFreeBusyReq, GetUserFreeBusyUseCase, GetUserFreeBusyErrors};
+use super::usecases::get_user_freebusy::{
+    GetUserFreeBusyErrors, GetUserFreeBusyReq, GetUserFreeBusyUseCase,
+};
 use crate::api::Context;
 use crate::event::repo::IEventRepo;
 use crate::shared::usecase::UseCase;
@@ -137,13 +139,21 @@ struct UserPathParams {
     user_id: String,
 }
 
+#[derive(Debug, Deserialize)]
+struct UserFreebusyBodyReq {
+    start_ts: i64,
+    end_ts: i64,
+    calendar_ids: Option<Vec<String>>,
+}
+
 async fn get_user_freebusy_controller(
     get_user_freebusy_usecase: web::Data<GetUserFreeBusyUseCase>,
-    body: web::Query<TimespanBodyReq>,
+    body: web::Query<UserFreebusyBodyReq>,
     params: web::Path<UserPathParams>,
 ) -> impl Responder {
     let req = GetUserFreeBusyReq {
         user_id: params.user_id.clone(),
+        calendar_ids: body.calendar_ids.clone(),
         start_ts: body.start_ts,
         end_ts: body.end_ts,
     };

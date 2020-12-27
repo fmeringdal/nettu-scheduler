@@ -182,7 +182,7 @@ fn to_domain(raw: Document) -> CalendarEvent {
         calendar_id: from_bson(raw.get("calendar_id").unwrap().clone()).unwrap(),
         user_id: from_bson(raw.get("user_id").unwrap().clone()).unwrap(),
     };
-    
+
     if let Some(rrule_opts_bson) = raw.get("recurrence") {
         e.set_reccurrence(from_bson(rrule_opts_bson.clone()).unwrap(), false);
     };

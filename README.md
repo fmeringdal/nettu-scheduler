@@ -6,7 +6,6 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 
 ## backlog
 
-- should userid be on event ?
 - tests for useCases / controllers, checkout actix test framework
 - use the different results that are unused
 - smarter mongodb schema
