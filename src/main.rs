@@ -9,8 +9,7 @@ mod event;
 mod shared;
 
 use crate::api::Context;
-use crate::event::rest::configure_routes;
-use actix_web::{get, middleware, web, App, HttpServer};
+use actix_web::{get, middleware, App, HttpServer};
 use env_logger::Env;
 use std::sync::Arc;
 
@@ -32,7 +31,8 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::Compress::default())
             .wrap(middleware::Logger::default())
             .service(status)
-            .configure(|cfg| configure_routes(cfg, Arc::clone(&ctx)))
+            .configure(|cfg| event::rest::configure_routes(cfg, Arc::clone(&ctx)))
+            .configure(|cfg| calendar::rest::configure_routes(cfg, Arc::clone(&ctx)))
     })
     .bind("0.0.0.0:5000")?
     .workers(4)

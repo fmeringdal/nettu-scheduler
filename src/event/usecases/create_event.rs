@@ -32,7 +32,7 @@ impl UseCase<CreateEventReq, Result<(), Box<dyn Error>>> for CreateEventUseCase 
             user_id: String::from("2"),
         };
         if let Some(rrule_opts) = event.rrule_options.clone() {
-            e.set_reccurrence(rrule_opts);
+            e.set_reccurrence(rrule_opts, true);
         };
         self.event_repo.insert(&e).await;
         Ok(())
@@ -41,23 +41,37 @@ impl UseCase<CreateEventReq, Result<(), Box<dyn Error>>> for CreateEventUseCase 
 
 #[cfg(test)]
 mod test {
+    use mongodb::results::DeleteResult;
+    use std::error::Error;
+
+    use crate::shared::errors::NotFoundError;
+
     use super::*;
 
     struct MockEventRepo {}
 
     #[async_trait]
     impl IEventRepo for MockEventRepo {
-        async fn insert(&self, e: &CalendarEvent) -> Result<(), Box<dyn std::error::Error>> {
+        async fn insert(&self, e: &CalendarEvent) -> Result<(), Box<dyn Error>> {
             Ok(())
         }
-        async fn save(&self, e: &CalendarEvent) -> Result<(), Box<dyn std::error::Error>> {
+        async fn save(&self, e: &CalendarEvent) -> Result<(), Box<dyn Error>> {
             Ok(())
         }
         async fn find(&self, event_id: &str) -> Option<CalendarEvent> {
             None
         }
+        async fn find_by_calendar(
+            &self,
+            calendar_id: &str,
+        ) -> Result<Vec<CalendarEvent>, Box<dyn Error>> {
+            Ok(vec![])
+        }
         async fn delete(&self, event_id: &str) -> Option<CalendarEvent> {
             None
+        }
+        async fn delete_by_calendar(&self, event_id: &str) -> Result<DeleteResult, Box<dyn Error>> {
+            Err(Box::new(NotFoundError))
         }
     }
 

@@ -1,10 +1,8 @@
-use crate::event::domain::event::{CalendarEvent, RRuleOptions};
-use crate::event::repo::ICalendarRepo;
+use crate::calendar::domain::calendar::Calendar;
+use crate::calendar::repo::ICalendarRepo;
 use crate::shared::usecase::UseCase;
-use crate::shared::errors::NotFoundError;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
-use std::error::Error;
 use std::sync::Arc;
 
 #[derive(Serialize, Deserialize)]
@@ -21,11 +19,8 @@ pub enum GetCalendarErrors {
 }
 
 #[async_trait(?Send)]
-impl UseCase<GetCalendarReq, Result<CalendarEvent, GetCalendarErrors>> for GetCalendarUseCase {
-    async fn execute(
-        &self,
-        req: GetCalendarReq,
-    ) -> Result<CalendarEvent, GetCalendarErrors> {
+impl UseCase<GetCalendarReq, Result<Calendar, GetCalendarErrors>> for GetCalendarUseCase {
+    async fn execute(&self, req: GetCalendarReq) -> Result<Calendar, GetCalendarErrors> {
         let cal = self.calendar_repo.find(&req.calendar_id).await;
         match cal {
             Some(cal) => Ok(cal),

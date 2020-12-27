@@ -1,9 +1,10 @@
 use crate::event::domain::event::CalendarEvent;
 use async_trait::async_trait;
+use futures::stream::StreamExt;
 use mongodb::{
     bson::{doc, from_bson, oid::ObjectId, to_bson, Bson, Bson::Int64, Document},
+    results::DeleteResult,
     Collection, Database,
-    results::DeleteResult
 };
 use std::error::Error;
 use tokio::sync::RwLock;
@@ -13,6 +14,10 @@ pub trait IEventRepo: Send + Sync {
     async fn insert(&self, e: &CalendarEvent) -> Result<(), Box<dyn Error>>;
     async fn save(&self, e: &CalendarEvent) -> Result<(), Box<dyn Error>>;
     async fn find(&self, event_id: &str) -> Option<CalendarEvent>;
+    async fn find_by_calendar(
+        &self,
+        calendar_id: &str,
+    ) -> Result<Vec<CalendarEvent>, Box<dyn Error>>;
     async fn delete(&self, event_id: &str) -> Option<CalendarEvent>;
     async fn delete_by_calendar(&self, calendar_id: &str) -> Result<DeleteResult, Box<dyn Error>>;
 }
@@ -69,6 +74,36 @@ impl IEventRepo for EventRepo {
         }
     }
 
+    async fn find_by_calendar(
+        &self,
+        calendar_id: &str,
+    ) -> Result<Vec<CalendarEvent>, Box<dyn Error>> {
+        let filter = doc! {
+            "calendar_id": calendar_id
+        };
+        let coll = self.collection.read().await;
+        let res = coll.find(filter, None).await;
+
+        match res {
+            Ok(mut cursor) => {
+                let mut events = vec![];
+                while let Some(result) = cursor.next().await {
+                    match result {
+                        Ok(document) => {
+                            events.push(to_domain(document));
+                        }
+                        Err(e) => {
+                            println!("Error getting cursor calendar event: {:?}", e);
+                        }
+                    }
+                }
+
+                Ok(events)
+            }
+            Err(err) => Err(Box::new(err)),
+        }
+    }
+
     async fn delete(&self, event_id: &str) -> Option<CalendarEvent> {
         let filter = doc! {
             "_id": ObjectId::with_string(event_id).unwrap()
@@ -84,12 +119,15 @@ impl IEventRepo for EventRepo {
         }
     }
 
-    async fn delete_by_calendar(&self, calendar_id: &str) -> Result<(), Box<dyn Error>> {
+    async fn delete_by_calendar(&self, calendar_id: &str) -> Result<DeleteResult, Box<dyn Error>> {
         let filter = doc! {
             "calendar_id": calendar_id
         };
         let coll = self.collection.read().await;
-        coll.delete_many(filter, None).await
+        match coll.delete_many(filter, None).await {
+            Ok(res) => Ok(res),
+            Err(err) => Err(Box::new(err)),
+        }
     }
 }
 

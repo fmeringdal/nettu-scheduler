@@ -1,5 +1,5 @@
-use crate::event::domain::event::{CalendarEvent, RRuleOptions};
-use crate::event::repo::ICalendarRepo;
+use crate::calendar::domain::calendar::Calendar;
+use crate::calendar::repo::ICalendarRepo;
 use crate::shared::usecase::UseCase;
 use async_trait::async_trait;
 use mongodb::bson::oid::ObjectId;

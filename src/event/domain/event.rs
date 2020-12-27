@@ -42,7 +42,7 @@ impl CalendarEvent {
         }
     }
 
-    fn update_endtime(&mut self){
+    fn update_endtime(&mut self) {
         let opts = self.get_rrule_options();
         if (opts.count.is_some() && opts.count.unwrap() > 0) || opts.until.is_some() {
             let expand = self.expand();

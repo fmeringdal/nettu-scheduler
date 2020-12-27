@@ -1,4 +1,7 @@
-use crate::event::repo::{EventRepo, IEventRepo};
+use crate::{
+    calendar::repo::{CalendarRepo, ICalendarRepo},
+    event::repo::{EventRepo, IEventRepo},
+};
 use actix_web::web;
 use mongodb::{options::ClientOptions, Client};
 use std::sync::Arc;
@@ -6,6 +9,7 @@ type DataContext = web::Data<Arc<Context>>;
 
 pub struct Repos {
     pub event_repo: Arc<dyn IEventRepo>,
+    pub calendar_repo: Arc<dyn ICalendarRepo>,
 }
 
 impl Repos {
@@ -29,6 +33,7 @@ impl Repos {
         println!("DB CHECKING CONNECTION ... [done]");
         Ok(Self {
             event_repo: Arc::new(EventRepo::new(&db)),
+            calendar_repo: Arc::new(CalendarRepo::new(&db)),
         })
     }
 }

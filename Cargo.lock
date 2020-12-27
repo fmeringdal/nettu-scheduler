@@ -1576,6 +1576,7 @@ dependencies = [
  "chrono",
  "chrono-tz",
  "env_logger",
+ "futures",
  "mockall",
  "mongodb",
  "rrule",

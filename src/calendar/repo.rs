@@ -1,4 +1,4 @@
-use crate::event::domain::calendar::Calendar;
+use crate::calendar::domain::calendar::Calendar;
 use async_trait::async_trait;
 use mongodb::{
     bson::{doc, from_bson, oid::ObjectId, to_bson, Bson, Bson::Int64, Document},
@@ -9,10 +9,10 @@ use tokio::sync::RwLock;
 
 #[async_trait]
 pub trait ICalendarRepo: Send + Sync {
-    async fn insert(&self, e: &CalendarEvent) -> Result<(), Box<dyn Error>>;
-    async fn save(&self, e: &CalendarEvent) -> Result<(), Box<dyn Error>>;
-    async fn find(&self, event_id: &str) -> Option<CalendarEvent>;
-    async fn delete(&self, event_id: &str) -> Option<CalendarEvent>;
+    async fn insert(&self, calendar: &Calendar) -> Result<(), Box<dyn Error>>;
+    async fn save(&self, calendar: &Calendar) -> Result<(), Box<dyn Error>>;
+    async fn find(&self, event_id: &str) -> Option<Calendar>;
+    async fn delete(&self, event_id: &str) -> Option<Calendar>;
 }
 
 pub struct CalendarRepo {
@@ -42,13 +42,15 @@ impl ICalendarRepo for CalendarRepo {
     async fn save(&self, calendar: &Calendar) -> Result<(), Box<dyn Error>> {
         let coll = self.collection.read().await;
         let filter = doc! {
-            "_id": ObjectId::with_string(&e.id)?
+            "_id": ObjectId::with_string(&calendar.id)?
         };
-        let res = coll.update_one(filter, to_persistence(calendar), None).await;
+        let res = coll
+            .update_one(filter, to_persistence(calendar), None)
+            .await;
         Ok(())
     }
 
-    async fn find(&self, calendar_id: &str) -> Option<CalendarEvent> {
+    async fn find(&self, calendar_id: &str) -> Option<Calendar> {
         let filter = doc! {
             "_id": ObjectId::with_string(calendar_id).unwrap()
         };
@@ -63,7 +65,7 @@ impl ICalendarRepo for CalendarRepo {
         }
     }
 
-    async fn delete(&self, calendar_id: &str) -> Option<CalendarEvent> {
+    async fn delete(&self, calendar_id: &str) -> Option<Calendar> {
         let filter = doc! {
             "_id": ObjectId::with_string(calendar_id).unwrap()
         };
@@ -80,12 +82,11 @@ impl ICalendarRepo for CalendarRepo {
 }
 
 fn to_persistence(calendar: &Calendar) -> Document {
-
     let raw = doc! {
         "_id": ObjectId::with_string(&calendar.id).unwrap(),
-        "user_id": e.user_id.clone(),
+        "user_id": calendar.user_id.clone(),
     };
-    
+
     raw
 }
 
@@ -99,6 +100,6 @@ fn to_domain(raw: Document) -> Calendar {
         id,
         user_id: from_bson(raw.get("user_id").unwrap().clone()).unwrap(),
     };
-     
+
     calendar
 }

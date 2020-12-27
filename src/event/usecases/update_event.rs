@@ -52,9 +52,9 @@ impl UseCase<UpdateEventReq, Result<(), UpdateEventErrors>> for UpdateEventUseCa
         }
 
         if let Some(rrule_opts) = event_update_req.rrule_options.clone() {
-            e.set_reccurrence(rrule_opts);
+            e.set_reccurrence(rrule_opts, true);
         } else if should_update_endtime && e.recurrence.is_some() {
-            e.set_reccurrence(e.recurrence.clone().unwrap());
+            e.set_reccurrence(e.recurrence.clone().unwrap(), true);
         }
 
         self.event_repo.save(&e).await;
@@ -64,6 +64,9 @@ impl UseCase<UpdateEventReq, Result<(), UpdateEventErrors>> for UpdateEventUseCa
 
 #[cfg(test)]
 mod test {
+    use mongodb::results::DeleteResult;
+    use std::error::Error;
+
     use super::*;
 
     struct MockEventRepo {}
@@ -79,8 +82,17 @@ mod test {
         async fn find(&self, event_id: &str) -> Option<CalendarEvent> {
             None
         }
+        async fn find_by_calendar(
+            &self,
+            calendar_id: &str,
+        ) -> Result<Vec<CalendarEvent>, Box<dyn Error>> {
+            Ok(vec![])
+        }
         async fn delete(&self, event_id: &str) -> Option<CalendarEvent> {
             None
+        }
+        async fn delete_by_calendar(&self, event_id: &str) -> Result<DeleteResult, Box<dyn Error>> {
+            Err(Box::new(NotFoundError))
         }
     }
 
