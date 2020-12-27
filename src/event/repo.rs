@@ -3,6 +3,7 @@ use async_trait::async_trait;
 use mongodb::{
     bson::{doc, from_bson, oid::ObjectId, to_bson, Bson, Bson::Int64, Document},
     Collection, Database,
+    results::DeleteResult
 };
 use std::error::Error;
 use tokio::sync::RwLock;
@@ -13,6 +14,7 @@ pub trait IEventRepo: Send + Sync {
     async fn save(&self, e: &CalendarEvent) -> Result<(), Box<dyn Error>>;
     async fn find(&self, event_id: &str) -> Option<CalendarEvent>;
     async fn delete(&self, event_id: &str) -> Option<CalendarEvent>;
+    async fn delete_by_calendar(&self, calendar_id: &str) -> Result<DeleteResult, Box<dyn Error>>;
 }
 
 pub struct EventRepo {
@@ -81,6 +83,14 @@ impl IEventRepo for EventRepo {
             _ => None,
         }
     }
+
+    async fn delete_by_calendar(&self, calendar_id: &str) -> Result<(), Box<dyn Error>> {
+        let filter = doc! {
+            "calendar_id": calendar_id
+        };
+        let coll = self.collection.read().await;
+        coll.delete_many(filter, None).await
+    }
 }
 
 fn to_persistence(e: &CalendarEvent) -> Document {
@@ -117,7 +127,7 @@ fn to_domain(raw: Document) -> CalendarEvent {
         user_id: String::from("2"),
     };
     if let Some(rrule_opts_bson) = raw.get("recurrence") {
-        e.set_reccurrence(from_bson(rrule_opts_bson.clone()).unwrap());
+        e.set_reccurrence(from_bson(rrule_opts_bson.clone()).unwrap(), false);
     };
     e
 }

@@ -42,8 +42,7 @@ impl CalendarEvent {
         }
     }
 
-    pub fn set_reccurrence(&mut self, reccurence: RRuleOptions) {
-        self.recurrence = Some(reccurence);
+    fn update_endtime(&mut self){
         let opts = self.get_rrule_options();
         if (opts.count.is_some() && opts.count.unwrap() > 0) || opts.until.is_some() {
             let expand = self.expand();
@@ -54,6 +53,13 @@ impl CalendarEvent {
             }
         } else {
             self.end_ts = None;
+        }
+    }
+
+    pub fn set_reccurrence(&mut self, reccurence: RRuleOptions, update_endtime: bool) {
+        self.recurrence = Some(reccurence);
+        if update_endtime {
+            self.update_endtime();
         }
     }
 
