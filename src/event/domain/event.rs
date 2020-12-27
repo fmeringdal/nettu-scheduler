@@ -99,7 +99,7 @@ impl CalendarEvent {
                     return EventInstance {
                         start_ts,
                         end_ts: start_ts + self.duration,
-                        busy: false,
+                        busy: self.busy,
                     };
                 })
                 .collect()
@@ -107,7 +107,7 @@ impl CalendarEvent {
             vec![EventInstance {
                 start_ts: self.start_ts,
                 end_ts: self.start_ts + self.duration,
-                busy: false,
+                busy: self.busy,
             }]
         }
     }

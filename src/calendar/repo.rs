@@ -1,5 +1,6 @@
 use crate::calendar::domain::calendar::Calendar;
 use async_trait::async_trait;
+use futures::stream::StreamExt;
 use mongodb::{
     bson::{doc, from_bson, oid::ObjectId, to_bson, Bson, Bson::Int64, Document},
     Collection, Database,
@@ -12,6 +13,7 @@ pub trait ICalendarRepo: Send + Sync {
     async fn insert(&self, calendar: &Calendar) -> Result<(), Box<dyn Error>>;
     async fn save(&self, calendar: &Calendar) -> Result<(), Box<dyn Error>>;
     async fn find(&self, event_id: &str) -> Option<Calendar>;
+    async fn find_by_user(&self, user_id: &str) -> Vec<Calendar>;
     async fn delete(&self, event_id: &str) -> Option<Calendar>;
 }
 
@@ -62,6 +64,33 @@ impl ICalendarRepo for CalendarRepo {
                 Some(calendar)
             }
             _ => None,
+        }
+    }
+
+    async fn find_by_user(&self, user_id: &str) -> Vec<Calendar> {
+        let filter = doc! {
+            "user_id": user_id
+        };
+        let coll = self.collection.read().await;
+        let res = coll.find(filter, None).await;
+        match res {
+            Ok(mut cursor) => {
+                let mut calendars = vec![];
+
+                while let Some(result) = cursor.next().await {
+                    match result {
+                        Ok(document) => {
+                            calendars.push(to_domain(document));
+                        }
+                        Err(e) => {
+                            println!("Error getting cursor calendar: {:?}", e);
+                        }
+                    }
+                }
+
+                calendars
+            }
+            _ => vec![],
         }
     }
 

@@ -148,7 +148,8 @@ fn remove_busy_from_free(
         .collect()
 }
 
-fn get_free_busy(instances: &mut Vec<EventInstance>) -> Vec<EventInstance> {
+// TODO: should be able to just pass in free and busy instances as params
+pub fn get_free_busy(instances: &mut Vec<EventInstance>) -> Vec<EventInstance> {
     let mut free_instances = vec![];
     let mut busy_instances = vec![];
 

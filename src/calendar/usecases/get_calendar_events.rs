@@ -60,6 +60,8 @@ impl UseCase<GetCalendarEventsReq, Result<GetCalendarEventsResponse, GetCalendar
                         let instances = event.expand(Some(&view));
                         EventWithInstances { event, instances }
                     })
+                    // Also it is possible that there are no instances in the expanded event, should remove them
+                    .filter(|data| !data.instances.is_empty())
                     .collect();
 
                 Ok(GetCalendarEventsResponse { calendar, events })
@@ -82,7 +84,7 @@ impl std::fmt::Display for GetCalendarEventsErrors {
         match *self {
             GetCalendarEventsErrors::NotFoundError => write!(f, "The calendar was not found"),
             GetCalendarEventsErrors::InvalidTimespanError => {
-                write!(f, "The provided timestamp was invalid.")
+                write!(f, "The provided timesspan was invalid.")
             }
         }
     }

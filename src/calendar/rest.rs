@@ -5,6 +5,7 @@ use super::usecases::get_calendar::{GetCalendarReq, GetCalendarUseCase};
 use super::usecases::get_calendar_events::{
     GetCalendarEventsErrors, GetCalendarEventsReq, GetCalendarEventsUseCase,
 };
+use super::usecases::get_user_freebusy::{GetUserFreeBusyReq, GetUserFreeBusyUseCase, GetUserFreeBusyErrors};
 use crate::api::Context;
 use crate::event::repo::IEventRepo;
 use crate::shared::usecase::UseCase;
@@ -29,11 +30,16 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig, ctx: Arc<Context>) {
         event_repo: Arc::clone(&ctx.repos.event_repo),
         calendar_repo: Arc::clone(&ctx.repos.calendar_repo),
     };
+    let get_user_freebusy_usecase = GetUserFreeBusyUseCase {
+        event_repo: Arc::clone(&ctx.repos.event_repo),
+        calendar_repo: Arc::clone(&ctx.repos.calendar_repo),
+    };
 
     cfg.app_data(web::Data::new(create_calendar_usecase));
     cfg.app_data(web::Data::new(delete_calendar_usecase));
     cfg.app_data(web::Data::new(get_calendar_usecase));
     cfg.app_data(web::Data::new(get_calendar_events_usecase));
+    cfg.app_data(web::Data::new(get_user_freebusy_usecase));
 
     // Hookup Routes to usecases
     cfg.route("/calendar", web::post().to(create_calendar_controller));
@@ -48,6 +54,10 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig, ctx: Arc<Context>) {
     cfg.route(
         "/calendar/{calendar_id}/events",
         web::get().to(get_calendar_events_controller),
+    );
+    cfg.route(
+        "/user/{user_id}/freebusy",
+        web::get().to(get_user_freebusy_controller),
     );
 }
 
@@ -94,14 +104,14 @@ async fn get_event_controller(
 }
 
 #[derive(Debug, Deserialize)]
-struct GetCalendarEventReq {
+struct TimespanBodyReq {
     pub start_ts: i64,
     pub end_ts: i64,
 }
 
 async fn get_calendar_events_controller(
     get_calendar_events_usecase: web::Data<GetCalendarEventsUseCase>,
-    body: web::Json<GetCalendarEventReq>,
+    body: web::Json<TimespanBodyReq>,
     params: web::Path<CalendarPathParams>,
 ) -> impl Responder {
     let req = GetCalendarEventsReq {
@@ -118,6 +128,33 @@ async fn get_calendar_events_controller(
                 HttpResponse::UnprocessableEntity().finish()
             }
             GetCalendarEventsErrors::NotFoundError => HttpResponse::NotFound().finish(),
+        },
+    }
+}
+
+#[derive(Debug, Deserialize)]
+struct UserPathParams {
+    user_id: String,
+}
+
+async fn get_user_freebusy_controller(
+    get_user_freebusy_usecase: web::Data<GetUserFreeBusyUseCase>,
+    body: web::Query<TimespanBodyReq>,
+    params: web::Path<UserPathParams>,
+) -> impl Responder {
+    let req = GetUserFreeBusyReq {
+        user_id: params.user_id.clone(),
+        start_ts: body.start_ts,
+        end_ts: body.end_ts,
+    };
+    let res = get_user_freebusy_usecase.execute(req).await;
+
+    match res {
+        Ok(r) => HttpResponse::Ok().json(r),
+        Err(e) => match e {
+            GetUserFreeBusyErrors::InvalidTimespanError => {
+                HttpResponse::UnprocessableEntity().finish()
+            }
         },
     }
 }
