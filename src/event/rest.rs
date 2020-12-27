@@ -121,9 +121,10 @@ async fn get_event_controller(
 
 async fn get_event_instances_controller(
     get_event_instances_usecase: web::Data<GetEventInstancesUseCase>,
-    params: web::Path<GetEventInstancesReq>,
+    params: web::Path<EventPathParams>,
     query_params: web::Query<GetEventInstancesReqView>,
 ) -> impl Responder {
+    println!("Query params: {:?}", query_params);
     let req = GetEventInstancesReq {
         event_id: params.event_id.clone(),
         view: query_params.0,

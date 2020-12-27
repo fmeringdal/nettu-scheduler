@@ -14,7 +14,7 @@ pub struct GetEventInstancesReq {
     pub view: GetEventInstancesReqView,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct GetEventInstancesReqView {
     start_ts: i64,
     end_ts: i64,
