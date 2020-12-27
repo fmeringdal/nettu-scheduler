@@ -25,7 +25,7 @@ pub struct GetUserFreeBusyUseCase {
 
 #[derive(Serialize)]
 pub struct GetUserFreeBusyResponse {
-    free: Vec<EventInstance>,
+    pub free: Vec<EventInstance>,
 }
 
 #[async_trait(?Send)]

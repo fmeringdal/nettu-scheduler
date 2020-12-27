@@ -5,6 +5,9 @@ use super::usecases::get_calendar::{GetCalendarReq, GetCalendarUseCase};
 use super::usecases::get_calendar_events::{
     GetCalendarEventsErrors, GetCalendarEventsReq, GetCalendarEventsUseCase,
 };
+use super::usecases::get_user_bookingslots::{
+    GetUserBookingSlotsErrors, GetUserBookingSlotsReq, GetUserBookingSlotsUseCase,
+};
 use super::usecases::get_user_freebusy::{
     GetUserFreeBusyErrors, GetUserFreeBusyReq, GetUserFreeBusyUseCase,
 };
@@ -36,12 +39,17 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig, ctx: Arc<Context>) {
         event_repo: Arc::clone(&ctx.repos.event_repo),
         calendar_repo: Arc::clone(&ctx.repos.calendar_repo),
     };
+    let get_user_freebusy_usecase_arc = Arc::new(get_user_freebusy_usecase);
+    let get_user_bookingslots_usecase = GetUserBookingSlotsUseCase {
+        get_user_freebusy_usecase: Arc::clone(&get_user_freebusy_usecase_arc),
+    };
 
     cfg.app_data(web::Data::new(create_calendar_usecase));
     cfg.app_data(web::Data::new(delete_calendar_usecase));
     cfg.app_data(web::Data::new(get_calendar_usecase));
     cfg.app_data(web::Data::new(get_calendar_events_usecase));
-    cfg.app_data(web::Data::new(get_user_freebusy_usecase));
+    cfg.app_data(web::Data::new(get_user_freebusy_usecase_arc));
+    cfg.app_data(web::Data::new(get_user_bookingslots_usecase));
 
     // Hookup Routes to usecases
     cfg.route("/calendar", web::post().to(create_calendar_controller));
@@ -60,6 +68,10 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig, ctx: Arc<Context>) {
     cfg.route(
         "/user/{user_id}/freebusy",
         web::get().to(get_user_freebusy_controller),
+    );
+    cfg.route(
+        "/user/{user_id}/booking",
+        web::get().to(get_user_bookingslots_controller),
     );
 }
 
@@ -147,7 +159,7 @@ struct UserFreebusyBodyReq {
 }
 
 async fn get_user_freebusy_controller(
-    get_user_freebusy_usecase: web::Data<GetUserFreeBusyUseCase>,
+    get_user_freebusy_usecase: web::Data<Arc<GetUserFreeBusyUseCase>>,
     body: web::Query<UserFreebusyBodyReq>,
     params: web::Path<UserPathParams>,
 ) -> impl Responder {
@@ -163,6 +175,38 @@ async fn get_user_freebusy_controller(
         Ok(r) => HttpResponse::Ok().json(r),
         Err(e) => match e {
             GetUserFreeBusyErrors::InvalidTimespanError => {
+                HttpResponse::UnprocessableEntity().finish()
+            }
+        },
+    }
+}
+
+#[derive(Debug, Deserialize)]
+struct UserBookingBodyReq {
+    iana_tz: Option<String>,
+    duration: i64,
+    date: String,
+    calendar_ids: Option<Vec<String>>,
+}
+
+async fn get_user_bookingslots_controller(
+    get_user_bookingslots_usecase: web::Data<GetUserBookingSlotsUseCase>,
+    query_params: web::Query<UserBookingBodyReq>,
+    params: web::Path<UserPathParams>,
+) -> impl Responder {
+    let req = GetUserBookingSlotsReq {
+        user_id: params.user_id.clone(),
+        calendar_ids: query_params.calendar_ids.clone(),
+        iana_tz: query_params.iana_tz.clone(),
+        date: query_params.date.clone(),
+        duration: query_params.duration,
+    };
+    let res = get_user_bookingslots_usecase.execute(req).await;
+
+    match res {
+        Ok(r) => HttpResponse::Ok().json(r),
+        Err(e) => match e {
+            GetUserBookingSlotsErrors::InvalidTimespanError => {
                 HttpResponse::UnprocessableEntity().finish()
             }
         },
