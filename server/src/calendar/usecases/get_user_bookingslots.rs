@@ -119,7 +119,7 @@ async fn get_user_bookingslots_usecase(
 
             Ok(GetUserBookingSlotsResponse { booking_slots })
         }
-        Err(e) => panic!("djsaojdosa"), // ! fix this
+        Err(_e) => panic!("djsaojdosa"), // ! fix this
     }
 }
 

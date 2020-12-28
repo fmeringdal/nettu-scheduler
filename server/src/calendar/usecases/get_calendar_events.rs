@@ -2,7 +2,7 @@ use crate::calendar::repo::ICalendarRepo;
 use crate::event::domain::event::CalendarEvent;
 use crate::event::domain::event_instance::EventInstance;
 use crate::event::repo::IEventRepo;
-use crate::shared::usecase::UseCase;
+
 use crate::{
     api::Context,
     calendar::domain::{calendar::Calendar, calendar_view::CalendarView},

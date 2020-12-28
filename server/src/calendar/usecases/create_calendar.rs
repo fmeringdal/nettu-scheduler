@@ -1,4 +1,4 @@
-use crate::api::{Context, NettuError, Perform};
+use crate::api::{Context};
 use crate::calendar::domain::calendar::Calendar;
 use crate::calendar::repo::ICalendarRepo;
 use actix_web::{web, HttpResponse};

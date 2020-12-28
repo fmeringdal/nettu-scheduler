@@ -12,7 +12,7 @@ use crate::api::Context;
 use actix_web::{get, middleware, App, HttpServer};
 use api::Repos;
 use env_logger::Env;
-use std::sync::Arc;
+
 
 #[get("/")]
 async fn status() -> &'static str {

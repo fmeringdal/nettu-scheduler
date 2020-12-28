@@ -1,11 +1,11 @@
-use crate::shared::usecase::UseCase;
-use crate::{api::Context, shared::errors::NotFoundError};
-use crate::{api::Perform, calendar::repo::ICalendarRepo};
-use crate::{calendar::domain::calendar::Calendar, event::repo::IEventRepo};
+
+use crate::{api::Context};
+use crate::{calendar::repo::ICalendarRepo};
+use crate::{event::repo::IEventRepo};
 use actix_web::{web, HttpResponse};
-use async_trait::async_trait;
-use serde::{Deserialize, Serialize};
-use std::error::Error;
+
+use serde::{Deserialize};
+
 use std::sync::Arc;
 
 #[derive(Deserialize)]

@@ -4,7 +4,7 @@ use crate::{
 };
 use actix_web::{web, HttpResponse};
 use mongodb::{options::ClientOptions, Client};
-use serde::{Deserialize, Serialize};
+
 use std::sync::Arc;
 type DataContext = web::Data<Arc<Context>>;
 

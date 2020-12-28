@@ -1,15 +1,15 @@
 use crate::calendar::repo::ICalendarRepo;
-use crate::event::domain::event::CalendarEvent;
+
 use crate::event::domain::event_instance::get_free_busy;
 use crate::event::domain::event_instance::EventInstance;
 use crate::event::repo::IEventRepo;
-use crate::shared::usecase::UseCase;
+
 use crate::{
     api::Context,
-    calendar::domain::{calendar::Calendar, calendar_view::CalendarView},
+    calendar::domain::{calendar_view::CalendarView},
 };
 use actix_web::{web, HttpResponse};
-use async_trait::async_trait;
+
 use futures::future::join_all;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;

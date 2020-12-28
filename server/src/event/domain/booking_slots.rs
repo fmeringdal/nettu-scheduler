@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use crate::shared::errors::NotFoundError;
+
 
 use super::event_instance::EventInstance;
 

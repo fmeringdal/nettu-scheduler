@@ -106,26 +106,26 @@ mod test {
 
     #[async_trait]
     impl IEventRepo for MockEventRepo {
-        async fn insert(&self, e: &CalendarEvent) -> Result<(), Box<dyn std::error::Error>> {
+        async fn insert(&self, _e: &CalendarEvent) -> Result<(), Box<dyn std::error::Error>> {
             Ok(())
         }
-        async fn save(&self, e: &CalendarEvent) -> Result<(), Box<dyn std::error::Error>> {
+        async fn save(&self, _e: &CalendarEvent) -> Result<(), Box<dyn std::error::Error>> {
             Ok(())
         }
-        async fn find(&self, event_id: &str) -> Option<CalendarEvent> {
+        async fn find(&self, _event_id: &str) -> Option<CalendarEvent> {
             None
         }
         async fn find_by_calendar(
             &self,
-            calendar_id: &str,
-            cal_view: Option<&CalendarView>,
+            _calendar_id: &str,
+            _cal_view: Option<&CalendarView>,
         ) -> Result<Vec<CalendarEvent>, Box<dyn Error>> {
             Ok(vec![])
         }
-        async fn delete(&self, event_id: &str) -> Option<CalendarEvent> {
+        async fn delete(&self, _event_id: &str) -> Option<CalendarEvent> {
             None
         }
-        async fn delete_by_calendar(&self, event_id: &str) -> Result<DeleteResult, Box<dyn Error>> {
+        async fn delete_by_calendar(&self, _event_id: &str) -> Result<DeleteResult, Box<dyn Error>> {
             Err(Box::new(NotFoundError))
         }
     }

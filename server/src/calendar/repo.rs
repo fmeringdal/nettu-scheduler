@@ -37,7 +37,7 @@ impl CalendarRepo {
 impl ICalendarRepo for CalendarRepo {
     async fn insert(&self, calendar: &Calendar) -> Result<(), Box<dyn Error>> {
         let coll = self.collection.read().await;
-        let res = coll.insert_one(to_persistence(calendar), None).await;
+        let _res = coll.insert_one(to_persistence(calendar), None).await;
         Ok(())
     }
 
@@ -46,7 +46,7 @@ impl ICalendarRepo for CalendarRepo {
         let filter = doc! {
             "_id": ObjectId::with_string(&calendar.id)?
         };
-        let res = coll
+        let _res = coll
             .update_one(filter, to_persistence(calendar), None)
             .await;
         Ok(())

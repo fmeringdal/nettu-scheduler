@@ -2,7 +2,7 @@ use crate::calendar::domain::calendar_view::CalendarView;
 
 use super::event_instance::EventInstance;
 use chrono::prelude::*;
-use chrono_tz::{Tz, UTC};
+use chrono_tz::{Tz};
 use rrule::{Frequenzy, ParsedOptions, RRule, RRuleSet};
 use serde::{Deserialize, Serialize};
 

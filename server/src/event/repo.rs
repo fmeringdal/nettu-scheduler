@@ -43,7 +43,7 @@ impl EventRepo {
 impl IEventRepo for EventRepo {
     async fn insert(&self, e: &CalendarEvent) -> Result<(), Box<dyn Error>> {
         let coll = self.collection.read().await;
-        let res = coll.insert_one(to_persistence(e), None).await;
+        let _res = coll.insert_one(to_persistence(e), None).await;
         Ok(())
     }
 
@@ -53,7 +53,7 @@ impl IEventRepo for EventRepo {
         let filter = doc! {
             "_id": ObjectId::with_string(&e.id)?
         };
-        let res = coll.update_one(filter, to_persistence(e), None).await;
+        let _res = coll.update_one(filter, to_persistence(e), None).await;
         Ok(())
     }
 
