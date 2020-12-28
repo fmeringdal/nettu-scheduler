@@ -1,5 +1,5 @@
 [package]
-name = "nettu-booking"
+name = "nettu_booking"
 version = "0.1.0"
 authors = ["Fredrik Meringdal <fmeringdal@hotmail.com>"]
 edition = "2018"

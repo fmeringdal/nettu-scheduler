@@ -39,3 +39,23 @@ async fn main() -> std::io::Result<()> {
     .run()
     .await
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use actix_web::{test, http, App};
+
+
+    #[actix_web::main]
+    #[test]
+    async fn test_status_ok() {
+        let mut app = test::init_service(
+            App::new()
+                .service(status)
+        ).await;
+        let req = test::TestRequest::with_uri("/").to_request();
+        let resp = test::call_service(&mut app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::OK);
+    }
+}

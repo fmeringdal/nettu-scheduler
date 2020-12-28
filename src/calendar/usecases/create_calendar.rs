@@ -9,7 +9,7 @@ use std::sync::Arc;
 
 #[derive(Serialize, Deserialize)]
 pub struct CreateCalendarReq {
-    user_id: String,
+    pub user_id: String,
 }
 
 pub struct CreateCalendarUseCase {
@@ -27,3 +27,4 @@ impl UseCase<CreateCalendarReq, Result<(), Box<dyn Error>>> for CreateCalendarUs
         Ok(())
     }
 }
+

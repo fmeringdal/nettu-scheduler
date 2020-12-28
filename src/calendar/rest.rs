@@ -212,3 +212,30 @@ async fn get_user_bookingslots_controller(
         },
     }
 }
+
+
+
+
+
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use actix_web::{test, web, App, http};
+
+    #[actix_web::main]
+    #[test]
+    async fn create_calendar_api() {
+        let mut app = test::init_service(
+            App::new()
+                .route("/calendar", web::post().to(create_calendar_controller))
+        ).await;
+
+        let req = test::TestRequest::with_uri("/calendar").set_json(&CreateCalendarReq {
+            user_id: String::from("yeah")
+        }).method(http::Method::POST).to_request();
+        let resp = test::call_service(&mut app, req).await;
+        println!("Resp: {:?}", resp);
+        assert_eq!(resp.status(), http::StatusCode::OK);
+    }
+}

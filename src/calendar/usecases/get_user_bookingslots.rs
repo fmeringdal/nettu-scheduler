@@ -74,8 +74,7 @@ impl UseCase<GetUserBookingSlotsReq, Result<GetUserBookingSlotsResponse, GetUser
 
         match free_events {
             Ok(free_events) => {
-                println!("Free events???");
-                println!("{:?}", free_events.free);
+                
                 let booking_slots = get_booking_slots(
                     &free_events.free,
                     BookingSlotsOptions {
