@@ -32,8 +32,8 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             .service(status)
             .data(ctx)
-            .configure(|cfg| event::rest::configure_routes(cfg))
-            .configure(|cfg| calendar::rest::configure_routes(cfg))
+            .configure(|cfg| event::api::configure_routes(cfg))
+            .configure(|cfg| calendar::api::configure_routes(cfg))
     })
     .bind("0.0.0.0:5000")?
     .workers(4)

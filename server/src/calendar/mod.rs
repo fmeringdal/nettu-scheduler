@@ -1,4 +1,4 @@
 pub mod domain;
 pub mod repos;
-pub mod rest;
+pub mod api;
 pub mod usecases;
