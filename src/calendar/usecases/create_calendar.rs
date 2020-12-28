@@ -1,30 +1,56 @@
+use crate::api::{Context, NettuError, Perform};
 use crate::calendar::domain::calendar::Calendar;
 use crate::calendar::repo::ICalendarRepo;
-use crate::shared::usecase::UseCase;
-use async_trait::async_trait;
+use actix_web::{web, HttpResponse};
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
-use std::error::Error;
 use std::sync::Arc;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct CreateCalendarReq {
     pub user_id: String,
 }
 
-pub struct CreateCalendarUseCase {
-    pub calendar_repo: Arc<dyn ICalendarRepo>,
-}
+pub async fn create_calendar_controller(
+    req: web::Json<CreateCalendarReq>,
+    ctx: web::Data<Context>,
+) -> HttpResponse {
+    let res = create_calendar_usecase(
+        req.0,
+        CreateCalendarUseCaseCtx {
+            calendar_repo: Arc::clone(&ctx.repos.calendar_repo),
+        },
+    )
+    .await;
 
-#[async_trait(?Send)]
-impl UseCase<CreateCalendarReq, Result<(), Box<dyn Error>>> for CreateCalendarUseCase {
-    async fn execute(&self, req: CreateCalendarReq) -> Result<(), Box<dyn Error>> {
-        let calendar = Calendar {
-            id: ObjectId::new().to_string(),
-            user_id: req.user_id,
-        };
-        self.calendar_repo.insert(&calendar).await;
-        Ok(())
+    match res {
+        Ok(json) => HttpResponse::Ok().json(json),
+        Err(_) => HttpResponse::UnprocessableEntity().finish(),
     }
 }
 
+#[derive(Serialize)]
+pub struct CreateCalendarRes {
+    pub calendar_id: String,
+}
+
+pub struct CreateCalendarUseCaseCtx {
+    pub calendar_repo: Arc<dyn ICalendarRepo>,
+}
+
+pub async fn create_calendar_usecase(
+    req: CreateCalendarReq,
+    ctx: CreateCalendarUseCaseCtx,
+) -> Result<CreateCalendarRes, anyhow::Error> {
+    let calendar = Calendar {
+        id: ObjectId::new().to_string(),
+        user_id: req.user_id,
+    };
+    let res = ctx.calendar_repo.insert(&calendar).await;
+    match res {
+        Ok(_) => Ok(CreateCalendarRes {
+            calendar_id: calendar.id.clone(),
+        }),
+        Err(_) => Err(anyhow::Error::msg("Unable to create calendar")),
+    }
+}

@@ -1,14 +1,12 @@
-use crate::event::repo::IEventRepo;
-use crate::shared::errors::NotFoundError;
 use crate::shared::usecase::UseCase;
+use crate::{api::Context, event::repo::IEventRepo};
 use crate::{
     calendar::repo::ICalendarRepo,
     event::domain::event::{CalendarEvent, RRuleOptions},
 };
-use async_trait::async_trait;
+use actix_web::{web, HttpResponse};
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
-use std::error::Error;
 use std::sync::Arc;
 
 #[derive(Serialize, Deserialize)]
@@ -20,7 +18,22 @@ pub struct CreateEventReq {
     rrule_options: Option<RRuleOptions>,
 }
 
-pub struct CreateEventUseCase {
+pub async fn create_event_controller(
+    req: web::Json<CreateEventReq>,
+    ctx: web::Data<Context>,
+) -> HttpResponse {
+    let ctx = CreateEventUseCaseCtx {
+        event_repo: ctx.repos.event_repo.clone(),
+        calendar_repo: ctx.repos.calendar_repo.clone(),
+    };
+    let res = create_event_usecase(req.0, ctx).await;
+    match res {
+        Ok(e) => HttpResponse::Created().json(e),
+        Err(e) => HttpResponse::UnprocessableEntity().finish(),
+    }
+}
+
+pub struct CreateEventUseCaseCtx {
     pub event_repo: Arc<dyn IEventRepo>,
     pub calendar_repo: Arc<dyn ICalendarRepo>,
 }
@@ -29,36 +42,37 @@ pub enum CreateCalendarEventErrors {
     NotFoundError,
 }
 
-#[async_trait(?Send)]
-impl UseCase<CreateEventReq, Result<(), CreateCalendarEventErrors>> for CreateEventUseCase {
-    async fn execute(&self, event: CreateEventReq) -> Result<(), CreateCalendarEventErrors> {
-        let calendar = self.calendar_repo.find(&event.calendar_id).await;
-        if calendar.is_none() {
-            return Err(CreateCalendarEventErrors::NotFoundError);
-        }
-        let calendar = calendar.unwrap();
-
-        let mut e = CalendarEvent {
-            id: ObjectId::new().to_string(),
-            busy: event.busy.unwrap_or(false),
-            start_ts: event.start_ts,
-            duration: event.duration,
-            recurrence: None,
-            end_ts: None,
-            exdates: vec![],
-            calendar_id: calendar.id,
-            user_id: calendar.user_id,
-        };
-        if let Some(rrule_opts) = event.rrule_options.clone() {
-            e.set_reccurrence(rrule_opts, true);
-        };
-        self.event_repo.insert(&e).await;
-        Ok(())
+async fn create_event_usecase(
+    event: CreateEventReq,
+    ctx: CreateEventUseCaseCtx,
+) -> Result<CalendarEvent, CreateCalendarEventErrors> {
+    let calendar = ctx.calendar_repo.find(&event.calendar_id).await;
+    if calendar.is_none() {
+        return Err(CreateCalendarEventErrors::NotFoundError);
     }
+    let calendar = calendar.unwrap();
+
+    let mut e = CalendarEvent {
+        id: ObjectId::new().to_string(),
+        busy: event.busy.unwrap_or(false),
+        start_ts: event.start_ts,
+        duration: event.duration,
+        recurrence: None,
+        end_ts: None,
+        exdates: vec![],
+        calendar_id: calendar.id,
+        user_id: calendar.user_id,
+    };
+    if let Some(rrule_opts) = event.rrule_options.clone() {
+        e.set_reccurrence(rrule_opts, true);
+    };
+    ctx.event_repo.insert(&e).await;
+    Ok(e)
 }
 
 #[cfg(test)]
 mod test {
+    use async_trait::async_trait;
     use mongodb::results::DeleteResult;
     use std::error::Error;
 

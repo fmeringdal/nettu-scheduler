@@ -2,8 +2,9 @@ use crate::{
     calendar::repo::{CalendarRepo, ICalendarRepo},
     event::repo::{EventRepo, IEventRepo},
 };
-use actix_web::web;
+use actix_web::{web, HttpResponse};
 use mongodb::{options::ClientOptions, Client};
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 type DataContext = web::Data<Arc<Context>>;
 
@@ -14,7 +15,6 @@ pub struct Repos {
 
 impl Repos {
     pub async fn create() -> Result<Self, Box<dyn std::error::Error>> {
-        println!("create");
         let client_options =
             ClientOptions::parse(&std::env::var("MONGODB_CONNECTION_STRING").unwrap()).await?;
         let client = Client::with_options(client_options)?;
@@ -38,14 +38,44 @@ impl Repos {
     }
 }
 
+impl Clone for Repos {
+    fn clone(&self) -> Self {
+        Self {
+            event_repo: Arc::clone(&self.event_repo),
+            calendar_repo: Arc::clone(&self.calendar_repo),
+        }
+    }
+}
+
 pub struct Context {
     pub repos: Repos,
 }
 
-impl Context {
-    pub async fn new() -> Result<Self, Box<dyn std::error::Error>> {
-        let repos = Repos::create().await?;
+#[async_trait::async_trait(?Send)]
+pub trait Perform {
+    // type Response: serde::ser::Serialize + Send;
 
-        Ok(Self { repos })
+    async fn perform(&self, context: &web::Data<Context>) -> HttpResponse;
+}
+
+#[derive(Debug)]
+pub struct NettuError {
+    pub inner: anyhow::Error,
+}
+
+impl<T> From<T> for NettuError
+where
+    T: Into<anyhow::Error>,
+{
+    fn from(t: T) -> Self {
+        NettuError { inner: t.into() }
     }
 }
+
+impl std::fmt::Display for NettuError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        self.inner.fmt(f)
+    }
+}
+
+impl actix_web::error::ResponseError for NettuError {}
