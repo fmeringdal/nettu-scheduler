@@ -4,10 +4,7 @@ use crate::event::domain::event_instance::get_free_busy;
 use crate::event::domain::event_instance::EventInstance;
 use crate::event::repo::IEventRepo;
 
-use crate::{
-    api::Context,
-    calendar::domain::{calendar_view::CalendarView},
-};
+use crate::{api::Context, calendar::domain::calendar_view::CalendarView};
 use actix_web::{web, HttpResponse};
 
 use futures::future::join_all;

@@ -3,11 +3,14 @@ use async_trait::async_trait;
 use futures::stream::StreamExt;
 use mongodb::{
     bson::{doc, from_bson, oid::ObjectId, to_bson, Bson, Document},
-    results::DeleteResult,
     Collection, Database,
 };
 use std::error::Error;
 use tokio::sync::RwLock;
+
+pub struct DeleteResult {
+    pub deleted_count: i64,
+}
 
 #[async_trait]
 pub trait IEventRepo: Send + Sync {
@@ -141,7 +144,9 @@ impl IEventRepo for EventRepo {
         };
         let coll = self.collection.read().await;
         match coll.delete_many(filter, None).await {
-            Ok(res) => Ok(res),
+            Ok(res) => Ok(DeleteResult {
+                deleted_count: res.deleted_count,
+            }),
             Err(err) => Err(Box::new(err)),
         }
     }
@@ -187,4 +192,83 @@ fn to_domain(raw: Document) -> CalendarEvent {
         e.set_reccurrence(from_bson(rrule_opts_bson.clone()).unwrap(), false);
     };
     e
+}
+
+pub struct InMemoryEventRepo {
+    calendar_events: std::sync::Mutex<Vec<CalendarEvent>>,
+}
+
+#[async_trait]
+impl IEventRepo for InMemoryEventRepo {
+    async fn insert(&self, e: &CalendarEvent) -> Result<(), Box<dyn Error>> {
+        let mut events = self.calendar_events.lock().unwrap();
+        events.push(e.clone());
+        Ok(())
+    }
+
+    async fn save(&self, e: &CalendarEvent) -> Result<(), Box<dyn Error>> {
+        let mut events = self.calendar_events.lock().unwrap();
+        for i in 0..events.len() {
+            if events[i].id == e.id {
+                events.splice(i..i + 1, vec![e.clone()]);
+            }
+        }
+        Ok(())
+    }
+
+    async fn find(&self, event_id: &str) -> Option<CalendarEvent> {
+        let events = self.calendar_events.lock().unwrap();
+        for i in 0..events.len() {
+            if events[i].id == event_id {
+                return Some(events[i].clone());
+            }
+        }
+        None
+    }
+
+    async fn find_by_calendar(
+        &self,
+        calendar_id: &str,
+        view: Option<&CalendarView>,
+    ) -> Result<Vec<CalendarEvent>, Box<dyn Error>> {
+        let events = self.calendar_events.lock().unwrap();
+        let mut res = vec![];
+        for i in 0..events.len() {
+            if events[i].calendar_id == calendar_id {
+                if let Some(v) = view {
+                    if v.get_start() <= events[i].end_ts.unwrap()
+                        && v.get_end() >= events[i].start_ts
+                    {
+                        res.push(events[i].clone());
+                    }
+                } else {
+                    res.push(events[i].clone());
+                }
+            }
+        }
+        Ok(res)
+    }
+
+    async fn delete(&self, event_id: &str) -> Option<CalendarEvent> {
+        let mut events = self.calendar_events.lock().unwrap();
+        for i in 0..events.len() {
+            if events[i].id == event_id {
+                events.remove(i);
+                return Some(events[i].clone());
+            }
+        }
+        None
+    }
+
+    async fn delete_by_calendar(&self, calendar_id: &str) -> Result<DeleteResult, Box<dyn Error>> {
+        let mut events = self.calendar_events.lock().unwrap();
+        let mut deleted_count = 0;
+        for i in 0..events.len() {
+            if events[i].calendar_id == calendar_id {
+                events.remove(i);
+                deleted_count += 1;
+            }
+        }
+        Ok(DeleteResult { deleted_count })
+    }
 }

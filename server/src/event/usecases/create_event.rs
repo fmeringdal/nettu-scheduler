@@ -1,4 +1,3 @@
-
 use crate::{api::Context, event::repo::IEventRepo};
 use crate::{
     calendar::repo::ICalendarRepo,
@@ -103,7 +102,10 @@ mod test {
         async fn delete(&self, _event_id: &str) -> Option<CalendarEvent> {
             None
         }
-        async fn delete_by_calendar(&self, _event_id: &str) -> Result<DeleteResult, Box<dyn Error>> {
+        async fn delete_by_calendar(
+            &self,
+            _event_id: &str,
+        ) -> Result<DeleteResult, Box<dyn Error>> {
             Err(Box::new(NotFoundError))
         }
     }

@@ -1,7 +1,5 @@
 use serde::Serialize;
 
-
-
 use super::event_instance::EventInstance;
 
 #[derive(Serialize, PartialEq, Debug)]

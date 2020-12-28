@@ -2,7 +2,7 @@ use crate::calendar::domain::calendar_view::CalendarView;
 
 use super::event_instance::EventInstance;
 use chrono::prelude::*;
-use chrono_tz::{Tz};
+use chrono_tz::Tz;
 use rrule::{Frequenzy, ParsedOptions, RRule, RRuleSet};
 use serde::{Deserialize, Serialize};
 
@@ -18,7 +18,7 @@ pub struct RRuleOptions {
     pub byweekday: Vec<isize>,
     pub bynweekday: Vec<Vec<isize>>,
 }
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, Clone)]
 pub struct CalendarEvent {
     pub id: String,
     pub start_ts: i64,

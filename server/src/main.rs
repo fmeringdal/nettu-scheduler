@@ -13,7 +13,6 @@ use actix_web::{get, middleware, App, HttpServer};
 use api::Repos;
 use env_logger::Env;
 
-
 #[get("/")]
 async fn status() -> &'static str {
     println!("Got req");

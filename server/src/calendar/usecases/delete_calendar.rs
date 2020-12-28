@@ -1,10 +1,9 @@
-
-use crate::{api::Context};
-use crate::{calendar::repo::ICalendarRepo};
-use crate::{event::repo::IEventRepo};
+use crate::api::Context;
+use crate::calendar::repo::ICalendarRepo;
+use crate::event::repo::IEventRepo;
 use actix_web::{web, HttpResponse};
 
-use serde::{Deserialize};
+use serde::Deserialize;
 
 use std::sync::Arc;
 
