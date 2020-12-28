@@ -198,6 +198,14 @@ pub struct InMemoryEventRepo {
     calendar_events: std::sync::Mutex<Vec<CalendarEvent>>,
 }
 
+impl InMemoryEventRepo {
+    pub fn new() -> Self {
+        Self {
+            calendar_events: std::sync::Mutex::new(vec![]),
+        }
+    }
+}
+
 #[async_trait]
 impl IEventRepo for InMemoryEventRepo {
     async fn insert(&self, e: &CalendarEvent) -> Result<(), Box<dyn Error>> {

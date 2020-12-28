@@ -91,54 +91,17 @@ async fn update_event_usecase(
 
 #[cfg(test)]
 mod test {
-    use async_trait::async_trait;
-    use mongodb::results::DeleteResult;
-    use std::error::Error;
-
-    use crate::{
-        calendar::domain::calendar_view::CalendarView, event::domain::event::CalendarEvent,
-        shared::errors::NotFoundError,
-    };
+    use crate::{api::Repos, event::repo::InMemoryEventRepo};
 
     use super::*;
-
-    struct MockEventRepo {}
-
-    #[async_trait]
-    impl IEventRepo for MockEventRepo {
-        async fn insert(&self, _e: &CalendarEvent) -> Result<(), Box<dyn std::error::Error>> {
-            Ok(())
-        }
-        async fn save(&self, _e: &CalendarEvent) -> Result<(), Box<dyn std::error::Error>> {
-            Ok(())
-        }
-        async fn find(&self, _event_id: &str) -> Option<CalendarEvent> {
-            None
-        }
-        async fn find_by_calendar(
-            &self,
-            _calendar_id: &str,
-            _cal_view: Option<&CalendarView>,
-        ) -> Result<Vec<CalendarEvent>, Box<dyn Error>> {
-            Ok(vec![])
-        }
-        async fn delete(&self, _event_id: &str) -> Option<CalendarEvent> {
-            None
-        }
-        async fn delete_by_calendar(
-            &self,
-            _event_id: &str,
-        ) -> Result<DeleteResult, Box<dyn Error>> {
-            Err(Box::new(NotFoundError))
-        }
-    }
+    use actix_web::{test, web, App};
 
     #[actix_web::main]
     #[test]
     async fn update_notexisting_event() {
-        let ctx = UpdateEventUseCaseCtx {
-            event_repo: Arc::new(MockEventRepo {}),
-        };
+        let event_repo = Arc::new(InMemoryEventRepo::new());
+
+        let ctx = UpdateEventUseCaseCtx { event_repo };
         let req = UpdateEventReq {
             event_id: String::from(""),
             start_ts: Some(500),

@@ -2,7 +2,7 @@ use crate::calendar::domain::calendar::Calendar;
 use async_trait::async_trait;
 use futures::stream::StreamExt;
 use mongodb::{
-    bson::{doc, from_bson, oid::ObjectId, to_bson, Bson, Bson::Int64, Document},
+    bson::{doc, from_bson, oid::ObjectId, Bson, Document},
     Collection, Database,
 };
 use std::error::Error;
@@ -12,9 +12,9 @@ use tokio::sync::RwLock;
 pub trait ICalendarRepo: Send + Sync {
     async fn insert(&self, calendar: &Calendar) -> Result<(), Box<dyn Error>>;
     async fn save(&self, calendar: &Calendar) -> Result<(), Box<dyn Error>>;
-    async fn find(&self, event_id: &str) -> Option<Calendar>;
+    async fn find(&self, calendar_id: &str) -> Option<Calendar>;
     async fn find_by_user(&self, user_id: &str) -> Vec<Calendar>;
-    async fn delete(&self, event_id: &str) -> Option<Calendar>;
+    async fn delete(&self, calendar_id: &str) -> Option<Calendar>;
 }
 
 pub struct CalendarRepo {
@@ -133,11 +133,16 @@ fn to_domain(raw: Document) -> Calendar {
     calendar
 }
 
-
-
-
 pub struct InMemoryCalendarRepo {
     calendars: std::sync::Mutex<Vec<Calendar>>,
+}
+
+impl InMemoryCalendarRepo {
+    pub fn new() -> Self {
+        Self {
+            calendars: std::sync::Mutex::new(vec![]),
+        }
+    }
 }
 
 #[async_trait]
@@ -170,7 +175,7 @@ impl ICalendarRepo for InMemoryCalendarRepo {
 
     async fn find_by_user(&self, user_id: &str) -> Vec<Calendar> {
         let calendars = self.calendars.lock().unwrap();
-        let mut res = vec![]; 
+        let mut res = vec![];
         for i in 0..calendars.len() {
             if calendars[i].user_id == user_id {
                 res.push(calendars[i].clone());

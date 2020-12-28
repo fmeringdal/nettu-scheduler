@@ -1,8 +1,3 @@
-extern crate chrono;
-extern crate chrono_tz;
-extern crate mongodb;
-extern crate rrule;
-
 mod api;
 mod calendar;
 mod event;

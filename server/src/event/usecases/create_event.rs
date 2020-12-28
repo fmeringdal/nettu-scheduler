@@ -36,7 +36,7 @@ pub struct CreateEventUseCaseCtx {
     pub event_repo: Arc<dyn IEventRepo>,
     pub calendar_repo: Arc<dyn ICalendarRepo>,
 }
-
+#[derive(Debug)]
 pub enum CreateCalendarEventErrors {
     NotFoundError,
 }
@@ -71,61 +71,43 @@ async fn create_event_usecase(
 
 #[cfg(test)]
 mod test {
-    use async_trait::async_trait;
-    use mongodb::results::DeleteResult;
-    use std::error::Error;
-
-    use crate::{calendar::domain::calendar_view::CalendarView, shared::errors::NotFoundError};
+    use crate::{
+        api::Repos,
+        calendar::{domain::calendar::Calendar, repo::InMemoryCalendarRepo},
+        event::repo::InMemoryEventRepo,
+    };
 
     use super::*;
-
-    struct MockEventRepo {}
-
-    #[async_trait]
-    impl IEventRepo for MockEventRepo {
-        async fn insert(&self, _e: &CalendarEvent) -> Result<(), Box<dyn Error>> {
-            Ok(())
-        }
-        async fn save(&self, _e: &CalendarEvent) -> Result<(), Box<dyn Error>> {
-            Ok(())
-        }
-        async fn find(&self, _event_id: &str) -> Option<CalendarEvent> {
-            None
-        }
-        async fn find_by_calendar(
-            &self,
-            _calendar_id: &str,
-            _cal_view: Option<&CalendarView>,
-        ) -> Result<Vec<CalendarEvent>, Box<dyn Error>> {
-            Ok(vec![])
-        }
-        async fn delete(&self, _event_id: &str) -> Option<CalendarEvent> {
-            None
-        }
-        async fn delete_by_calendar(
-            &self,
-            _event_id: &str,
-        ) -> Result<DeleteResult, Box<dyn Error>> {
-            Err(Box::new(NotFoundError))
-        }
-    }
+    use actix_web::{test, web, App};
 
     #[actix_web::main]
     #[test]
-    #[ignore = "calendar repo mock"]
     async fn create_event_use_case_test() {
-        // let use_case = CreateEventUseCase {
-        //     event_repo: Arc::new(MockEventRepo {}),
-        // };
-        // let res = use_case
-        //     .execute(CreateEventReq {
-        //         start_ts: 500,
-        //         duration: 800,
-        //         rrule_options: None,
-        //         busy: Some(false),
-        //         calendar_id: String::from("1231"),
-        //     })
-        //     .await;
-        // assert!(res.is_ok());
+        let event_repo = Arc::new(InMemoryEventRepo::new());
+        let calendar_repo = Arc::new(InMemoryCalendarRepo::new());
+        let calendar = Calendar {
+            id: String::from("312312"),
+            user_id: String::from("2312312"),
+        };
+        calendar_repo.insert(&calendar).await;
+
+        let req = CreateEventReq {
+            start_ts: 500,
+            duration: 800,
+            rrule_options: None,
+            busy: Some(false),
+            calendar_id: calendar.id.clone(),
+        };
+
+        let res = create_event_usecase(
+            req,
+            CreateEventUseCaseCtx {
+                calendar_repo,
+                event_repo,
+            },
+        )
+        .await;
+
+        assert!(res.is_ok());
     }
 }

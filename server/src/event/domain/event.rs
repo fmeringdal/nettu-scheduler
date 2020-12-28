@@ -169,6 +169,7 @@ impl CalendarEvent {
 #[cfg(test)]
 mod test {
     use super::*;
+    use chrono_tz::UTC;
 
     fn ymd_hms(
         year: i32,
