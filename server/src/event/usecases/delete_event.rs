@@ -1,5 +1,5 @@
 use crate::api::Context;
-use crate::event::repo::IEventRepo;
+use crate::event::repos::IEventRepo;
 use actix_web::{web, HttpResponse};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;

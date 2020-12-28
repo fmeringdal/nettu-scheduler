@@ -1,4 +1,4 @@
-use crate::event::repo::IEventRepo;
+use crate::event::repos::IEventRepo;
 use crate::{api::Context, event::domain::event_instance::EventInstance};
 use crate::{calendar::domain::calendar_view::CalendarView, event::domain::event::CalendarEvent};
 use actix_web::{web, HttpResponse};

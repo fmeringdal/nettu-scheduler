@@ -1,6 +1,6 @@
 use crate::{
     calendar::repo::{CalendarRepo, ICalendarRepo},
-    event::repo::{EventRepo, IEventRepo},
+    event::repos::{EventRepo, IEventRepo},
 };
 use actix_web::{web, HttpResponse};
 use mongodb::{options::ClientOptions, Client};

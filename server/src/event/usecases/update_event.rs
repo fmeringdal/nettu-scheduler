@@ -1,4 +1,4 @@
-use crate::event::repo::IEventRepo;
+use crate::event::repos::IEventRepo;
 use crate::{api::Context, event::domain::event::RRuleOptions};
 use actix_web::{web, HttpResponse};
 use serde::{Deserialize, Serialize};
@@ -91,7 +91,7 @@ async fn update_event_usecase(
 
 #[cfg(test)]
 mod test {
-    use crate::{api::Repos, event::repo::InMemoryEventRepo};
+    use crate::{api::Repos, event::repos::InMemoryEventRepo};
 
     use super::*;
     use actix_web::{test, web, App};

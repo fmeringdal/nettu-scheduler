@@ -1,7 +1,7 @@
 use crate::calendar::repo::ICalendarRepo;
 use crate::event::domain::event::CalendarEvent;
 use crate::event::domain::event_instance::EventInstance;
-use crate::event::repo::IEventRepo;
+use crate::event::repos::IEventRepo;
 
 use crate::{
     api::Context,

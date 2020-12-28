@@ -1,6 +1,6 @@
 use crate::{
     api::Context,
-    event::{domain::event::CalendarEvent, repo::IEventRepo},
+    event::{domain::event::CalendarEvent, repos::IEventRepo},
 };
 use actix_web::{web, HttpResponse};
 use serde::{Deserialize, Serialize};

@@ -1,4 +1,4 @@
-use crate::{api::Context, event::repo::IEventRepo};
+use crate::{api::Context, event::repos::IEventRepo};
 use crate::{
     calendar::repo::ICalendarRepo,
     event::domain::event::{CalendarEvent, RRuleOptions},
@@ -74,7 +74,7 @@ mod test {
     use crate::{
         api::Repos,
         calendar::{domain::calendar::Calendar, repo::InMemoryCalendarRepo},
-        event::repo::InMemoryEventRepo,
+        event::repos::InMemoryEventRepo,
     };
 
     use super::*;
