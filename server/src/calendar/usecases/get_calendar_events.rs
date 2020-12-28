@@ -1,4 +1,4 @@
-use crate::calendar::repo::ICalendarRepo;
+use crate::calendar::repos::ICalendarRepo;
 use crate::event::domain::event::CalendarEvent;
 use crate::event::domain::event_instance::EventInstance;
 use crate::event::repos::IEventRepo;

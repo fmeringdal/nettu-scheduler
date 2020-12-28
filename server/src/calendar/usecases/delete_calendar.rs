@@ -1,5 +1,5 @@
 use crate::api::Context;
-use crate::calendar::repo::ICalendarRepo;
+use crate::calendar::repos::ICalendarRepo;
 use crate::event::repos::IEventRepo;
 use actix_web::{web, HttpResponse};
 

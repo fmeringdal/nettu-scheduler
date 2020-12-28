@@ -1,6 +1,6 @@
 use crate::api::Context;
 use crate::calendar::domain::calendar::Calendar;
-use crate::calendar::repo::ICalendarRepo;
+use crate::calendar::repos::ICalendarRepo;
 use actix_web::{web, HttpResponse};
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};

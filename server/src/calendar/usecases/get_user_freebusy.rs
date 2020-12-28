@@ -1,4 +1,4 @@
-use crate::calendar::repo::ICalendarRepo;
+use crate::calendar::repos::ICalendarRepo;
 
 use crate::event::domain::event_instance::get_free_busy;
 use crate::event::domain::event_instance::EventInstance;

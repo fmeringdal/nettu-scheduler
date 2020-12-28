@@ -1,6 +1,6 @@
 use crate::{api::Context, event::repos::IEventRepo};
 use crate::{
-    calendar::repo::ICalendarRepo,
+    calendar::repos::ICalendarRepo,
     event::domain::event::{CalendarEvent, RRuleOptions},
 };
 use actix_web::{web, HttpResponse};
@@ -73,7 +73,7 @@ async fn create_event_usecase(
 mod test {
     use crate::{
         api::Repos,
-        calendar::{domain::calendar::Calendar, repo::InMemoryCalendarRepo},
+        calendar::{domain::calendar::Calendar, repos::InMemoryCalendarRepo},
         event::repos::InMemoryEventRepo,
     };
 

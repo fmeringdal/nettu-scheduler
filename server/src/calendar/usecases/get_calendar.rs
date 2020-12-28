@@ -1,4 +1,4 @@
-use crate::calendar::repo::ICalendarRepo;
+use crate::calendar::repos::ICalendarRepo;
 use crate::{api::Context, calendar::domain::calendar::Calendar};
 use actix_web::{web, HttpResponse};
 use serde::{Deserialize, Serialize};
