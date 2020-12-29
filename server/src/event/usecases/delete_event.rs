@@ -1,6 +1,6 @@
-use crate::api::Context;
+use crate::{api::Context, shared::auth::protect_route};
 use crate::event::repos::IEventRepo;
-use actix_web::{web, HttpResponse};
+use actix_web::{HttpRequest, HttpResponse, web};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
@@ -10,10 +10,17 @@ pub struct EventPathParams {
 }
 
 pub async fn delete_event_controller(
+    http_req: HttpRequest,
     params: web::Path<EventPathParams>,
     ctx: web::Data<Context>,
 ) -> HttpResponse {
+    let user = match protect_route(&http_req) {
+        Ok(u) => u,
+        Err(res) => return res
+    };
+
     let req = DeleteEventReq {
+        user_id: user.id.clone(),
         event_id: params.event_id.clone(),
     };
     let ctx = DeleteEventUseCaseCtx {
@@ -28,6 +35,7 @@ pub async fn delete_event_controller(
 
 #[derive(Serialize, Deserialize)]
 pub struct DeleteEventReq {
+    pub user_id: String,
     pub event_id: String,
 }
 
@@ -45,10 +53,10 @@ async fn delete_event_usecase(
 ) -> Result<(), DeleteEventErrors> {
     let e = ctx.event_repo.find(&req.event_id).await;
     match e {
-        Some(event) => {
+        Some(event) if event.user_id == req.user_id => {
             ctx.event_repo.delete(&event.id).await;
             Ok(())
         }
-        None => Err(DeleteEventErrors::NotFoundError {}),
+        _ => Err(DeleteEventErrors::NotFoundError {}),
     }
 }

@@ -1,9 +1,9 @@
-use crate::{api::Context, event::repos::IEventRepo};
+use crate::{api::Context, event::repos::IEventRepo, shared::auth::{User, protect_route}};
 use crate::{
     calendar::repos::ICalendarRepo,
     event::domain::event::{CalendarEvent, RRuleOptions},
 };
-use actix_web::{web, HttpResponse};
+use actix_web::{HttpRequest, HttpResponse, web};
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -18,14 +18,21 @@ pub struct CreateEventReq {
 }
 
 pub async fn create_event_controller(
+    http_req: HttpRequest,
     req: web::Json<CreateEventReq>,
     ctx: web::Data<Context>,
 ) -> HttpResponse {
+    let user = match protect_route(&http_req) {
+        Ok(u) => u,
+        Err(res) => return res
+    };
+
     let ctx = CreateEventUseCaseCtx {
         event_repo: ctx.repos.event_repo.clone(),
         calendar_repo: ctx.repos.calendar_repo.clone(),
     };
-    let res = create_event_usecase(req.0, ctx).await;
+
+    let res = create_event_usecase(req.0, user, ctx).await;
     match res {
         Ok(e) => HttpResponse::Created().json(e),
         Err(_e) => HttpResponse::UnprocessableEntity().finish(),
@@ -43,14 +50,14 @@ pub enum CreateCalendarEventErrors {
 
 async fn create_event_usecase(
     event: CreateEventReq,
+    user: User,
     ctx: CreateEventUseCaseCtx,
 ) -> Result<CalendarEvent, CreateCalendarEventErrors> {
-    let calendar = ctx.calendar_repo.find(&event.calendar_id).await;
-    if calendar.is_none() {
-        return Err(CreateCalendarEventErrors::NotFoundError);
-    }
-    let calendar = calendar.unwrap();
-
+    let calendar = match ctx.calendar_repo.find(&event.calendar_id).await {
+        Some(calendar) if calendar.user_id == user.id => calendar,
+        _ => return Err(CreateCalendarEventErrors::NotFoundError)
+    };
+    
     let mut e = CalendarEvent {
         id: ObjectId::new().to_string(),
         busy: event.busy.unwrap_or(false),
@@ -60,7 +67,7 @@ async fn create_event_usecase(
         end_ts: None,
         exdates: vec![],
         calendar_id: calendar.id,
-        user_id: calendar.user_id,
+        user_id: user.id,
     };
     if let Some(rrule_opts) = event.rrule_options.clone() {
         e.set_reccurrence(rrule_opts, true);
@@ -85,9 +92,15 @@ mod test {
     async fn create_event_use_case_test() {
         let event_repo = Arc::new(InMemoryEventRepo::new());
         let calendar_repo = Arc::new(InMemoryCalendarRepo::new());
+        
+
+        let user = User {
+            id: String::from("2312312")
+        };
+        
         let calendar = Calendar {
             id: String::from("312312"),
-            user_id: String::from("2312312"),
+            user_id: user.id.clone(),
         };
         calendar_repo.insert(&calendar).await;
 
@@ -99,8 +112,10 @@ mod test {
             calendar_id: calendar.id.clone(),
         };
 
+
         let res = create_event_usecase(
             req,
+            user,
             CreateEventUseCaseCtx {
                 calendar_repo,
                 event_repo,

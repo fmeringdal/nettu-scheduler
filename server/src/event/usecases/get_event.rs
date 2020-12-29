@@ -1,8 +1,5 @@
-use crate::{
-    api::Context,
-    event::{domain::event::CalendarEvent, repos::IEventRepo},
-};
-use actix_web::{web, HttpResponse};
+use crate::{api::Context, event::{domain::event::CalendarEvent, repos::IEventRepo}, shared::auth::protect_route};
+use actix_web::{HttpRequest, HttpResponse, web};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
@@ -12,11 +9,18 @@ pub struct EventPathParams {
 }
 
 pub async fn get_event_controller(
+    http_req: HttpRequest,
     params: web::Path<EventPathParams>,
     ctx: web::Data<Context>,
 ) -> HttpResponse {
+    let user = match protect_route(&http_req) {
+        Ok(u) => u,
+        Err(res) => return res
+    };
+
     let req = GetEventReq {
         event_id: params.event_id.clone(),
+        user_id: user.id.clone(),
     };
     let ctx = GetEventUseCaseCtx {
         event_repo: ctx.repos.event_repo.clone(),
@@ -31,6 +35,7 @@ pub async fn get_event_controller(
 #[derive(Serialize, Deserialize)]
 pub struct GetEventReq {
     pub event_id: String,
+    pub user_id: String
 }
 
 pub struct GetEventUseCaseCtx {
@@ -46,7 +51,7 @@ async fn get_event_usecase(
 ) -> Result<CalendarEvent, GetEventErrors> {
     let e = ctx.event_repo.find(&req.event_id).await;
     match e {
-        Some(event) => Ok(event),
-        None => Err(GetEventErrors::NotFoundError {}),
+        Some(event) if event.user_id == req.user_id => Ok(event),
+        _ => Err(GetEventErrors::NotFoundError {}),
     }
 }
