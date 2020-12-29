@@ -1,7 +1,7 @@
-use crate::api::Context;
+use crate::{api::Context, shared::auth::protect_route};
 use crate::calendar::repos::ICalendarRepo;
 use crate::event::repos::IEventRepo;
-use actix_web::{web, HttpResponse};
+use actix_web::{HttpRequest, HttpResponse, web};
 
 use serde::Deserialize;
 
@@ -13,9 +13,14 @@ pub struct DeleteCalendarReq {
 }
 
 pub async fn delete_calendar_controller(
+    http_req: HttpRequest,
     req: web::Path<DeleteCalendarReq>,
     ctx: web::Data<Context>,
 ) -> HttpResponse {
+    let user = match protect_route(&http_req) {
+        Ok(u) => u,
+        Err(res) => return res
+    };
     let ctx = DeleteCalendarUseCaseCtx {
         calendar_repo: Arc::clone(&ctx.repos.calendar_repo),
         event_repo: Arc::clone(&ctx.repos.event_repo),

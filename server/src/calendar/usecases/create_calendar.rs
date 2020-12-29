@@ -1,4 +1,4 @@
-use crate::api::Context;
+use crate::{api::Context, shared::auth::protect_route};
 use crate::calendar::domain::calendar::Calendar;
 use crate::calendar::repos::ICalendarRepo;
 use actix_web::{web, HttpResponse};
@@ -6,17 +6,19 @@ use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
-#[derive(Debug, Deserialize)]
-pub struct CreateCalendarReq {
-    pub user_id: String,
-}
 
 pub async fn create_calendar_controller(
-    req: web::Json<CreateCalendarReq>,
+    http_req: web::HttpRequest,
     ctx: web::Data<Context>,
 ) -> HttpResponse {
+    let user = match protect_route(&http_req) {
+        Ok(u) => u,
+        Err(res) => return res
+    };
     let res = create_calendar_usecase(
-        req.0,
+        CreateCalendarReq {
+            user_id: user.id
+        },
         CreateCalendarUseCaseCtx {
             calendar_repo: Arc::clone(&ctx.repos.calendar_repo),
         },
@@ -29,16 +31,21 @@ pub async fn create_calendar_controller(
     }
 }
 
+struct CreateCalendarReq {
+    pub user_id: String
+}
+
 #[derive(Serialize)]
-pub struct CreateCalendarRes {
+#[serde(rename_all = "camelCase")]
+struct CreateCalendarRes {
     pub calendar_id: String,
 }
 
-pub struct CreateCalendarUseCaseCtx {
+struct CreateCalendarUseCaseCtx {
     pub calendar_repo: Arc<dyn ICalendarRepo>,
 }
 
-pub async fn create_calendar_usecase(
+async fn create_calendar_usecase(
     req: CreateCalendarReq,
     ctx: CreateCalendarUseCaseCtx,
 ) -> Result<CreateCalendarRes, anyhow::Error> {

@@ -70,8 +70,8 @@ impl IEventRepo for InMemoryEventRepo {
         let mut events = self.calendar_events.lock().unwrap();
         for i in 0..events.len() {
             if events[i].id == event_id {
-                events.remove(i);
-                return Some(events[i].clone());
+                let deleted_event  = events.remove(i);
+                return Some(deleted_event);
             }
         }
         None
@@ -81,8 +81,9 @@ impl IEventRepo for InMemoryEventRepo {
         let mut events = self.calendar_events.lock().unwrap();
         let mut deleted_count = 0;
         for i in 0..events.len() {
-            if events[i].calendar_id == calendar_id {
-                events.remove(i);
+            let index = events.len() - i - 1;
+            if events[index].calendar_id == calendar_id {
+                events.remove(index);
                 deleted_count += 1;
             }
         }

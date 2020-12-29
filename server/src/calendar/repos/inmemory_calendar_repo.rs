@@ -58,8 +58,8 @@ impl ICalendarRepo for InMemoryCalendarRepo {
         let mut calendars = self.calendars.lock().unwrap();
         for i in 0..calendars.len() {
             if calendars[i].id == calendar_id {
-                calendars.remove(i);
-                return Some(calendars[i].clone());
+                let deleted_calendar = calendars.remove(i);
+                return Some(deleted_calendar);
             }
         }
         None

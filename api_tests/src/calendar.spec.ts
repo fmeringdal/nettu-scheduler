@@ -1,12 +1,6 @@
-import axios from "axios";
 import { nettuClient } from "./client";
 
-describe("it works", () => {
-  it("should give status 200", async () => {
-    const status = await nettuClient.checkStatus();
-    expect(status).toBe(200);
-  });
-
+describe("Calendar API", () => {
   it("should not create calendar for unauthenticated user", async () => {
     const res = await nettuClient.createCalendar(undefined, false);
     expect(res.status).toBe(401);
