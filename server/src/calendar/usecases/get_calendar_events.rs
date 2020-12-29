@@ -1,4 +1,4 @@
-use crate::calendar::repos::ICalendarRepo;
+use crate::{calendar::repos::ICalendarRepo, shared::auth::protect_route};
 use crate::event::domain::event::CalendarEvent;
 use crate::event::domain::event_instance::EventInstance;
 use crate::event::repos::IEventRepo;
@@ -7,7 +7,7 @@ use crate::{
     api::Context,
     calendar::domain::{calendar::Calendar, calendar_view::CalendarView},
 };
-use actix_web::{web, HttpResponse};
+use actix_web::{HttpRequest, HttpResponse, web};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
@@ -23,15 +23,21 @@ pub struct TimespanBodyReq {
 }
 
 pub async fn get_calendar_events_controller(
+    http_req: HttpRequest,
     query_params: web::Query<TimespanBodyReq>,
     params: web::Path<CalendarPathParams>,
     ctx: web::Data<Context>,
 ) -> HttpResponse {
+    let user = match protect_route(&http_req) {
+        Ok(u) => u,
+        Err(res) => return res
+    };
     let ctx = GetCalendarEventsUseCaseCtx {
         calendar_repo: ctx.repos.calendar_repo.clone(),
         event_repo: ctx.repos.event_repo.clone(),
     };
     let req = GetCalendarEventsReq {
+        user_id: user.id.clone(),
         calendar_id: params.calendar_id.clone(),
         start_ts: query_params.start_ts,
         end_ts: query_params.end_ts,
@@ -52,6 +58,7 @@ pub async fn get_calendar_events_controller(
 #[derive(Serialize, Deserialize)]
 pub struct GetCalendarEventsReq {
     pub calendar_id: String,
+    pub user_id: String,
     pub start_ts: i64,
     pub end_ts: i64,
 }
@@ -86,7 +93,7 @@ async fn get_calendar_events_usecase(
     let view = view.unwrap();
 
     match calendar {
-        Some(calendar) => {
+        Some(calendar) if calendar.user_id == req.user_id => {
             let events = ctx
                 .event_repo
                 .find_by_calendar(&calendar.id, Some(&view))
@@ -103,7 +110,7 @@ async fn get_calendar_events_usecase(
 
             Ok(GetCalendarEventsResponse { calendar, events })
         }
-        None => Err(GetCalendarEventsErrors::NotFoundError {}),
+        _ => Err(GetCalendarEventsErrors::NotFoundError {}),
     }
 }
 
