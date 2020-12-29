@@ -12,14 +12,14 @@ pub struct BookingSlot {
 fn is_cursor_in_events(
     cursor: i64,
     duration: i64,
-    events: &Vec<EventInstance>,
+    events: &[EventInstance],
 ) -> Option<&EventInstance> {
     for event in events {
         if event.start_ts <= cursor && event.end_ts >= cursor + duration {
             return Some(event);
         }
     }
-    return None;
+    None
 }
 
 pub struct BookingSlotsOptions {
@@ -31,7 +31,7 @@ pub struct BookingSlotsOptions {
 
 // Free events should be sorted and nonoverlapping and not busy
 pub fn get_booking_slots(
-    free_events: &Vec<EventInstance>,
+    free_events: &[EventInstance],
     options: BookingSlotsOptions,
 ) -> Vec<BookingSlot> {
     let mut booking_slots = vec![];

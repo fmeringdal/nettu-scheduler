@@ -6,7 +6,6 @@ use actix_web::{web, HttpResponse};
 use mongodb::{options::ClientOptions, Client};
 
 use std::sync::Arc;
-type DataContext = web::Data<Arc<Context>>;
 
 pub struct Repos {
     pub event_repo: Arc<dyn IEventRepo>,

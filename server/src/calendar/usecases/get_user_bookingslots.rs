@@ -73,7 +73,7 @@ async fn get_user_bookingslots_usecase(
     if tz.is_err() {
         // handle this
     }
-    let dates = req.date.split("-").collect::<Vec<_>>();
+    let dates = req.date.split('-').collect::<Vec<_>>();
     if dates.len() != 3 {
         // handle this
     }

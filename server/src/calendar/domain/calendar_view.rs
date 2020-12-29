@@ -35,9 +35,9 @@ impl CalendarView {
         if delta > max_timespan || delta < min_timespan {
             println!("st: {}, end: {}", start_ts, end_ts);
             println!("Delta got: {}", delta);
-            return Err(InvalidTimespanError(start_ts, end_ts));
+            Err(InvalidTimespanError(start_ts, end_ts))
         } else {
-            return Ok(Self { start_ts, end_ts });
+            Ok(Self { start_ts, end_ts })
         }
     }
 

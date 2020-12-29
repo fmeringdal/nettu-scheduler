@@ -153,7 +153,7 @@ pub fn get_free_busy(instances: &mut Vec<EventInstance>) -> Vec<EventInstance> {
     let mut free_instances = vec![];
     let mut busy_instances = vec![];
 
-    for instance in instances.into_iter() {
+    for instance in instances.iter_mut() {
         if instance.busy {
             busy_instances.push(instance);
         } else {

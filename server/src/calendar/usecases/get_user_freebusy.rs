@@ -93,7 +93,7 @@ pub async fn get_user_freebusy_usecase(
     let mut all_events_instances = join_all(all_events_futures)
         .await
         .into_iter()
-        .map(|events_res| events_res.unwrap_or(vec![]))
+        .map(|events_res| events_res.unwrap_or_default())
         .map(|events| {
             events
                 .into_iter()

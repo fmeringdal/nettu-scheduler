@@ -72,7 +72,7 @@ impl CalendarEvent {
             let rrule_options = self.get_rrule_options();
             println!("Opts: {:?}", rrule_options);
 
-            let tzid = rrule_options.tzid.clone();
+            let tzid = rrule_options.tzid;
             let mut rrule_set = RRuleSet::new();
             for exdate in &self.exdates {
                 let exdate = tzid.timestamp(*exdate as i64 / 1000, 0);
@@ -96,11 +96,11 @@ impl CalendarEvent {
                     // println!("Occurence: {:?}", occurence);
                     let start_ts = occurence.timestamp() * 1000;
 
-                    return EventInstance {
+                    EventInstance {
                         start_ts,
                         end_ts: start_ts + self.duration,
                         busy: self.busy,
-                    };
+                    }
                 })
                 .collect()
         } else {
@@ -146,7 +146,7 @@ impl CalendarEvent {
             byweekday: options
                 .byweekday
                 .iter()
-                .map(|d| d.clone() as usize)
+                .map(|d| *d as usize)
                 .collect(),
             byhour: vec![dtstart.hour() as usize],
             bysetpos: options.bysetpos,
