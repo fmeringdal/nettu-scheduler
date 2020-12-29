@@ -1,7 +1,4 @@
-use crate::{
-    calendar::repos::{CalendarRepo, ICalendarRepo},
-    event::repos::{EventRepo, IEventRepo},
-};
+use crate::{calendar::repos::{CalendarRepo, ICalendarRepo, InMemoryCalendarRepo}, event::repos::{EventRepo, IEventRepo, InMemoryEventRepo}};
 use actix_web::{web, HttpResponse};
 use mongodb::{options::ClientOptions, Client};
 
@@ -13,7 +10,7 @@ pub struct Repos {
 }
 
 impl Repos {
-    pub async fn create() -> Result<Self, Box<dyn std::error::Error>> {
+    pub async fn create_mongodb() -> Result<Self, Box<dyn std::error::Error>> {
         let client_options =
             ClientOptions::parse(&std::env::var("MONGODB_CONNECTION_STRING").unwrap()).await?;
         let client = Client::with_options(client_options)?;
@@ -34,6 +31,14 @@ impl Repos {
             event_repo: Arc::new(EventRepo::new(&db)),
             calendar_repo: Arc::new(CalendarRepo::new(&db)),
         })
+    }
+
+    pub fn create_inmemory() -> Self {
+        println!("using inmemory database");
+        Self {
+            event_repo: Arc::new(InMemoryEventRepo::new()),
+            calendar_repo: Arc::new(InMemoryCalendarRepo::new()),
+        }
     }
 }
 

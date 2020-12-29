@@ -18,8 +18,12 @@ async fn status() -> &'static str {
 async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_server=info,actix_web=info");
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
-
-    let repos = Repos::create().await.unwrap();
+    let args: Vec<String> = std::env::args().collect();
+    println!("args: {:?}", args);
+    let repos = match &args[1][..] {
+        "inmemory" => Repos::create_inmemory(),
+        _ => Repos::create_mongodb().await.unwrap()
+    };
 
     HttpServer::new(move || {
         let ctx = Context {
