@@ -6,9 +6,11 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
   - should it be just microservice for nettu to start with ? (public / private cert jwt, check google)
   - same as nettu meeting with external api calling endpoints ?
   - both
+- better error handling: https://auth0.com/blog/build-an-api-in-rust-with-jwt-authentication-using-actix-web/
 - tests for useCases / controllers, checkout actix test framework
 - [freebusy and scheduling / booking endpoints] MORE TESTING
 - https://developer.makeplans.net/#services
+
 
 ## backlog
 
