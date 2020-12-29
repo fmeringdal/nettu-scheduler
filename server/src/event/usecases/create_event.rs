@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 #[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CreateEventReq {
     calendar_id: String,
     start_ts: i64,

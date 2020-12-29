@@ -3,6 +3,7 @@ use serde::Serialize;
 use super::event_instance::EventInstance;
 
 #[derive(Serialize, PartialEq, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct BookingSlot {
     pub start: i64,
     pub duration: i64,

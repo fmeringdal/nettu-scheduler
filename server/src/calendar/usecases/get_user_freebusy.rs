@@ -17,14 +17,15 @@ pub struct UserPathParams {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct UserFreebusyBodyReq {
+#[serde(rename_all = "camelCase")]
+pub struct UserFreebusyQuery {
     start_ts: i64,
     end_ts: i64,
     calendar_ids: Option<Vec<String>>,
 }
 
 pub async fn get_user_freebusy_controller(
-    body: web::Query<UserFreebusyBodyReq>,
+    body: web::Query<UserFreebusyQuery>,
     params: web::Path<UserPathParams>,
     ctx: web::Data<Context>,
 ) -> HttpResponse {
@@ -64,6 +65,7 @@ pub struct GetUserFreeBusyUseCaseCtx {
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GetUserFreeBusyResponse {
     pub free: Vec<EventInstance>,
 }

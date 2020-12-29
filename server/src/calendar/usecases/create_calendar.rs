@@ -26,7 +26,7 @@ pub async fn create_calendar_controller(
     .await;
 
     match res {
-        Ok(json) => HttpResponse::Ok().json(json),
+        Ok(json) => HttpResponse::Created().json(json),
         Err(_) => HttpResponse::UnprocessableEntity().finish(),
     }
 }

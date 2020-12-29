@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UpdateEventBody {
     start_ts: Option<i64>,
     duration: Option<i64>,

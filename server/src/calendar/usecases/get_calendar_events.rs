@@ -17,14 +17,15 @@ pub struct CalendarPathParams {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct TimespanBodyReq {
+#[serde(rename_all = "camelCase")]
+pub struct TimespanParams {
     pub start_ts: i64,
     pub end_ts: i64,
 }
 
 pub async fn get_calendar_events_controller(
     http_req: HttpRequest,
-    query_params: web::Query<TimespanBodyReq>,
+    query_params: web::Query<TimespanParams>,
     params: web::Path<CalendarPathParams>,
     ctx: web::Data<Context>,
 ) -> HttpResponse {
@@ -69,6 +70,7 @@ pub struct GetCalendarEventsUseCaseCtx {
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GetCalendarEventsResponse {
     calendar: Calendar,
     events: Vec<EventWithInstances>,

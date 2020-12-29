@@ -1,6 +1,7 @@
 use serde::Serialize;
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct EventInstance {
     pub start_ts: i64,
     pub end_ts: i64,

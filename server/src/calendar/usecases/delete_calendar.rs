@@ -61,6 +61,6 @@ async fn delete_calendar_usecase(
             ctx.event_repo.delete_by_calendar(&calendar.id).await;
             Ok(())
         }
-        None => Err(DeleteCalendarErrors::NotFoundError {}),
+        _ => Err(DeleteCalendarErrors::NotFoundError {}),
     }
 }

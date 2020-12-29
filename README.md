@@ -2,8 +2,6 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 
 ## Todos
 
-- auth for controllers and authorization
-- serde derive camelcase
 - More api tests for [calendarevent, booking]
 - better error handling: https://auth0.com/blog/build-an-api-in-rust-with-jwt-authentication-using-actix-web/
 - https://developer.makeplans.net/#services

@@ -19,6 +19,7 @@ pub struct RRuleOptions {
     pub bynweekday: Vec<Vec<isize>>,
 }
 #[derive(Serialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct CalendarEvent {
     pub id: String,
     pub start_ts: i64,

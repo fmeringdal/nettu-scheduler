@@ -50,6 +50,7 @@ pub struct GetEventInstancesReq {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct GetEventInstancesReqView {
     start_ts: i64,
     end_ts: i64,
@@ -65,6 +66,7 @@ pub enum GetEventInstancesErrors {
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GetEventInstancesResponse {
     pub event: CalendarEvent,
     pub instances: Vec<EventInstance>,

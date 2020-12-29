@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::error::Error;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CalendarView {
     start_ts: i64,
     end_ts: i64,

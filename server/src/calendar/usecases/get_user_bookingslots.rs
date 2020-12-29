@@ -16,7 +16,8 @@ pub struct UserPathParams {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct UserBookingBodyReq {
+#[serde(rename_all = "camelCase")]
+pub struct UserBookingQuery {
     iana_tz: Option<String>,
     duration: i64,
     date: String,
@@ -24,7 +25,7 @@ pub struct UserBookingBodyReq {
 }
 
 pub async fn get_user_bookingslots_controller(
-    query_params: web::Query<UserBookingBodyReq>,
+    query_params: web::Query<UserBookingQuery>,
     params: web::Path<UserPathParams>,
     ctx: web::Data<Context>,
 ) -> HttpResponse {
@@ -61,6 +62,7 @@ pub struct GetUserBookingSlotsReq {
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GetUserBookingSlotsResponse {
     booking_slots: Vec<BookingSlot>,
 }
