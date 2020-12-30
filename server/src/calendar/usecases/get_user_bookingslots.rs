@@ -24,7 +24,6 @@ pub struct UserBookingQuery {
     calendar_ids: Option<String>,
 }
 
-
 pub async fn get_user_bookingslots_controller(
     query_params: web::Query<UserBookingQuery>,
     params: web::Path<UserPathParams>,
@@ -32,7 +31,7 @@ pub async fn get_user_bookingslots_controller(
 ) -> HttpResponse {
     let calendar_ids = match &query_params.calendar_ids {
         Some(calendar_ids) => Some(calendar_ids.split(",").map(|s| String::from(s)).collect()),
-        None => None
+        None => None,
     };
 
     let req = GetUserBookingSlotsReq {
@@ -116,7 +115,11 @@ async fn get_user_bookingslots_usecase(
 
     match free_events {
         Ok(free_events) => {
-            println!("Start: {}, end: {}", start_of_day.timestamp_millis(), end_of_day.timestamp_millis());
+            println!(
+                "Start: {}, end: {}",
+                start_of_day.timestamp_millis(),
+                end_of_day.timestamp_millis()
+            );
             println!("Free events got: {:?}", free_events.free);
             let booking_slots = get_booking_slots(
                 &free_events.free,

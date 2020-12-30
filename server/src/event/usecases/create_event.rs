@@ -76,7 +76,7 @@ async fn create_event_usecase(
         start_ts: event.start_ts,
         duration: event.duration,
         recurrence: None,
-        end_ts: Some(event.start_ts+event.duration), // default, if recurrence changes, this will be updated
+        end_ts: Some(event.start_ts + event.duration), // default, if recurrence changes, this will be updated
         exdates: vec![],
         calendar_id: calendar.id,
         user_id: user.id,
