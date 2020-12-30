@@ -1546,6 +1546,7 @@ dependencies = [
  "env_logger",
  "futures",
  "jsonwebtoken",
+ "lazy_static",
  "mongodb",
  "rrule",
  "serde",

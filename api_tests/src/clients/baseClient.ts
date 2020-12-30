@@ -7,7 +7,7 @@ export abstract class NettuBaseClient {
   };
   public static userId = "coooltestuser";
   public static token =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjb29vbHRlc3R1c2VyIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjI1MTYyMzkwMjJ9.1qAop_g3Fb9NXa5-65Lk8xvHKvY6LRkRbFK47thRDwM";
+    "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjb29vbHRlc3R1c2VyIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjE5MTYyMzkwMjJ9.O1ENncekZdLZC8QkYa2Kz8ih6CDq0cCrx-nxiSgtrcFTr6fwxIBgEqg-eWnqKheFvgcF4wWoVwmp2so6bnsHDgeRowG7k8iRRP963zBiqZpXWRQNRJEuyjyRUeYknYsCuF6pWsCwANlULvM6axCGMv69C0urd9Qiv82Xw6Ox9-nLKmnzVcuXnPXFTG-GUPS4QiVsLA70pyq5tLiixHm9mtT2OcPX-n2kjXfQrHG9wzQL6peGIB7A6jNlP5wtDQJ0MQ4bnXJTMRTbiXLl86X_t2zxj_1FkY0z5VbDFtoaEKqaXj4pECUZZ6V__kqDBX9hYmW66OZdTugKLFxVRGHFnQ";
   private authHeaders = {
     authorization: `Bearer ${NettuBaseClient.token}`,
   };

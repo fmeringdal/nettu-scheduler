@@ -1,6 +1,14 @@
 use actix_web::{HttpRequest, HttpResponse};
-use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
+use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use serde::{Deserialize, Serialize};
+
+lazy_static::lazy_static! {
+    static ref PUBLIC_KEY: Vec<u8> = std::fs::read("./config/pubkey.pem").expect("Public signing verification key to be present");
+    static ref DECODIC_KEY: DecodingKey<'static> = {  
+        DecodingKey::from_rsa_pem(PUBLIC_KEY.as_ref()).unwrap()
+    };
+}
+
 
 pub struct User {
     pub id: String,
@@ -28,9 +36,7 @@ pub fn auth_user_req(req: &HttpRequest) -> Option<User> {
                 Ok(token) => parse_authtoken_header(token),
                 Err(_) => return None,
             };
-            let signing_secret = "nettubookingtest";
-            let key = DecodingKey::from_secret(signing_secret.as_ref());
-            let res = decode::<Claims>(&token, &key, &Validation::default());
+            let res = decode::<Claims>(&token, &DECODIC_KEY, &Validation::new(Algorithm::RS256));
             match res {
                 Ok(token_data) => Some(User {
                     id: token_data.claims.user_id.clone(),
