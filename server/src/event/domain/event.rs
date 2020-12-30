@@ -75,7 +75,7 @@ impl CalendarEvent {
             let tzid = rrule_options.tzid;
             let mut rrule_set = RRuleSet::new();
             for exdate in &self.exdates {
-                let exdate = tzid.timestamp(*exdate as i64 / 1000, 0);
+                let exdate = tzid.timestamp_millis(*exdate as i64);
                 rrule_set.exdate(exdate);
             }
             let rrule = RRule::new(rrule_options);
@@ -84,24 +84,41 @@ impl CalendarEvent {
             let instances = match view {
                 Some(view) => {
                     let view = view.as_datetime(&tzid);
+                    println!("new view: {:?}", view);
                     rrule_set.between(view.start, view.end, true)
                 }
                 None => rrule_set.all(),
             };
 
-            instances
+            let mut instances: Vec<_> = instances
                 .iter()
                 .map(|occurence| {
-                    // println!("Occurence: {:?}", occurence);
-                    let start_ts = occurence.timestamp() * 1000;
-
+                    let start_ts = occurence.timestamp_millis();
+                    let end_ts = start_ts+self.duration;
                     EventInstance {
                         start_ts,
-                        end_ts: start_ts + self.duration,
+                        end_ts,
                         busy: self.busy,
                     }
                 })
-                .collect()
+                .collect();
+            
+            // Since rrule library only looks at start_ts when getting all instances
+            // and we also have duration, we will need to remove instances (if any)
+            // that has end_ts greater than view.end_ts
+            if let Some(view) = view {
+                for i in (0..instances.len()).rev() {
+                    if instances[i].end_ts <= view.get_end() {
+                        break;
+                    }
+                    if instances[i].end_ts > view.get_end() {
+                        instances.remove(i);
+                    }
+                }
+            }
+            
+            
+            instances
         } else {
             vec![EventInstance {
                 start_ts: self.start_ts,
@@ -126,11 +143,11 @@ impl CalendarEvent {
 
         let tzid: Tz = options.tzid.parse().unwrap();
         let until = match options.until {
-            Some(ts) => Some(tzid.timestamp(ts as i64 / 1000, 0)),
+            Some(ts) => Some(tzid.timestamp_millis(ts as i64)),
             None => None,
         };
 
-        let dtstart = tzid.timestamp(self.start_ts as i64 / 1000, 0);
+        let dtstart = tzid.timestamp_millis(self.start_ts as i64);
 
         let count = match options.count {
             Some(c) => Some(std::cmp::max(c, 0) as u32),

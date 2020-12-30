@@ -22,6 +22,7 @@ impl std::fmt::Display for InvalidTimespanError {
     }
 }
 
+#[derive(Debug)]
 pub struct CalendarViewDateTime {
     pub start: DateTime<Tz>,
     pub end: DateTime<Tz>,
@@ -40,10 +41,14 @@ impl CalendarView {
         }
     }
 
+    fn create_datetime_from_millis(timestamp_millis: i64, tz: &Tz) -> DateTime<Tz> {
+        tz.timestamp_millis(timestamp_millis)
+    }
+
     pub fn as_datetime(&self, tz: &Tz) -> CalendarViewDateTime {
         CalendarViewDateTime {
-            start: tz.timestamp(self.start_ts as i64 / 1000 + 1, 0),
-            end: tz.timestamp(self.end_ts as i64 / 1000, 0),
+            start: CalendarView::create_datetime_from_millis(self.start_ts, tz),
+            end: CalendarView::create_datetime_from_millis(self.end_ts, tz),
         }
     }
 

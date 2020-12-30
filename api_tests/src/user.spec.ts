@@ -1,7 +1,7 @@
 import { Client } from "./clients";
 import { NettuBaseClient } from "./clients/baseClient";
 
-describe.only("User API", () => {
+describe("User API", () => {
   let calendarId = "";
   const userId = NettuBaseClient.userId;
 
@@ -53,12 +53,13 @@ describe.only("User API", () => {
       },
       false
     );
-    expect(res.data.free.length).toBe(4);
+    console.log(res.data.free);
+    expect(res.data.free.length).toBe(3);
 
     await Client.events.remove(event.data.eventId, true);
   });
 
-  it.only("should show correct freebusy with multiple events in calendar", async () => {
+  it("should show correct freebusy with multiple events in calendar", async () => {
     const event1 = await Client.events.insert(
       {
         calendarId,
@@ -149,8 +150,6 @@ describe.only("User API", () => {
       },
       true
     );
-    console.log(res.data.free);
-    console.log(bookingRes.data);
     expect(bookingRes.data.bookingSlots.length).toBe(6);
 
     for (const e of [event1, event2, event3]) {
