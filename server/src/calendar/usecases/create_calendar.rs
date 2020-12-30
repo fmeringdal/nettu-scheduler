@@ -1,11 +1,10 @@
-use crate::{api::Context, shared::auth::protect_route};
 use crate::calendar::domain::calendar::Calendar;
 use crate::calendar::repos::ICalendarRepo;
+use crate::{api::Context, shared::auth::protect_route};
 use actix_web::{web, HttpResponse};
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-
 
 pub async fn create_calendar_controller(
     http_req: web::HttpRequest,
@@ -13,12 +12,10 @@ pub async fn create_calendar_controller(
 ) -> HttpResponse {
     let user = match protect_route(&http_req) {
         Ok(u) => u,
-        Err(res) => return res
+        Err(res) => return res,
     };
     let res = create_calendar_usecase(
-        CreateCalendarReq {
-            user_id: user.id
-        },
+        CreateCalendarReq { user_id: user.id },
         CreateCalendarUseCaseCtx {
             calendar_repo: Arc::clone(&ctx.repos.calendar_repo),
         },
@@ -32,7 +29,7 @@ pub async fn create_calendar_controller(
 }
 
 struct CreateCalendarReq {
-    pub user_id: String
+    pub user_id: String,
 }
 
 #[derive(Serialize)]

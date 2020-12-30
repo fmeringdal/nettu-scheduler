@@ -1,18 +1,17 @@
 use actix_web::{HttpRequest, HttpResponse};
-use jsonwebtoken::{encode, decode, Header, Algorithm, Validation, EncodingKey, DecodingKey};
-use serde::{Serialize, Deserialize};
-
+use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
+use serde::{Deserialize, Serialize};
 
 pub struct User {
-    pub id: String
+    pub id: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct Claims {
-    exp: usize,          // Required (validate_exp defaults to true in validation). Expiration time (as UTC timestamp)
-    iat: usize,          // Optional. Issued at (as UTC timestamp)
-    user_id: String,         // Optional. Subject (whom token refers to)
+    exp: usize, // Required (validate_exp defaults to true in validation). Expiration time (as UTC timestamp)
+    iat: usize, // Optional. Issued at (as UTC timestamp)
+    user_id: String, // Optional. Subject (whom token refers to)
 }
 
 fn parse_authtoken_header(token_header_value: &str) -> String {
@@ -27,28 +26,26 @@ pub fn auth_user_req(req: &HttpRequest) -> Option<User> {
         Some(token) => {
             let token = match token.to_str() {
                 Ok(token) => parse_authtoken_header(token),
-                Err(_) => return None
+                Err(_) => return None,
             };
-            println!("Token i got: {}", token);
             let signing_secret = "nettubookingtest";
             let key = DecodingKey::from_secret(signing_secret.as_ref());
             let res = decode::<Claims>(&token, &key, &Validation::default());
-            println!("Parsing res: {:?}", res);
             match res {
                 Ok(token_data) => Some(User {
-                    id: token_data.claims.user_id.clone()
+                    id: token_data.claims.user_id.clone(),
                 }),
-                Err(_) => None
-            }  
+                Err(_) => None,
+            }
         }
-        None => None
+        None => None,
     }
 }
 
 pub fn protect_route(req: &HttpRequest) -> Result<User, HttpResponse> {
     let res = auth_user_req(req);
     match res {
-        Some(user ) => Ok(user),
-        None => Err(HttpResponse::Unauthorized().finish())
+        Some(user) => Ok(user),
+        None => Err(HttpResponse::Unauthorized().finish()),
     }
 }

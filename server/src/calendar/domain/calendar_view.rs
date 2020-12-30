@@ -34,8 +34,6 @@ impl CalendarView {
         let delta = end_ts - start_ts;
 
         if delta > max_timespan || delta < min_timespan {
-            println!("st: {}, end: {}", start_ts, end_ts);
-            println!("Delta got: {}", delta);
             Err(InvalidTimespanError(start_ts, end_ts))
         } else {
             Ok(Self { start_ts, end_ts })

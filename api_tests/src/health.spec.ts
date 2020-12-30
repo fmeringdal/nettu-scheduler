@@ -1,8 +1,8 @@
-import { nettuClient } from "./client";
+import { Client } from "./clients";
 
 describe("Calendar API", () => {
   it("should give status 200", async () => {
-    const status = await nettuClient.checkStatus();
+    const status = await Client.health.checkStatus();
     expect(status).toBe(200);
   });
 });

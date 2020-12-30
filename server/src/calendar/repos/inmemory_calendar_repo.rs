@@ -1,7 +1,6 @@
+use super::ICalendarRepo;
 use crate::calendar::domain::calendar::Calendar;
 use std::error::Error;
-use super::ICalendarRepo;
-
 
 pub struct InMemoryCalendarRepo {
     calendars: std::sync::Mutex<Vec<Calendar>>,

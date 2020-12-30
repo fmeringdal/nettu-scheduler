@@ -1,7 +1,6 @@
+use super::repos::{DeleteResult, IEventRepo};
 use crate::{calendar::domain::calendar_view::CalendarView, event::domain::event::CalendarEvent};
 use std::error::Error;
-use super::repos::{DeleteResult, IEventRepo};
-
 
 pub struct InMemoryEventRepo {
     calendar_events: std::sync::Mutex<Vec<CalendarEvent>>,
@@ -50,16 +49,17 @@ impl IEventRepo for InMemoryEventRepo {
     ) -> Result<Vec<CalendarEvent>, Box<dyn Error>> {
         let events = self.calendar_events.lock().unwrap();
         let mut res = vec![];
-        for i in 0..events.len() {
-            if events[i].calendar_id == calendar_id {
+        for event in events.iter() {
+            if event.calendar_id == calendar_id {
                 if let Some(v) = view {
-                    if v.get_start() <= events[i].end_ts.unwrap()
-                        && v.get_end() >= events[i].start_ts
+                    // TODO: Consider if this should be strict equals or not
+                    if v.get_start() <= event.end_ts.unwrap()
+                        && v.get_end() >= event.start_ts
                     {
-                        res.push(events[i].clone());
+                        res.push(event.clone());
                     }
                 } else {
-                    res.push(events[i].clone());
+                    res.push(event.clone());
                 }
             }
         }
@@ -70,7 +70,7 @@ impl IEventRepo for InMemoryEventRepo {
         let mut events = self.calendar_events.lock().unwrap();
         for i in 0..events.len() {
             if events[i].id == event_id {
-                let deleted_event  = events.remove(i);
+                let deleted_event = events.remove(i);
                 return Some(deleted_event);
             }
         }

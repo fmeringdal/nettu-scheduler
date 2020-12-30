@@ -22,7 +22,9 @@ async fn main() -> std::io::Result<()> {
     println!("args: {:?}", args);
     let repos = match &args[1][..] {
         "inmemory" => Repos::create_inmemory(),
-        _ => Repos::create_mongodb().await.expect("Mongo db creds must be set and valid")
+        _ => Repos::create_mongodb()
+            .await
+            .expect("Mongo db creds must be set and valid"),
     };
 
     HttpServer::new(move || {

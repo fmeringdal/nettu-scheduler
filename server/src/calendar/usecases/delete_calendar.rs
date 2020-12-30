@@ -1,7 +1,7 @@
-use crate::{api::Context, shared::auth::protect_route};
 use crate::calendar::repos::ICalendarRepo;
 use crate::event::repos::IEventRepo;
-use actix_web::{HttpRequest, HttpResponse, web};
+use crate::{api::Context, shared::auth::protect_route};
+use actix_web::{web, HttpRequest, HttpResponse};
 
 use serde::Deserialize;
 
@@ -19,7 +19,7 @@ pub async fn delete_calendar_controller(
 ) -> HttpResponse {
     let user = match protect_route(&http_req) {
         Ok(u) => u,
-        Err(res) => return res
+        Err(res) => return res,
     };
     let ctx = DeleteCalendarUseCaseCtx {
         calendar_repo: Arc::clone(&ctx.repos.calendar_repo),
@@ -27,7 +27,7 @@ pub async fn delete_calendar_controller(
     };
     let req = DeleteCalendarUseCaseReq {
         user_id: user.id.clone(),
-        calendar_id: req.calendar_id.clone()
+        calendar_id: req.calendar_id.clone(),
     };
     let res = delete_calendar_usecase(req, ctx).await;
     return match res {
@@ -47,7 +47,7 @@ pub struct DeleteCalendarUseCaseCtx {
 
 pub struct DeleteCalendarUseCaseReq {
     calendar_id: String,
-    user_id: String
+    user_id: String,
 }
 
 async fn delete_calendar_usecase(

@@ -1,13 +1,13 @@
-use crate::{calendar::repos::ICalendarRepo, shared::auth::protect_route};
 use crate::event::domain::event::CalendarEvent;
 use crate::event::domain::event_instance::EventInstance;
 use crate::event::repos::IEventRepo;
+use crate::{calendar::repos::ICalendarRepo, shared::auth::protect_route};
 
 use crate::{
     api::Context,
     calendar::domain::{calendar::Calendar, calendar_view::CalendarView},
 };
-use actix_web::{HttpRequest, HttpResponse, web};
+use actix_web::{web, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
@@ -31,7 +31,7 @@ pub async fn get_calendar_events_controller(
 ) -> HttpResponse {
     let user = match protect_route(&http_req) {
         Ok(u) => u,
-        Err(res) => return res
+        Err(res) => return res,
     };
     let ctx = GetCalendarEventsUseCaseCtx {
         calendar_repo: ctx.repos.calendar_repo.clone(),
@@ -55,8 +55,6 @@ pub async fn get_calendar_events_controller(
         },
     }
 }
-
-#[derive(Serialize, Deserialize)]
 pub struct GetCalendarEventsReq {
     pub calendar_id: String,
     pub user_id: String,

@@ -1,9 +1,8 @@
-use crate::{calendar::repos::ICalendarRepo, shared::auth::protect_route};
 use crate::{api::Context, calendar::domain::calendar::Calendar};
-use actix_web::{HttpRequest, HttpResponse, web};
+use crate::{calendar::repos::ICalendarRepo, shared::auth::protect_route};
+use actix_web::{web, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -18,7 +17,7 @@ pub async fn get_calendar_controller(
 ) -> HttpResponse {
     let user = match protect_route(&http_req) {
         Ok(u) => u,
-        Err(res) => return res
+        Err(res) => return res,
     };
     let ctx = GetCalendarUseCaseCtx {
         calendar_repo: ctx.repos.calendar_repo.clone(),
@@ -34,7 +33,6 @@ pub async fn get_calendar_controller(
         Err(_) => HttpResponse::NotFound().finish(),
     }
 }
-
 
 pub struct GetCalendarUseCaseReq {
     pub user_id: String,

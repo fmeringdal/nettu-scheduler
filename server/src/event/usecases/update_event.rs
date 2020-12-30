@@ -1,6 +1,6 @@
-use crate::{event::repos::IEventRepo, shared::auth::protect_route};
 use crate::{api::Context, event::domain::event::RRuleOptions};
-use actix_web::{HttpRequest, HttpResponse, web};
+use crate::{event::repos::IEventRepo, shared::auth::protect_route};
+use actix_web::{web, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
@@ -26,7 +26,7 @@ pub async fn update_event_controller(
 ) -> HttpResponse {
     let user = match protect_route(&http_req) {
         Ok(u) => u,
-        Err(res) => return res
+        Err(res) => return res,
     };
 
     let req = UpdateEventReq {
@@ -70,7 +70,7 @@ async fn update_event_usecase(
 ) -> Result<(), UpdateEventErrors> {
     let mut e = match ctx.event_repo.find(&req.event_id).await {
         Some(event) if event.user_id == req.user_id => event,
-        _ => return Err(UpdateEventErrors::NotFoundError {})
+        _ => return Err(UpdateEventErrors::NotFoundError {}),
     };
 
     let mut should_update_endtime = false;
@@ -102,7 +102,6 @@ mod test {
     use super::*;
     use crate::{api::Repos, event::repos::InMemoryEventRepo};
 
-
     #[actix_web::main]
     #[test]
     async fn update_notexisting_event() {
@@ -115,7 +114,7 @@ mod test {
             duration: Some(800),
             rrule_options: None,
             busy: Some(false),
-            user_id: String::from("cool")
+            user_id: String::from("cool"),
         };
         let res = update_event_usecase(req, ctx).await;
         assert!(res.is_err());

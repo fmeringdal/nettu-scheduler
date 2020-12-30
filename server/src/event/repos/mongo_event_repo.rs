@@ -1,6 +1,10 @@
-use tokio::sync::RwLock;
 use futures::stream::StreamExt;
-use mongodb::{Collection, Database, bson::doc, bson::{Bson, Document, from_bson, oid::ObjectId, to_bson}};
+use mongodb::{
+    bson::doc,
+    bson::{from_bson, oid::ObjectId, to_bson, Bson, Document},
+    Collection, Database,
+};
+use tokio::sync::RwLock;
 
 use crate::{calendar::domain::calendar_view::CalendarView, event::domain::event::CalendarEvent};
 

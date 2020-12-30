@@ -21,17 +21,23 @@ pub struct UserBookingQuery {
     iana_tz: Option<String>,
     duration: i64,
     date: String,
-    calendar_ids: Option<Vec<String>>,
+    calendar_ids: Option<String>,
 }
+
 
 pub async fn get_user_bookingslots_controller(
     query_params: web::Query<UserBookingQuery>,
     params: web::Path<UserPathParams>,
     ctx: web::Data<Context>,
 ) -> HttpResponse {
+    let calendar_ids = match &query_params.calendar_ids {
+        Some(calendar_ids) => Some(calendar_ids.split(",").map(|s| String::from(s)).collect()),
+        None => None
+    };
+
     let req = GetUserBookingSlotsReq {
         user_id: params.user_id.clone(),
-        calendar_ids: query_params.calendar_ids.clone(),
+        calendar_ids,
         iana_tz: query_params.iana_tz.clone(),
         date: query_params.date.clone(),
         duration: query_params.duration,
@@ -89,6 +95,7 @@ async fn get_user_bookingslots_usecase(
     let year = year.unwrap();
     let month = month.unwrap();
     let day = day.unwrap();
+    println!("year: {}, month: {}, day: {}", year, month, day);
     // handle invalid values for year month and day
 
     let date = tz.unwrap().ymd(year, month, day);
@@ -109,6 +116,8 @@ async fn get_user_bookingslots_usecase(
 
     match free_events {
         Ok(free_events) => {
+            println!("Start: {}, end: {}", start_of_day.timestamp_millis(), end_of_day.timestamp_millis());
+            println!("Free events got: {:?}", free_events.free);
             let booking_slots = get_booking_slots(
                 &free_events.free,
                 BookingSlotsOptions {

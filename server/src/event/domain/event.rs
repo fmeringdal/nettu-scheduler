@@ -71,7 +71,6 @@ impl CalendarEvent {
     pub fn expand(&self, view: Option<&CalendarView>) -> Vec<EventInstance> {
         if self.recurrence.is_some() {
             let rrule_options = self.get_rrule_options();
-            println!("Opts: {:?}", rrule_options);
 
             let tzid = rrule_options.tzid;
             let mut rrule_set = RRuleSet::new();
@@ -80,7 +79,6 @@ impl CalendarEvent {
                 rrule_set.exdate(exdate);
             }
             let rrule = RRule::new(rrule_options);
-            // println!("rr: {:?}", rrule.all());
             rrule_set.rrule(rrule);
 
             let instances = match view {
@@ -144,11 +142,7 @@ impl CalendarEvent {
             count,
             bymonth: vec![],
             dtstart,
-            byweekday: options
-                .byweekday
-                .iter()
-                .map(|d| *d as usize)
-                .collect(),
+            byweekday: options.byweekday.iter().map(|d| *d as usize).collect(),
             byhour: vec![dtstart.hour() as usize],
             bysetpos: options.bysetpos,
             byweekno: vec![],

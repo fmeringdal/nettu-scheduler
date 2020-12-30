@@ -1,4 +1,7 @@
-use crate::{calendar::repos::{CalendarRepo, ICalendarRepo, InMemoryCalendarRepo}, event::repos::{EventRepo, IEventRepo, InMemoryEventRepo}};
+use crate::{
+    calendar::repos::{CalendarRepo, ICalendarRepo, InMemoryCalendarRepo},
+    event::repos::{EventRepo, IEventRepo, InMemoryEventRepo},
+};
 use actix_web::{web, HttpResponse};
 use mongodb::{options::ClientOptions, Client};
 

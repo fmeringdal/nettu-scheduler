@@ -1,5 +1,9 @@
-use crate::{api::Context, event::{domain::event::CalendarEvent, repos::IEventRepo}, shared::auth::protect_route};
-use actix_web::{HttpRequest, HttpResponse, web};
+use crate::{
+    api::Context,
+    event::{domain::event::CalendarEvent, repos::IEventRepo},
+    shared::auth::protect_route,
+};
+use actix_web::{web, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
@@ -15,7 +19,7 @@ pub async fn get_event_controller(
 ) -> HttpResponse {
     let user = match protect_route(&http_req) {
         Ok(u) => u,
-        Err(res) => return res
+        Err(res) => return res,
     };
 
     let req = GetEventReq {
@@ -35,7 +39,7 @@ pub async fn get_event_controller(
 #[derive(Serialize, Deserialize)]
 pub struct GetEventReq {
     pub event_id: String,
-    pub user_id: String
+    pub user_id: String,
 }
 
 pub struct GetEventUseCaseCtx {
