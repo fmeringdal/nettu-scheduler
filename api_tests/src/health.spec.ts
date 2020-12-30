@@ -1,7 +1,7 @@
 import { Client } from "./clients";
 
-describe("Calendar API", () => {
-  it("should give status 200", async () => {
+describe("Health API", () => {
+  it("should report healthy status", async () => {
     const status = await Client.health.checkStatus();
     expect(status).toBe(200);
   });

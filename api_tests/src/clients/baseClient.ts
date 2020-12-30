@@ -16,8 +16,12 @@ export abstract class NettuBaseClient {
     headers: auth ? this.authHeaders : undefined,
   });
 
-  protected async get(path: string, auth: boolean): Promise<AxiosResponse> {
-    return axios.get(this.config.baseUrl + path, this.getAxiosConfig(auth));
+  protected async get<T>(path: string, auth: boolean): Promise<APIResponse<T>> {
+    const res = await axios.get(
+      this.config.baseUrl + path,
+      this.getAxiosConfig(auth)
+    );
+    return new APIResponse(res);
   }
 
   protected async delete(path: string, auth: boolean): Promise<AxiosResponse> {
@@ -46,5 +50,17 @@ export abstract class NettuBaseClient {
       data,
       this.getAxiosConfig(auth)
     );
+  }
+}
+
+export class APIResponse<T> {
+  readonly data: T;
+  readonly status: number;
+  readonly res: AxiosResponse;
+
+  constructor(res: AxiosResponse) {
+    this.res = res;
+    this.data = res.data;
+    this.status = res.status;
   }
 }

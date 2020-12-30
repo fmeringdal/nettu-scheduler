@@ -21,3 +21,9 @@ export type CalendarEvent = {
   calendarId: string;
   userId: string;
 };
+
+export type CalendarEventInstance = {
+  startTs: number;
+  endTs: number;
+  busy: boolean;
+};

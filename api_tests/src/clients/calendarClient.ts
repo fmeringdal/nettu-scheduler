@@ -1,3 +1,4 @@
+import { Calendar } from "../domain/calendar";
 import { NettuBaseClient } from "./baseClient";
 
 export class NettuCalendarClient extends NettuBaseClient {
@@ -7,7 +8,7 @@ export class NettuCalendarClient extends NettuBaseClient {
   }
 
   public findById(calendarId: string, auth: boolean) {
-    return this.get(`/calendar/${calendarId}`, auth);
+    return this.get<Calendar>(`/calendar/${calendarId}`, auth);
   }
 
   public remove(calendarId: string, auth: boolean) {

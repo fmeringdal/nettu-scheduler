@@ -1,5 +1,9 @@
 import { NettuBaseClient } from "./baseClient";
-import { RRuleOptions } from "../domain/calendarEvent";
+import {
+  CalendarEvent,
+  CalendarEventInstance,
+  RRuleOptions,
+} from "../domain/calendarEvent";
 
 export type CreateCalendarEventReq = {
   calendarId: string;
@@ -31,7 +35,7 @@ export class NettuEventClient extends NettuBaseClient {
   }
 
   public findById(eventId: string, auth: boolean) {
-    return this.get(`/events/${eventId}`, auth);
+    return this.get<CalendarEvent>(`/events/${eventId}`, auth);
   }
 
   public remove(eventId: string, auth: boolean) {
@@ -39,7 +43,7 @@ export class NettuEventClient extends NettuBaseClient {
   }
 
   public getInstances(eventId: string, timespan: Timespan, auth: boolean) {
-    return this.get(
+    return this.get<{ instances: CalendarEventInstance[] }>(
       `/events/${eventId}/instances?startTs=${timespan.startTs}&endTs=${timespan.endTs}`,
       auth
     );

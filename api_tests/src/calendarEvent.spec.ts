@@ -56,16 +56,16 @@ describe("CalendarEvent API", () => {
     );
     const { eventId } = res.data;
     expect(res.status).toBe(201);
-    res = await Client.events.getInstances(
+    let res2 = await Client.events.getInstances(
       eventId,
       { startTs: 20, endTs: 1000 * 60 * 60 * 24 * (count + 1) },
       true
     );
-    let instances = res.data.instances;
+    let instances = res2.data.instances;
     expect(instances.length).toBe(count);
 
     // Query after instances are finished
-    res = await Client.events.getInstances(
+    let res3 = await Client.events.getInstances(
       eventId,
       {
         startTs: 1000 * 60 * 60 * 24 * (count + 1),
@@ -73,7 +73,7 @@ describe("CalendarEvent API", () => {
       },
       true
     );
-    instances = res.data.instances;
+    instances = res3.data.instances;
     expect(instances.length).toBe(0);
   });
 });
