@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::calendar::domain::calendar_view::CalendarView;
 
 use super::event_instance::EventInstance;
-use chrono::prelude::*;
+use chrono::{Duration, prelude::*};
 use chrono_tz::Tz;
 use rrule::{Frequenzy, ParsedOptions, RRule, RRuleSet};
 use serde::{Deserialize, Serialize};
@@ -86,12 +86,17 @@ impl CalendarEvent {
             let instances = match view {
                 Some(view) => {
                     let view = view.as_datetime(&tzid);
-                    rrule_set.between(view.start, view.end, true)
+                    
+                    // Also take the duration of events into consideration as the rrule library
+                    // does not support duration on events.
+                    let end = view.end - Duration::milliseconds(self.duration);
+                    
+                    rrule_set.between(view.start, end, true)
                 }
                 None => rrule_set.all(),
             };
 
-            let mut instances:Vec<_> = instances
+            instances
                 .iter()
                 .map(|occurence| {
                     let start_ts = occurence.timestamp_millis();
@@ -102,24 +107,7 @@ impl CalendarEvent {
                         busy: self.busy,
                     }
                 })
-                .collect();
-
-
-                // Since rrule library only looks at start_ts when getting all instances
-            // and we also have duration, we will need to remove instances (if any)
-            // that has end_ts greater than view.end_ts
-            if let Some(view) = view {
-                for i in (0..instances.len()).rev() {
-                    if instances[i].end_ts <= view.get_end() {
-                        break;
-                    }
-                    if instances[i].end_ts > view.get_end() {
-                        instances.remove(i);
-                    }
-                }
-            }
-
-            instances
+                .collect()
         } else {
             vec![EventInstance {
                 start_ts: self.start_ts,
