@@ -2,9 +2,7 @@ use crate::{
     calendar::repos::{CalendarRepo, ICalendarRepo, InMemoryCalendarRepo},
     event::repos::{EventRepo, IEventRepo, InMemoryEventRepo},
 };
-use actix_web::{web, HttpResponse};
 use mongodb::{options::ClientOptions, Client};
-
 use std::sync::Arc;
 
 pub struct Repos {
@@ -54,15 +52,17 @@ impl Clone for Repos {
     }
 }
 
-pub struct Context {
-    pub repos: Repos,
+pub struct Config {}
+
+impl Config {
+    pub fn new() -> Self {
+        Self {}
+    }
 }
 
-#[async_trait::async_trait(?Send)]
-pub trait Perform {
-    // type Response: serde::ser::Serialize + Send;
-
-    async fn perform(&self, context: &web::Data<Context>) -> HttpResponse;
+pub struct Context {
+    pub repos: Repos,
+    pub config: Config,
 }
 
 #[derive(Debug)]

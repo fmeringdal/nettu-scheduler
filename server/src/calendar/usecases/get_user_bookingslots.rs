@@ -50,8 +50,19 @@ pub async fn get_user_bookingslots_controller(
     match res {
         Ok(r) => HttpResponse::Ok().json(r),
         Err(e) => match e {
-            GetUserBookingSlotsErrors::InvalidTimespanError => {
-                HttpResponse::UnprocessableEntity().finish()
+            GetUserBookingSlotsErrors::InvalidDateError(msg) => HttpResponse::UnprocessableEntity()
+                .body(format!(
+                    "Invalid datetime: {}. Should be YYYY-MM-DD, e.g. January 1. 2020 => 2020-1-1",
+                    msg
+                )),
+            GetUserBookingSlotsErrors::InvalidTimezoneError(msg) => {
+                HttpResponse::UnprocessableEntity().body(format!(
+                    "Invalid timezone: {}. It should be a valid IANA TimeZone.",
+                    msg
+                ))
+            }
+            GetUserBookingSlotsErrors::UserFreebusyError => {
+                HttpResponse::InternalServerError().finish()
             }
         },
     }
@@ -72,32 +83,24 @@ pub struct GetUserBookingSlotsResponse {
     booking_slots: Vec<BookingSlot>,
 }
 
+#[derive(Debug)]
+pub enum GetUserBookingSlotsErrors {
+    InvalidDateError(String),
+    InvalidTimezoneError(String),
+    UserFreebusyError,
+}
+
 async fn get_user_bookingslots_usecase(
     req: GetUserBookingSlotsReq,
     ctx: GetUserFreeBusyUseCaseCtx,
 ) -> Result<GetUserBookingSlotsResponse, GetUserBookingSlotsErrors> {
-    let tz: Result<Tz, _> = req.iana_tz.unwrap_or(String::from("UTC")).parse();
-    if tz.is_err() {
-        // handle this
-    }
-    let dates = req.date.split('-').collect::<Vec<_>>();
-    if dates.len() != 3 {
-        // handle this
-    }
-    let year = dates[0].parse();
-    let month = dates[1].parse();
-    let day = dates[2].parse();
+    let tz: Tz = match req.iana_tz.unwrap_or(String::from("UTC")).parse() {
+        Ok(tz) => tz,
+        Err(_) => return Err(GetUserBookingSlotsErrors::InvalidTimezoneError(req.date)),
+    };
 
-    if year.is_err() || month.is_err() || day.is_err() {
-        // handle this
-    }
-    let year = year.unwrap();
-    let month = month.unwrap();
-    let day = day.unwrap();
-    println!("year: {}, month: {}, day: {}", year, month, day);
-    // handle invalid values for year month and day
-
-    let date = tz.unwrap().ymd(year, month, day);
+    let parsed_date = is_valid_date(&req.date)?;
+    let date = tz.ymd(parsed_date.0, parsed_date.1, parsed_date.2);
 
     let start_of_day = date.and_hms(0, 0, 0);
     let end_of_day = (date + Duration::days(1)).and_hms(0, 0, 0);
@@ -133,21 +136,62 @@ async fn get_user_bookingslots_usecase(
 
             Ok(GetUserBookingSlotsResponse { booking_slots })
         }
-        Err(_e) => panic!("djsaojdosa"), // ! fix this
+        Err(_e) => Err(GetUserBookingSlotsErrors::UserFreebusyError),
     }
 }
 
-#[derive(Debug)]
-pub enum GetUserBookingSlotsErrors {
-    InvalidTimespanError,
+fn is_valid_date(datestr: &str) -> Result<(i32, u32, u32), GetUserBookingSlotsErrors> {
+    let datestr = String::from(datestr);
+    let dates = datestr.split('-').collect::<Vec<_>>();
+    if dates.len() != 3 {
+        return Err(GetUserBookingSlotsErrors::InvalidDateError(datestr));
+    }
+    let year = dates[0].parse();
+    let month = dates[1].parse();
+    let day = dates[2].parse();
+
+    if year.is_err() || month.is_err() || day.is_err() {
+        return Err(GetUserBookingSlotsErrors::InvalidDateError(datestr));
+    }
+
+    let year = year.unwrap();
+    let month = month.unwrap();
+    let day = day.unwrap();
+    if year < 1970 || year > 2100 || month < 1 || month > 12 {
+        return Err(GetUserBookingSlotsErrors::InvalidDateError(datestr));
+    }
+
+    let mut month_length = vec![31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    if year % 400 == 0 || (year % 100 != 0 && year % 4 == 0) {
+        month_length[1] = 29;
+    }
+
+    if day < 1 || day > month_length[month as usize] {
+        return Err(GetUserBookingSlotsErrors::InvalidDateError(datestr));
+    }
+
+    Ok((year, month, day))
 }
 
-impl std::fmt::Display for GetUserBookingSlotsErrors {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match *self {
-            GetUserBookingSlotsErrors::InvalidTimespanError => {
-                write!(f, "The provided timesspan was invalid.")
-            }
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn it_accepts_valid_dates() {
+        let valid_dates = vec!["2018-1-1"];
+
+        for date in &valid_dates {
+            assert!(is_valid_date(date).is_ok());
+        }
+    }
+
+    #[test]
+    fn it_rejects_invalid_dates() {
+        let valid_dates = vec!["2018--1-1"];
+
+        for date in &valid_dates {
+            assert!(is_valid_date(date).is_err());
         }
     }
 }

@@ -30,14 +30,18 @@ pub async fn delete_calendar_controller(
         calendar_id: req.calendar_id.clone(),
     };
     let res = delete_calendar_usecase(req, ctx).await;
-    return match res {
+    match res {
         Ok(_) => HttpResponse::Ok().body("Calendar deleted"),
-        Err(_) => HttpResponse::NotFound().finish(),
-    };
+        Err(e) => match e {
+            DeleteCalendarErrors::NotFoundError => HttpResponse::NotFound().finish(),
+            DeleteCalendarErrors::UnableToDelete => HttpResponse::InternalServerError().finish(),
+        },
+    }
 }
 
 pub enum DeleteCalendarErrors {
     NotFoundError,
+    UnableToDelete,
 }
 
 pub struct DeleteCalendarUseCaseCtx {
@@ -58,7 +62,11 @@ async fn delete_calendar_usecase(
     match calendar {
         Some(calendar) if calendar.user_id.eq(&req.user_id) => {
             ctx.calendar_repo.delete(&calendar.id).await;
-            ctx.event_repo.delete_by_calendar(&calendar.id).await;
+            let repo_res = ctx.event_repo.delete_by_calendar(&calendar.id).await;
+            if repo_res.is_err() {
+                return Err(DeleteCalendarErrors::UnableToDelete);
+            }
+
             Ok(())
         }
         _ => Err(DeleteCalendarErrors::NotFoundError {}),

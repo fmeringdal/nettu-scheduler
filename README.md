@@ -2,9 +2,11 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 
 ## Todos
 
-- get booking slots date error handling
-- use the different results that are unused and better error handling: https://auth0.com/blog/build-an-api-in-rust-with-jwt-authentication-using-actix-web/
+- error handling: https://auth0.com/blog/build-an-api-in-rust-with-jwt-authentication-using-actix-web/
 - https://developer.makeplans.net/#services
+- frontend for booking
+  - admin portal for external application
+  - callback for connecting to google calendar and outlook calendar
 
 
 ## backlog

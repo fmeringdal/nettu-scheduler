@@ -47,7 +47,10 @@ pub async fn create_event_controller(
     let res = create_event_usecase(req.0, user, ctx).await;
     match res {
         Ok(e) => HttpResponse::Created().json(CreateEventRes { event_id: e.id }),
-        Err(_e) => HttpResponse::UnprocessableEntity().finish(),
+        Err(e) => match e {
+            CreateCalendarEventErrors::NotFoundError => HttpResponse::NotFound().finish(),
+            CreateCalendarEventErrors::StorageError => HttpResponse::InternalServerError().finish(),
+        },
     }
 }
 
@@ -58,6 +61,7 @@ pub struct CreateEventUseCaseCtx {
 #[derive(Debug)]
 pub enum CreateCalendarEventErrors {
     NotFoundError,
+    StorageError,
 }
 
 async fn create_event_usecase(
@@ -83,8 +87,11 @@ async fn create_event_usecase(
     };
     if let Some(rrule_opts) = event.rrule_options.clone() {
         e.set_reccurrence(rrule_opts, true);
-    };
-    ctx.event_repo.insert(&e).await;
+    }
+    let repo_res = ctx.event_repo.insert(&e).await;
+    if repo_res.is_err() {
+        return Err(CreateCalendarEventErrors::StorageError);
+    }
     Ok(e)
 }
 

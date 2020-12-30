@@ -43,7 +43,10 @@ pub async fn update_event_controller(
     let res = update_event_usecase(req, ctx).await;
     match res {
         Ok(_) => HttpResponse::Ok().finish(),
-        Err(_) => HttpResponse::UnprocessableEntity().finish(),
+        Err(e) => match e {
+            UpdateEventErrors::NotFoundError => HttpResponse::NotFound().finish(),
+            UpdateEventErrors::StorageError => HttpResponse::InternalServerError().finish(),
+        },
     }
 }
 
@@ -63,7 +66,9 @@ pub struct UpdateEventUseCaseCtx {
 
 pub enum UpdateEventErrors {
     NotFoundError,
+    StorageError,
 }
+
 async fn update_event_usecase(
     req: UpdateEventReq,
     ctx: UpdateEventUseCaseCtx,
@@ -99,7 +104,11 @@ async fn update_event_usecase(
         e.set_reccurrence(e.recurrence.clone().unwrap(), true);
     }
 
-    ctx.event_repo.save(&e).await;
+    let repo_res = ctx.event_repo.save(&e).await;
+    if repo_res.is_err() {
+        return Err(UpdateEventErrors::StorageError);
+    }
+
     Ok(())
 }
 

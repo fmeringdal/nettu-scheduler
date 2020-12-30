@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use crate::calendar::domain::calendar_view::CalendarView;
 
 use super::event_instance::EventInstance;
@@ -35,20 +33,6 @@ pub struct CalendarEvent {
 }
 
 impl CalendarEvent {
-    pub fn new() -> Self {
-        Self {
-            id: String::from(""),
-            start_ts: 0,
-            duration: 0,
-            end_ts: None,
-            recurrence: None,
-            exdates: vec![],
-            busy: false,
-            calendar_id: String::from(""),
-            user_id: String::from(""),
-        }
-    }
-
     fn update_endtime(&mut self) {
         let opts = self.get_rrule_options();
         if (opts.count.is_some() && opts.count.unwrap() > 0) || opts.until.is_some() {

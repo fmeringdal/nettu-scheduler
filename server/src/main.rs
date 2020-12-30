@@ -5,7 +5,7 @@ mod shared;
 
 use crate::api::Context;
 use actix_web::{get, middleware, App, HttpServer};
-use api::Repos;
+use api::{Config, Repos};
 use env_logger::Env;
 
 #[get("/")]
@@ -30,6 +30,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         let ctx = Context {
             repos: repos.clone(),
+            config: Config::new(),
         };
 
         App::new()

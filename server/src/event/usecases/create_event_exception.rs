@@ -34,13 +34,18 @@ pub async fn create_event_exception_controller(
     };
     let req = CreateEventExceptionReq {
         event_id: path_params.event_id.clone(),
-        exception_ts: body.exception_ts.clone()
+        exception_ts: body.exception_ts.clone(),
     };
 
     let res = create_event_exception_usecase(req, user, ctx).await;
     match res {
-        Ok(e) => HttpResponse::Ok().finish(),
-        Err(e) => HttpResponse::UnprocessableEntity().finish(),
+        Ok(_) => HttpResponse::Ok().finish(),
+        Err(e) => match e {
+            CreateCalendarEventExceptionErrors::NotFoundError => HttpResponse::NotFound().finish(),
+            CreateCalendarEventExceptionErrors::StorageError => {
+                HttpResponse::InternalServerError().finish()
+            }
+        },
     }
 }
 
@@ -54,22 +59,27 @@ pub struct CreateEventExceptionUseCaseCtx {
 }
 
 #[derive(Debug)]
-pub enum CreateCalendarEventErrors {
+pub enum CreateCalendarEventExceptionErrors {
     NotFoundError,
+    StorageError,
 }
 
 async fn create_event_exception_usecase(
     req: CreateEventExceptionReq,
     user: User,
     ctx: CreateEventExceptionUseCaseCtx,
-) -> Result<CalendarEvent, CreateCalendarEventErrors> {
+) -> Result<CalendarEvent, CreateCalendarEventExceptionErrors> {
     let mut event = match ctx.event_repo.find(&req.event_id).await {
         Some(event) if event.user_id == user.id => event,
-        _ => return Err(CreateCalendarEventErrors::NotFoundError),
+        _ => return Err(CreateCalendarEventExceptionErrors::NotFoundError),
     };
 
     event.exdates.push(req.exception_ts);
 
-    ctx.event_repo.save(&event).await;
+    let repo_res = ctx.event_repo.save(&event).await;
+    if repo_res.is_err() {
+        return Err(CreateCalendarEventExceptionErrors::StorageError);
+    }
+
     Ok(event)
 }
