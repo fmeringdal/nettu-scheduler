@@ -2,6 +2,7 @@ mod api;
 mod calendar;
 mod event;
 mod company;
+mod user;
 mod shared;
 
 use crate::api::Context;
