@@ -1,5 +1,6 @@
 import axios, { AxiosResponse } from "axios";
 
+// TODO: add generics and return APIResponse in the other http methods (remaining: PUT, POST, DELETE, done: GET)
 export abstract class NettuBaseClient {
   private config = {
     baseUrl: "http://localhost:5000",

@@ -2,10 +2,8 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 
 ## Todos
 
-- add event_id on eventInstance
-- exdates usecases and tests
-- use the different results that are unused
-- better error handling: https://auth0.com/blog/build-an-api-in-rust-with-jwt-authentication-using-actix-web/
+- get booking slots date error handling
+- use the different results that are unused and better error handling: https://auth0.com/blog/build-an-api-in-rust-with-jwt-authentication-using-actix-web/
 - https://developer.makeplans.net/#services
 
 

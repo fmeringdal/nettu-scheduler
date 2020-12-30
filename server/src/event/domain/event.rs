@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::calendar::domain::calendar_view::CalendarView;
 
 use super::event_instance::EventInstance;
-use chrono::{Duration, prelude::*};
+use chrono::{prelude::*, Duration};
 use chrono_tz::Tz;
 use rrule::{Frequenzy, ParsedOptions, RRule, RRuleSet};
 use serde::{Deserialize, Serialize};
@@ -29,7 +29,7 @@ pub struct CalendarEvent {
     pub busy: bool,
     pub end_ts: Option<i64>,
     pub recurrence: Option<RRuleOptions>,
-    pub exdates: Vec<isize>,
+    pub exdates: Vec<i64>,
     pub calendar_id: String,
     pub user_id: String,
 }
@@ -77,7 +77,7 @@ impl CalendarEvent {
             let tzid = rrule_options.tzid;
             let mut rrule_set = RRuleSet::new();
             for exdate in &self.exdates {
-                let exdate = tzid.timestamp_millis(*exdate as i64);
+                let exdate = tzid.timestamp_millis(*exdate);
                 rrule_set.exdate(exdate);
             }
             let rrule = RRule::new(rrule_options);
@@ -86,11 +86,11 @@ impl CalendarEvent {
             let instances = match view {
                 Some(view) => {
                     let view = view.as_datetime(&tzid);
-                    
+
                     // Also take the duration of events into consideration as the rrule library
                     // does not support duration on events.
                     let end = view.end - Duration::milliseconds(self.duration);
-                    
+
                     rrule_set.between(view.start, end, true)
                 }
                 None => rrule_set.all(),
@@ -136,7 +136,7 @@ impl CalendarEvent {
             None => None,
         };
 
-        let dtstart = tzid.timestamp(self.start_ts as i64 / 1000, 0);
+        let dtstart = tzid.timestamp(self.start_ts / 1000, 0);
 
         let count = match options.count {
             Some(c) => Some(std::cmp::max(c, 0) as u32),

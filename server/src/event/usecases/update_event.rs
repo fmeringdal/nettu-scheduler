@@ -76,18 +76,24 @@ async fn update_event_usecase(
     let mut should_update_endtime = false;
 
     if let Some(start_ts) = req.start_ts {
-        e.start_ts = start_ts;
-        should_update_endtime = true;
+        if e.start_ts != start_ts {
+            e.start_ts = start_ts;
+            e.exdates = vec![];
+            should_update_endtime = true;
+        }
     }
     if let Some(duration) = req.duration {
-        e.duration = duration;
-        should_update_endtime = true;
+        if e.duration != duration {
+            e.duration = duration;
+            should_update_endtime = true;
+        }
     }
     if let Some(busy) = req.busy {
         e.busy = busy;
     }
 
     if let Some(rrule_opts) = req.rrule_options.clone() {
+        // should we clear exdates when rrules are updated ?
         e.set_reccurrence(rrule_opts, true);
     } else if should_update_endtime && e.recurrence.is_some() {
         e.set_reccurrence(e.recurrence.clone().unwrap(), true);

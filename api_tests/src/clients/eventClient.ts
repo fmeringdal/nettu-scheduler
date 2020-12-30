@@ -20,6 +20,10 @@ export type UpdateCalendarEventReq = {
   rruleOptions?: RRuleOptions;
 };
 
+export type CreateCalendarEventExceptionReq = {
+  exceptionTs: number;
+};
+
 export type Timespan = {
   startTs: number;
   endTs: number;
@@ -32,6 +36,14 @@ export class NettuEventClient extends NettuBaseClient {
 
   public insert(data: CreateCalendarEventReq, auth: boolean) {
     return this.post("/events", data, auth);
+  }
+
+  public createException(
+    eventId: string,
+    data: CreateCalendarEventExceptionReq,
+    auth: boolean
+  ) {
+    return this.post(`/events/${eventId}/exception`, data, auth);
   }
 
   public findById(eventId: string, auth: boolean) {
