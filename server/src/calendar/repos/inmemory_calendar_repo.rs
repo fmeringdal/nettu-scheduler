@@ -1,5 +1,6 @@
 use super::ICalendarRepo;
 use crate::calendar::domain::calendar::Calendar;
+use crate::shared::inmemory_repo::*;
 use std::error::Error;
 
 pub struct InMemoryCalendarRepo {
@@ -17,29 +18,17 @@ impl InMemoryCalendarRepo {
 #[async_trait::async_trait]
 impl ICalendarRepo for InMemoryCalendarRepo {
     async fn insert(&self, calendar: &Calendar) -> Result<(), Box<dyn Error>> {
-        let mut calendars = self.calendars.lock().unwrap();
-        calendars.push(calendar.clone());
+        insert(calendar, &self.calendars);
         Ok(())
     }
 
     async fn save(&self, calendar: &Calendar) -> Result<(), Box<dyn Error>> {
-        let mut calendars = self.calendars.lock().unwrap();
-        for i in 0..calendars.len() {
-            if calendars[i].id == calendar.id {
-                calendars.splice(i..i + 1, vec![calendar.clone()]);
-            }
-        }
+        save(calendar, &self.calendars);
         Ok(())
     }
 
     async fn find(&self, calendar_id: &str) -> Option<Calendar> {
-        let calendars = self.calendars.lock().unwrap();
-        for i in 0..calendars.len() {
-            if calendars[i].id == calendar_id {
-                return Some(calendars[i].clone());
-            }
-        }
-        None
+        find(calendar_id, &self.calendars)
     }
 
     async fn find_by_user(&self, user_id: &str) -> Vec<Calendar> {
@@ -54,13 +43,6 @@ impl ICalendarRepo for InMemoryCalendarRepo {
     }
 
     async fn delete(&self, calendar_id: &str) -> Option<Calendar> {
-        let mut calendars = self.calendars.lock().unwrap();
-        for i in 0..calendars.len() {
-            if calendars[i].id == calendar_id {
-                let deleted_calendar = calendars.remove(i);
-                return Some(deleted_calendar);
-            }
-        }
-        None
+        delete(calendar_id, &self.calendars)
     }
 }

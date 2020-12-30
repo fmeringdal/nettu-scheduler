@@ -1,5 +1,6 @@
 use super::IUserRepo;
 use crate::user::domain::User;
+use crate::shared::inmemory_repo::*;
 use std::error::Error;
 
 pub struct InMemoryUserRepo {
@@ -17,39 +18,20 @@ impl InMemoryUserRepo {
 #[async_trait::async_trait]
 impl IUserRepo for InMemoryUserRepo {
     async fn insert(&self, user: &User) -> Result<(), Box<dyn Error>> {
-        let mut users = self.users.lock().unwrap();
-        users.push(user.clone());
+        insert(user, &self.users);
         Ok(())
     }
 
     async fn save(&self, user: &User) -> Result<(), Box<dyn Error>> {
-        let mut users = self.users.lock().unwrap();
-        for i in 0..users.len() {
-            if users[i].id == user.id {
-                users.splice(i..i + 1, vec![user.clone()]);
-            }
-        }
+        save(user, &self.users);
         Ok(())
     }
 
     async fn find(&self, user_id: &str) -> Option<User> {
-        let users = self.users.lock().unwrap();
-        for i in 0..users.len() {
-            if users[i].id == user_id {
-                return Some(users[i].clone());
-            }
-        }
-        None
+        find(user_id, &self.users)
     }
 
     async fn delete(&self, user_id: &str) -> Option<User> {
-        let mut users = self.users.lock().unwrap();
-        for i in 0..users.len() {
-            if users[i].id == user_id {
-                let deleted_user = users.remove(i);
-                return Some(deleted_user);
-            }
-        }
-        None
+        delete(user_id, &self.users)
     }
 }

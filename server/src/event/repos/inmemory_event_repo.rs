@@ -1,5 +1,6 @@
 use super::repos::{DeleteResult, IEventRepo};
 use crate::{calendar::domain::calendar_view::CalendarView, event::domain::event::CalendarEvent};
+use crate::shared::inmemory_repo::*;
 use std::error::Error;
 
 pub struct InMemoryEventRepo {
@@ -17,29 +18,17 @@ impl InMemoryEventRepo {
 #[async_trait::async_trait]
 impl IEventRepo for InMemoryEventRepo {
     async fn insert(&self, e: &CalendarEvent) -> Result<(), Box<dyn Error>> {
-        let mut events = self.calendar_events.lock().unwrap();
-        events.push(e.clone());
+        insert(e, &self.calendar_events);
         Ok(())
     }
 
     async fn save(&self, e: &CalendarEvent) -> Result<(), Box<dyn Error>> {
-        let mut events = self.calendar_events.lock().unwrap();
-        for i in 0..events.len() {
-            if events[i].id == e.id {
-                events.splice(i..i + 1, vec![e.clone()]);
-            }
-        }
+        save(e, &self.calendar_events);
         Ok(())
     }
 
     async fn find(&self, event_id: &str) -> Option<CalendarEvent> {
-        let events = self.calendar_events.lock().unwrap();
-        for i in 0..events.len() {
-            if events[i].id == event_id {
-                return Some(events[i].clone());
-            }
-        }
-        None
+        find(event_id, &self.calendar_events)
     }
 
     async fn find_by_calendar(
@@ -65,14 +54,7 @@ impl IEventRepo for InMemoryEventRepo {
     }
 
     async fn delete(&self, event_id: &str) -> Option<CalendarEvent> {
-        let mut events = self.calendar_events.lock().unwrap();
-        for i in 0..events.len() {
-            if events[i].id == event_id {
-                let deleted_event = events.remove(i);
-                return Some(deleted_event);
-            }
-        }
-        None
+        delete(event_id, &self.calendar_events)
     }
 
     async fn delete_by_calendar(&self, calendar_id: &str) -> Result<DeleteResult, Box<dyn Error>> {

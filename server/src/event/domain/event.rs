@@ -1,4 +1,4 @@
-use crate::calendar::domain::calendar_view::CalendarView;
+use crate::{calendar::domain::calendar_view::CalendarView, shared::entity::Entity};
 
 use super::event_instance::EventInstance;
 use chrono::{prelude::*, Duration};
@@ -150,6 +150,14 @@ impl CalendarEvent {
         };
     }
 }
+
+
+impl Entity for CalendarEvent {
+    fn id(&self) -> String {
+        self.id.clone()
+    }
+}
+
 
 #[cfg(test)]
 mod test {
