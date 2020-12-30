@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 lazy_static::lazy_static! {
     static ref PUBLIC_KEY: Vec<u8> = std::fs::read("./config/pubkey.pem").expect("Public signing verification key to be present");
-    static ref DECODIC_KEY: DecodingKey<'static> = {  
+    static ref DECODING_KEY: DecodingKey<'static> = {  
         DecodingKey::from_rsa_pem(PUBLIC_KEY.as_ref()).unwrap()
     };
 }
@@ -36,7 +36,7 @@ pub fn auth_user_req(req: &HttpRequest) -> Option<User> {
                 Ok(token) => parse_authtoken_header(token),
                 Err(_) => return None,
             };
-            let res = decode::<Claims>(&token, &DECODIC_KEY, &Validation::new(Algorithm::RS256));
+            let res = decode::<Claims>(&token, &DECODING_KEY, &Validation::new(Algorithm::RS256));
             match res {
                 Ok(token_data) => Some(User {
                     id: token_data.claims.user_id.clone(),
