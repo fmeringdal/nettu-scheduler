@@ -42,9 +42,10 @@ impl IUserRepo for UserRepo {
         Ok(())
     }
 
-    async fn find(&self, user_id: &str) -> Option<User> {
-        let filter = doc! {
-            "_id": ObjectId::with_string(user_id).unwrap()
+    async fn find(&self, external_id: &str, company_id: &str) -> Option<User> {
+        let filter = doc! { 
+            "external_id": external_id,
+            "company_id": company_id
         };
         let coll = self.collection.read().await;
         let res = coll.find_one(filter, None).await;
@@ -87,7 +88,11 @@ fn to_domain(raw: Document) -> User {
         _ => unreachable!("This should not happen"),
     };
 
-    let user = User { id };
+    let user = User { 
+        id,
+        company_id: from_bson(raw.get("company_id").unwrap().clone()).unwrap(),
+        external_id: from_bson(raw.get("external_id").unwrap().clone()).unwrap(),
+     };
 
     user
 }

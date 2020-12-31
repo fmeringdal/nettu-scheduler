@@ -1,8 +1,4 @@
-use crate::{
-    api::Context,
-    event::repos::IEventRepo,
-    shared::auth::{protect_route, AuthContext, User},
-};
+use crate::{api::Context, event::repos::IEventRepo, shared::auth::{protect_route, AuthContext}, user::domain::User};
 use crate::{
     calendar::repos::ICalendarRepo,
     event::domain::event::{CalendarEvent, RRuleOptions},
@@ -121,6 +117,8 @@ mod test {
 
         let user = User {
             id: String::from("2312312"),
+            external_id: String::from("cool2"),
+            company_id: String::from("cool"),
         };
 
         let calendar = Calendar {

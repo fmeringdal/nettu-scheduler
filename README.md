@@ -3,9 +3,13 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 ## Todos
 
 - think about how to do auth (Nettu EE will likely also use this and maybe nettmeet)
-  - support public key / private key verification with public key from company
-    - how to fetch company from req ? Header value (just create user if it does not exist?)
+  - create user if user does not exist
+  - commong crud for mongodb, dont unwrap objectid
+  - user should have store the company name and an external id
+  - more test for public key / private key verification with public key from company
+    - usecases for uploading public private key
   - support api secret key
+- company -> account
 - Look more into this: https://developer.makeplans.net/#services
 - use strings for rruleoptions.frequenzy
 - frontend for booking

@@ -1,24 +1,11 @@
 use actix_web::{HttpRequest, HttpResponse};
 use company::domain::Company;
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
+use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
-use crate::{
-    company::{self, repos::ICompanyRepo},
-    user::repos::IUserRepo,
-};
-
-lazy_static::lazy_static! {
-    static ref PUBLIC_KEY: Vec<u8> = std::fs::read("./config/pubkey.pem").expect("Public signing verification key to be present");
-    static ref DECODING_KEY: DecodingKey<'static> = {
-        DecodingKey::from_rsa_pem(PUBLIC_KEY.as_ref()).unwrap()
-    };
-}
-
-pub struct User {
-    pub id: String,
-}
+use crate::{company::{self, repos::ICompanyRepo}, user::{domain::User, repos::IUserRepo}};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -39,6 +26,25 @@ pub struct AuthContext {
     pub company_repo: Arc<dyn ICompanyRepo>,
 }
 
+async fn create_user_if_not_exists(external_user_id: &str, company_id: &str, ctx: &AuthContext) -> User {
+    match ctx.user_repo.find(external_user_id, company_id).await {
+        Some(user) => user,
+        None => {
+            // create user
+            // todo: in future there will be a create user admin endpoint
+            let user = User {
+                id: ObjectId::new().to_string(),
+                external_id: String::from(external_user_id),
+                company_id: String::from(company_id)
+            };
+
+            ctx.user_repo.insert(&user).await;
+
+            user
+        }
+    }
+}
+
 pub async fn auth_user_req(
     req: &HttpRequest,
     company: &Company,
@@ -51,12 +57,12 @@ pub async fn auth_user_req(
                 Ok(token) => parse_authtoken_header(token),
                 Err(_) => return None,
             };
-            println!("Token found: {:?}", token);
 
             match decode_token(company, &token) {
-                Ok(claims) => Some(User {
-                    id: claims.user_id.clone(),
-                }),
+                Ok(claims) => {
+                    let user = create_user_if_not_exists(&claims.user_id, &company.id, ctx).await;
+                    Some(user)
+                },
                 Err(_) => None,
             }
         }
@@ -107,40 +113,72 @@ mod test {
     use jsonwebtoken::{encode, Header, EncodingKey, Algorithm};
 
     async fn setup_company(ctx: &AuthContext) -> Company {
-        let pub_key = std::fs::read("./config/test_public_rsa_key.crt").unwrap();
-        let pub_key = base64::encode(pub_key);
-        let company = Company {
-            id: String::from("nettu"),
-            public_key_b64: pub_key
-        };
-        ctx.company_repo.insert(&company).await;
+        let company = get_company();
+        ctx.company_repo.insert(&company).await.unwrap();
         company
+    }
+
+    fn setup_ctx() -> AuthContext {
+        let company_repo = InMemoryCompanyRepo::new();
+        let user_repo = InMemoryUserRepo::new();
+        AuthContext {
+            company_repo: Arc::new(company_repo),
+            user_repo: Arc::new(user_repo),
+        }
     }
 
     fn get_token(expired: bool) -> String {
         let priv_key = std::fs::read("./config/test_private_rsa_key.pem").unwrap();
         let exp = if expired {
-            100
+            100 // year 1970
         } else {
-            2609418990073
+            5609418990073 // year 2147
         };
-        let claims = Claims { exp, iat: 19, user_id: String::from("cool") };
+        let claims = Claims { exp, iat: 19, user_id: get_external_user_id()  };
         let enc_key = EncodingKey::from_rsa_pem(&priv_key).unwrap();
         encode(&Header::new(Algorithm::RS256), &claims, &enc_key).unwrap()
     }
 
+    fn get_external_user_id() -> String {
+        String::from("cool")
+    }
+
+    fn get_company() -> Company {
+        let pub_key = std::fs::read("./config/test_public_rsa_key.crt").unwrap();
+        let public_key_b64 = base64::encode(pub_key);
+        Company {
+            id: String::from("nettu"),
+            public_key_b64
+        }
+    }
+
     #[actix_web::main]
     #[test]
-    async fn decodes_valid_token() {
-        let company_repo = InMemoryCompanyRepo::new();
-        let user_repo = InMemoryUserRepo::new();
-        let ctx = AuthContext {
-            company_repo: Arc::new(company_repo),
-            user_repo: Arc::new(user_repo),
-        };
+    async fn decodes_valid_token_and_creates_user_if_not_found() {
+        let ctx = setup_ctx();
         let comp = setup_company(&ctx).await;
-
         let token = get_token(false);
+
+        let req = TestRequest::with_header("nettu-account", comp.id.clone())
+            .header("Authorization", format!("Bearer {}", token))
+            .to_http_request();
+        let res = protect_route(&req, &ctx).await;
+        assert!(res.is_ok());
+        assert!(ctx.user_repo.find(&get_external_user_id(), &comp.id).await.is_some());
+    }
+
+    #[actix_web::main]
+    #[test]
+    async fn decodes_valid_token_and_for_existing_user() {
+        let ctx = setup_ctx();
+        let comp = setup_company(&ctx).await;
+        let token = get_token(false);
+        let user = User {
+            id: ObjectId::new().to_string(),
+            external_id: get_external_user_id(),
+            company_id: comp.id.clone()
+        };
+        ctx.user_repo.insert(&user).await;
 
         let req = TestRequest::with_header("nettu-account", comp.id)
             .header("Authorization", format!("Bearer {}", token))
@@ -152,14 +190,8 @@ mod test {
     #[actix_web::main]
     #[test]
     async fn rejects_expired_token() {
-        let company_repo = InMemoryCompanyRepo::new();
-        let user_repo = InMemoryUserRepo::new();
-        let ctx = AuthContext {
-            company_repo: Arc::new(company_repo),
-            user_repo: Arc::new(user_repo),
-        };
+        let ctx = setup_ctx();
         let comp = setup_company(&ctx).await;
-
         let token = get_token(true);
 
         let req = TestRequest::with_header("nettu-account", comp.id)
@@ -172,17 +204,26 @@ mod test {
     #[actix_web::main]
     #[test]
     async fn rejects_valid_token_without_account_header() {
-        let company_repo = InMemoryCompanyRepo::new();
-        let user_repo = InMemoryUserRepo::new();
-        let ctx = AuthContext {
-            company_repo: Arc::new(company_repo),
-            user_repo: Arc::new(user_repo),
-        };
+        let ctx = setup_ctx();
         let comp = setup_company(&ctx).await;
-
-        let token = String::from("eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwidXNlcklkIjoiY29vbHRlc3R1c2VyIiwiZXhwIjoxOTE2MjM5MDIyLCJpYXQiOjE1MTYyMzkwMjJ9.TRRzG_Vakpsa3n7Gt9lYSKqwzK6FvxTSWnxMI04LUQEAXfZfhTWGooQHnAmVDxHdT-XZlExJ0MepK27NhHQ8Xww7Mu91YE_kaiRkXMo1SmdFjzLyBLOBhJrYUrqY4wYb7uzZBrIVy0rDNwKZKUtJ5MnSF2x-bPPFD1IQjNqit--D-UpHrKqoDXp5j7T0E5CzhYtyXBQsX2uUb47lbmQfyuMiKXCM85oDMNzESoTAHWv0FNhyubV5ZeGqZedPHsYI2qQr8be4vdjfaS0_tQ5mP9DpIVK_aOVJPKMzdwaFyI8Oqr886VFLkXv7kKkuIipQK__tzoFmYm1V22wEzUp0-Q");
+        let token = get_token(false);
 
         let req = TestRequest::with_header("Authorization", format!("Bearer {}", token))
+            .to_http_request();
+        let res = protect_route(&req, &ctx).await;
+        assert!(res.is_err());
+    }
+
+
+    #[actix_web::main]
+    #[test]
+    async fn rejects_valid_token_with_valid_invalid_account_header() {
+        let ctx = setup_ctx();
+        let comp = setup_company(&ctx).await;
+        let token = "sajfosajfposajfopaso12";
+
+        let req = TestRequest::with_header("nettu-account", comp.id+"s")
+            .header("Authorization", format!("Bearer {}", token))
             .to_http_request();
         let res = protect_route(&req, &ctx).await;
         assert!(res.is_err());
@@ -191,15 +232,9 @@ mod test {
     #[actix_web::main]
     #[test]
     async fn rejects_garbage_token_with_valid_account_header() {
-        let company_repo = InMemoryCompanyRepo::new();
-        let user_repo = InMemoryUserRepo::new();
-        let ctx = AuthContext {
-            company_repo: Arc::new(company_repo),
-            user_repo: Arc::new(user_repo),
-        };
+        let ctx = setup_ctx();
         let comp = setup_company(&ctx).await;
-
-        let token = String::from("eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwidXNlcklkIjoiY29vbHRlc3R1c2VyIiwiZXhwIjoxOTE2MjM5MDIyLCJpYXQiOjE1MTYyMzkwMjJ.TRRzG_Vakpsa3n7Gt9lYSKqwzK6FvxTSWnxMI04LUQEAXfZfhTWGooQHnAmVDxHdT-XZlExJ0MepK27NhHQ8Xww7Mu91YE_kaiRkXMo1SmdFjzLyBLOBhJrYUrqY4wYb7uzZBrIVy0rDNwKZKUtJ5MnSF2x-bPPFD1IQjNqit--D-UpHrKqoDXp5j7T0E5CzhYtyXBQsX2uUb47lbmQfyuMiKXCM85oDMNzESoTAHWv0FNhyubV5ZeGqZedPHsYI2qQr8be4vdjfaS0_tQ5mP9DpIVK_aOVJPKMzdwaFyI8Oqr886VFLkXv7kKkuIipQK__tzoFmYm1V22wEzUp0-Q");
+        let token = "sajfosajfposajfopaso12";
 
         let req = TestRequest::with_header("Authorization", format!("Bearer {}", token))
             .to_http_request();
@@ -207,15 +242,11 @@ mod test {
         assert!(res.is_err());
     }
 
+
     #[actix_web::main]
     #[test]
     async fn rejects_req_without_headers() {
-        let company_repo = InMemoryCompanyRepo::new();
-        let user_repo = InMemoryUserRepo::new();
-        let ctx = AuthContext {
-            company_repo: Arc::new(company_repo),
-            user_repo: Arc::new(user_repo),
-        };
+        let ctx = setup_ctx();
         let comp = setup_company(&ctx).await;
 
         let req = TestRequest::default()

@@ -3,6 +3,8 @@ use crate::shared::entity::Entity;
 #[derive(Debug, Clone)]
 pub struct User {
     pub id: String,
+    pub external_id: String,
+    pub company_id: String,
 }
 
 impl Entity for User {
