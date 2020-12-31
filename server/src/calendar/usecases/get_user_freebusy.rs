@@ -172,7 +172,7 @@ mod test {
         let user = User {
             id: String::from("2312312"),
             external_id: String::from("yoyoyo"),
-            company_id: String::from("coool")
+            account_id: String::from("coool")
         };
 
         let calendar = Calendar {

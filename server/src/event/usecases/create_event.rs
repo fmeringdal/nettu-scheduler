@@ -32,7 +32,7 @@ pub async fn create_event_controller(
     let user = match protect_route(
         &http_req,
         &AuthContext {
-            company_repo: Arc::clone(&ctx.repos.company_repo),
+            account_repo: Arc::clone(&ctx.repos.account_repo),
             user_repo: Arc::clone(&ctx.repos.user_repo),
         },
     )
@@ -118,7 +118,7 @@ mod test {
         let user = User {
             id: String::from("2312312"),
             external_id: String::from("cool2"),
-            company_id: String::from("cool"),
+            account_id: String::from("cool"),
         };
 
         let calendar = Calendar {

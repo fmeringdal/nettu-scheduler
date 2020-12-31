@@ -1,11 +1,11 @@
 use actix_web::{HttpRequest, HttpResponse};
-use company::domain::Company;
+use account::domain::Account;
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
-use crate::{company::{self, repos::ICompanyRepo}, user::{domain::User, repos::IUserRepo}};
+use crate::{account::{self, repos::IAccountRepo}, user::{domain::User, repos::IUserRepo}};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -23,11 +23,11 @@ fn parse_authtoken_header(token_header_value: &str) -> String {
 
 pub struct AuthContext {
     pub user_repo: Arc<dyn IUserRepo>,
-    pub company_repo: Arc<dyn ICompanyRepo>,
+    pub account_repo: Arc<dyn IAccountRepo>,
 }
 
-async fn create_user_if_not_exists(external_user_id: &str, company_id: &str, ctx: &AuthContext) -> User {
-    match ctx.user_repo.find(external_user_id, company_id).await {
+async fn create_user_if_not_exists(external_user_id: &str, account_id: &str, ctx: &AuthContext) -> User {
+    match ctx.user_repo.find(external_user_id, account_id).await {
         Some(user) => user,
         None => {
             // create user
@@ -35,7 +35,7 @@ async fn create_user_if_not_exists(external_user_id: &str, company_id: &str, ctx
             let user = User {
                 id: ObjectId::new().to_string(),
                 external_id: String::from(external_user_id),
-                company_id: String::from(company_id)
+                account_id: String::from(account_id)
             };
 
             ctx.user_repo.insert(&user).await;
@@ -47,7 +47,7 @@ async fn create_user_if_not_exists(external_user_id: &str, company_id: &str, ctx
 
 pub async fn auth_user_req(
     req: &HttpRequest,
-    company: &Company,
+    account: &Account,
     ctx: &AuthContext,
 ) -> Option<User> {
     let token = req.headers().get("authorization");
@@ -58,9 +58,9 @@ pub async fn auth_user_req(
                 Err(_) => return None,
             };
 
-            match decode_token(company, &token) {
+            match decode_token(account, &token) {
                 Ok(claims) => {
-                    let user = create_user_if_not_exists(&claims.user_id, &company.id, ctx).await;
+                    let user = create_user_if_not_exists(&claims.user_id, &account.id, ctx).await;
                     Some(user)
                 },
                 Err(_) => None,
@@ -70,34 +70,34 @@ pub async fn auth_user_req(
     }
 }
 
-pub async fn get_client_company(req: &HttpRequest, ctx: &AuthContext) -> Option<Company> {
+pub async fn get_client_account(req: &HttpRequest, ctx: &AuthContext) -> Option<Account> {
     let account = req.headers().get("nettu-account");
 
     match account {
         Some(acc) => match acc.to_str() {
-            Ok(acc) => ctx.company_repo.find(acc).await,
+            Ok(acc) => ctx.account_repo.find(acc).await,
             Err(_) => None,
         },
         None => None,
     }
 }
 
-fn decode_token(company: &Company, token: &str) -> anyhow::Result<Claims> {
-    let public_key = base64::decode(&company.public_key_b64)?;
+fn decode_token(account: &Account, token: &str) -> anyhow::Result<Claims> {
+    let public_key = base64::decode(&account.public_key_b64)?;
     let decoding_key = DecodingKey::from_rsa_pem(&public_key)?;
     let token_data = decode::<Claims>(&token, &decoding_key, &Validation::new(Algorithm::RS256))?;
     Ok(token_data.claims)
 }
 
 pub async fn protect_route(req: &HttpRequest, ctx: &AuthContext) -> Result<User, HttpResponse> {
-    let company = match get_client_company(req, ctx).await {
+    let account = match get_client_account(req, ctx).await {
         Some(comp) => comp,
         None => {
             return Err(HttpResponse::Unauthorized()
-                .body("Unable to find the company the client belongs to"))
+                .body("Unable to find the account the client belongs to"))
         }
     };
-    let res = auth_user_req(req, &company, ctx).await;
+    let res = auth_user_req(req, &account, ctx).await;
 
     match res {
         Some(user) => Ok(user),
@@ -108,21 +108,21 @@ pub async fn protect_route(req: &HttpRequest, ctx: &AuthContext) -> Result<User,
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{company::repos::InMemoryCompanyRepo, user::repos::InMemoryUserRepo};
+    use crate::{account::repos::InMemoryAccountRepo, user::repos::InMemoryUserRepo};
     use actix_web::test::TestRequest;
     use jsonwebtoken::{encode, Header, EncodingKey, Algorithm};
 
-    async fn setup_company(ctx: &AuthContext) -> Company {
-        let company = get_company();
-        ctx.company_repo.insert(&company).await.unwrap();
-        company
+    async fn setup_account(ctx: &AuthContext) -> Account {
+        let account = get_account();
+        ctx.account_repo.insert(&account).await.unwrap();
+        account
     }
 
     fn setup_ctx() -> AuthContext {
-        let company_repo = InMemoryCompanyRepo::new();
+        let account_repo = InMemoryAccountRepo::new();
         let user_repo = InMemoryUserRepo::new();
         AuthContext {
-            company_repo: Arc::new(company_repo),
+            account_repo: Arc::new(account_repo),
             user_repo: Arc::new(user_repo),
         }
     }
@@ -143,10 +143,10 @@ mod test {
         String::from("cool")
     }
 
-    fn get_company() -> Company {
+    fn get_account() -> Account {
         let pub_key = std::fs::read("./config/test_public_rsa_key.crt").unwrap();
         let public_key_b64 = base64::encode(pub_key);
-        Company {
+        Account {
             id: String::from("nettu"),
             public_key_b64
         }
@@ -156,7 +156,7 @@ mod test {
     #[test]
     async fn decodes_valid_token_and_creates_user_if_not_found() {
         let ctx = setup_ctx();
-        let comp = setup_company(&ctx).await;
+        let comp = setup_account(&ctx).await;
         let token = get_token(false);
 
         let req = TestRequest::with_header("nettu-account", comp.id.clone())
@@ -171,12 +171,12 @@ mod test {
     #[test]
     async fn decodes_valid_token_and_for_existing_user() {
         let ctx = setup_ctx();
-        let comp = setup_company(&ctx).await;
+        let comp = setup_account(&ctx).await;
         let token = get_token(false);
         let user = User {
             id: ObjectId::new().to_string(),
             external_id: get_external_user_id(),
-            company_id: comp.id.clone()
+            account_id: comp.id.clone()
         };
         ctx.user_repo.insert(&user).await.unwrap();
 
@@ -191,7 +191,7 @@ mod test {
     #[test]
     async fn rejects_expired_token() {
         let ctx = setup_ctx();
-        let comp = setup_company(&ctx).await;
+        let comp = setup_account(&ctx).await;
         let token = get_token(true);
 
         let req = TestRequest::with_header("nettu-account", comp.id)
@@ -205,7 +205,7 @@ mod test {
     #[test]
     async fn rejects_valid_token_without_account_header() {
         let ctx = setup_ctx();
-        let comp = setup_company(&ctx).await;
+        let comp = setup_account(&ctx).await;
         let token = get_token(false);
 
         let req = TestRequest::with_header("Authorization", format!("Bearer {}", token))
@@ -219,7 +219,7 @@ mod test {
     #[test]
     async fn rejects_valid_token_with_valid_invalid_account_header() {
         let ctx = setup_ctx();
-        let comp = setup_company(&ctx).await;
+        let comp = setup_account(&ctx).await;
         let token = "sajfosajfposajfopaso12";
 
         let req = TestRequest::with_header("nettu-account", comp.id+"s")
@@ -233,7 +233,7 @@ mod test {
     #[test]
     async fn rejects_garbage_token_with_valid_account_header() {
         let ctx = setup_ctx();
-        let comp = setup_company(&ctx).await;
+        let comp = setup_account(&ctx).await;
         let token = "sajfosajfposajfopaso12";
 
         let req = TestRequest::with_header("Authorization", format!("Bearer {}", token))
@@ -247,7 +247,7 @@ mod test {
     #[test]
     async fn rejects_req_without_headers() {
         let ctx = setup_ctx();
-        let comp = setup_company(&ctx).await;
+        let comp = setup_account(&ctx).await;
 
         let req = TestRequest::default()
             .to_http_request();

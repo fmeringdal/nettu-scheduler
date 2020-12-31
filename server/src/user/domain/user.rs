@@ -4,7 +4,7 @@ use crate::shared::entity::Entity;
 pub struct User {
     pub id: String,
     pub external_id: String,
-    pub company_id: String,
+    pub account_id: String,
 }
 
 impl Entity for User {

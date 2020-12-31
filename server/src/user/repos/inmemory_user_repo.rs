@@ -32,10 +32,10 @@ impl IUserRepo for InMemoryUserRepo {
         delete(user_id, &self.users)
     }
 
-    async fn find(&self, external_id: &str, company_id: &str) -> Option<User> {
+    async fn find(&self, external_id: &str, account_id: &str) -> Option<User> {
         let users = self.users.lock().unwrap();
         for i in 0..users.len() {
-            if users[i].external_id == external_id && users[i].company_id == company_id {
+            if users[i].external_id == external_id && users[i].account_id == account_id {
                 return Some(users[i].clone());
             }
         }

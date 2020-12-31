@@ -1,6 +1,6 @@
 mod api;
 mod calendar;
-mod company;
+mod account;
 mod event;
 mod shared;
 mod user;

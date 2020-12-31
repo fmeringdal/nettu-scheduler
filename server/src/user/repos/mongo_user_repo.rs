@@ -42,10 +42,10 @@ impl IUserRepo for UserRepo {
         Ok(())
     }
 
-    async fn find(&self, external_id: &str, company_id: &str) -> Option<User> {
+    async fn find(&self, external_id: &str, account_id: &str) -> Option<User> {
         let filter = doc! { 
             "external_id": external_id,
-            "company_id": company_id
+            "account_id": account_id
         };
         let coll = self.collection.read().await;
         let res = coll.find_one(filter, None).await;
@@ -90,7 +90,7 @@ fn to_domain(raw: Document) -> User {
 
     let user = User { 
         id,
-        company_id: from_bson(raw.get("company_id").unwrap().clone()).unwrap(),
+        account_id: from_bson(raw.get("account_id").unwrap().clone()).unwrap(),
         external_id: from_bson(raw.get("external_id").unwrap().clone()).unwrap(),
      };
 

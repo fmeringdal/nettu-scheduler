@@ -20,7 +20,7 @@ pub async fn delete_calendar_controller(
     let user = match protect_route(
         &http_req,
         &AuthContext {
-            company_repo: Arc::clone(&ctx.repos.company_repo),
+            account_repo: Arc::clone(&ctx.repos.account_repo),
             user_repo: Arc::clone(&ctx.repos.user_repo),
         },
     )
