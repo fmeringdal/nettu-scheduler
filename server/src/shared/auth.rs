@@ -178,7 +178,7 @@ mod test {
             external_id: get_external_user_id(),
             company_id: comp.id.clone()
         };
-        ctx.user_repo.insert(&user).await;
+        ctx.user_repo.insert(&user).await.unwrap();
 
         let req = TestRequest::with_header("nettu-account", comp.id)
             .header("Authorization", format!("Bearer {}", token))
