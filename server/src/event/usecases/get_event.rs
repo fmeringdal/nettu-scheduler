@@ -1,7 +1,7 @@
 use crate::{
     api::Context,
     event::{domain::event::CalendarEvent, repos::IEventRepo},
-    shared::auth::protect_route,
+    shared::auth::{protect_route, AuthContext},
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
@@ -17,7 +17,15 @@ pub async fn get_event_controller(
     params: web::Path<EventPathParams>,
     ctx: web::Data<Context>,
 ) -> HttpResponse {
-    let user = match protect_route(&http_req) {
+    let user = match protect_route(
+        &http_req,
+        &AuthContext {
+            company_repo: Arc::clone(&ctx.repos.company_repo),
+            user_repo: Arc::clone(&ctx.repos.user_repo),
+        },
+    )
+    .await
+    {
         Ok(u) => u,
         Err(res) => return res,
     };

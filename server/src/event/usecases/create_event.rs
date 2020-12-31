@@ -1,7 +1,7 @@
 use crate::{
     api::Context,
     event::repos::IEventRepo,
-    shared::auth::{protect_route, User},
+    shared::auth::{protect_route, AuthContext, User},
 };
 use crate::{
     calendar::repos::ICalendarRepo,
@@ -33,8 +33,15 @@ pub async fn create_event_controller(
     req: web::Json<CreateEventReq>,
     ctx: web::Data<Context>,
 ) -> HttpResponse {
-    // println("Got here");
-    let user = match protect_route(&http_req) {
+    let user = match protect_route(
+        &http_req,
+        &AuthContext {
+            company_repo: Arc::clone(&ctx.repos.company_repo),
+            user_repo: Arc::clone(&ctx.repos.user_repo),
+        },
+    )
+    .await
+    {
         Ok(u) => u,
         Err(res) => return res,
     };

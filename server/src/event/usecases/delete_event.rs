@@ -1,5 +1,5 @@
-use crate::event::repos::IEventRepo;
 use crate::{api::Context, shared::auth::protect_route};
+use crate::{event::repos::IEventRepo, shared::auth::AuthContext};
 use actix_web::{web, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -14,7 +14,15 @@ pub async fn delete_event_controller(
     params: web::Path<EventPathParams>,
     ctx: web::Data<Context>,
 ) -> HttpResponse {
-    let user = match protect_route(&http_req) {
+    let user = match protect_route(
+        &http_req,
+        &AuthContext {
+            company_repo: Arc::clone(&ctx.repos.company_repo),
+            user_repo: Arc::clone(&ctx.repos.user_repo),
+        },
+    )
+    .await
+    {
         Ok(u) => u,
         Err(res) => return res,
     };

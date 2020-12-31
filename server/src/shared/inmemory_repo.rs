@@ -1,13 +1,13 @@
+use super::entity::Entity;
+/// Useful functions for creating inmemory repositories
 use std::sync::Mutex;
 
-use super::entity::Entity;
-
-pub fn insert<T: Clone>(val: &T, collection: &Mutex<Vec<T>>){
+pub fn insert<T: Clone>(val: &T, collection: &Mutex<Vec<T>>) {
     let mut collection = collection.lock().unwrap();
     collection.push(val.clone());
 }
 
-pub fn save<T: Clone+Entity>(val: &T, collection: &Mutex<Vec<T>>){
+pub fn save<T: Clone + Entity>(val: &T, collection: &Mutex<Vec<T>>) {
     let mut collection = collection.lock().unwrap();
     for i in 0..collection.len() {
         if collection[i].id() == val.id() {
@@ -16,7 +16,7 @@ pub fn save<T: Clone+Entity>(val: &T, collection: &Mutex<Vec<T>>){
     }
 }
 
-pub fn find<T: Clone+Entity>(val_id: &str, collection: &Mutex<Vec<T>>) -> Option<T> {
+pub fn find<T: Clone + Entity>(val_id: &str, collection: &Mutex<Vec<T>>) -> Option<T> {
     let collection = collection.lock().unwrap();
     for i in 0..collection.len() {
         if collection[i].id() == val_id {
@@ -26,7 +26,7 @@ pub fn find<T: Clone+Entity>(val_id: &str, collection: &Mutex<Vec<T>>) -> Option
     None
 }
 
-pub fn delete<T: Clone+Entity>(val_id: &str, collection: &Mutex<Vec<T>>) -> Option<T> {
+pub fn delete<T: Clone + Entity>(val_id: &str, collection: &Mutex<Vec<T>>) -> Option<T> {
     let mut collection = collection.lock().unwrap();
     for i in 0..collection.len() {
         if collection[i].id() == val_id {

@@ -38,9 +38,7 @@ impl ICompanyRepo for CompanyRepo {
         let filter = doc! {
             "_id": ObjectId::with_string(&company.id)?
         };
-        let _res = coll
-            .update_one(filter, to_persistence(company), None)
-            .await;
+        let _res = coll.update_one(filter, to_persistence(company), None).await;
         Ok(())
     }
 
@@ -91,6 +89,7 @@ fn to_domain(raw: Document) -> Company {
 
     let company = Company {
         id,
+        public_key_b64: from_bson(raw.get("public_key_b64").unwrap().clone()).unwrap(),
     };
 
     company

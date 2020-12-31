@@ -1,7 +1,7 @@
-use crate::event::domain::event::CalendarEvent;
 use crate::event::domain::event_instance::EventInstance;
 use crate::event::repos::IEventRepo;
 use crate::{calendar::repos::ICalendarRepo, shared::auth::protect_route};
+use crate::{event::domain::event::CalendarEvent, shared::auth::AuthContext};
 
 use crate::{
     api::Context,
@@ -29,7 +29,15 @@ pub async fn get_calendar_events_controller(
     params: web::Path<CalendarPathParams>,
     ctx: web::Data<Context>,
 ) -> HttpResponse {
-    let user = match protect_route(&http_req) {
+    let user = match protect_route(
+        &http_req,
+        &AuthContext {
+            company_repo: Arc::clone(&ctx.repos.company_repo),
+            user_repo: Arc::clone(&ctx.repos.user_repo),
+        },
+    )
+    .await
+    {
         Ok(u) => u,
         Err(res) => return res,
     };

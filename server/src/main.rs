@@ -1,9 +1,9 @@
 mod api;
 mod calendar;
-mod event;
 mod company;
-mod user;
+mod event;
 mod shared;
+mod user;
 
 use crate::api::Context;
 use actix_web::{get, middleware, App, HttpServer};

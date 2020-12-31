@@ -1,4 +1,6 @@
-use crate::{api::Context, event::domain::event_instance::EventInstance};
+use crate::{
+    api::Context, event::domain::event_instance::EventInstance, shared::auth::AuthContext,
+};
 use crate::{calendar::domain::calendar_view::CalendarView, event::domain::event::CalendarEvent};
 use crate::{event::repos::IEventRepo, shared::auth::protect_route};
 use actix_web::{web, HttpRequest, HttpResponse};
@@ -22,7 +24,15 @@ pub async fn get_event_instances_controller(
     query_params: web::Query<GetEventInstancesReqView>,
     ctx: web::Data<Context>,
 ) -> HttpResponse {
-    let user = match protect_route(&http_req) {
+    let user = match protect_route(
+        &http_req,
+        &AuthContext {
+            company_repo: Arc::clone(&ctx.repos.company_repo),
+            user_repo: Arc::clone(&ctx.repos.user_repo),
+        },
+    )
+    .await
+    {
         Ok(u) => u,
         Err(res) => return res,
     };

@@ -1,6 +1,6 @@
 use super::IUserRepo;
-use crate::user::domain::User;
 use crate::shared::inmemory_repo::*;
+use crate::user::domain::User;
 use std::error::Error;
 
 pub struct InMemoryUserRepo {

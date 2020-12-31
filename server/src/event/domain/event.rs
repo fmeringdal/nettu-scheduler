@@ -151,13 +151,11 @@ impl CalendarEvent {
     }
 }
 
-
 impl Entity for CalendarEvent {
     fn id(&self) -> String {
         self.id.clone()
     }
 }
-
 
 #[cfg(test)]
 mod test {

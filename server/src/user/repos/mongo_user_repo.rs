@@ -38,9 +38,7 @@ impl IUserRepo for UserRepo {
         let filter = doc! {
             "_id": ObjectId::with_string(&user.id)?
         };
-        let _res = coll
-            .update_one(filter, to_persistence(user), None)
-            .await;
+        let _res = coll.update_one(filter, to_persistence(user), None).await;
         Ok(())
     }
 
@@ -89,9 +87,7 @@ fn to_domain(raw: Document) -> User {
         _ => unreachable!("This should not happen"),
     };
 
-    let user = User {
-        id,
-    };
+    let user = User { id };
 
     user
 }

@@ -4,14 +4,14 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 
 - think about how to do auth (Nettu EE will likely also use this and maybe nettmeet)
   - support public key / private key verification with public key from company
-    - need a company repo
-    - how to fetch company from req ? Header value
-  - support api secret key (need a user repo)
-- https://developer.makeplans.net/#services
+    - how to fetch company from req ? Header value (just create user if it does not exist?)
+  - support api secret key
+- Look more into this: https://developer.makeplans.net/#services
+- use strings for rruleoptions.frequenzy
 - frontend for booking
   - admin portal for external application
   - callback for connecting to google calendar and outlook calendar
-  - calendar page? Neh
+  - company page or calendar page?
 
 
 ## backlog

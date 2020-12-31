@@ -1,2 +1,2 @@
-pub mod repos;
 pub mod domain;
+pub mod repos;

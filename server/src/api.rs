@@ -1,7 +1,8 @@
 use crate::{
     calendar::repos::{CalendarRepo, ICalendarRepo, InMemoryCalendarRepo},
+    company::repos::{CompanyRepo, ICompanyRepo, InMemoryCompanyRepo},
     event::repos::{EventRepo, IEventRepo, InMemoryEventRepo},
-    company::repos::{CompanyRepo, ICompanyRepo, InMemoryCompanyRepo}
+    user::repos::{IUserRepo, InMemoryUserRepo, UserRepo},
 };
 use mongodb::{options::ClientOptions, Client};
 use std::sync::Arc;
@@ -10,6 +11,7 @@ pub struct Repos {
     pub event_repo: Arc<dyn IEventRepo>,
     pub calendar_repo: Arc<dyn ICalendarRepo>,
     pub company_repo: Arc<dyn ICompanyRepo>,
+    pub user_repo: Arc<dyn IUserRepo>,
 }
 
 impl Repos {
@@ -33,7 +35,8 @@ impl Repos {
         Ok(Self {
             event_repo: Arc::new(EventRepo::new(&db)),
             calendar_repo: Arc::new(CalendarRepo::new(&db)),
-            company_repo: Arc::new(CompanyRepo::new(&db))
+            company_repo: Arc::new(CompanyRepo::new(&db)),
+            user_repo: Arc::new(UserRepo::new(&db)),
         })
     }
 
@@ -43,6 +46,7 @@ impl Repos {
             event_repo: Arc::new(InMemoryEventRepo::new()),
             calendar_repo: Arc::new(InMemoryCalendarRepo::new()),
             company_repo: Arc::new(InMemoryCompanyRepo::new()),
+            user_repo: Arc::new(InMemoryUserRepo::new()),
         }
     }
 }
@@ -52,7 +56,8 @@ impl Clone for Repos {
         Self {
             event_repo: Arc::clone(&self.event_repo),
             calendar_repo: Arc::clone(&self.calendar_repo),
-            company_repo: Arc::clone(&self.company_repo)
+            company_repo: Arc::clone(&self.company_repo),
+            user_repo: Arc::clone(&self.user_repo),
         }
     }
 }

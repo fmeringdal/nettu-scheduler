@@ -1,4 +1,4 @@
-use crate::{api::Context, calendar::domain::calendar::Calendar};
+use crate::{api::Context, calendar::domain::calendar::Calendar, shared::auth::AuthContext};
 use crate::{calendar::repos::ICalendarRepo, shared::auth::protect_route};
 use actix_web::{web, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
@@ -15,7 +15,15 @@ pub async fn get_calendar_controller(
     req: web::Path<GetCalendarReq>,
     ctx: web::Data<Context>,
 ) -> HttpResponse {
-    let user = match protect_route(&http_req) {
+    let user = match protect_route(
+        &http_req,
+        &AuthContext {
+            company_repo: Arc::clone(&ctx.repos.company_repo),
+            user_repo: Arc::clone(&ctx.repos.user_repo),
+        },
+    )
+    .await
+    {
         Ok(u) => u,
         Err(res) => return res,
     };

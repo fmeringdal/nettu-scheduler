@@ -1,6 +1,6 @@
-use crate::calendar::domain::calendar::Calendar;
 use crate::calendar::repos::ICalendarRepo;
 use crate::{api::Context, shared::auth::protect_route};
+use crate::{calendar::domain::calendar::Calendar, shared::auth::AuthContext};
 use actix_web::{web, HttpResponse};
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
@@ -10,7 +10,15 @@ pub async fn create_calendar_controller(
     http_req: web::HttpRequest,
     ctx: web::Data<Context>,
 ) -> HttpResponse {
-    let user = match protect_route(&http_req) {
+    let user = match protect_route(
+        &http_req,
+        &AuthContext {
+            company_repo: Arc::clone(&ctx.repos.company_repo),
+            user_repo: Arc::clone(&ctx.repos.user_repo),
+        },
+    )
+    .await
+    {
         Ok(u) => u,
         Err(res) => return res,
     };
