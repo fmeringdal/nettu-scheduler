@@ -39,10 +39,9 @@ impl IUserRepo for UserRepo {
         Ok(())
     }
 
-    async fn find(&self, external_id: &str, account_id: &str) -> Option<User> {
+    async fn find(&self, user_id: &str) -> Option<User> {
         let filter = doc! { 
-            "external_id": external_id,
-            "account_id": account_id
+            "_id": user_id,
         };
         let coll = self.collection.read().await;
         let res = coll.find_one(filter, None).await;
@@ -73,7 +72,7 @@ impl IUserRepo for UserRepo {
 
 fn to_persistence(user: &User) -> Document {
     let raw = doc! {
-        "_id": ObjectId::with_string(&user.id).unwrap(),
+        "id": to_bson(&user.id).unwrap(),
         "account_id": to_bson(&user.account_id).unwrap(),
         "external_id": to_bson(&user.external_id).unwrap(),
     };
@@ -82,13 +81,8 @@ fn to_persistence(user: &User) -> Document {
 }
 
 fn to_domain(raw: Document) -> User {
-    let id = match raw.get("_id").unwrap() {
-        Bson::ObjectId(oid) => oid.to_string(),
-        _ => unreachable!("This should not happen"),
-    };
-
     let user = User { 
-        id,
+        id: from_bson(raw.get("_id").unwrap().clone()).unwrap(),
         account_id: from_bson(raw.get("account_id").unwrap().clone()).unwrap(),
         external_id: from_bson(raw.get("external_id").unwrap().clone()).unwrap(),
      };

@@ -27,16 +27,13 @@ pub struct AuthContext {
 }
 
 async fn create_user_if_not_exists(external_user_id: &str, account_id: &str, ctx: &AuthContext) -> User {
-    match ctx.user_repo.find(external_user_id, account_id).await {
+    let user_id = User::create_id(account_id, external_user_id);
+    match ctx.user_repo.find(&user_id).await {
         Some(user) => user,
         None => {
             // create user
             // todo: in future there will be a create user admin endpoint
-            let user = User {
-                id: ObjectId::new().to_string(),
-                external_id: String::from(external_user_id),
-                account_id: String::from(account_id)
-            };
+            let user = User::new(account_id, external_user_id);
 
             ctx.user_repo.insert(&user).await;
 
@@ -207,7 +204,8 @@ mod test {
             .to_http_request();
         let res = protect_route(&req, &ctx).await;
         assert!(res.is_ok());
-        assert!(ctx.user_repo.find(&get_external_user_id(), &comp.id).await.is_some());
+        let user_id = User::create_id(&comp.id, &get_external_user_id());
+        assert!(ctx.user_repo.find(&user_id).await.is_some());
     }
 
     #[actix_web::main]
@@ -216,11 +214,7 @@ mod test {
         let ctx = setup_ctx();
         let comp = setup_account(&ctx).await;
         let token = get_token(false);
-        let user = User {
-            id: ObjectId::new().to_string(),
-            external_id: get_external_user_id(),
-            account_id: comp.id.clone()
-        };
+        let user = User::new(&comp.id, &get_external_user_id());
         ctx.user_repo.insert(&user).await.unwrap();
 
         let req = TestRequest::with_header("nettu-account", comp.id)

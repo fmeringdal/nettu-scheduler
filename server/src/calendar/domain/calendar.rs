@@ -6,7 +6,7 @@ use crate::{shared::entity::Entity, user::domain::User};
 #[serde(rename_all = "camelCase")]
 pub struct Calendar {
     pub id: String,
-    pub external_user_id: String,
+    pub user_id: String,
 }
 
 

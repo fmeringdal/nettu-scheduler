@@ -73,7 +73,7 @@ async fn create_event_usecase(
     ctx: CreateEventUseCaseCtx,
 ) -> Result<CalendarEvent, CreateCalendarEventErrors> {
     let calendar = match ctx.calendar_repo.find(&event.calendar_id).await {
-        Some(calendar) if calendar.external_user_id == user.external_id() => calendar,
+        Some(calendar) if calendar.user_id == user.id => calendar,
         _ => return Err(CreateCalendarEventErrors::NotFoundError),
     };
 
@@ -115,15 +115,11 @@ mod test {
         let event_repo = Arc::new(InMemoryEventRepo::new());
         let calendar_repo = Arc::new(InMemoryCalendarRepo::new());
 
-        let user = User {
-            id: String::from("2312312"),
-            external_id: String::from("cool2"),
-            account_id: String::from("cool"),
-        };
+        let user = User::new("cool2", "cool");
 
         let calendar = Calendar {
             id: String::from("312312"),
-            external_user_id: user.id.clone(),
+            user_id: user.id.clone(),
         };
         calendar_repo.insert(&calendar).await;
 

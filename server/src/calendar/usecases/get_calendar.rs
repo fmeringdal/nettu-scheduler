@@ -61,7 +61,7 @@ async fn get_calendar_usecase(
 ) -> Result<Calendar, GetCalendarErrors> {
     let cal = ctx.calendar_repo.find(&req.calendar_id).await;
     match cal {
-        Some(cal) if cal.external_user_id == req.user_id => Ok(cal),
+        Some(cal) if cal.user_id == req.user_id => Ok(cal),
         _ => Err(GetCalendarErrors::NotFoundError {}),
     }
 }

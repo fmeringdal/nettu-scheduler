@@ -37,7 +37,7 @@ pub async fn get_user_bookingslots_controller(
     };
 
     let req = GetUserBookingSlotsReq {
-        external_user_id: User::create_external_id( &account, &params.external_user_id),
+        user_id: User::create_id(&account, &params.external_user_id),
         calendar_ids,
         iana_tz: query_params.iana_tz.clone(),
         date: query_params.date.clone(),
@@ -72,7 +72,7 @@ pub async fn get_user_bookingslots_controller(
 
 #[derive(Serialize, Deserialize)]
 pub struct GetUserBookingSlotsReq {
-    pub external_user_id: String,
+    pub user_id: String,
     pub calendar_ids: Option<Vec<String>>,
     pub date: String,
     pub iana_tz: Option<String>,
@@ -112,7 +112,7 @@ async fn get_user_bookingslots_usecase(
             calendar_ids: req.calendar_ids,
             end_ts: end_of_day.timestamp_millis(),
             start_ts: start_of_day.timestamp_millis(),
-            external_user_id: req.external_user_id,
+            user_id: req.user_id,
         },
         ctx,
     )
@@ -168,7 +168,7 @@ fn is_valid_date(datestr: &str) -> Result<(i32, u32, u32), GetUserBookingSlotsEr
         month_length[1] = 29;
     }
 
-    if day < 1 || day > month_length[month as usize] {
+    if day < 1 || day > month_length[month as usize - 1] {
         return Err(GetUserBookingSlotsErrors::InvalidDateError(datestr));
     }
 
@@ -181,7 +181,7 @@ mod test {
 
     #[test]
     fn it_accepts_valid_dates() {
-        let valid_dates = vec!["2018-1-1"];
+        let valid_dates = vec!["2018-1-1", "2025-12-31", "2020-1-12", "2020-2-29", "2020-02-2", "2020-02-02", "2020-2-09"];
 
         for date in &valid_dates {
             assert!(is_valid_date(date).is_ok());
@@ -190,9 +190,11 @@ mod test {
 
     #[test]
     fn it_rejects_invalid_dates() {
-        let valid_dates = vec!["2018--1-1"];
+        let valid_dates = vec!["2018--1-1", "2020-1-32", "2020-2-30", "2020-0-1", "2020-1-0"];
 
         for date in &valid_dates {
+
+            println!("Checking date: {} with result {:?}", date, is_valid_date(date));
             assert!(is_valid_date(date).is_err());
         }
     }

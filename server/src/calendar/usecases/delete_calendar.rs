@@ -34,7 +34,7 @@ pub async fn delete_calendar_controller(
         event_repo: Arc::clone(&ctx.repos.event_repo),
     };
     let req = DeleteCalendarUseCaseReq {
-        external_user_id: user.external_id(),
+        user_id: user.id,
         calendar_id: req.calendar_id.clone(),
     };
     let res = delete_calendar_usecase(req, ctx).await;
@@ -59,7 +59,7 @@ pub struct DeleteCalendarUseCaseCtx {
 
 pub struct DeleteCalendarUseCaseReq {
     calendar_id: String,
-    external_user_id: String,
+    user_id: String,
 }
 
 async fn delete_calendar_usecase(
@@ -68,7 +68,7 @@ async fn delete_calendar_usecase(
 ) -> Result<(), DeleteCalendarErrors> {
     let calendar = ctx.calendar_repo.find(&req.calendar_id).await;
     match calendar {
-        Some(calendar) if calendar.external_user_id == req.external_user_id => {
+        Some(calendar) if calendar.user_id == req.user_id => {
             ctx.calendar_repo.delete(&calendar.id).await;
             let repo_res = ctx.event_repo.delete_by_calendar(&calendar.id).await;
             if repo_res.is_err() {

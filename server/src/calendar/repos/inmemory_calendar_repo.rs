@@ -37,7 +37,7 @@ impl ICalendarRepo for InMemoryCalendarRepo {
         println!("All calendars: {:?}", calendars);
         let mut res = vec![];
         for i in 0..calendars.len() {
-            if calendars[i].external_user_id == user_id {
+            if calendars[i].user_id == user_id {
                 res.push(calendars[i].clone());
             }
         }

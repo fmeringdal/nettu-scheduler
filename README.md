@@ -3,10 +3,7 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 ## Todos
 
 - think about how to do auth (Nettu EE will likely also use this and maybe nettmeet)
-  - how to reference user in routes ? 
-      - nettu genereated object id
-      - external user id created
-  - commong crud for mongodb, dont unwrap objectid
+  - common crud for mongodb, dont unwrap objectid
   - more test for public key / private key verification with public key from company
     - usecases for uploading public private key
 - company -> account

@@ -40,7 +40,7 @@ pub async fn get_user_freebusy_controller(
     };
 
     let req = GetUserFreeBusyReq {
-        external_user_id: User::create_external_id(&account, &params.external_user_id),
+        user_id: User::create_id(&account, &params.external_user_id),
         calendar_ids,
         start_ts: query_params.start_ts,
         end_ts: query_params.end_ts,
@@ -63,7 +63,7 @@ pub async fn get_user_freebusy_controller(
 
 #[derive(Debug)]
 pub struct GetUserFreeBusyReq {
-    pub external_user_id: String,
+    pub user_id: String,
     pub calendar_ids: Option<Vec<String>>,
     pub start_ts: i64,
     pub end_ts: i64,
@@ -93,7 +93,7 @@ pub async fn get_user_freebusy_usecase(
     println!("view freebusy: {:?}", view);
 
     // can probably make query to event repo instead
-    let mut calendars = ctx.calendar_repo.find_by_user(&req.external_user_id).await;
+    let mut calendars = ctx.calendar_repo.find_by_user(&req.user_id).await;
 
     if let Some(calendar_ids) = req.calendar_ids {
         if !calendar_ids.is_empty() {
@@ -159,6 +159,7 @@ mod test {
             repos::InMemoryEventRepo,
         },
         user::domain::User,
+        shared::entity::Entity
     };
     use std::sync::Arc;
 
@@ -168,15 +169,11 @@ mod test {
         let event_repo = InMemoryEventRepo::new();
         let calendar_repo = InMemoryCalendarRepo::new();
 
-        let user = User {
-            id: String::from("2312312"),
-            external_id: String::from("yoyoyo"),
-            account_id: String::from("coool")
-        };
+        let user = User::new("yoyoyo", "cool");
 
         let calendar = Calendar {
             id: String::from("312312"),
-            external_user_id: user.external_id(),
+            user_id: user.id(),
         };
         calendar_repo.insert(&calendar).await;
 
@@ -262,7 +259,7 @@ mod test {
         };
 
         let req = GetUserFreeBusyReq {
-            external_user_id: user.external_id(),
+            user_id: user.id(),
             calendar_ids: Some(vec![calendar.id.clone()]),
             start_ts: 86400000,
             end_ts: 172800000,

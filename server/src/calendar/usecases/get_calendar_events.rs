@@ -46,7 +46,7 @@ pub async fn get_calendar_events_controller(
         event_repo: ctx.repos.event_repo.clone(),
     };
     let req = GetCalendarEventsReq {
-        external_user_id: user.external_id(),
+        user_id: user.id,
         calendar_id: params.calendar_id.clone(),
         start_ts: query_params.start_ts,
         end_ts: query_params.end_ts,
@@ -65,7 +65,7 @@ pub async fn get_calendar_events_controller(
 }
 pub struct GetCalendarEventsReq {
     pub calendar_id: String,
-    pub external_user_id: String,
+    pub user_id: String,
     pub start_ts: i64,
     pub end_ts: i64,
 }
@@ -101,7 +101,7 @@ async fn get_calendar_events_usecase(
     let view = view.unwrap();
 
     match calendar {
-        Some(calendar) if calendar.external_user_id == req.external_user_id => {
+        Some(calendar) if calendar.user_id == req.user_id => {
             let events = ctx
                 .event_repo
                 .find_by_calendar(&calendar.id, Some(&view))
