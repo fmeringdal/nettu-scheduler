@@ -90,7 +90,7 @@ fn decode_token(account: &Account, token: &str) -> anyhow::Result<Claims> {
 
 pub async fn protect_route(req: &HttpRequest, ctx: &AuthContext) -> Result<User, HttpResponse> {
     let account = match get_client_account(req, ctx).await {
-        Some(comp) => comp,
+        Some(account) => account,
         None => {
             return Err(HttpResponse::Unauthorized()
                 .body("Unable to find the account the client belongs to"))
@@ -196,15 +196,15 @@ mod test {
     #[test]
     async fn decodes_valid_token_and_creates_user_if_not_found() {
         let ctx = setup_ctx();
-        let comp = setup_account(&ctx).await;
+        let account = setup_account(&ctx).await;
         let token = get_token(false);
 
-        let req = TestRequest::with_header("nettu-account", comp.id.clone())
+        let req = TestRequest::with_header("nettu-account", account.id.clone())
             .header("Authorization", format!("Bearer {}", token))
             .to_http_request();
         let res = protect_route(&req, &ctx).await;
         assert!(res.is_ok());
-        let user_id = User::create_id(&comp.id, &get_external_user_id());
+        let user_id = User::create_id(&account.id, &get_external_user_id());
         assert!(ctx.user_repo.find(&user_id).await.is_some());
     }
 
@@ -212,12 +212,12 @@ mod test {
     #[test]
     async fn decodes_valid_token_and_for_existing_user() {
         let ctx = setup_ctx();
-        let comp = setup_account(&ctx).await;
+        let account = setup_account(&ctx).await;
         let token = get_token(false);
-        let user = User::new(&comp.id, &get_external_user_id());
+        let user = User::new(&account.id, &get_external_user_id());
         ctx.user_repo.insert(&user).await.unwrap();
 
-        let req = TestRequest::with_header("nettu-account", comp.id)
+        let req = TestRequest::with_header("nettu-account", account.id)
             .header("Authorization", format!("Bearer {}", token))
             .to_http_request();
         let res = protect_route(&req, &ctx).await;
@@ -228,10 +228,10 @@ mod test {
     #[test]
     async fn rejects_expired_token() {
         let ctx = setup_ctx();
-        let comp = setup_account(&ctx).await;
+        let account = setup_account(&ctx).await;
         let token = get_token(true);
 
-        let req = TestRequest::with_header("nettu-account", comp.id)
+        let req = TestRequest::with_header("nettu-account", account.id)
             .header("Authorization", format!("Bearer {}", token))
             .to_http_request();
         let res = protect_route(&req, &ctx).await;
@@ -242,7 +242,7 @@ mod test {
     #[test]
     async fn rejects_valid_token_without_account_header() {
         let ctx = setup_ctx();
-        let comp = setup_account(&ctx).await;
+        let account = setup_account(&ctx).await;
         let token = get_token(false);
 
         let req = TestRequest::with_header("Authorization", format!("Bearer {}", token))
@@ -256,10 +256,10 @@ mod test {
     #[test]
     async fn rejects_valid_token_with_valid_invalid_account_header() {
         let ctx = setup_ctx();
-        let comp = setup_account(&ctx).await;
+        let account = setup_account(&ctx).await;
         let token = "sajfosajfposajfopaso12";
 
-        let req = TestRequest::with_header("nettu-account", comp.id+"s")
+        let req = TestRequest::with_header("nettu-account", account.id+"s")
             .header("Authorization", format!("Bearer {}", token))
             .to_http_request();
         let res = protect_route(&req, &ctx).await;
@@ -270,7 +270,7 @@ mod test {
     #[test]
     async fn rejects_garbage_token_with_valid_account_header() {
         let ctx = setup_ctx();
-        let comp = setup_account(&ctx).await;
+        let account = setup_account(&ctx).await;
         let token = "sajfosajfposajfopaso12";
 
         let req = TestRequest::with_header("Authorization", format!("Bearer {}", token))
@@ -284,7 +284,7 @@ mod test {
     #[test]
     async fn rejects_req_without_headers() {
         let ctx = setup_ctx();
-        let comp = setup_account(&ctx).await;
+        let account = setup_account(&ctx).await;
 
         let req = TestRequest::default()
             .to_http_request();
