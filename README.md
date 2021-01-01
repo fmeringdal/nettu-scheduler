@@ -6,7 +6,6 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
   - common crud for mongodb, dont unwrap objectid
   - more test for public key / private key verification with public key from company
     - usecases for uploading public private key
-- company -> account
 - Look more into this: https://developer.makeplans.net/#services
 - use strings for rruleoptions.frequenzy
 - frontend for booking

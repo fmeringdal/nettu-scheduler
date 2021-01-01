@@ -1,6 +1,7 @@
 import { NettuClient } from "../clients";
-import { readFile, toBase64 } from "./utils";
+import { readPrivateKey, readPublicKeyBase64, toBase64 } from "./utils";
 import jwt from "jsonwebtoken";
+import { Account } from "../domain/account";
 
 export const setupAccount = async () => {
   const client = NettuClient();
@@ -12,12 +13,27 @@ export const setupAccount = async () => {
 };
 
 export const setupUserClient = async () => {
-  const configFolder = __dirname + "/../../config";
   const { client, accountId } = await setupAccount();
-  const publicKey = await readFile(`${configFolder}/test_public_rsa_key.crt`);
-  const publicKeyB64 = toBase64(publicKey as string);
+  const publicKeyB64 = await readPublicKeyBase64();
   const r = await client.account.setPublicSigningKey(publicKeyB64);
-  const privateKey = await readFile(`${configFolder}/test_private_rsa_key.pem`);
+  const privateKey = await readPrivateKey();
+  const { userId, token, client: userClient } = setupUserClientForAccount(
+    privateKey,
+    accountId
+  );
+
+  return {
+    accountClient: client,
+    userClient,
+    userId,
+    accountId,
+  };
+};
+
+export const setupUserClientForAccount = (
+  privateKey: string,
+  accountId: string
+) => {
   const userId = "123";
   const token = jwt.sign(
     {
@@ -29,11 +45,9 @@ export const setupUserClient = async () => {
       expiresIn: "1h",
     }
   );
-
   return {
-    accountClient: client,
-    userClient: NettuClient({ token, nettuAccount: accountId }),
+    token,
     userId,
-    accountId,
+    client: NettuClient({ token, nettuAccount: accountId }),
   };
 };
