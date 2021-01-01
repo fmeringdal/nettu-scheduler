@@ -1,12 +1,12 @@
-use crate::user::domain::User;
+use crate::{shared::mongo_repo::MongoPersistence, user::domain::User};
 
 use mongodb::{
-    bson::{doc, from_bson, oid::ObjectId, to_bson, Document},
+    bson::{doc, from_bson, to_bson, Document},
     Collection, Database,
 };
 use std::error::Error;
 use tokio::sync::RwLock;
-
+use crate::shared::mongo_repo;
 use super::IUserRepo;
 
 pub struct UserRepo {
@@ -28,67 +28,53 @@ impl UserRepo {
 #[async_trait::async_trait]
 impl IUserRepo for UserRepo {
     async fn insert(&self, user: &User) -> Result<(), Box<dyn Error>> {
-        let coll = self.collection.read().await;
-        let _res = coll.insert_one(to_persistence(user), None).await;
-        Ok(())
+        match mongo_repo::insert(&self.collection, user).await {
+            Ok(_) => Ok(()),
+            Err(_) => Ok(()) // fix this
+        }
     }
 
     async fn save(&self, user: &User) -> Result<(), Box<dyn Error>> {
-        let coll = self.collection.read().await;
-        let filter = doc! {
-            "_id": ObjectId::with_string(&user.id)?
-        };
-        let _res = coll.update_one(filter, to_persistence(user), None).await;
-        Ok(())
+        match mongo_repo::save(&self.collection, user).await {
+            Ok(_) => Ok(()),
+            Err(_) => Ok(()) // fix this
+        }
     }
 
     async fn find(&self, user_id: &str) -> Option<User> {
-        let filter = doc! {
-            "_id": user_id,
-        };
-        let coll = self.collection.read().await;
-        let res = coll.find_one(filter, None).await;
-        match res {
-            Ok(doc) if doc.is_some() => {
-                let user = to_domain(doc.unwrap());
-                Some(user)
-            }
-            _ => None,
-        }
+        let id = mongo_repo::MongoPersistenceID::String(String::from(user_id));
+        mongo_repo::find(&self.collection, &id).await
     }
 
     async fn delete(&self, user_id: &str) -> Option<User> {
-        let filter = doc! {
-            "_id": ObjectId::with_string(user_id).unwrap()
-        };
-        let coll = self.collection.read().await;
-        let res = coll.find_one_and_delete(filter, None).await;
-        match res {
-            Ok(doc) if doc.is_some() => {
-                let user = to_domain(doc.unwrap());
-                Some(user)
-            }
-            _ => None,
-        }
+        let id = mongo_repo::MongoPersistenceID::String(String::from(user_id));
+        mongo_repo::delete(&self.collection, &id).await
     }
 }
 
-fn to_persistence(user: &User) -> Document {
-    let raw = doc! {
-        "id": to_bson(&user.id).unwrap(),
-        "account_id": to_bson(&user.account_id).unwrap(),
-        "external_id": to_bson(&user.external_id).unwrap(),
-    };
 
-    raw
-}
+impl MongoPersistence for User {
+    fn to_domain(doc: Document) -> Self {
+        let user = User {
+            id: from_bson(doc.get("_id").unwrap().clone()).unwrap(),
+            account_id: from_bson(doc.get("account_id").unwrap().clone()).unwrap(),
+            external_id: from_bson(doc.get("external_id").unwrap().clone()).unwrap(),
+        };
+    
+        user
+    }
 
-fn to_domain(raw: Document) -> User {
-    let user = User {
-        id: from_bson(raw.get("_id").unwrap().clone()).unwrap(),
-        account_id: from_bson(raw.get("account_id").unwrap().clone()).unwrap(),
-        external_id: from_bson(raw.get("external_id").unwrap().clone()).unwrap(),
-    };
+    fn to_persistence(&self) -> Document {
+        let raw = doc! {
+            "id": to_bson(&self.id).unwrap(),
+            "account_id": to_bson(&self.account_id).unwrap(),
+            "external_id": to_bson(&self.external_id).unwrap(),
+        };
+    
+        raw
+    }
 
-    user
+    fn get_persistence_id(&self) -> anyhow::Result<crate::shared::mongo_repo::MongoPersistenceID> {
+        Ok(mongo_repo::MongoPersistenceID::String(self.id.clone()))
+    }
 }
