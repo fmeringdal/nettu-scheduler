@@ -26,7 +26,7 @@ describe("Account API", () => {
     expect(res.data.id).toBeUndefined();
   });
 
-  it("should upload account public signing cert and remove it", async () => {
+  it("should upload account public key and be able to remove it", async () => {
     const { client } = await setupAccount();
     const publicKeyB64 = await readPublicKeyBase64();
     await client.account.setPublicSigningKey(publicKeyB64);

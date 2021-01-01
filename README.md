@@ -2,8 +2,7 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 
 ## Todos
 
-- think about how to do auth (Nettu EE will likely also use this and maybe nettmeet)
-  - common crud for mongodb, dont unwrap objectid
+- smarter mongodb schema
 - Look more into this: https://developer.makeplans.net/#services
 - frontend for booking
   - admin portal for external application
@@ -13,6 +12,5 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 
 ## backlog
 
-- smarter mongodb schema
 - More api tests for [calendarevent, booking]
 - error handling: https://auth0.com/blog/build-an-api-in-rust-with-jwt-authentication-using-actix-web/
