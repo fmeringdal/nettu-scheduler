@@ -14,10 +14,6 @@ pub struct AccountRepo {
     collection: RwLock<Collection>,
 }
 
-// RwLock is Send + Sync
-unsafe impl Send for AccountRepo {}
-unsafe impl Sync for AccountRepo {}
-
 impl AccountRepo {
     pub fn new(db: &Database) -> Self {
         Self {

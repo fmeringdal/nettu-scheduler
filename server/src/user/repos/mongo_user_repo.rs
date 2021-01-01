@@ -13,10 +13,6 @@ pub struct UserRepo {
     collection: RwLock<Collection>,
 }
 
-// RwLock is Send + Sync
-unsafe impl Send for UserRepo {}
-unsafe impl Sync for UserRepo {}
-
 impl UserRepo {
     pub fn new(db: &Database) -> Self {
         Self {

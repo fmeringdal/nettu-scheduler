@@ -13,10 +13,6 @@ pub struct CalendarRepo {
     collection: RwLock<Collection>,
 }
 
-// RwLock is Send + Sync
-unsafe impl Send for CalendarRepo {}
-unsafe impl Sync for CalendarRepo {}
-
 impl CalendarRepo {
     pub fn new(db: &Database) -> Self {
         Self {

@@ -15,10 +15,6 @@ pub struct EventRepo {
     collection: RwLock<Collection>,
 }
 
-// RwLock is Send + Sync
-unsafe impl Send for EventRepo {}
-unsafe impl Sync for EventRepo {}
-
 impl EventRepo {
     pub fn new(db: &Database) -> Self {
         Self {
