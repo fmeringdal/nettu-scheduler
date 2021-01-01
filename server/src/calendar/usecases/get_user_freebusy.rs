@@ -1,10 +1,10 @@
-use crate::{
-    calendar::repos::ICalendarRepo, shared::auth::ensure_nettu_acct_header, user::domain::User,
-};
 use crate::event::domain::event_instance::get_free_busy;
 use crate::event::domain::event_instance::EventInstance;
 use crate::event::repos::IEventRepo;
 use crate::{api::Context, calendar::domain::calendar_view::CalendarView};
+use crate::{
+    calendar::repos::ICalendarRepo, shared::auth::ensure_nettu_acct_header, user::domain::User,
+};
 use actix_web::{web, HttpRequest, HttpResponse};
 use futures::future::join_all;
 use serde::{Deserialize, Serialize};

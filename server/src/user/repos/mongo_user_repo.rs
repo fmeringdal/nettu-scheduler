@@ -1,13 +1,13 @@
 use crate::{shared::mongo_repo::MongoPersistence, user::domain::User};
 
+use super::IUserRepo;
+use crate::shared::mongo_repo;
 use mongodb::{
     bson::{doc, from_bson, to_bson, Document},
     Collection, Database,
 };
 use std::error::Error;
 use tokio::sync::RwLock;
-use crate::shared::mongo_repo;
-use super::IUserRepo;
 
 pub struct UserRepo {
     collection: RwLock<Collection>,
@@ -30,14 +30,14 @@ impl IUserRepo for UserRepo {
     async fn insert(&self, user: &User) -> Result<(), Box<dyn Error>> {
         match mongo_repo::insert(&self.collection, user).await {
             Ok(_) => Ok(()),
-            Err(_) => Ok(()) // fix this
+            Err(_) => Ok(()), // fix this
         }
     }
 
     async fn save(&self, user: &User) -> Result<(), Box<dyn Error>> {
         match mongo_repo::save(&self.collection, user).await {
             Ok(_) => Ok(()),
-            Err(_) => Ok(()) // fix this
+            Err(_) => Ok(()), // fix this
         }
     }
 
@@ -52,7 +52,6 @@ impl IUserRepo for UserRepo {
     }
 }
 
-
 impl MongoPersistence for User {
     fn to_domain(doc: Document) -> Self {
         let user = User {
@@ -60,7 +59,7 @@ impl MongoPersistence for User {
             account_id: from_bson(doc.get("account_id").unwrap().clone()).unwrap(),
             external_id: from_bson(doc.get("external_id").unwrap().clone()).unwrap(),
         };
-    
+
         user
     }
 
@@ -70,7 +69,7 @@ impl MongoPersistence for User {
             "account_id": to_bson(&self.account_id).unwrap(),
             "external_id": to_bson(&self.external_id).unwrap(),
         };
-    
+
         raw
     }
 

@@ -2,8 +2,7 @@ use mongodb::bson::oid::ObjectId;
 
 use crate::shared::entity::Entity;
 
-
-use rand::{Rng};
+use rand::Rng;
 
 const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ\
                             abcdefghijklmnopqrstuvwxyz\

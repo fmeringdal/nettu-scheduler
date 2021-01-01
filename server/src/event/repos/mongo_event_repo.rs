@@ -6,9 +6,9 @@ use mongodb::{
 };
 use tokio::sync::RwLock;
 
-use crate::{calendar::domain::calendar_view::CalendarView, event::domain::event::CalendarEvent};
-use crate::shared::mongo_repo;
 use super::repos::{DeleteResult, IEventRepo};
+use crate::shared::mongo_repo;
+use crate::{calendar::domain::calendar_view::CalendarView, event::domain::event::CalendarEvent};
 use std::error::Error;
 
 pub struct EventRepo {
@@ -27,27 +27,26 @@ impl EventRepo {
     }
 }
 
-
 #[async_trait::async_trait]
 impl IEventRepo for EventRepo {
     async fn insert(&self, e: &CalendarEvent) -> Result<(), Box<dyn Error>> {
         match mongo_repo::insert(&self.collection, e).await {
             Ok(_) => Ok(()),
-            Err(_) => Ok(()) // fix this
+            Err(_) => Ok(()), // fix this
         }
     }
 
     async fn save(&self, e: &CalendarEvent) -> Result<(), Box<dyn Error>> {
         match mongo_repo::save(&self.collection, e).await {
             Ok(_) => Ok(()),
-            Err(_) => Ok(()) // fix this
+            Err(_) => Ok(()), // fix this
         }
     }
 
     async fn find(&self, event_id: &str) -> Option<CalendarEvent> {
         let id = match ObjectId::with_string(event_id) {
             Ok(oid) => mongo_repo::MongoPersistenceID::ObjectId(oid),
-            Err(_) => return None
+            Err(_) => return None,
         };
         mongo_repo::find(&self.collection, &id).await
     }
@@ -84,7 +83,7 @@ impl IEventRepo for EventRepo {
     async fn delete(&self, event_id: &str) -> Option<CalendarEvent> {
         let id = match ObjectId::with_string(event_id) {
             Ok(oid) => mongo_repo::MongoPersistenceID::ObjectId(oid),
-            Err(_) => return None
+            Err(_) => return None,
         };
         mongo_repo::delete(&self.collection, &id).await
     }
@@ -103,14 +102,13 @@ impl IEventRepo for EventRepo {
     }
 }
 
-
 impl MongoPersistence for CalendarEvent {
     fn to_domain(doc: Document) -> Self {
         let id = match doc.get("_id").unwrap() {
             Bson::ObjectId(oid) => oid.to_string(),
             _ => unreachable!("This should not happen"),
         };
-    
+
         let mut e = CalendarEvent {
             id,
             start_ts: from_bson(doc.get("start_ts").unwrap().clone()).unwrap(),
@@ -122,7 +120,7 @@ impl MongoPersistence for CalendarEvent {
             calendar_id: from_bson(doc.get("calendar_id").unwrap().clone()).unwrap(),
             user_id: from_bson(doc.get("user_id").unwrap().clone()).unwrap(),
         };
-    
+
         if let Some(rrule_opts_bson) = doc.get("recurrence") {
             e.set_reccurrence(from_bson(rrule_opts_bson.clone()).unwrap(), false);
         };

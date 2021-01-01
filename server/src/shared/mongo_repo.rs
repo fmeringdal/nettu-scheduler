@@ -1,12 +1,15 @@
 use anyhow::Result;
-use mongodb::{Collection, bson::{Document, doc, oid::ObjectId}};
-use tokio::sync::RwLock;
-use std::error::Error;
 use futures::stream::StreamExt;
+use mongodb::{
+    bson::{doc, oid::ObjectId, Document},
+    Collection,
+};
+use std::error::Error;
+use tokio::sync::RwLock;
 
 pub enum MongoPersistenceID {
     ObjectId(ObjectId),
-    String(String)
+    String(String),
 }
 
 pub trait MongoPersistence {
@@ -22,7 +25,7 @@ fn get_id_filter<T: MongoPersistence>(val_id: &MongoPersistenceID) -> Document {
         },
         MongoPersistenceID::String(id) => doc! {
             "_id": id
-        }
+        },
     }
 }
 
@@ -40,12 +43,18 @@ pub async fn save<T: MongoPersistence>(collection: &RwLock<Collection>, val: &T)
     Ok(())
 }
 
-pub async fn find<T: MongoPersistence>(collection: &RwLock<Collection>, id: &MongoPersistenceID) -> Option<T> {
+pub async fn find<T: MongoPersistence>(
+    collection: &RwLock<Collection>,
+    id: &MongoPersistenceID,
+) -> Option<T> {
     let filter = get_id_filter::<T>(id);
     find_one_by(collection, filter).await
 }
 
-pub async fn find_one_by<T: MongoPersistence>(collection: &RwLock<Collection>, filter: Document) -> Option<T> {
+pub async fn find_one_by<T: MongoPersistence>(
+    collection: &RwLock<Collection>,
+    filter: Document,
+) -> Option<T> {
     let coll = collection.read().await;
     let res = coll.find_one(filter, None).await;
     match res {
@@ -59,7 +68,7 @@ pub async fn find_one_by<T: MongoPersistence>(collection: &RwLock<Collection>, f
 
 pub async fn find_many_by<T: MongoPersistence>(
     collection: &RwLock<Collection>,
-    filter: Document
+    filter: Document,
 ) -> Result<Vec<T>, Box<dyn Error>> {
     let coll = collection.read().await;
     let res = coll.find(filter, None).await;
@@ -84,7 +93,10 @@ pub async fn find_many_by<T: MongoPersistence>(
     }
 }
 
-pub async fn delete<T: MongoPersistence>(collection: &RwLock<Collection>, id: &MongoPersistenceID) -> Option<T> {
+pub async fn delete<T: MongoPersistence>(
+    collection: &RwLock<Collection>,
+    id: &MongoPersistenceID,
+) -> Option<T> {
     let filter = get_id_filter::<T>(id);
     let coll = collection.read().await;
     let res = coll.find_one_and_delete(filter, None).await;

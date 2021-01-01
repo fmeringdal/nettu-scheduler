@@ -111,7 +111,6 @@ mod test {
     };
 
     use super::*;
-    
 
     #[actix_web::main]
     #[test]

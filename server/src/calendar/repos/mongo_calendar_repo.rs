@@ -1,4 +1,6 @@
+use super::ICalendarRepo;
 use crate::calendar::domain::calendar::Calendar;
+use crate::shared::mongo_repo;
 use mongo_repo::MongoPersistence;
 use mongodb::{
     bson::{doc, from_bson, oid::ObjectId, Bson, Document},
@@ -6,8 +8,6 @@ use mongodb::{
 };
 use std::error::Error;
 use tokio::sync::RwLock;
-use crate::shared::mongo_repo;
-use super::ICalendarRepo;
 
 pub struct CalendarRepo {
     collection: RwLock<Collection>,
@@ -30,21 +30,21 @@ impl ICalendarRepo for CalendarRepo {
     async fn insert(&self, calendar: &Calendar) -> Result<(), Box<dyn Error>> {
         match mongo_repo::insert(&self.collection, calendar).await {
             Ok(_) => Ok(()),
-            Err(_) => Ok(()) // fix this
+            Err(_) => Ok(()), // fix this
         }
     }
 
     async fn save(&self, calendar: &Calendar) -> Result<(), Box<dyn Error>> {
         match mongo_repo::save(&self.collection, calendar).await {
             Ok(_) => Ok(()),
-            Err(_) => Ok(()) // fix this
+            Err(_) => Ok(()), // fix this
         }
     }
 
     async fn find(&self, calendar_id: &str) -> Option<Calendar> {
         let id = match ObjectId::with_string(calendar_id) {
             Ok(oid) => mongo_repo::MongoPersistenceID::ObjectId(oid),
-            Err(_) => return None
+            Err(_) => return None,
         };
         mongo_repo::find(&self.collection, &id).await
     }
@@ -55,14 +55,14 @@ impl ICalendarRepo for CalendarRepo {
         };
         match mongo_repo::find_many_by(&self.collection, filter).await {
             Ok(cals) => cals,
-            Err(_) => vec![]
+            Err(_) => vec![],
         }
     }
 
     async fn delete(&self, calendar_id: &str) -> Option<Calendar> {
         let id = match ObjectId::with_string(calendar_id) {
             Ok(oid) => mongo_repo::MongoPersistenceID::ObjectId(oid),
-            Err(_) => return None
+            Err(_) => return None,
         };
         mongo_repo::delete(&self.collection, &id).await
     }
@@ -74,12 +74,12 @@ impl MongoPersistence for Calendar {
             Bson::ObjectId(oid) => oid.to_string(),
             _ => unreachable!("This should not happen"),
         };
-    
+
         let calendar = Calendar {
             id,
             user_id: from_bson(doc.get("user_id").unwrap().clone()).unwrap(),
         };
-    
+
         calendar
     }
 
@@ -88,7 +88,7 @@ impl MongoPersistence for Calendar {
             "_id": ObjectId::with_string(&self.id).unwrap(),
             "user_id": self.user_id.clone(),
         };
-    
+
         raw
     }
 

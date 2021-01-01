@@ -1,8 +1,5 @@
-
-use crate::{
-    shared::auth::{protect_account_route, AccountAuthContext},
-};
-use crate::{api::Context};
+use crate::api::Context;
+use crate::shared::auth::{protect_account_route, AccountAuthContext};
 use actix_web::{web, HttpResponse};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;

@@ -1,9 +1,9 @@
+use crate::account::domain::Account;
 use crate::account::repos::IAccountRepo;
-use crate::{account::domain::Account};
-use crate::{api::Context};
+use crate::api::Context;
 use actix_web::{web, HttpResponse};
 
-use serde::{Serialize};
+use serde::Serialize;
 use std::sync::Arc;
 
 pub async fn create_account_controller(ctx: web::Data<Context>) -> HttpResponse {

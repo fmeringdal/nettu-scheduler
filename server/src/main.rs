@@ -25,8 +25,8 @@ async fn main() -> std::io::Result<()> {
         Repos::create_inmemory()
     } else {
         Repos::create_mongodb()
-        .await
-        .expect("Mongo db creds must be set and valid")
+            .await
+            .expect("Mongo db creds must be set and valid")
     };
 
     HttpServer::new(move || {

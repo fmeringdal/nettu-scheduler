@@ -3,7 +3,7 @@ use crate::{calendar::domain::calendar::Calendar, shared::auth::AuthContext};
 use crate::{calendar::repos::ICalendarRepo, user::domain::User};
 use actix_web::{web, HttpResponse};
 use mongodb::bson::oid::ObjectId;
-use serde::{Serialize};
+use serde::Serialize;
 use std::sync::Arc;
 
 pub async fn create_calendar_controller(

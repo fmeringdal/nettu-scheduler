@@ -1,5 +1,7 @@
 use crate::account::domain::Account;
 
+use super::IAccountRepo;
+use crate::shared::mongo_repo;
 use mongo_repo::MongoPersistence;
 use mongodb::{
     bson::{doc, from_bson, oid::ObjectId, to_bson, Bson, Document},
@@ -7,8 +9,6 @@ use mongodb::{
 };
 use std::error::Error;
 use tokio::sync::RwLock;
-use crate::shared::mongo_repo;
-use super::IAccountRepo;
 
 pub struct AccountRepo {
     collection: RwLock<Collection>,
@@ -31,21 +31,21 @@ impl IAccountRepo for AccountRepo {
     async fn insert(&self, account: &Account) -> Result<(), Box<dyn Error>> {
         match mongo_repo::insert(&self.collection, account).await {
             Ok(_) => Ok(()),
-            Err(_) => Ok(()) // fix this
+            Err(_) => Ok(()), // fix this
         }
     }
 
     async fn save(&self, account: &Account) -> Result<(), Box<dyn Error>> {
         match mongo_repo::save(&self.collection, account).await {
             Ok(_) => Ok(()),
-            Err(_) => Ok(()) // fix this
+            Err(_) => Ok(()), // fix this
         }
     }
 
     async fn find(&self, account_id: &str) -> Option<Account> {
         let id = match ObjectId::with_string(account_id) {
             Ok(oid) => mongo_repo::MongoPersistenceID::ObjectId(oid),
-            Err(_) => return None
+            Err(_) => return None,
         };
         mongo_repo::find(&self.collection, &id).await
     }
@@ -60,12 +60,11 @@ impl IAccountRepo for AccountRepo {
     async fn delete(&self, account_id: &str) -> Option<Account> {
         let id = match ObjectId::with_string(account_id) {
             Ok(oid) => mongo_repo::MongoPersistenceID::ObjectId(oid),
-            Err(_) => return None
+            Err(_) => return None,
         };
         mongo_repo::delete(&self.collection, &id).await
     }
 }
-
 
 impl MongoPersistence for Account {
     fn to_domain(doc: Document) -> Self {
@@ -73,18 +72,18 @@ impl MongoPersistence for Account {
             Bson::ObjectId(oid) => oid.to_string(),
             _ => unreachable!("This should not happen"),
         };
-    
+
         let public_key_b64 = match doc.get("public_key_b64") {
             Some(bson) => from_bson(bson.clone()).unwrap_or(None),
             None => None,
         };
-    
+
         let account = Account {
             id,
             public_key_b64,
             secret_api_key: from_bson(doc.get("secret_api_key").unwrap().clone()).unwrap(),
         };
-    
+
         account
     }
 
@@ -96,7 +95,7 @@ impl MongoPersistence for Account {
         if let Ok(public_key_b64) = to_bson(&self.public_key_b64) {
             raw.insert("public_key_b64", public_key_b64);
         }
-    
+
         raw
     }
 

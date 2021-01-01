@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use crate::{shared::entity::Entity};
+use crate::shared::entity::Entity;
 
 #[derive(Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
