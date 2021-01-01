@@ -37,6 +37,7 @@ impl IEventRepo for InMemoryEventRepo {
         view: Option<&CalendarView>,
     ) -> Result<Vec<CalendarEvent>, Box<dyn Error>> {
         let events = self.calendar_events.lock().unwrap();
+        println!("Find by calendar amoung events: {:?}", events);
         let mut res = vec![];
         for event in events.iter() {
             if event.calendar_id == calendar_id {

@@ -165,10 +165,10 @@ fn to_domain(raw: Document) -> CalendarEvent {
         id,
         start_ts: from_bson(raw.get("start_ts").unwrap().clone()).unwrap(),
         duration: from_bson(raw.get("duration").unwrap().clone()).unwrap(),
-        recurrence: None,
+        recurrence: from_bson(raw.get("recurrence").unwrap().clone()).unwrap(),
         end_ts: from_bson(raw.get("end_ts").unwrap().clone()).unwrap(),
         busy: from_bson(raw.get("busy").unwrap().clone()).unwrap(),
-        exdates: vec![],
+        exdates: from_bson(raw.get("exdates").unwrap().clone()).unwrap(),
         calendar_id: from_bson(raw.get("calendar_id").unwrap().clone()).unwrap(),
         user_id: from_bson(raw.get("user_id").unwrap().clone()).unwrap(),
     };

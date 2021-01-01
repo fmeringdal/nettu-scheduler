@@ -2,55 +2,71 @@ import axios, { AxiosResponse } from "axios";
 
 // TODO: add generics and return APIResponse in the other http methods (remaining: PUT, POST, DELETE, done: GET)
 export abstract class NettuBaseClient {
-  private config = {
+  private readonly config = {
     baseUrl: "http://localhost:5000",
   };
-  public static userId = "coooltestuser";
-  public static token =
-    "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjb29vbHRlc3R1c2VyIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjE5MTYyMzkwMjJ9.O1ENncekZdLZC8QkYa2Kz8ih6CDq0cCrx-nxiSgtrcFTr6fwxIBgEqg-eWnqKheFvgcF4wWoVwmp2so6bnsHDgeRowG7k8iRRP963zBiqZpXWRQNRJEuyjyRUeYknYsCuF6pWsCwANlULvM6axCGMv69C0urd9Qiv82Xw6Ox9-nLKmnzVcuXnPXFTG-GUPS4QiVsLA70pyq5tLiixHm9mtT2OcPX-n2kjXfQrHG9wzQL6peGIB7A6jNlP5wtDQJ0MQ4bnXJTMRTbiXLl86X_t2zxj_1FkY0z5VbDFtoaEKqaXj4pECUZZ6V__kqDBX9hYmW66OZdTugKLFxVRGHFnQ";
-  private authHeaders = {
-    authorization: `Bearer ${NettuBaseClient.token}`,
-  };
+  private readonly credentials: Credentials;
 
-  private getAxiosConfig = (auth: boolean) => ({
+  constructor(credentials: Credentials) {
+    this.credentials = credentials;
+  }
+
+  private createAuthHeaders() {
+    if (this.credentials.isAccountCredentials()) {
+      return {
+        "x-api-key": this.credentials.accountCreds!.apiKey,
+      };
+    } else if (this.credentials.isUserCredentials()) {
+      const creds: any = {
+        "nettu-account": this.credentials.userCreds!.nettuAccount,
+      };
+      if (this.credentials.userCreds!.token) {
+        creds["authorization"] = `Bearer ${this.credentials.userCreds!.token}`;
+      }
+
+      return creds;
+    } else {
+      return {};
+    }
+  }
+
+  private getAxiosConfig = () => ({
     validateStatus: () => true, // allow all status codes without throwing error
-    headers: auth ? this.authHeaders : undefined,
+    headers: this.createAuthHeaders(),
   });
 
-  protected async get<T>(path: string, auth: boolean): Promise<APIResponse<T>> {
+  protected async get<T>(path: string): Promise<APIResponse<T>> {
     const res = await axios.get(
       this.config.baseUrl + path,
-      this.getAxiosConfig(auth)
+      this.getAxiosConfig()
     );
     return new APIResponse(res);
   }
 
-  protected async delete(path: string, auth: boolean): Promise<AxiosResponse> {
-    return axios.delete(this.config.baseUrl + path, this.getAxiosConfig(auth));
+  protected async delete<T>(path: string): Promise<APIResponse<T>> {
+    const res = await axios.delete(
+      this.config.baseUrl + path,
+      this.getAxiosConfig()
+    );
+    return new APIResponse(res);
   }
 
-  protected async post(
-    path: string,
-    data: any,
-    auth: boolean
-  ): Promise<AxiosResponse> {
-    return axios.post(
+  protected async post<T>(path: string, data: any): Promise<APIResponse<T>> {
+    const res = await axios.post(
       this.config.baseUrl + path,
       data,
-      this.getAxiosConfig(auth)
+      this.getAxiosConfig()
     );
+    return new APIResponse(res);
   }
 
-  protected async put(
-    path: string,
-    data: any,
-    auth: boolean
-  ): Promise<AxiosResponse> {
-    return axios.put(
+  protected async put<T>(path: string, data: any): Promise<APIResponse<T>> {
+    const res = await axios.put(
       this.config.baseUrl + path,
       data,
-      this.getAxiosConfig(auth)
+      this.getAxiosConfig()
     );
+    return new APIResponse(res);
   }
 }
 
@@ -63,5 +79,45 @@ export class APIResponse<T> {
     this.res = res;
     this.data = res.data;
     this.status = res.status;
+  }
+}
+
+export type UserCreds = {
+  nettuAccount: string;
+  token?: string;
+};
+
+export type AccountCreds = {
+  apiKey: string;
+};
+
+export class Credentials {
+  readonly userCreds?: UserCreds;
+  readonly accountCreds?: AccountCreds;
+
+  private constructor(userCreds?: UserCreds, accountCreds?: AccountCreds) {
+    this.userCreds = userCreds;
+    this.accountCreds = accountCreds;
+  }
+
+  public isAccountCredentials(): boolean {
+    return this.accountCreds !== undefined;
+  }
+
+  public isUserCredentials(): boolean {
+    // Account credentials take preference over user credentials (they should never both be set, butbut ...)
+    return !this.isAccountCredentials() && this.userCreds !== undefined;
+  }
+
+  public static createFromSecretKey(creds: AccountCreds): Credentials {
+    return new Credentials(undefined, creds);
+  }
+
+  public static createForUser(creds: UserCreds): Credentials {
+    return new Credentials(creds, undefined);
+  }
+
+  public static createEmpty(): Credentials {
+    return new Credentials(undefined, undefined);
   }
 }

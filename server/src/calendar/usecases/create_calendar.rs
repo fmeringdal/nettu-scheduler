@@ -1,4 +1,4 @@
-use crate::calendar::repos::ICalendarRepo;
+use crate::{calendar::repos::ICalendarRepo, user::domain::User};
 use crate::{api::Context, shared::auth::protect_route};
 use crate::{calendar::domain::calendar::Calendar, shared::auth::AuthContext};
 use actix_web::{web, HttpResponse};
@@ -23,7 +23,7 @@ pub async fn create_calendar_controller(
         Err(res) => return res,
     };
     let res = create_calendar_usecase(
-        CreateCalendarReq { user_id: user.id },
+        CreateCalendarReq { user },
         CreateCalendarUseCaseCtx {
             calendar_repo: Arc::clone(&ctx.repos.calendar_repo),
         },
@@ -37,7 +37,7 @@ pub async fn create_calendar_controller(
 }
 
 struct CreateCalendarReq {
-    pub user_id: String,
+    pub user: User,
 }
 
 #[derive(Serialize)]
@@ -56,7 +56,7 @@ async fn create_calendar_usecase(
 ) -> Result<CreateCalendarRes, anyhow::Error> {
     let calendar = Calendar {
         id: ObjectId::new().to_string(),
-        user_id: req.user_id,
+        user_id: req.user.external_id(),
     };
     let res = ctx.calendar_repo.insert(&calendar).await;
     match res {

@@ -1,18 +1,15 @@
 use super::get_user_freebusy::{
     get_user_freebusy_usecase, GetUserFreeBusyReq, GetUserFreeBusyUseCaseCtx,
 };
-use crate::{
-    api::Context,
-    event::domain::booking_slots::{get_booking_slots, BookingSlot, BookingSlotsOptions},
-};
-use actix_web::{web, HttpResponse};
+use crate::{api::Context, event::domain::booking_slots::{get_booking_slots, BookingSlot, BookingSlotsOptions}, shared::auth::ensure_nettu_acct_header};
+use actix_web::{HttpRequest, HttpResponse, web};
 use chrono::{prelude::*, Duration};
 use chrono_tz::Tz;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize)]
 pub struct UserPathParams {
-    user_id: String,
+    external_user_id: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -25,17 +22,22 @@ pub struct UserBookingQuery {
 }
 
 pub async fn get_user_bookingslots_controller(
+    http_req: HttpRequest,
     query_params: web::Query<UserBookingQuery>,
     params: web::Path<UserPathParams>,
     ctx: web::Data<Context>,
 ) -> HttpResponse {
+    let account = match ensure_nettu_acct_header(&http_req) {
+        Ok(a) => a,
+        Err(e) => return e
+    };
     let calendar_ids = match &query_params.calendar_ids {
         Some(calendar_ids) => Some(calendar_ids.split(",").map(|s| String::from(s)).collect()),
         None => None,
     };
 
     let req = GetUserBookingSlotsReq {
-        user_id: params.user_id.clone(),
+        external_user_id: format!("{}#{}", account, params.external_user_id),
         calendar_ids,
         iana_tz: query_params.iana_tz.clone(),
         date: query_params.date.clone(),
@@ -70,7 +72,7 @@ pub async fn get_user_bookingslots_controller(
 
 #[derive(Serialize, Deserialize)]
 pub struct GetUserBookingSlotsReq {
-    pub user_id: String,
+    pub external_user_id: String,
     pub calendar_ids: Option<Vec<String>>,
     pub date: String,
     pub iana_tz: Option<String>,
@@ -110,7 +112,7 @@ async fn get_user_bookingslots_usecase(
             calendar_ids: req.calendar_ids,
             end_ts: end_of_day.timestamp_millis(),
             start_ts: start_of_day.timestamp_millis(),
-            user_id: req.user_id,
+            external_user_id: req.external_user_id,
         },
         ctx,
     )

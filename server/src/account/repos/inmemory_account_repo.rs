@@ -34,4 +34,14 @@ impl IAccountRepo for InMemoryAccountRepo {
     async fn delete(&self, account_id: &str) -> Option<Account> {
         delete(account_id, &self.accounts)
     }
+
+    async fn find_by_apikey(&self, api_key: &str) -> Option<Account> {
+        let accounts = self.accounts.lock().unwrap();
+        for i in 0..accounts.len() {
+            if accounts[i].secret_api_key == api_key {
+                return Some(accounts[i].clone());
+            }
+        }
+        None
+    }
 }

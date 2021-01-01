@@ -1,7 +1,7 @@
 use crate::account::domain::Account;
 use futures::stream::StreamExt;
 use mongodb::{
-    bson::{doc, from_bson, oid::ObjectId, Bson, Document},
+    bson::{doc, from_bson, oid::ObjectId, Bson, Document, to_bson},
     Collection, Database,
 };
 use std::error::Error;
@@ -57,6 +57,21 @@ impl IAccountRepo for AccountRepo {
         }
     }
 
+    async fn find_by_apikey(&self, api_key: &str) -> Option<Account> {
+        let filter = doc! {
+            "secret_api_key": api_key
+        };
+        let coll = self.collection.read().await;
+        let res = coll.find_one(filter, None).await;
+        match res {
+            Ok(doc) if doc.is_some() => {
+                let account = to_domain(doc.unwrap());
+                Some(account)
+            }
+            _ => None,
+        }
+    }
+
     async fn delete(&self, account_id: &str) -> Option<Account> {
         let filter = doc! {
             "_id": ObjectId::with_string(account_id).unwrap()
@@ -74,9 +89,13 @@ impl IAccountRepo for AccountRepo {
 }
 
 fn to_persistence(account: &Account) -> Document {
-    let raw = doc! {
-        "_id": ObjectId::with_string(&account.id).unwrap()
+    let mut raw = doc! {
+        "_id": ObjectId::with_string(&account.id).unwrap(),
+        "secret_api_key": to_bson(&account.secret_api_key).unwrap()
     };
+    if let Ok(public_key_b64) = to_bson(&account.public_key_b64) {
+        raw.insert("public_key_b64", public_key_b64);
+    }
 
     raw
 }
@@ -87,9 +106,15 @@ fn to_domain(raw: Document) -> Account {
         _ => unreachable!("This should not happen"),
     };
 
+    let public_key_b64 = match raw.get("public_key_b64") {
+        Some(bson) => from_bson(bson.clone()).unwrap_or(None),
+        None => None
+    };
+
     let account = Account {
         id,
-        public_key_b64: from_bson(raw.get("public_key_b64").unwrap().clone()).unwrap(),
+        public_key_b64,
+        secret_api_key: from_bson(raw.get("secret_api_key").unwrap().clone()).unwrap()
     };
 
     account

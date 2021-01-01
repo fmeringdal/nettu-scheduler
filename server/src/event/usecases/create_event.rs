@@ -3,7 +3,7 @@ use crate::{
     calendar::repos::ICalendarRepo,
     event::domain::event::{CalendarEvent, RRuleOptions},
 };
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpResponse};
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -25,7 +25,7 @@ pub struct CreateEventRes {
 }
 
 pub async fn create_event_controller(
-    http_req: HttpRequest,
+    http_req: web::HttpRequest,
     req: web::Json<CreateEventReq>,
     ctx: web::Data<Context>,
 ) -> HttpResponse {
@@ -73,7 +73,7 @@ async fn create_event_usecase(
     ctx: CreateEventUseCaseCtx,
 ) -> Result<CalendarEvent, CreateCalendarEventErrors> {
     let calendar = match ctx.calendar_repo.find(&event.calendar_id).await {
-        Some(calendar) if calendar.user_id == user.id => calendar,
+        Some(calendar) if calendar.user_id == user.external_id() => calendar,
         _ => return Err(CreateCalendarEventErrors::NotFoundError),
     };
 

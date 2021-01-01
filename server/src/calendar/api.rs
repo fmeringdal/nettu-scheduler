@@ -21,11 +21,11 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
         web::get().to(get_calendar_events_controller),
     );
     cfg.route(
-        "/user/{user_id}/freebusy",
+        "/user/{external_user_id}/freebusy",
         web::get().to(get_user_freebusy_controller),
     );
     cfg.route(
-        "/user/{user_id}/booking",
+        "/user/{external_user_id}/booking",
         web::get().to(get_user_bookingslots_controller),
     );
 }

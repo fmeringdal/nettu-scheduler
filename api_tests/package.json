@@ -14,8 +14,10 @@
   },
   "dependencies": {
     "@types/jest": "^26.0.19",
+    "@types/jsonwebtoken": "^8.5.0",
     "axios": "^0.21.1",
     "jest": "^26.6.3",
+    "jsonwebtoken": "^8.5.1",
     "ts-jest": "^26.4.4"
   }
 }

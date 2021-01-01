@@ -43,6 +43,7 @@ async fn main() -> std::io::Result<()> {
             .data(ctx)
             .configure(|cfg| event::api::configure_routes(cfg))
             .configure(|cfg| calendar::api::configure_routes(cfg))
+            .configure(|cfg| account::api::configure_routes(cfg))
     })
     .bind("0.0.0.0:5000")?
     .workers(4)

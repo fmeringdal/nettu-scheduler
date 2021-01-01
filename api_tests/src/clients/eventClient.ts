@@ -30,36 +30,32 @@ export type Timespan = {
 };
 
 export class NettuEventClient extends NettuBaseClient {
-  public update(eventId: string, data: UpdateCalendarEventReq, auth: boolean) {
-    return this.put(`/events/${eventId}`, data, auth);
+  public update(eventId: string, data: UpdateCalendarEventReq) {
+    return this.put<any>(`/events/${eventId}`, data);
   }
 
-  public insert(data: CreateCalendarEventReq, auth: boolean) {
-    return this.post("/events", data, auth);
+  public insert(data: CreateCalendarEventReq) {
+    return this.post<any>("/events", data);
   }
 
   public createException(
     eventId: string,
-    data: CreateCalendarEventExceptionReq,
-    auth: boolean
+    data: CreateCalendarEventExceptionReq
   ) {
-    return this.post(`/events/${eventId}/exception`, data, auth);
+    return this.post<any>(`/events/${eventId}/exception`, data);
   }
 
-  public findById(eventId: string, auth: boolean) {
-    return this.get<CalendarEvent>(`/events/${eventId}`, auth);
+  public findById(eventId: string) {
+    return this.get<CalendarEvent>(`/events/${eventId}`);
   }
 
-  public remove(eventId: string, auth: boolean) {
-    return this.delete(`/events/${eventId}`, auth);
+  public remove(eventId: string) {
+    return this.delete<any>(`/events/${eventId}`);
   }
 
-  public getInstances(eventId: string, timespan: Timespan, auth: boolean) {
+  public getInstances(eventId: string, timespan: Timespan) {
     return this.get<{ instances: CalendarEventInstance[] }>(
-      `/events/${eventId}/instances?startTs=${timespan.startTs}&endTs=${timespan.endTs}`,
-      auth
+      `/events/${eventId}/instances?startTs=${timespan.startTs}&endTs=${timespan.endTs}`
     );
   }
 }
-
-export const nettuEventClient = new NettuEventClient();

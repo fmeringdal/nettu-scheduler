@@ -1,9 +1,6 @@
 use crate::user::domain::User;
 use futures::stream::StreamExt;
-use mongodb::{
-    bson::{doc, from_bson, oid::ObjectId, Bson, Document},
-    Collection, Database,
-};
+use mongodb::{Collection, Database, bson::{Bson, Document, doc, from_bson, oid::ObjectId, to_bson}};
 use std::error::Error;
 use tokio::sync::RwLock;
 
@@ -76,7 +73,9 @@ impl IUserRepo for UserRepo {
 
 fn to_persistence(user: &User) -> Document {
     let raw = doc! {
-        "_id": ObjectId::with_string(&user.id).unwrap()
+        "_id": ObjectId::with_string(&user.id).unwrap(),
+        "account_id": to_bson(&user.account_id).unwrap(),
+        "external_id": to_bson(&user.external_id).unwrap(),
     };
 
     raw

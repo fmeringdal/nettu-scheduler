@@ -1,8 +1,10 @@
-import { Client } from "./clients";
+import { NettuClient } from "./clients";
 
 describe("Health API", () => {
+  const client = NettuClient();
+
   it("should report healthy status", async () => {
-    const status = await Client.health.checkStatus();
+    const status = await client.health.checkStatus();
     expect(status).toBe(200);
   });
 });

@@ -1,11 +1,11 @@
-use crate::calendar::repos::ICalendarRepo;
+use crate::{calendar::repos::ICalendarRepo, shared::auth::ensure_nettu_acct_header};
 
 use crate::event::domain::event_instance::get_free_busy;
 use crate::event::domain::event_instance::EventInstance;
 use crate::event::repos::IEventRepo;
 
 use crate::{api::Context, calendar::domain::calendar_view::CalendarView};
-use actix_web::{web, HttpResponse};
+use actix_web::{HttpRequest, HttpResponse, web};
 
 use futures::future::join_all;
 use serde::{Deserialize, Serialize};
@@ -13,7 +13,7 @@ use std::sync::Arc;
 
 #[derive(Debug, Deserialize)]
 pub struct UserPathParams {
-    user_id: String,
+    external_user_id: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -25,17 +25,22 @@ pub struct UserFreebusyQuery {
 }
 
 pub async fn get_user_freebusy_controller(
+    http_req: HttpRequest,
     query_params: web::Query<UserFreebusyQuery>,
     params: web::Path<UserPathParams>,
     ctx: web::Data<Context>,
 ) -> HttpResponse {
+    let account = match ensure_nettu_acct_header(&http_req) {
+        Ok(a) => a,
+        Err(e) => return e
+    };
     let calendar_ids = match &query_params.calendar_ids {
         Some(calendar_ids) => Some(calendar_ids.split(",").map(|s| String::from(s)).collect()),
         None => None,
     };
 
     let req = GetUserFreeBusyReq {
-        user_id: params.user_id.clone(),
+        external_user_id: format!("{}#{}", account, params.external_user_id),
         calendar_ids,
         start_ts: query_params.start_ts,
         end_ts: query_params.end_ts,
@@ -58,7 +63,7 @@ pub async fn get_user_freebusy_controller(
 
 #[derive(Debug)]
 pub struct GetUserFreeBusyReq {
-    pub user_id: String,
+    pub external_user_id: String,
     pub calendar_ids: Option<Vec<String>>,
     pub start_ts: i64,
     pub end_ts: i64,
@@ -88,7 +93,8 @@ pub async fn get_user_freebusy_usecase(
     println!("view freebusy: {:?}", view);
 
     // can probably make query to event repo instead
-    let mut calendars = ctx.calendar_repo.find_by_user(&req.user_id).await;
+    let mut calendars = ctx.calendar_repo.find_by_user(&req.external_user_id).await;
+
     if let Some(calendar_ids) = req.calendar_ids {
         if !calendar_ids.is_empty() {
             calendars = calendars
@@ -97,6 +103,7 @@ pub async fn get_user_freebusy_usecase(
                 .collect();
         }
     }
+    println!("calendars {:?}", calendars);
 
     let all_events_futures = calendars
         .iter()
@@ -104,22 +111,14 @@ pub async fn get_user_freebusy_usecase(
     let mut all_events_instances = join_all(all_events_futures)
         .await
         .into_iter()
-        // .map(|events_res| {
-        //     println!("events_res: {:?}", events_res);
-        //     events_res
-        // })
+        .map(|events_res| {
+            println!("events_res: {:?}", events_res);
+            events_res
+        })
         .map(|events_res| events_res.unwrap_or_default())
         .map(|events| {
             events
                 .into_iter()
-                .map(|event| {
-                    if event.id == String::from("1") {
-                        println!("Expanding event: {:?}", event);
-                        println!("Expanding event in view: {:?}", view);
-                        println!("With result: {:?}", event.expand(Some(&view)));
-                    }
-                    event
-                })
                 .map(|event| event.expand(Some(&view)))
                 // It is possible that there are no instances in the expanded event, should remove them
                 .filter(|instances| !instances.is_empty())
@@ -177,7 +176,7 @@ mod test {
 
         let calendar = Calendar {
             id: String::from("312312"),
-            user_id: user.id.clone(),
+            user_id: user.external_id(),
         };
         calendar_repo.insert(&calendar).await;
 
@@ -263,7 +262,7 @@ mod test {
         };
 
         let req = GetUserFreeBusyReq {
-            user_id: user.id.clone(),
+            external_user_id: user.external_id(),
             calendar_ids: Some(vec![calendar.id.clone()]),
             start_ts: 86400000,
             end_ts: 172800000,

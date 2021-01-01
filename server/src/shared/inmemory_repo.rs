@@ -7,7 +7,7 @@ pub fn insert<T: Clone>(val: &T, collection: &Mutex<Vec<T>>) {
     collection.push(val.clone());
 }
 
-pub fn save<T: Clone + Entity>(val: &T, collection: &Mutex<Vec<T>>) {
+pub fn save<T: Clone + Entity + std::fmt::Debug>(val: &T, collection: &Mutex<Vec<T>>) {
     let mut collection = collection.lock().unwrap();
     for i in 0..collection.len() {
         if collection[i].id() == val.id() {
