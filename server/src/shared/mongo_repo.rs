@@ -42,6 +42,10 @@ pub async fn save<T: MongoPersistence>(collection: &RwLock<Collection>, val: &T)
 
 pub async fn find<T: MongoPersistence>(collection: &RwLock<Collection>, id: &MongoPersistenceID) -> Option<T> {
     let filter = get_id_filter::<T>(id);
+    find_one_by(collection, filter).await
+}
+
+pub async fn find_one_by<T: MongoPersistence>(collection: &RwLock<Collection>, filter: Document) -> Option<T> {
     let coll = collection.read().await;
     let res = coll.find_one(filter, None).await;
     match res {
