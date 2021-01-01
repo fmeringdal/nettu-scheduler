@@ -1,4 +1,4 @@
-use futures::stream::StreamExt;
+use mongo_repo::MongoPersistence;
 use mongodb::{
     bson::doc,
     bson::{from_bson, oid::ObjectId, to_bson, Bson, Document},
@@ -7,7 +7,7 @@ use mongodb::{
 use tokio::sync::RwLock;
 
 use crate::{calendar::domain::calendar_view::CalendarView, event::domain::event::CalendarEvent};
-
+use crate::shared::mongo_repo;
 use super::repos::{DeleteResult, IEventRepo};
 use std::error::Error;
 
@@ -27,37 +27,29 @@ impl EventRepo {
     }
 }
 
+
 #[async_trait::async_trait]
 impl IEventRepo for EventRepo {
     async fn insert(&self, e: &CalendarEvent) -> Result<(), Box<dyn Error>> {
-        let coll = self.collection.read().await;
-        let _res = coll.insert_one(to_persistence(e), None).await;
-        Ok(())
+        match mongo_repo::insert(&self.collection, e).await {
+            Ok(_) => Ok(()),
+            Err(_) => Ok(()) // fix this
+        }
     }
 
     async fn save(&self, e: &CalendarEvent) -> Result<(), Box<dyn Error>> {
-        let coll = self.collection.read().await;
-
-        let filter = doc! {
-            "_id": ObjectId::with_string(&e.id)?
-        };
-        let _res = coll.update_one(filter, to_persistence(e), None).await;
-        Ok(())
+        match mongo_repo::save(&self.collection, e).await {
+            Ok(_) => Ok(()),
+            Err(_) => Ok(()) // fix this
+        }
     }
 
     async fn find(&self, event_id: &str) -> Option<CalendarEvent> {
-        let filter = doc! {
-            "_id": ObjectId::with_string(event_id).unwrap()
+        let id = match ObjectId::with_string(event_id) {
+            Ok(oid) => mongo_repo::MongoPersistenceID::ObjectId(oid),
+            Err(_) => return None
         };
-        let coll = self.collection.read().await;
-        let res = coll.find_one(filter, None).await;
-        match res {
-            Ok(doc) if doc.is_some() => {
-                let event = to_domain(doc.unwrap());
-                Some(event)
-            }
-            _ => None,
-        }
+        mongo_repo::find(&self.collection, &id).await
     }
 
     async fn find_by_calendar(
@@ -65,7 +57,6 @@ impl IEventRepo for EventRepo {
         calendar_id: &str,
         view: Option<&CalendarView>,
     ) -> Result<Vec<CalendarEvent>, Box<dyn Error>> {
-        let coll = self.collection.read().await;
         let mut filter = doc! {
             "calendar_id": calendar_id
         };
@@ -86,41 +77,16 @@ impl IEventRepo for EventRepo {
                 ]
             };
         }
-        let res = coll.find(filter, None).await;
 
-        match res {
-            Ok(mut cursor) => {
-                let mut events = vec![];
-                while let Some(result) = cursor.next().await {
-                    match result {
-                        Ok(document) => {
-                            events.push(to_domain(document));
-                        }
-                        Err(e) => {
-                            println!("Error getting cursor calendar event: {:?}", e);
-                        }
-                    }
-                }
-
-                Ok(events)
-            }
-            Err(err) => Err(Box::new(err)),
-        }
+        mongo_repo::find_many_by(&self.collection, filter).await
     }
 
     async fn delete(&self, event_id: &str) -> Option<CalendarEvent> {
-        let filter = doc! {
-            "_id": ObjectId::with_string(event_id).unwrap()
+        let id = match ObjectId::with_string(event_id) {
+            Ok(oid) => mongo_repo::MongoPersistenceID::ObjectId(oid),
+            Err(_) => return None
         };
-        let coll = self.collection.read().await;
-        let res = coll.find_one_and_delete(filter, None).await;
-        match res {
-            Ok(doc) if doc.is_some() => {
-                let event = to_domain(doc.unwrap());
-                Some(event)
-            }
-            _ => None,
-        }
+        mongo_repo::delete(&self.collection, &id).await
     }
 
     async fn delete_by_calendar(&self, calendar_id: &str) -> Result<DeleteResult, Box<dyn Error>> {
@@ -137,45 +103,53 @@ impl IEventRepo for EventRepo {
     }
 }
 
-fn to_persistence(e: &CalendarEvent) -> Document {
-    let max_timestamp = 9999999999;
 
-    let mut d = doc! {
-        "_id": ObjectId::with_string(&e.id).unwrap(),
-        "start_ts": Bson::Int64(e.start_ts),
-        "duration": Bson::Int64(e.duration),
-        "busy": Bson::Boolean(e.busy),
-        "end_ts": Bson::Int64(e.end_ts.unwrap_or(max_timestamp)),
-        "user_id": e.user_id.clone(),
-        "exdates": e.exdates.clone(),
-        "calendar_id": e.calendar_id.clone(),
-    };
-    if let Some(recurrence) = &e.recurrence {
-        d.insert("recurrence", to_bson(recurrence).unwrap());
+impl MongoPersistence for CalendarEvent {
+    fn to_domain(doc: Document) -> Self {
+        let id = match doc.get("_id").unwrap() {
+            Bson::ObjectId(oid) => oid.to_string(),
+            _ => unreachable!("This should not happen"),
+        };
+    
+        let mut e = CalendarEvent {
+            id,
+            start_ts: from_bson(doc.get("start_ts").unwrap().clone()).unwrap(),
+            duration: from_bson(doc.get("duration").unwrap().clone()).unwrap(),
+            recurrence: from_bson(doc.get("recurrence").unwrap().clone()).unwrap(),
+            end_ts: from_bson(doc.get("end_ts").unwrap().clone()).unwrap(),
+            busy: from_bson(doc.get("busy").unwrap().clone()).unwrap(),
+            exdates: from_bson(doc.get("exdates").unwrap().clone()).unwrap(),
+            calendar_id: from_bson(doc.get("calendar_id").unwrap().clone()).unwrap(),
+            user_id: from_bson(doc.get("user_id").unwrap().clone()).unwrap(),
+        };
+    
+        if let Some(rrule_opts_bson) = doc.get("recurrence") {
+            e.set_reccurrence(from_bson(rrule_opts_bson.clone()).unwrap(), false);
+        };
+        e
     }
-    d
-}
 
-fn to_domain(raw: Document) -> CalendarEvent {
-    let id = match raw.get("_id").unwrap() {
-        Bson::ObjectId(oid) => oid.to_string(),
-        _ => unreachable!("This should not happen"),
-    };
+    fn to_persistence(&self) -> Document {
+        let max_timestamp = 9999999999;
 
-    let mut e = CalendarEvent {
-        id,
-        start_ts: from_bson(raw.get("start_ts").unwrap().clone()).unwrap(),
-        duration: from_bson(raw.get("duration").unwrap().clone()).unwrap(),
-        recurrence: from_bson(raw.get("recurrence").unwrap().clone()).unwrap(),
-        end_ts: from_bson(raw.get("end_ts").unwrap().clone()).unwrap(),
-        busy: from_bson(raw.get("busy").unwrap().clone()).unwrap(),
-        exdates: from_bson(raw.get("exdates").unwrap().clone()).unwrap(),
-        calendar_id: from_bson(raw.get("calendar_id").unwrap().clone()).unwrap(),
-        user_id: from_bson(raw.get("user_id").unwrap().clone()).unwrap(),
-    };
+        let mut d = doc! {
+            "_id": ObjectId::with_string(&self.id).unwrap(),
+            "start_ts": Bson::Int64(self.start_ts),
+            "duration": Bson::Int64(self.duration),
+            "busy": Bson::Boolean(self.busy),
+            "end_ts": Bson::Int64(self.end_ts.unwrap_or(max_timestamp)),
+            "user_id": self.user_id.clone(),
+            "exdates": self.exdates.clone(),
+            "calendar_id": self.calendar_id.clone(),
+        };
+        if let Some(recurrence) = &self.recurrence {
+            d.insert("recurrence", to_bson(recurrence).unwrap());
+        }
+        d
+    }
 
-    if let Some(rrule_opts_bson) = raw.get("recurrence") {
-        e.set_reccurrence(from_bson(rrule_opts_bson.clone()).unwrap(), false);
-    };
-    e
+    fn get_persistence_id(&self) -> anyhow::Result<mongo_repo::MongoPersistenceID> {
+        let oid = ObjectId::with_string(&self.id)?;
+        Ok(mongo_repo::MongoPersistenceID::ObjectId(oid))
+    }
 }
