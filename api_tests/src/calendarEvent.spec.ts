@@ -40,9 +40,6 @@ describe("CalendarEvent API", () => {
       duration: 1000,
       startTs: 1000,
       rruleOptions: {
-        bynweekday: [[]],
-        bysetpos: [],
-        byweekday: [],
         freq: Frequenzy.Daily,
         interval: 1,
         tzid: "UTC",
@@ -75,9 +72,6 @@ describe("CalendarEvent API", () => {
       duration: 1000,
       startTs: 1000,
       rruleOptions: {
-        bynweekday: [[]],
-        bysetpos: [],
-        byweekday: [],
         freq: Frequenzy.Daily,
         interval: 1,
         tzid: "UTC",
@@ -115,9 +109,6 @@ describe("CalendarEvent API", () => {
       duration: 1000,
       startTs: 1000,
       rruleOptions: {
-        bynweekday: [[]],
-        bysetpos: [],
-        byweekday: [],
         freq: Frequenzy.Daily,
         interval: 1,
         tzid: "UTC",

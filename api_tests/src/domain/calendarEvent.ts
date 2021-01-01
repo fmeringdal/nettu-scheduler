@@ -12,9 +12,9 @@ export type RRuleOptions = {
   until?: number;
   tzid: string;
   wkst: number;
-  bysetpos: number[];
-  byweekday: number[];
-  bynweekday: number[][];
+  bysetpos?: number[];
+  byweekday?: number[];
+  bynweekday?: number[][];
 };
 
 export type CalendarEvent = {

@@ -32,9 +32,6 @@ describe("User API", () => {
       duration: 1000 * 60 * 60,
       startTs: 0,
       rruleOptions: {
-        bynweekday: [],
-        bysetpos: [],
-        byweekday: [],
         freq: Frequenzy.Daily,
         interval: 1,
         tzid: "UTC",
@@ -59,9 +56,6 @@ describe("User API", () => {
       duration: 1000 * 60 * 60,
       startTs: 0,
       rruleOptions: {
-        bynweekday: [],
-        bysetpos: [],
-        byweekday: [],
         freq: Frequenzy.Daily,
         interval: 1,
         tzid: "UTC",
@@ -74,9 +68,6 @@ describe("User API", () => {
       duration: 1000 * 60 * 60,
       startTs: 1000 * 60 * 60 * 4,
       rruleOptions: {
-        bynweekday: [],
-        bysetpos: [],
-        byweekday: [],
         freq: Frequenzy.Daily,
         interval: 1,
         tzid: "UTC",
@@ -90,9 +81,6 @@ describe("User API", () => {
       startTs: 0,
       busy: true,
       rruleOptions: {
-        bynweekday: [],
-        bysetpos: [],
-        byweekday: [],
         freq: Frequenzy.Daily,
         interval: 2,
         tzid: "UTC",

@@ -43,7 +43,6 @@ describe("Account API", () => {
     // now disable public key and dont allow jwt token anymore
     await client.account.removePublicSigningKey();
     res = await client.account.find();
-    console.log(res.data);
     expect(res.data.public_key_b64).toBeNull();
 
     const { status: status2 } = await userClient.calendar.insert(undefined);

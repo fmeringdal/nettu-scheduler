@@ -17,7 +17,6 @@ describe("Calendar API", () => {
 
   it("should create calendar for authenticated user", async () => {
     const res = await client.calendar.insert(undefined);
-    // console.log(res);
     expect(res.status).toBe(201);
     expect(res.data.calendarId).toBeDefined();
   });
