@@ -1,9 +1,9 @@
 use crate::account::repos::IAccountRepo;
-use crate::{account::domain::Account, shared::auth::AuthContext};
-use crate::{api::Context, shared::auth::protect_route};
+use crate::{account::domain::Account};
+use crate::{api::Context};
 use actix_web::{web, HttpResponse};
-use mongodb::bson::oid::ObjectId;
-use serde::{Deserialize, Serialize};
+
+use serde::{Serialize};
 use std::sync::Arc;
 
 pub async fn create_account_controller(ctx: web::Data<Context>) -> HttpResponse {
@@ -41,7 +41,7 @@ struct CreateAccountUseCaseCtx {
 }
 
 async fn create_account_usecase(
-    req: CreateAccountReq,
+    _req: CreateAccountReq,
     ctx: CreateAccountUseCaseCtx,
 ) -> Result<CreateAccountRes, UsecaseErrors> {
     let account = Account::new();

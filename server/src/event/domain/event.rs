@@ -175,17 +175,6 @@ mod test {
     use super::*;
     use chrono_tz::UTC;
 
-    fn ymd_hms(
-        year: i32,
-        month: u32,
-        day: u32,
-        hour: u32,
-        minute: u32,
-        second: u32,
-    ) -> DateTime<Tz> {
-        UTC.ymd(year, month, day).and_hms(hour, minute, second)
-    }
-
     #[test]
     fn daily_calendar_event() {
         let event = CalendarEvent {

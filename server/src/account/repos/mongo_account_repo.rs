@@ -1,5 +1,5 @@
 use crate::account::domain::Account;
-use futures::stream::StreamExt;
+
 use mongodb::{
     bson::{doc, from_bson, oid::ObjectId, to_bson, Bson, Document},
     Collection, Database,

@@ -1,7 +1,7 @@
 use account::domain::Account;
 use actix_web::{HttpRequest, HttpResponse};
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
-use mongodb::bson::oid::ObjectId;
+
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
@@ -42,7 +42,13 @@ async fn create_user_if_not_exists(
             // todo: in future there will be a create user admin endpoint
             let user = User::new(account_id, external_user_id);
 
-            ctx.user_repo.insert(&user).await;
+            match ctx.user_repo.insert(&user).await {
+                Ok(_) => (),
+                Err(e) => {
+                    println!("Unable to insert user {:?}", e);
+                    ()
+                }
+            };
 
             user
         }
@@ -66,7 +72,7 @@ pub async fn auth_user_req(
                     let user = create_user_if_not_exists(&claims.user_id, &account.id, ctx).await;
                     Some(user)
                 }
-                Err(e) => None,
+                Err(_e) => None,
             }
         }
         None => None,
@@ -258,7 +264,7 @@ mod test {
     #[test]
     async fn rejects_valid_token_without_account_header() {
         let ctx = setup_ctx();
-        let account = setup_account(&ctx).await;
+        let _account = setup_account(&ctx).await;
         let token = get_token(false);
 
         let req = TestRequest::with_header("Authorization", format!("Bearer {}", token))
@@ -285,7 +291,7 @@ mod test {
     #[test]
     async fn rejects_garbage_token_with_valid_account_header() {
         let ctx = setup_ctx();
-        let account = setup_account(&ctx).await;
+        let _account = setup_account(&ctx).await;
         let token = "sajfosajfposajfopaso12";
 
         let req = TestRequest::with_header("Authorization", format!("Bearer {}", token))
@@ -298,7 +304,7 @@ mod test {
     #[test]
     async fn rejects_req_without_headers() {
         let ctx = setup_ctx();
-        let account = setup_account(&ctx).await;
+        let _account = setup_account(&ctx).await;
 
         let req = TestRequest::default().to_http_request();
         let res = protect_route(&req, &ctx).await;

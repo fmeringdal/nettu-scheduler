@@ -106,13 +106,12 @@ async fn create_event_usecase(
 #[cfg(test)]
 mod test {
     use crate::{
-        api::Repos,
         calendar::{domain::calendar::Calendar, repos::InMemoryCalendarRepo},
         event::repos::InMemoryEventRepo,
     };
 
     use super::*;
-    use actix_web::{test, web, App};
+    
 
     #[actix_web::main]
     #[test]
@@ -126,7 +125,7 @@ mod test {
             id: String::from("312312"),
             user_id: user.id.clone(),
         };
-        calendar_repo.insert(&calendar).await;
+        calendar_repo.insert(&calendar).await.unwrap();
 
         let req = CreateEventReq {
             start_ts: 500,

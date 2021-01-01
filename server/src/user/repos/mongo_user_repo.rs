@@ -1,7 +1,7 @@
 use crate::user::domain::User;
-use futures::stream::StreamExt;
+
 use mongodb::{
-    bson::{doc, from_bson, oid::ObjectId, to_bson, Bson, Document},
+    bson::{doc, from_bson, oid::ObjectId, to_bson, Document},
     Collection, Database,
 };
 use std::error::Error;

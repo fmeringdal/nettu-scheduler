@@ -1,11 +1,11 @@
-use crate::{account::domain::Account, shared::auth::AuthContext};
+use crate::{account::domain::Account};
 use crate::{
     account::repos::IAccountRepo,
     shared::auth::{protect_account_route, AccountAuthContext},
 };
-use crate::{api::Context, shared::auth::protect_route};
+use crate::{api::Context};
 use actix_web::{web, HttpResponse};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize};
 use std::sync::Arc;
 
 #[derive(Debug, Deserialize)]

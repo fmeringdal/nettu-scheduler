@@ -123,7 +123,7 @@ async fn update_event_usecase(
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{api::Repos, event::repos::InMemoryEventRepo};
+    use crate::{event::repos::InMemoryEventRepo};
 
     #[actix_web::main]
     #[test]
