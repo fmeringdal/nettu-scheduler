@@ -12,6 +12,7 @@ impl User {
         Self::create_external_id(&self.account_id, &self.external_id)
     }
 
+    // todo: make sure that no external id contains the seperator chat
     pub fn create_external_id(account_id: &str, external_id: &str) -> String {
         format!("{}#{}", account_id, external_id)
     }
