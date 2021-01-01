@@ -7,16 +7,25 @@ use rrule::{Frequenzy, ParsedOptions, RRule, RRuleSet};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum RRuleFrequenzy {
+    Yearly,
+    Monthly,
+    Weekly,
+    Daily
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RRuleOptions {
-    pub freq: isize,
+    pub freq: RRuleFrequenzy,
     pub interval: isize,
     pub count: Option<i32>,
     pub until: Option<isize>,
     pub tzid: String,
     pub wkst: isize,
-    pub bysetpos: Vec<isize>,
-    pub byweekday: Vec<isize>,
-    pub bynweekday: Vec<Vec<isize>>,
+    pub bysetpos: Option<Vec<isize>>,
+    pub byweekday: Option<Vec<isize>>,
+    pub bynweekday: Option<Vec<Vec<isize>>>,
 }
 #[derive(Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -101,13 +110,12 @@ impl CalendarEvent {
         }
     }
 
-    fn freq_convert(freq: isize) -> Frequenzy {
+    fn freq_convert(freq: &RRuleFrequenzy) -> Frequenzy {
         match freq {
-            1 => Frequenzy::Yearly,
-            2 => Frequenzy::Monthly,
-            3 => Frequenzy::Weekly,
-            4 => Frequenzy::Daily,
-            _ => Frequenzy::Weekly,
+            RRuleFrequenzy::Yearly => Frequenzy::Yearly,
+            RRuleFrequenzy::Monthly => Frequenzy::Monthly,
+            RRuleFrequenzy::Weekly => Frequenzy::Weekly,
+            RRuleFrequenzy::Daily => Frequenzy::Daily,
         }
     }
 
@@ -128,19 +136,19 @@ impl CalendarEvent {
         };
 
         return ParsedOptions {
-            freq: Self::freq_convert(options.freq),
+            freq: Self::freq_convert(&options.freq),
             count,
             bymonth: vec![],
             dtstart,
-            byweekday: options.byweekday.iter().map(|d| *d as usize).collect(),
+            byweekday: options.byweekday.unwrap_or_default().iter().map(|d| *d as usize).collect(),
             byhour: vec![dtstart.hour() as usize],
-            bysetpos: options.bysetpos,
+            bysetpos: options.bysetpos.unwrap_or_default(),
             byweekno: vec![],
             byminute: vec![dtstart.minute() as usize],
             bysecond: vec![dtstart.second() as usize],
             byyearday: vec![],
             bymonthday: vec![],
-            bynweekday: options.bynweekday.clone(),
+            bynweekday: options.bynweekday.clone().unwrap_or_default(),
             bynmonthday: vec![],
             until,
             wkst: options.wkst as usize,
@@ -181,15 +189,15 @@ mod test {
             busy: false,
             duration: 1000 * 60 * 60,
             recurrence: Some(RRuleOptions {
-                freq: 4,
+                freq: RRuleFrequenzy::Daily,
                 interval: 1,
                 tzid: UTC.to_string(),
                 wkst: 0,
                 until: None,
                 count: Some(4),
-                bynweekday: vec![],
-                byweekday: vec![],
-                bysetpos: vec![],
+                bynweekday: None,
+                byweekday: None,
+                bysetpos: None,
             }),
             end_ts: None,
             exdates: vec![1521317491239],

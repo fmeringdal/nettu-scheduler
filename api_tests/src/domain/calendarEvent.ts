@@ -1,5 +1,12 @@
+export enum Frequenzy {
+  Daily = "daily",
+  Weekly = "weekly",
+  Monthly = "monthly",
+  Yearly = "yearly",
+}
+
 export type RRuleOptions = {
-  freq: number;
+  freq: Frequenzy;
   interval: number;
   count?: number;
   until?: number;

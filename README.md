@@ -5,7 +5,6 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 - think about how to do auth (Nettu EE will likely also use this and maybe nettmeet)
   - common crud for mongodb, dont unwrap objectid
 - Look more into this: https://developer.makeplans.net/#services
-- use strings for rruleoptions.frequenzy
 - frontend for booking
   - admin portal for external application
   - callback for connecting to google calendar and outlook calendar

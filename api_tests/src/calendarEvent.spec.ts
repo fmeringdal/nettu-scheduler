@@ -1,4 +1,5 @@
 import { INettuClient, NettuClient } from "./clients";
+import { Frequenzy } from "./domain/calendarEvent";
 import { setupUserClient } from "./helpers/setup";
 
 describe("CalendarEvent API", () => {
@@ -42,7 +43,7 @@ describe("CalendarEvent API", () => {
         bynweekday: [[]],
         bysetpos: [],
         byweekday: [],
-        freq: 4,
+        freq: Frequenzy.Daily,
         interval: 1,
         tzid: "UTC",
         wkst: 0,
@@ -77,7 +78,7 @@ describe("CalendarEvent API", () => {
         bynweekday: [[]],
         bysetpos: [],
         byweekday: [],
-        freq: 4,
+        freq: Frequenzy.Daily,
         interval: 1,
         tzid: "UTC",
         wkst: 0,
@@ -117,7 +118,7 @@ describe("CalendarEvent API", () => {
         bynweekday: [[]],
         bysetpos: [],
         byweekday: [],
-        freq: 4,
+        freq: Frequenzy.Daily,
         interval: 1,
         tzid: "UTC",
         wkst: 0,
