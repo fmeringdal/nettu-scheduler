@@ -1,7 +1,7 @@
 use super::get_user_freebusy::{
     get_user_freebusy_usecase, GetUserFreeBusyReq, GetUserFreeBusyUseCaseCtx,
 };
-use crate::{api::Context, event::domain::booking_slots::{get_booking_slots, BookingSlot, BookingSlotsOptions}, shared::auth::ensure_nettu_acct_header};
+use crate::{api::Context, event::domain::booking_slots::{get_booking_slots, BookingSlot, BookingSlotsOptions}, shared::auth::ensure_nettu_acct_header, user::domain::User};
 use actix_web::{HttpRequest, HttpResponse, web};
 use chrono::{prelude::*, Duration};
 use chrono_tz::Tz;
@@ -37,7 +37,7 @@ pub async fn get_user_bookingslots_controller(
     };
 
     let req = GetUserBookingSlotsReq {
-        external_user_id: format!("{}#{}", account, params.external_user_id),
+        external_user_id: User::create_external_id( &account, &params.external_user_id),
         calendar_ids,
         iana_tz: query_params.iana_tz.clone(),
         date: query_params.date.clone(),

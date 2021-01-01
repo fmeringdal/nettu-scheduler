@@ -101,7 +101,7 @@ async fn get_calendar_events_usecase(
     let view = view.unwrap();
 
     match calendar {
-        Some(calendar) if calendar.user_id == req.external_user_id => {
+        Some(calendar) if calendar.external_user_id == req.external_user_id => {
             let events = ctx
                 .event_repo
                 .find_by_calendar(&calendar.id, Some(&view))

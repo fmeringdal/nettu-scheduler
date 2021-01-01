@@ -6,7 +6,7 @@ describe("User API", () => {
   let calendarId: string;
   let client: INettuClient;
   let unauthClient: INettuClient;
-  beforeEach(async () => {
+  beforeAll(async () => {
     const data = await setupUserClient();
     client = data.userClient;
     userId = data.userId;

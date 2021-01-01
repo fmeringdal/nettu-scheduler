@@ -9,7 +9,11 @@ pub struct User {
 
 impl User {
     pub fn external_id(&self) -> String {
-        format!("{}#{}", self.account_id, self.external_id)
+        Self::create_external_id(&self.account_id, &self.external_id)
+    }
+
+    pub fn create_external_id(account_id: &str, external_id: &str) -> String {
+        format!("{}#{}", account_id, external_id)
     }
 }
 

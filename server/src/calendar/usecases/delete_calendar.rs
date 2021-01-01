@@ -68,7 +68,7 @@ async fn delete_calendar_usecase(
 ) -> Result<(), DeleteCalendarErrors> {
     let calendar = ctx.calendar_repo.find(&req.calendar_id).await;
     match calendar {
-        Some(calendar) if calendar.user_id == req.external_user_id => {
+        Some(calendar) if calendar.external_user_id == req.external_user_id => {
             ctx.calendar_repo.delete(&calendar.id).await;
             let repo_res = ctx.event_repo.delete_by_calendar(&calendar.id).await;
             if repo_res.is_err() {

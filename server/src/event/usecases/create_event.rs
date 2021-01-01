@@ -73,7 +73,7 @@ async fn create_event_usecase(
     ctx: CreateEventUseCaseCtx,
 ) -> Result<CalendarEvent, CreateCalendarEventErrors> {
     let calendar = match ctx.calendar_repo.find(&event.calendar_id).await {
-        Some(calendar) if calendar.user_id == user.external_id() => calendar,
+        Some(calendar) if calendar.external_user_id == user.external_id() => calendar,
         _ => return Err(CreateCalendarEventErrors::NotFoundError),
     };
 
@@ -123,7 +123,7 @@ mod test {
 
         let calendar = Calendar {
             id: String::from("312312"),
-            user_id: user.id.clone(),
+            external_user_id: user.id.clone(),
         };
         calendar_repo.insert(&calendar).await;
 

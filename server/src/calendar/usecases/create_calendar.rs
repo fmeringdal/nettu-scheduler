@@ -56,7 +56,7 @@ async fn create_calendar_usecase(
 ) -> Result<CreateCalendarRes, anyhow::Error> {
     let calendar = Calendar {
         id: ObjectId::new().to_string(),
-        user_id: req.user.external_id(),
+        external_user_id: req.user.external_id(),
     };
     let res = ctx.calendar_repo.insert(&calendar).await;
     match res {

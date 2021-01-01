@@ -105,7 +105,7 @@ impl ICalendarRepo for CalendarRepo {
 fn to_persistence(calendar: &Calendar) -> Document {
     let raw = doc! {
         "_id": ObjectId::with_string(&calendar.id).unwrap(),
-        "user_id": calendar.user_id.clone(),
+        "user_id": calendar.external_user_id.clone(),
     };
 
     raw
@@ -119,7 +119,7 @@ fn to_domain(raw: Document) -> Calendar {
 
     let calendar = Calendar {
         id,
-        user_id: from_bson(raw.get("user_id").unwrap().clone()).unwrap(),
+        external_user_id: from_bson(raw.get("user_id").unwrap().clone()).unwrap(),
     };
 
     calendar

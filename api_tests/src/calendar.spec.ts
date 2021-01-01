@@ -5,7 +5,7 @@ describe("Calendar API", () => {
   let client: INettuClient;
   const unauthClient = NettuClient();
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const data = await setupUserClient();
     client = data.userClient;
   });

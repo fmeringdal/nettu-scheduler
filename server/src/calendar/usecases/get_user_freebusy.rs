@@ -1,4 +1,4 @@
-use crate::{calendar::repos::ICalendarRepo, shared::auth::ensure_nettu_acct_header};
+use crate::{calendar::repos::ICalendarRepo, shared::auth::ensure_nettu_acct_header, user::domain::User};
 
 use crate::event::domain::event_instance::get_free_busy;
 use crate::event::domain::event_instance::EventInstance;
@@ -40,7 +40,7 @@ pub async fn get_user_freebusy_controller(
     };
 
     let req = GetUserFreeBusyReq {
-        external_user_id: format!("{}#{}", account, params.external_user_id),
+        external_user_id: User::create_external_id(&account, &params.external_user_id),
         calendar_ids,
         start_ts: query_params.start_ts,
         end_ts: query_params.end_ts,
@@ -176,7 +176,7 @@ mod test {
 
         let calendar = Calendar {
             id: String::from("312312"),
-            user_id: user.external_id(),
+            external_user_id: user.external_id(),
         };
         calendar_repo.insert(&calendar).await;
 
