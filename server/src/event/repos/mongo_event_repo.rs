@@ -147,6 +147,7 @@ fn to_persistence(e: &CalendarEvent) -> Document {
         "busy": Bson::Boolean(e.busy),
         "end_ts": Bson::Int64(e.end_ts.unwrap_or(max_timestamp)),
         "user_id": e.user_id.clone(),
+        "exdates": e.exdates.clone(),
         "calendar_id": e.calendar_id.clone(),
     };
     if let Some(recurrence) = &e.recurrence {

@@ -21,12 +21,12 @@ async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_server=info,actix_web=info");
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
     let args: Vec<String> = std::env::args().collect();
-    println!("args: {:?}", args);
-    let repos = match &args[1][..] {
-        "inmemory" => Repos::create_inmemory(),
-        _ => Repos::create_mongodb()
-            .await
-            .expect("Mongo db creds must be set and valid"),
+    let repos = if args.len() > 1 && args[1] == "inmemory" {
+        Repos::create_inmemory()
+    } else {
+        Repos::create_mongodb()
+        .await
+        .expect("Mongo db creds must be set and valid")
     };
 
     HttpServer::new(move || {
