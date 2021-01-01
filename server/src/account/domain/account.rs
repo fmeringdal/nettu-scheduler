@@ -1,9 +1,9 @@
 use mongodb::bson::oid::ObjectId;
 
 use crate::shared::entity::Entity;
+use rand::distributions::Alphanumeric;
 use rand::prelude::*;
 use rand::{thread_rng, Rng};
-use rand::distributions::Alphanumeric;
 
 const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ\
                             abcdefghijklmnopqrstuvwxyz\
@@ -22,7 +22,7 @@ impl Account {
         Self {
             id: ObjectId::new().to_string(),
             public_key_b64: None,
-            secret_api_key: Self::generate_secret_api_key()
+            secret_api_key: Self::generate_secret_api_key(),
         }
     }
 
@@ -35,7 +35,7 @@ impl Account {
                 CHARSET[idx] as char
             })
             .collect();
-        
+
         format!("sk_live_{}", rand_string)
     }
 
@@ -45,7 +45,7 @@ impl Account {
                 base64::decode(&public_key_b64)?;
                 self.public_key_b64 = Some(public_key_b64);
                 Ok(())
-            },
+            }
             None => {
                 self.public_key_b64 = None;
                 Ok(())
@@ -60,13 +60,12 @@ impl Entity for Account {
     }
 }
 
-
 #[cfg(test)]
 mod test {
     use super::*;
 
     #[test]
-    fn it_creates_account(){
+    fn it_creates_account() {
         let acc = Account::new();
         assert!(acc.secret_api_key.starts_with("sk_live_"));
         assert!(acc.secret_api_key.len() > API_KEY_LEN);

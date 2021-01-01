@@ -1,4 +1,9 @@
-use crate::{api::Context, event::repos::IEventRepo, shared::auth::{protect_route, AuthContext}, user::domain::User};
+use crate::{
+    api::Context,
+    event::repos::IEventRepo,
+    shared::auth::{protect_route, AuthContext},
+    user::domain::User,
+};
 use crate::{
     calendar::repos::ICalendarRepo,
     event::domain::event::{CalendarEvent, RRuleOptions},

@@ -27,7 +27,6 @@ impl IUserRepo for InMemoryUserRepo {
         Ok(())
     }
 
-
     async fn delete(&self, user_id: &str) -> Option<User> {
         delete(user_id, &self.users)
     }

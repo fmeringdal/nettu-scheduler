@@ -1,7 +1,7 @@
 use crate::account::domain::Account;
 use futures::stream::StreamExt;
 use mongodb::{
-    bson::{doc, from_bson, oid::ObjectId, Bson, Document, to_bson},
+    bson::{doc, from_bson, oid::ObjectId, to_bson, Bson, Document},
     Collection, Database,
 };
 use std::error::Error;
@@ -108,13 +108,13 @@ fn to_domain(raw: Document) -> Account {
 
     let public_key_b64 = match raw.get("public_key_b64") {
         Some(bson) => from_bson(bson.clone()).unwrap_or(None),
-        None => None
+        None => None,
     };
 
     let account = Account {
         id,
         public_key_b64,
-        secret_api_key: from_bson(raw.get("secret_api_key").unwrap().clone()).unwrap()
+        secret_api_key: from_bson(raw.get("secret_api_key").unwrap().clone()).unwrap(),
     };
 
     account

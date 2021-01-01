@@ -9,7 +9,6 @@ pub struct Calendar {
     pub user_id: String,
 }
 
-
 impl Entity for Calendar {
     fn id(&self) -> String {
         self.id.clone()

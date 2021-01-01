@@ -1,4 +1,6 @@
-use crate::{api::Context, event::repos::IEventRepo, shared::auth::protect_route, user::domain::User};
+use crate::{
+    api::Context, event::repos::IEventRepo, shared::auth::protect_route, user::domain::User,
+};
 use crate::{event::domain::event::CalendarEvent, shared::auth::AuthContext};
 use actix_web::{web, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};

@@ -1,16 +1,14 @@
 use crate::account::repos::IAccountRepo;
-use crate::{api::Context, shared::auth::protect_route};
 use crate::{account::domain::Account, shared::auth::AuthContext};
+use crate::{api::Context, shared::auth::protect_route};
 use actix_web::{web, HttpResponse};
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
-pub async fn create_account_controller(
-    ctx: web::Data<Context>,
-) -> HttpResponse {
+pub async fn create_account_controller(ctx: web::Data<Context>) -> HttpResponse {
     let res = create_account_usecase(
-        CreateAccountReq { },
+        CreateAccountReq {},
         CreateAccountUseCaseCtx {
             account_repo: Arc::clone(&ctx.repos.account_repo),
         },
@@ -20,23 +18,22 @@ pub async fn create_account_controller(
     match res {
         Ok(json) => HttpResponse::Created().json(json),
         Err(e) => match e {
-            UsecaseErrors::StorageError => HttpResponse::InternalServerError().finish()
+            UsecaseErrors::StorageError => HttpResponse::InternalServerError().finish(),
         },
     }
 }
 
-struct CreateAccountReq {
-}
+struct CreateAccountReq {}
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct CreateAccountRes {
     pub account_id: String,
-    pub secret_api_key: String
+    pub secret_api_key: String,
 }
 
 enum UsecaseErrors {
-    StorageError
+    StorageError,
 }
 
 struct CreateAccountUseCaseCtx {
@@ -52,8 +49,8 @@ async fn create_account_usecase(
     match res {
         Ok(_) => Ok(CreateAccountRes {
             account_id: account.id.clone(),
-            secret_api_key: account.secret_api_key.clone()
-        }),    
+            secret_api_key: account.secret_api_key.clone(),
+        }),
         Err(_) => Err(UsecaseErrors::StorageError),
     }
 }

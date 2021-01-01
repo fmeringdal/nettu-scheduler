@@ -12,7 +12,7 @@ pub enum RRuleFrequenzy {
     Yearly,
     Monthly,
     Weekly,
-    Daily
+    Daily,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -140,7 +140,12 @@ impl CalendarEvent {
             count,
             bymonth: vec![],
             dtstart,
-            byweekday: options.byweekday.unwrap_or_default().iter().map(|d| *d as usize).collect(),
+            byweekday: options
+                .byweekday
+                .unwrap_or_default()
+                .iter()
+                .map(|d| *d as usize)
+                .collect(),
             byhour: vec![dtstart.hour() as usize],
             bysetpos: options.bysetpos.unwrap_or_default(),
             byweekno: vec![],

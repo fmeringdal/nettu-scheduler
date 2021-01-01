@@ -1,10 +1,12 @@
-use crate::{account::repos::IAccountRepo, shared::auth::{AccountAuthContext, protect_account_route}};
-use crate::{api::Context, shared::auth::protect_route};
 use crate::{account::domain::Account, shared::auth::AuthContext};
+use crate::{
+    account::repos::IAccountRepo,
+    shared::auth::{protect_account_route, AccountAuthContext},
+};
+use crate::{api::Context, shared::auth::protect_route};
 use actix_web::{web, HttpResponse};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -15,7 +17,7 @@ pub struct SetAccountPubKeyReq {
 pub async fn set_account_pub_key_controller(
     http_req: web::HttpRequest,
     ctx: web::Data<Context>,
-    body: web::Json<SetAccountPubKeyReq>
+    body: web::Json<SetAccountPubKeyReq>,
 ) -> HttpResponse {
     let account = match protect_account_route(
         &http_req,
@@ -30,7 +32,10 @@ pub async fn set_account_pub_key_controller(
     };
 
     let res = set_account_pub_key_usecase(
-        SetAccountPubKeyUseCaseReq { account, public_key_b64: body.public_key_b64.clone()  },
+        SetAccountPubKeyUseCaseReq {
+            account,
+            public_key_b64: body.public_key_b64.clone(),
+        },
         SetAccountPubKeyUseCaseCtx {
             account_repo: Arc::clone(&ctx.repos.account_repo),
         },
@@ -40,8 +45,10 @@ pub async fn set_account_pub_key_controller(
     match res {
         Ok(()) => HttpResponse::Ok().finish(),
         Err(e) => match e {
-            UsecaseErrors::InvalidBase64Key => HttpResponse::UnprocessableEntity().body("Invalid base64 encoding of public key"),
-            UsecaseErrors::StorageError => HttpResponse::InternalServerError().finish()
+            UsecaseErrors::InvalidBase64Key => {
+                HttpResponse::UnprocessableEntity().body("Invalid base64 encoding of public key")
+            }
+            UsecaseErrors::StorageError => HttpResponse::InternalServerError().finish(),
         },
     }
 }
@@ -57,15 +64,17 @@ struct SetAccountPubKeyUseCaseCtx {
 
 enum UsecaseErrors {
     InvalidBase64Key,
-    StorageError
+    StorageError,
 }
 
 async fn set_account_pub_key_usecase(
     req: SetAccountPubKeyUseCaseReq,
     ctx: SetAccountPubKeyUseCaseCtx,
 ) -> Result<(), UsecaseErrors> {
-    let SetAccountPubKeyUseCaseReq { mut account, public_key_b64 } = req;
-
+    let SetAccountPubKeyUseCaseReq {
+        mut account,
+        public_key_b64,
+    } = req;
 
     if account.set_public_key_b64(public_key_b64).is_err() {
         return Err(UsecaseErrors::InvalidBase64Key);

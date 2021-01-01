@@ -1,8 +1,13 @@
 use super::get_user_freebusy::{
     get_user_freebusy_usecase, GetUserFreeBusyReq, GetUserFreeBusyUseCaseCtx,
 };
-use crate::{api::Context, event::domain::booking_slots::{get_booking_slots, BookingSlot, BookingSlotsOptions}, shared::auth::ensure_nettu_acct_header, user::domain::User};
-use actix_web::{HttpRequest, HttpResponse, web};
+use crate::{
+    api::Context,
+    event::domain::booking_slots::{get_booking_slots, BookingSlot, BookingSlotsOptions},
+    shared::auth::ensure_nettu_acct_header,
+    user::domain::User,
+};
+use actix_web::{web, HttpRequest, HttpResponse};
 use chrono::{prelude::*, Duration};
 use chrono_tz::Tz;
 use serde::{Deserialize, Serialize};
@@ -29,7 +34,7 @@ pub async fn get_user_bookingslots_controller(
 ) -> HttpResponse {
     let account = match ensure_nettu_acct_header(&http_req) {
         Ok(a) => a,
-        Err(e) => return e
+        Err(e) => return e,
     };
     let calendar_ids = match &query_params.calendar_ids {
         Some(calendar_ids) => Some(calendar_ids.split(",").map(|s| String::from(s)).collect()),
@@ -120,12 +125,6 @@ async fn get_user_bookingslots_usecase(
 
     match free_events {
         Ok(free_events) => {
-            println!(
-                "Start: {}, end: {}",
-                start_of_day.timestamp_millis(),
-                end_of_day.timestamp_millis()
-            );
-            println!("Free events got: {:?}", free_events.free);
             let booking_slots = get_booking_slots(
                 &free_events.free,
                 BookingSlotsOptions {
@@ -181,7 +180,15 @@ mod test {
 
     #[test]
     fn it_accepts_valid_dates() {
-        let valid_dates = vec!["2018-1-1", "2025-12-31", "2020-1-12", "2020-2-29", "2020-02-2", "2020-02-02", "2020-2-09"];
+        let valid_dates = vec![
+            "2018-1-1",
+            "2025-12-31",
+            "2020-1-12",
+            "2020-2-29",
+            "2020-02-2",
+            "2020-02-02",
+            "2020-2-09",
+        ];
 
         for date in &valid_dates {
             assert!(is_valid_date(date).is_ok());
@@ -190,11 +197,20 @@ mod test {
 
     #[test]
     fn it_rejects_invalid_dates() {
-        let valid_dates = vec!["2018--1-1", "2020-1-32", "2020-2-30", "2020-0-1", "2020-1-0"];
+        let valid_dates = vec![
+            "2018--1-1",
+            "2020-1-32",
+            "2020-2-30",
+            "2020-0-1",
+            "2020-1-0",
+        ];
 
         for date in &valid_dates {
-
-            println!("Checking date: {} with result {:?}", date, is_valid_date(date));
+            println!(
+                "Checking date: {} with result {:?}",
+                date,
+                is_valid_date(date)
+            );
             assert!(is_valid_date(date).is_err());
         }
     }

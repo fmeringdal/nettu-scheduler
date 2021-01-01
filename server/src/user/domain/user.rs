@@ -10,9 +10,9 @@ pub struct User {
 impl User {
     pub fn new(account_id: &str, external_id: &str) -> Self {
         Self {
-           id: Self::create_id(account_id, external_id),
-           account_id: String::from(account_id),
-           external_id: String::from(external_id) 
+            id: Self::create_id(account_id, external_id),
+            account_id: String::from(account_id),
+            external_id: String::from(external_id),
         }
     }
 

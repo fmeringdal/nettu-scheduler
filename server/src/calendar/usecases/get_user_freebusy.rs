@@ -1,12 +1,11 @@
-use crate::{calendar::repos::ICalendarRepo, shared::auth::ensure_nettu_acct_header, user::domain::User};
-
+use crate::{
+    calendar::repos::ICalendarRepo, shared::auth::ensure_nettu_acct_header, user::domain::User,
+};
 use crate::event::domain::event_instance::get_free_busy;
 use crate::event::domain::event_instance::EventInstance;
 use crate::event::repos::IEventRepo;
-
 use crate::{api::Context, calendar::domain::calendar_view::CalendarView};
-use actix_web::{HttpRequest, HttpResponse, web};
-
+use actix_web::{web, HttpRequest, HttpResponse};
 use futures::future::join_all;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -32,7 +31,7 @@ pub async fn get_user_freebusy_controller(
 ) -> HttpResponse {
     let account = match ensure_nettu_acct_header(&http_req) {
         Ok(a) => a,
-        Err(e) => return e
+        Err(e) => return e,
     };
     let calendar_ids = match &query_params.calendar_ids {
         Some(calendar_ids) => Some(calendar_ids.split(",").map(|s| String::from(s)).collect()),
@@ -84,13 +83,10 @@ pub async fn get_user_freebusy_usecase(
     req: GetUserFreeBusyReq,
     ctx: GetUserFreeBusyUseCaseCtx,
 ) -> Result<GetUserFreeBusyResponse, GetUserFreeBusyErrors> {
-    println!("req into freebusy: {:?}", req);
-    let view = CalendarView::create(req.start_ts, req.end_ts);
-    if view.is_err() {
-        return Err(GetUserFreeBusyErrors::InvalidTimespanError);
-    }
-    let view = view.unwrap();
-    println!("view freebusy: {:?}", view);
+    let view = match CalendarView::create(req.start_ts, req.end_ts) {
+        Ok(view) => view,
+        Err(_) => return Err(GetUserFreeBusyErrors::InvalidTimespanError),
+    };
 
     // can probably make query to event repo instead
     let mut calendars = ctx.calendar_repo.find_by_user(&req.user_id).await;
@@ -103,7 +99,6 @@ pub async fn get_user_freebusy_usecase(
                 .collect();
         }
     }
-    println!("calendars {:?}", calendars);
 
     let all_events_futures = calendars
         .iter()
@@ -111,10 +106,6 @@ pub async fn get_user_freebusy_usecase(
     let mut all_events_instances = join_all(all_events_futures)
         .await
         .into_iter()
-        .map(|events_res| {
-            println!("events_res: {:?}", events_res);
-            events_res
-        })
         .map(|events_res| events_res.unwrap_or_default())
         .map(|events| {
             events
@@ -127,10 +118,8 @@ pub async fn get_user_freebusy_usecase(
         .flatten()
         .collect::<Vec<_>>();
 
-    println!("all fre: {:?}", all_events_instances);
     let freebusy = get_free_busy(&mut all_events_instances);
 
-    println!("res from freebusy: {:?}", freebusy);
     Ok(GetUserFreeBusyResponse { free: freebusy })
 }
 
@@ -139,27 +128,17 @@ pub enum GetUserFreeBusyErrors {
     InvalidTimespanError,
 }
 
-impl std::fmt::Display for GetUserFreeBusyErrors {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match *self {
-            GetUserFreeBusyErrors::InvalidTimespanError => {
-                write!(f, "The provided timesspan was invalid.")
-            }
-        }
-    }
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
     use crate::{
         calendar::{domain::calendar::Calendar, repos::InMemoryCalendarRepo},
         event::{
-            domain::event::{CalendarEvent, RRuleOptions, RRuleFrequenzy},
+            domain::event::{CalendarEvent, RRuleFrequenzy, RRuleOptions},
             repos::InMemoryEventRepo,
         },
+        shared::entity::Entity,
         user::domain::User,
-        shared::entity::Entity
     };
     use std::sync::Arc;
 
@@ -175,7 +154,7 @@ mod test {
             id: String::from("312312"),
             user_id: user.id(),
         };
-        calendar_repo.insert(&calendar).await;
+        calendar_repo.insert(&calendar).await.unwrap();
 
         let mut e1 = CalendarEvent {
             calendar_id: calendar.id.clone(),
@@ -249,9 +228,9 @@ mod test {
         };
         e3.set_reccurrence(e3rr, true);
 
-        event_repo.insert(&e1).await;
-        event_repo.insert(&e2).await;
-        event_repo.insert(&e3).await;
+        event_repo.insert(&e1).await.unwrap();
+        event_repo.insert(&e2).await.unwrap();
+        event_repo.insert(&e3).await.unwrap();
 
         let ctx = GetUserFreeBusyUseCaseCtx {
             event_repo: Arc::new(event_repo),

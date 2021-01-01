@@ -1,6 +1,6 @@
-use crate::{calendar::repos::ICalendarRepo, user::domain::User};
 use crate::{api::Context, shared::auth::protect_route};
 use crate::{calendar::domain::calendar::Calendar, shared::auth::AuthContext};
+use crate::{calendar::repos::ICalendarRepo, user::domain::User};
 use actix_web::{web, HttpResponse};
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
