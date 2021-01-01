@@ -1,12 +1,12 @@
 use crate::calendar::domain::calendar::Calendar;
-use futures::stream::StreamExt;
+use mongo_repo::MongoPersistence;
 use mongodb::{
     bson::{doc, from_bson, oid::ObjectId, Bson, Document},
     Collection, Database,
 };
 use std::error::Error;
 use tokio::sync::RwLock;
-
+use crate::shared::mongo_repo;
 use super::ICalendarRepo;
 
 pub struct CalendarRepo {
@@ -28,99 +28,72 @@ impl CalendarRepo {
 #[async_trait::async_trait]
 impl ICalendarRepo for CalendarRepo {
     async fn insert(&self, calendar: &Calendar) -> Result<(), Box<dyn Error>> {
-        let coll = self.collection.read().await;
-        let _res = coll.insert_one(to_persistence(calendar), None).await;
-        Ok(())
+        match mongo_repo::insert(&self.collection, calendar).await {
+            Ok(_) => Ok(()),
+            Err(_) => Ok(()) // fix this
+        }
     }
 
     async fn save(&self, calendar: &Calendar) -> Result<(), Box<dyn Error>> {
-        let coll = self.collection.read().await;
-        let filter = doc! {
-            "_id": ObjectId::with_string(&calendar.id)?
-        };
-        let _res = coll
-            .update_one(filter, to_persistence(calendar), None)
-            .await;
-        Ok(())
+        match mongo_repo::save(&self.collection, calendar).await {
+            Ok(_) => Ok(()),
+            Err(_) => Ok(()) // fix this
+        }
     }
 
     async fn find(&self, calendar_id: &str) -> Option<Calendar> {
-        let filter = doc! {
-            "_id": ObjectId::with_string(calendar_id).unwrap()
+        let id = match ObjectId::with_string(calendar_id) {
+            Ok(oid) => mongo_repo::MongoPersistenceID::ObjectId(oid),
+            Err(_) => return None
         };
-        let coll = self.collection.read().await;
-        let res = coll.find_one(filter, None).await;
-        match res {
-            Ok(doc) if doc.is_some() => {
-                let calendar = to_domain(doc.unwrap());
-                Some(calendar)
-            }
-            _ => None,
-        }
+        mongo_repo::find(&self.collection, &id).await
     }
 
     async fn find_by_user(&self, user_id: &str) -> Vec<Calendar> {
         let filter = doc! {
             "user_id": user_id
         };
-        let coll = self.collection.read().await;
-        let res = coll.find(filter, None).await;
-        match res {
-            Ok(mut cursor) => {
-                let mut calendars = vec![];
-
-                while let Some(result) = cursor.next().await {
-                    match result {
-                        Ok(document) => {
-                            calendars.push(to_domain(document));
-                        }
-                        Err(e) => {
-                            println!("Error getting cursor calendar: {:?}", e);
-                        }
-                    }
-                }
-
-                calendars
-            }
-            _ => vec![],
+        match mongo_repo::find_many_by(&self.collection, filter).await {
+            Ok(cals) => cals,
+            Err(_) => vec![]
         }
     }
 
     async fn delete(&self, calendar_id: &str) -> Option<Calendar> {
-        let filter = doc! {
-            "_id": ObjectId::with_string(calendar_id).unwrap()
+        let id = match ObjectId::with_string(calendar_id) {
+            Ok(oid) => mongo_repo::MongoPersistenceID::ObjectId(oid),
+            Err(_) => return None
         };
-        let coll = self.collection.read().await;
-        let res = coll.find_one_and_delete(filter, None).await;
-        match res {
-            Ok(doc) if doc.is_some() => {
-                let calendar = to_domain(doc.unwrap());
-                Some(calendar)
-            }
-            _ => None,
-        }
+        mongo_repo::delete(&self.collection, &id).await
     }
 }
 
-fn to_persistence(calendar: &Calendar) -> Document {
-    let raw = doc! {
-        "_id": ObjectId::with_string(&calendar.id).unwrap(),
-        "user_id": calendar.user_id.clone(),
-    };
+impl MongoPersistence for Calendar {
+    fn to_domain(doc: Document) -> Self {
+        let id = match doc.get("_id").unwrap() {
+            Bson::ObjectId(oid) => oid.to_string(),
+            _ => unreachable!("This should not happen"),
+        };
+    
+        let calendar = Calendar {
+            id,
+            user_id: from_bson(doc.get("user_id").unwrap().clone()).unwrap(),
+        };
+    
+        calendar
+    }
 
-    raw
-}
+    fn to_persistence(&self) -> Document {
+        let raw = doc! {
+            "_id": ObjectId::with_string(&self.id).unwrap(),
+            "user_id": self.user_id.clone(),
+        };
+    
+        raw
+    }
 
-fn to_domain(raw: Document) -> Calendar {
-    let id = match raw.get("_id").unwrap() {
-        Bson::ObjectId(oid) => oid.to_string(),
-        _ => unreachable!("This should not happen"),
-    };
-
-    let calendar = Calendar {
-        id,
-        user_id: from_bson(raw.get("user_id").unwrap().clone()).unwrap(),
-    };
-
-    calendar
+    fn get_persistence_id(&self) -> anyhow::Result<mongo_repo::MongoPersistenceID> {
+        let oid = ObjectId::with_string(&self.id)?;
+        Ok(mongo_repo::MongoPersistenceID::ObjectId(oid))
+    }
 }
