@@ -2,6 +2,7 @@ mod account;
 mod api;
 mod calendar;
 mod event;
+mod service;
 mod shared;
 mod user;
 
