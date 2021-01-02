@@ -3,35 +3,38 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 ## Todos
 
 - what needs to be done to make nettu marketplace work with this ? 
-    - define calendar that should be used for defining availibility
+    - service module with crud for its general info
+    - update users on service
+    - get booking slots for service
 - protect create account
-- create user
-- Look more into this: https://developer.makeplans.net/#services
-- frontend for booking
-  - admin portal for external application
-  - callback for connecting to google calendar and outlook calendar
-  - company page or calendar page?
+- account admin routes
+  - create user
+  - create calendar
+- reminders with webhook calls
 
 
 ## Backlog
 
 - smarter mongodb schema
 - More api tests for [calendarevent, booking]
-- reminders
 - error handling: https://auth0.com/blog/build-an-api-in-rust-with-jwt-authentication-using-actix-web/
+- frontend for booking
 
 
 ## Need to have a data model that will support google and outlook calendars in the future
 - oauth2.0 flow with redirect to our frontend customized with account logo
+- How to specify google and outlook calendar ids ? 
+  - on calendar level you can replicate to a selected google calendar id and outlook calendar id
+  - on resource level you can specify google calendar ids and outlook calendar ids
 
 
 ## Defining services, resources and availibility
+- booking objects will not be created 
 - service is a bookable entity
-- resource is a user registered on the service
-- where are bookings created ? Webhook or kafka or something ? 
-- when a user is connected to a service they will get a booking calendar assigned to them if not already exists
+- users can be registered on the service
+- events to listen to. Webhook or kafka or something ? 
   where all accepted bookings for them will be created
-- how to handle booking requests ? data model in nettu marketplace (because of users), how to get booking times etc ? Also read makeplans
+- how to handle booking requests ? 
 
 account:
   alloweduseractions
@@ -42,12 +45,17 @@ service:
   bookingslots_duration:
   allow_more_booking_requests_in_queue_than_resources
   breaks
-  resources ? 
+  users 
   metadata
 
 get_service_bookingslots
+  - fetch service by service id
+  - get user_ids and corresponding calendar_ids from service object
+  - get freebusy from these calendars
+  - generate bookingslots from freebusy for every resource
+
 
 resource:
-  serviceId
   userId
-  availibility_calendar, availibility_time
+  calendars: Calendar[]
+  availibility_time
