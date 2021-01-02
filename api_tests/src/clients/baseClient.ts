@@ -5,34 +5,15 @@ export abstract class NettuBaseClient {
   private readonly config = {
     baseUrl: "http://localhost:5000",
   };
-  private readonly credentials: Credentials;
+  private readonly credentials: ICredentials;
 
-  constructor(credentials: Credentials) {
+  constructor(credentials: ICredentials) {
     this.credentials = credentials;
-  }
-
-  private createAuthHeaders() {
-    if (this.credentials.isAccountCredentials()) {
-      return {
-        "x-api-key": this.credentials.accountCreds!.apiKey,
-      };
-    } else if (this.credentials.isUserCredentials()) {
-      const creds: any = {
-        "nettu-account": this.credentials.userCreds!.nettuAccount,
-      };
-      if (this.credentials.userCreds!.token) {
-        creds["authorization"] = `Bearer ${this.credentials.userCreds!.token}`;
-      }
-
-      return creds;
-    } else {
-      return {};
-    }
   }
 
   private getAxiosConfig = () => ({
     validateStatus: () => true, // allow all status codes without throwing error
-    headers: this.createAuthHeaders(),
+    headers: this.credentials.createAuthHeaders(),
   });
 
   protected async get<T>(path: string): Promise<APIResponse<T>> {
@@ -82,42 +63,41 @@ export class APIResponse<T> {
   }
 }
 
-export type UserCreds = {
-  nettuAccount: string;
-  token?: string;
-};
+export class UserCreds implements ICredentials {
+  private readonly nettuAccount: string;
+  private readonly token?: string;
 
-export type AccountCreds = {
-  apiKey: string;
-};
-
-export class Credentials {
-  readonly userCreds?: UserCreds;
-  readonly accountCreds?: AccountCreds;
-
-  private constructor(userCreds?: UserCreds, accountCreds?: AccountCreds) {
-    this.userCreds = userCreds;
-    this.accountCreds = accountCreds;
+  constructor(nettuAccount: string, token?: string) {
+    this.nettuAccount = nettuAccount;
+    this.token = token;
   }
 
-  public isAccountCredentials(): boolean {
-    return this.accountCreds !== undefined;
+  createAuthHeaders() {
+    const creds: any = {
+      "nettu-account": this.nettuAccount,
+    };
+    if (this.token) {
+      creds["authorization"] = `Bearer ${this.token}`;
+    }
+
+    return Object.freeze(creds);
+  }
+}
+
+export class AccountCreds implements ICredentials {
+  private readonly apiKey: string;
+
+  constructor(apiKey: string) {
+    this.apiKey = apiKey;
   }
 
-  public isUserCredentials(): boolean {
-    // Account credentials take preference over user credentials (they should never both be set, butbut ...)
-    return !this.isAccountCredentials() && this.userCreds !== undefined;
+  createAuthHeaders() {
+    return Object.freeze({
+      "x-api-key": this.apiKey,
+    });
   }
+}
 
-  public static createFromSecretKey(creds: AccountCreds): Credentials {
-    return new Credentials(undefined, creds);
-  }
-
-  public static createForUser(creds: UserCreds): Credentials {
-    return new Credentials(creds, undefined);
-  }
-
-  public static createEmpty(): Credentials {
-    return new Credentials(undefined, undefined);
-  }
+export interface ICredentials {
+  createAuthHeaders(): object;
 }
