@@ -1,6 +1,6 @@
 use crate::{
     account::domain::Account,
-    service::{domain::Service, repos::IServiceRepo},
+    service::{repos::IServiceRepo},
     shared::auth::{protect_account_route, AccountAuthContext},
 };
 use crate::{
@@ -12,7 +12,7 @@ use crate::{
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize};
 use std::sync::Arc;
 
 #[derive(Deserialize)]
