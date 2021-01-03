@@ -33,7 +33,6 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 - service is a bookable entity
 - users can be registered on the service
 - events to listen to. Webhook or kafka or something ? 
-  where all accepted bookings for them will be created
 - how to handle booking requests ? 
 
 account:
