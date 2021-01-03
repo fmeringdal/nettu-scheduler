@@ -4,7 +4,7 @@ use super::IServiceRepo;
 use crate::shared::mongo_repo;
 use mongo_repo::MongoPersistence;
 use mongodb::{
-    bson::{doc, from_bson, oid::ObjectId, to_bson, Bson, Bson::Array, Document},
+    bson::{doc, from_bson, oid::ObjectId, to_bson, Bson, Document},
     Collection, Database,
 };
 use std::error::Error;

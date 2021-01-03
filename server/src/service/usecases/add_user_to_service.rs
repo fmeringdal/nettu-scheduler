@@ -104,7 +104,7 @@ async fn add_user_to_service_usecase(
     req: UsecaseReq,
     ctx: UsecaseCtx,
 ) -> Result<UsecaseRes, UsecaseErrors> {
-    let user = match ctx.user_repo.find(&req.user_id).await {
+    let _user = match ctx.user_repo.find(&req.user_id).await {
         Some(user) if user.account_id == req.account.id => user,
         _ => return Err(UsecaseErrors::UserNotFoundError),
     };
@@ -114,7 +114,7 @@ async fn add_user_to_service_usecase(
         _ => return Err(UsecaseErrors::ServiceNotFoundError),
     };
 
-    if let Some(user_resource) = service.find_user(&req.user_id) {
+    if let Some(_user_resource) = service.find_user(&req.user_id) {
         return Err(UsecaseErrors::UserAlreadyInService);
     }
 

@@ -2,7 +2,7 @@ use crate::{
     account::domain::Account,
     calendar::repos::ICalendarRepo,
     service::{
-        domain::{Service, ServiceResource},
+        domain::{Service},
         repos::IServiceRepo,
     },
     shared::auth::{protect_account_route, AccountAuthContext},

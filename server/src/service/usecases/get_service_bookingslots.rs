@@ -2,10 +2,9 @@ use crate::{
     api::Context,
     calendar::domain::date,
     event::domain::booking_slots::{
-        get_service_bookingslots, BookingSlot, BookingSlotsOptions, ServiceBookingSlot,
+        get_service_bookingslots, BookingSlotsOptions, ServiceBookingSlot,
     },
     shared::auth::ensure_nettu_acct_header,
-    user::domain::User,
 };
 use crate::{
     calendar::{
@@ -16,7 +15,6 @@ use crate::{
     },
     event::{domain::booking_slots::UserFreeEvents, repos::IEventRepo},
     service::repos::IServiceRepo,
-    user::repos::IUserRepo,
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use chrono::{prelude::*, Duration};
@@ -44,7 +42,7 @@ pub async fn get_service_bookingslots_controller(
     path_params: web::Path<PathParams>,
     ctx: web::Data<Context>,
 ) -> HttpResponse {
-    let account = match ensure_nettu_acct_header(&http_req) {
+    let _account = match ensure_nettu_acct_header(&http_req) {
         Ok(a) => a,
         Err(e) => return e,
     };
