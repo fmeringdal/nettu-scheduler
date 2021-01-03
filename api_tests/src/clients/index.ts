@@ -3,6 +3,7 @@ import { AccountCreds, ICredentials, UserCreds } from "./baseClient";
 import { NettuCalendarClient } from "./calendarClient";
 import { NettuEventClient } from "./eventClient";
 import { NettuHealthClient } from "./healthClient";
+import { NettuServiceClient } from "./serviceClient";
 import { NettuUserClient } from "./userClient";
 
 type PartialCredentials = {
@@ -16,6 +17,7 @@ export interface INettuClient {
   calendar: NettuCalendarClient;
   events: NettuEventClient;
   user: NettuUserClient;
+  service: NettuServiceClient;
   health: NettuHealthClient;
 }
 
@@ -29,6 +31,7 @@ export const NettuClient = (
     events: new NettuEventClient(creds),
     calendar: new NettuCalendarClient(creds),
     user: new NettuUserClient(creds),
+    service: new NettuServiceClient(creds),
     health: new NettuHealthClient(creds),
   };
 };

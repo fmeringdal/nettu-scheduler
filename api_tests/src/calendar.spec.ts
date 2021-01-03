@@ -1,5 +1,5 @@
 import { INettuClient, NettuClient } from "./clients";
-import { setupUserClient } from "./helpers/setup";
+import { setupUserClient } from "./helpers/fixtures";
 
 describe("Calendar API", () => {
   let client: INettuClient;

@@ -7,7 +7,7 @@ use actix_web::web;
 pub fn configure_routes(cfg: &mut web::ServiceConfig) {
     cfg.route("/service", web::post().to(create_service_controller));
     cfg.route(
-        "/service/{service_id}",
+        "/service/{service_id}/users",
         web::post().to(add_user_to_service_controller),
     );
     cfg.route(

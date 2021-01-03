@@ -1,5 +1,5 @@
 import { NettuClient } from "./clients";
-import { setupAccount, setupUserClientForAccount } from "./helpers/setup";
+import { setupAccount, setupUserClientForAccount } from "./helpers/fixtures";
 import { readPrivateKey, readPublicKeyBase64 } from "./helpers/utils";
 
 describe("Account API", () => {
