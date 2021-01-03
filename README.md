@@ -3,8 +3,6 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 ## Todos
 
 - what needs to be done to make nettu marketplace work with this ? 
-    - get service by id
-    - list services for account
     - account admin routes 
       - get user with calendar list
       - create user

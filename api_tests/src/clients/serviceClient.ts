@@ -1,3 +1,4 @@
+import { Service } from "../domain/service";
 import { NettuBaseClient } from "./baseClient";
 
 type CreatedServiceResponse = {
@@ -34,6 +35,10 @@ export type GetServiceBookingslotsResponse = {
 export class NettuServiceClient extends NettuBaseClient {
   public insert() {
     return this.post<CreatedServiceResponse>("/service", undefined);
+  }
+
+  public find(serviceId: string) {
+    return this.get<Service>(`/service/${serviceId}`);
   }
 
   public addUserToService(serviceId: string, data: AddUserToServiceRequest) {

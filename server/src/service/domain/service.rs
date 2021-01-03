@@ -1,8 +1,9 @@
 use mongodb::bson::oid::ObjectId;
 
+use serde::Serialize;
 use crate::shared::entity::Entity;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub struct ServiceResource {
     pub id: String,
     pub user_id: String,
@@ -23,7 +24,7 @@ impl ServiceResource {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub struct Service {
     pub id: String,
     pub account_id: String,
