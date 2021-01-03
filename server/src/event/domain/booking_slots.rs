@@ -33,11 +33,12 @@ pub struct BookingSlotsOptions {
 }
 
 pub struct UserFreeEvents {
+    /// Free events should be sorted and nonoverlapping and not busy
     pub free_events: Vec<EventInstance>,
     pub user_id: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, PartialEq, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ServiceBookingSlot {
     pub start: i64,
@@ -47,12 +48,12 @@ pub struct ServiceBookingSlot {
 
 pub fn get_service_bookingslots(
     users_free: Vec<UserFreeEvents>,
-    options: BookingSlotsOptions,
+    options: &BookingSlotsOptions,
 ) -> Vec<ServiceBookingSlot> {
     let mut slots_lookup: HashMap<i64, ServiceBookingSlot> = HashMap::new();
 
     for user in &users_free {
-        let slots = get_booking_slots(&user.free_events, &options);
+        let slots = get_booking_slots(&user.free_events, options);
         for slot in slots {
             if let Some(val) = slots_lookup.get(&slot.start) {
                 let mut user_ids = val.user_ids.clone();
@@ -79,7 +80,7 @@ pub fn get_service_bookingslots(
     }
 
     let mut slots = slots_lookup.drain().map(|s| s.1).collect::<Vec<_>>();
-    slots.sort_by_key(|s| -s.start);
+    slots.sort_by_key(|s| s.start);
     slots
 }
 
@@ -448,6 +449,109 @@ mod test {
                 available_until: 30,
                 duration: 10,
                 start: 20
+            }
+        );
+    }
+
+    #[test]
+    fn generate_service_bookingslots_with_one_user_in_service() {
+        let e1 = EventInstance {
+            busy: false,
+            start_ts: 2,
+            end_ts: 30,
+        };
+
+        let mut users_free = vec![];
+        users_free.push(UserFreeEvents {
+            free_events: vec![e1],
+            user_id: String::from("1")
+        });
+
+        let slots = get_service_bookingslots(
+            users_free,
+            &BookingSlotsOptions {
+                start_ts: 10,
+                end_ts: 100,
+                duration: 10,
+                interval: 10,
+            },
+        );
+
+        assert_eq!(slots.len(), 2);
+        assert_eq!(
+            slots[0],
+            ServiceBookingSlot {
+                duration: 10,
+                start: 10,
+                user_ids: vec![String::from("1")]
+            }
+        );
+        assert_eq!(
+            slots[1],
+            ServiceBookingSlot {
+                duration: 10,
+                start: 20,
+                user_ids: vec![String::from("1")]
+            }
+        );
+    }
+
+    #[test]
+    fn generate_service_bookingslots_with_two_users_in_service() {
+        let e1 = EventInstance {
+            busy: false,
+            start_ts: 2,
+            end_ts: 30,
+        };
+
+        let e2 = EventInstance {
+            busy: false,
+            start_ts: 33,
+            end_ts: 52,
+        };
+
+        let mut users_free = vec![];
+        users_free.push(UserFreeEvents {
+            free_events: vec![e1.clone()],
+            user_id: String::from("1")
+        });
+        users_free.push(UserFreeEvents {
+            free_events: vec![e1.clone(), e2],
+            user_id: String::from("2")
+        });
+
+        let slots = get_service_bookingslots(
+            users_free,
+            &BookingSlotsOptions {
+                start_ts: 10,
+                end_ts: 100,
+                duration: 10,
+                interval: 10,
+            },
+        );
+        assert_eq!(slots.len(), 3);
+        assert_eq!(
+            slots[0],
+            ServiceBookingSlot {
+                duration: 10,
+                start: 10,
+                user_ids: vec![String::from("1"), String::from("2")]
+            }
+        );
+        assert_eq!(
+            slots[1],
+            ServiceBookingSlot {
+                duration: 10,
+                start: 20,
+                user_ids: vec![String::from("1"), String::from("2")]
+            }
+        );
+        assert_eq!(
+            slots[2],
+            ServiceBookingSlot {
+                duration: 10,
+                start: 40,
+                user_ids: vec![String::from("2")]
             }
         );
     }

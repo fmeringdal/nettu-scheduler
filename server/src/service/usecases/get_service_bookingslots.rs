@@ -162,7 +162,7 @@ async fn get_service_bookingslots_usecase(
 
     let booking_slots = get_service_bookingslots(
         users_freebusy,
-        BookingSlotsOptions {
+        &BookingSlotsOptions {
             interval: 1000 * 60 * 15, // 15 minutes
             duration: req.duration,
             end_ts: end_of_day.timestamp_millis(),
