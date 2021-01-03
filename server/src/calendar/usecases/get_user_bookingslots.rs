@@ -3,6 +3,7 @@ use super::get_user_freebusy::{
 };
 use crate::{
     api::Context,
+    calendar::domain::date,
     event::domain::booking_slots::{get_booking_slots, BookingSlot, BookingSlotsOptions},
     shared::auth::ensure_nettu_acct_header,
     user::domain::User,
@@ -106,7 +107,14 @@ async fn get_user_bookingslots_usecase(
         Err(_) => return Err(GetUserBookingSlotsErrors::InvalidTimezoneError(req.date)),
     };
 
-    let parsed_date = is_valid_date(&req.date)?;
+    let parsed_date = match date::is_valid_date(&req.date) {
+        Ok(val) => val,
+        Err(_) => {
+            return Err(GetUserBookingSlotsErrors::InvalidDateError(
+                req.date.clone(),
+            ))
+        }
+    };
     let date = tz.ymd(parsed_date.0, parsed_date.1, parsed_date.2);
 
     let start_of_day = date.and_hms(0, 0, 0);
@@ -127,7 +135,7 @@ async fn get_user_bookingslots_usecase(
         Ok(free_events) => {
             let booking_slots = get_booking_slots(
                 &free_events.free,
-                BookingSlotsOptions {
+                &BookingSlotsOptions {
                     interval: 1000 * 60 * 15, // 15 minutes
                     duration: req.duration,
                     end_ts: end_of_day.timestamp_millis(),
@@ -138,80 +146,5 @@ async fn get_user_bookingslots_usecase(
             Ok(GetUserBookingSlotsResponse { booking_slots })
         }
         Err(_e) => Err(GetUserBookingSlotsErrors::UserFreebusyError),
-    }
-}
-
-fn is_valid_date(datestr: &str) -> Result<(i32, u32, u32), GetUserBookingSlotsErrors> {
-    let datestr = String::from(datestr);
-    let dates = datestr.split('-').collect::<Vec<_>>();
-    if dates.len() != 3 {
-        return Err(GetUserBookingSlotsErrors::InvalidDateError(datestr));
-    }
-    let year = dates[0].parse();
-    let month = dates[1].parse();
-    let day = dates[2].parse();
-
-    if year.is_err() || month.is_err() || day.is_err() {
-        return Err(GetUserBookingSlotsErrors::InvalidDateError(datestr));
-    }
-
-    let year = year.unwrap();
-    let month = month.unwrap();
-    let day = day.unwrap();
-    if year < 1970 || year > 2100 || month < 1 || month > 12 {
-        return Err(GetUserBookingSlotsErrors::InvalidDateError(datestr));
-    }
-
-    let mut month_length = vec![31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-    if year % 400 == 0 || (year % 100 != 0 && year % 4 == 0) {
-        month_length[1] = 29;
-    }
-
-    if day < 1 || day > month_length[month as usize - 1] {
-        return Err(GetUserBookingSlotsErrors::InvalidDateError(datestr));
-    }
-
-    Ok((year, month, day))
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn it_accepts_valid_dates() {
-        let valid_dates = vec![
-            "2018-1-1",
-            "2025-12-31",
-            "2020-1-12",
-            "2020-2-29",
-            "2020-02-2",
-            "2020-02-02",
-            "2020-2-09",
-        ];
-
-        for date in &valid_dates {
-            assert!(is_valid_date(date).is_ok());
-        }
-    }
-
-    #[test]
-    fn it_rejects_invalid_dates() {
-        let valid_dates = vec![
-            "2018--1-1",
-            "2020-1-32",
-            "2020-2-30",
-            "2020-0-1",
-            "2020-1-0",
-        ];
-
-        for date in &valid_dates {
-            println!(
-                "Checking date: {} with result {:?}",
-                date,
-                is_valid_date(date)
-            );
-            assert!(is_valid_date(date).is_err());
-        }
     }
 }

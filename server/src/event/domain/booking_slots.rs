@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use serde::Serialize;
 
 use super::event_instance::EventInstance;
@@ -30,13 +32,64 @@ pub struct BookingSlotsOptions {
     pub interval: i64,
 }
 
+pub struct UserFreeEvents {
+    pub free_events: Vec<EventInstance>,
+    pub user_id: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ServiceBookingSlot {
+    pub start: i64,
+    pub duration: i64,
+    pub user_ids: Vec<String>,
+}
+
+pub fn get_service_bookingslots(
+    users_free: Vec<UserFreeEvents>,
+    options: BookingSlotsOptions,
+) -> Vec<ServiceBookingSlot> {
+    let mut slots_lookup: HashMap<i64, ServiceBookingSlot> = HashMap::new();
+
+    for user in &users_free {
+        let slots = get_booking_slots(&user.free_events, &options);
+        for slot in slots {
+            if let Some(val) = slots_lookup.get(&slot.start) {
+                let mut user_ids = val.user_ids.clone();
+                user_ids.push(user.user_id.clone());
+                slots_lookup.insert(
+                    slot.start,
+                    ServiceBookingSlot {
+                        duration: slot.duration,
+                        start: slot.start,
+                        user_ids,
+                    },
+                );
+            } else {
+                slots_lookup.insert(
+                    slot.start,
+                    ServiceBookingSlot {
+                        duration: slot.duration,
+                        start: slot.start,
+                        user_ids: vec![user.user_id.clone()],
+                    },
+                );
+            }
+        }
+    }
+
+    let mut slots = slots_lookup.drain().map(|s| s.1).collect::<Vec<_>>();
+    slots.sort_by_key(|s| -s.start);
+    slots
+}
+
 // Free events should be sorted and nonoverlapping and not busy
 pub fn get_booking_slots(
     free_events: &[EventInstance],
-    options: BookingSlotsOptions,
+    options: &BookingSlotsOptions,
 ) -> Vec<BookingSlot> {
     let mut booking_slots = vec![];
-    let BookingSlotsOptions {
+    let &BookingSlotsOptions {
         start_ts,
         end_ts,
         duration,
@@ -53,7 +106,7 @@ pub fn get_booking_slots(
         if let Some(event) = available_event {
             booking_slots.push(BookingSlot {
                 start: cursor,
-                duration,
+                duration: duration,
                 available_until: event.end_ts,
             });
         }
@@ -73,7 +126,7 @@ mod test {
     fn get_booking_slots_empty() {
         let slots = get_booking_slots(
             &vec![],
-            BookingSlotsOptions {
+            &BookingSlotsOptions {
                 start_ts: 0,
                 end_ts: 100,
                 duration: 10,
@@ -93,7 +146,7 @@ mod test {
 
         let slots = get_booking_slots(
             &vec![e1],
-            BookingSlotsOptions {
+            &BookingSlotsOptions {
                 start_ts: 0,
                 end_ts: 100,
                 duration: 10,
@@ -114,7 +167,7 @@ mod test {
 
         let slots = get_booking_slots(
             &vec![e1],
-            BookingSlotsOptions {
+            &BookingSlotsOptions {
                 start_ts: 0,
                 end_ts: 100,
                 duration: 10,
@@ -143,7 +196,7 @@ mod test {
 
         let slots = get_booking_slots(
             &vec![e1],
-            BookingSlotsOptions {
+            &BookingSlotsOptions {
                 start_ts: 0,
                 end_ts: 100,
                 duration: 10,
@@ -194,7 +247,7 @@ mod test {
 
         let slots = get_booking_slots(
             &vec![e1, e2],
-            BookingSlotsOptions {
+            &BookingSlotsOptions {
                 start_ts: 0,
                 end_ts: 100,
                 duration: 10,
@@ -277,7 +330,7 @@ mod test {
 
         let slots = get_booking_slots(
             &vec![e1, e2, e3, e4, e5, e6],
-            BookingSlotsOptions {
+            &BookingSlotsOptions {
                 start_ts: 0,
                 end_ts: 99,
                 duration: 10,
@@ -314,7 +367,7 @@ mod test {
 
         let slots = get_booking_slots(
             &vec![e1],
-            BookingSlotsOptions {
+            &BookingSlotsOptions {
                 start_ts: 0,
                 end_ts: 100,
                 duration: 10,
@@ -343,7 +396,7 @@ mod test {
 
         let slots = get_booking_slots(
             &vec![e1],
-            BookingSlotsOptions {
+            &BookingSlotsOptions {
                 start_ts: 0,
                 end_ts: 100,
                 duration: 10,
@@ -372,7 +425,7 @@ mod test {
 
         let slots = get_booking_slots(
             &vec![e1],
-            BookingSlotsOptions {
+            &BookingSlotsOptions {
                 start_ts: 10,
                 end_ts: 100,
                 duration: 10,
