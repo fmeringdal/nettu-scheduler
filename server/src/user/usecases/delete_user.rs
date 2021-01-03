@@ -89,9 +89,9 @@ async fn delete_user_usecase(
         Some(u) if u.account_id == req.account.id => {
             match ctx.user_repo.delete(&req.user_id).await {
                 Some(u) => u,
-                None => return Err(UsecaseErrors::StorageError)
+                None => return Err(UsecaseErrors::StorageError),
             }
-        },
+        }
         _ => return Err(UsecaseErrors::UserNotFoundError),
     };
 
