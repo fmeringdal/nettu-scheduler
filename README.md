@@ -5,12 +5,12 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 - what needs to be done to make nettu marketplace work with this ? 
     - account admin routes 
       - get user with calendar list
-      - create user
       - create calendar
 - use interval for bookingslots request
 - protect create account
 - reminders with webhook calls
 - account with alloweduseractions
+- delete user cleanup actions
 
 
 ## Backlog

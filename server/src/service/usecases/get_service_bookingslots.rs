@@ -2,7 +2,7 @@ use crate::{
     api::Context,
     calendar::domain::date,
     event::domain::booking_slots::{
-        get_service_bookingslots, BookingSlotsOptions, ServiceBookingSlot,
+        get_service_bookingslots, BookingSlotsOptions, ServiceBookingSlot, ServiceBookingSlotDTO,
     },
     shared::auth::ensure_nettu_acct_header,
 };
@@ -36,6 +36,12 @@ pub struct QueryParams {
     date: String,
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct APIRes {
+    booking_slots: Vec<ServiceBookingSlotDTO>,
+}
+
 pub async fn get_service_bookingslots_controller(
     http_req: HttpRequest,
     query_params: web::Query<QueryParams>,
@@ -61,7 +67,16 @@ pub async fn get_service_bookingslots_controller(
     let res = get_service_bookingslots_usecase(req, ctx).await;
 
     match res {
-        Ok(r) => HttpResponse::Ok().json(r),
+        Ok(r) => {
+            let res = APIRes {
+                booking_slots: r
+                    .booking_slots
+                    .iter()
+                    .map(|slot| ServiceBookingSlotDTO::new(slot))
+                    .collect(),
+            };
+            HttpResponse::Ok().json(res)
+        }
         Err(e) => match e {
             UsecaseErrors::InvalidDateError(msg) => {
                 HttpResponse::UnprocessableEntity().body(format!(
@@ -87,8 +102,6 @@ struct UsecaseReq {
     pub duration: i64,
 }
 
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
 struct UsecaseRes {
     booking_slots: Vec<ServiceBookingSlot>,
 }

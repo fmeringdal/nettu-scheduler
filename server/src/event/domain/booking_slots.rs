@@ -2,6 +2,8 @@ use std::collections::HashMap;
 
 use serde::Serialize;
 
+use crate::user::domain::User;
+
 use super::event_instance::EventInstance;
 
 #[derive(Serialize, PartialEq, Debug)]
@@ -38,12 +40,33 @@ pub struct UserFreeEvents {
     pub user_id: String,
 }
 
-#[derive(Serialize, PartialEq, Debug)]
-#[serde(rename_all = "camelCase")]
+#[derive(PartialEq, Debug)]
 pub struct ServiceBookingSlot {
     pub start: i64,
     pub duration: i64,
     pub user_ids: Vec<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ServiceBookingSlotDTO {
+    pub start: i64,
+    pub duration: i64,
+    pub user_ids: Vec<String>,
+}
+
+impl ServiceBookingSlotDTO {
+    pub fn new(slot: &ServiceBookingSlot) -> Self {
+        Self {
+            duration: slot.duration,
+            start: slot.start,
+            user_ids: slot
+                .user_ids
+                .iter()
+                .map(|u_id| User::create_external_id(u_id))
+                .collect(),
+        }
+    }
 }
 
 pub fn get_service_bookingslots(
@@ -464,7 +487,7 @@ mod test {
         let mut users_free = vec![];
         users_free.push(UserFreeEvents {
             free_events: vec![e1],
-            user_id: String::from("1")
+            user_id: String::from("1"),
         });
 
         let slots = get_service_bookingslots(
@@ -513,11 +536,11 @@ mod test {
         let mut users_free = vec![];
         users_free.push(UserFreeEvents {
             free_events: vec![e1.clone()],
-            user_id: String::from("1")
+            user_id: String::from("1"),
         });
         users_free.push(UserFreeEvents {
             free_events: vec![e1.clone(), e2],
-            user_id: String::from("2")
+            user_id: String::from("2"),
         });
 
         let slots = get_service_bookingslots(

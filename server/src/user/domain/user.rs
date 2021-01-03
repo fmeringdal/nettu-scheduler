@@ -1,4 +1,5 @@
 use crate::shared::entity::Entity;
+use serde::Serialize;
 
 #[derive(Debug, Clone)]
 pub struct User {
@@ -20,10 +21,30 @@ impl User {
     pub fn create_id(account_id: &str, external_id: &str) -> String {
         format!("{}#{}", account_id, external_id)
     }
+
+    pub fn create_external_id(id: &str) -> String {
+        String::from(&id[25..]) // objectid and "#" has length 25
+    }
 }
 
 impl Entity for User {
     fn id(&self) -> String {
         self.id.clone()
+    }
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UserDTO {
+    id: String,
+    account_id: String,
+}
+
+impl UserDTO {
+    pub fn new(user: &User) -> Self {
+        Self {
+            id: user.external_id.clone(),
+            account_id: user.account_id.clone(),
+        }
     }
 }

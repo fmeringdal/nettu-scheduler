@@ -1,12 +1,12 @@
-use crate::api::Context;
 use crate::{
     account::domain::Account,
     service::{domain::Service, repos::IServiceRepo},
     shared::auth::{protect_account_route, AccountAuthContext},
 };
+use crate::{api::Context, service::domain::ServiceDTO};
 use actix_web::{web, HttpRequest, HttpResponse};
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 #[derive(Deserialize)]
@@ -38,7 +38,10 @@ pub async fn get_service_controller(
     };
 
     let res = get_service_usecase(
-        UsecaseReq { account, service_id: path_params.service_id.clone() },
+        UsecaseReq {
+            account,
+            service_id: path_params.service_id.clone(),
+        },
         UsecaseCtx {
             service_repo: Arc::clone(&ctx.repos.service_repo),
         },
@@ -47,7 +50,8 @@ pub async fn get_service_controller(
 
     match res {
         Ok(res) => {
-            HttpResponse::Ok().json(res.service)
+            let dto = ServiceDTO::new(&res.service);
+            HttpResponse::Ok().json(dto)
         }
         Err(e) => match e {
             UsecaseErrors::NotFoundError => HttpResponse::NotFound().finish(),
@@ -57,7 +61,7 @@ pub async fn get_service_controller(
 
 struct UsecaseReq {
     account: Account,
-    service_id: String
+    service_id: String,
 }
 
 struct UsecaseRes {
@@ -65,7 +69,7 @@ struct UsecaseRes {
 }
 
 enum UsecaseErrors {
-    NotFoundError
+    NotFoundError,
 }
 
 struct UsecaseCtx {

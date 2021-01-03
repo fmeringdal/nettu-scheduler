@@ -1,7 +1,7 @@
 use mongodb::bson::oid::ObjectId;
 
+use crate::{shared::entity::Entity, user::domain::User};
 use serde::Serialize;
-use crate::shared::entity::Entity;
 
 #[derive(Clone, Debug, Serialize)]
 pub struct ServiceResource {
@@ -24,7 +24,7 @@ impl ServiceResource {
     }
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug)]
 pub struct Service {
     pub id: String,
     pub account_id: String,
@@ -70,5 +70,45 @@ impl Service {
 
     pub fn find_user_mut(&mut self, user_id: &str) -> Option<&mut ServiceResource> {
         self.users.iter_mut().find(|u| u.user_id == user_id)
+    }
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ServiceResourceDTO {
+    pub id: String,
+    pub user_id: String,
+    pub calendar_ids: Vec<String>,
+}
+
+impl ServiceResourceDTO {
+    pub fn new(resource: &ServiceResource) -> Self {
+        Self {
+            id: resource.id.clone(),
+            calendar_ids: resource.calendar_ids.clone(),
+            user_id: User::create_external_id(&resource.user_id),
+        }
+    }
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ServiceDTO {
+    pub id: String,
+    pub account_id: String,
+    pub users: Vec<ServiceResourceDTO>,
+}
+
+impl ServiceDTO {
+    pub fn new(service: &Service) -> Self {
+        Self {
+            id: service.id.clone(),
+            account_id: service.account_id.clone(),
+            users: service
+                .users
+                .iter()
+                .map(|u| ServiceResourceDTO::new(u))
+                .collect(),
+        }
     }
 }

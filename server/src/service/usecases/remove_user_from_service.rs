@@ -1,9 +1,6 @@
 use crate::{
     account::domain::Account,
-    service::{
-        domain::{ServiceResource},
-        repos::IServiceRepo,
-    },
+    service::{domain::ServiceResource, repos::IServiceRepo},
     shared::auth::{protect_account_route, AccountAuthContext},
     user::domain::User,
 };
