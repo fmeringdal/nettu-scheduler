@@ -33,6 +33,12 @@ async fn create_user_if_not_exists(
     account_id: &str,
     ctx: &AuthContext,
 ) -> Option<User> {
+    let user_id = User::create_id(account_id, external_id);
+    let user = ctx.user_repo.find(&user_id).await;
+    if let Some(user) = user {
+        return Some(user);
+    }
+
     let req = create_user::UsecaseReq {
         account_id: String::from(account_id),
         external_user_id: String::from(external_user_id),
@@ -41,6 +47,7 @@ async fn create_user_if_not_exists(
         user_repo: Arc::clone(&ctx.user_repo),
     };
     let res = create_user::create_user_usecase(req, ctx).await;
+    // println!("ENd {:?}", res);
     match res {
         Ok(res) => Some(res.user),
         Err(_) => None,
@@ -59,6 +66,7 @@ pub async fn auth_user_req(
                 Ok(token) => parse_authtoken_header(token),
                 Err(_) => return None,
             };
+            println!("Got here");
             match decode_token(account, &token) {
                 Ok(claims) => create_user_if_not_exists(&claims.user_id, &account.id, ctx).await,
                 Err(_e) => None,
@@ -98,6 +106,7 @@ pub async fn protect_route(req: &HttpRequest, ctx: &AuthContext) -> Result<User,
                 .body("Unable to find the account the client belongs to"))
         }
     };
+    println!("Found accounts");
     let res = auth_user_req(req, &account, ctx).await;
 
     match res {
@@ -221,7 +230,7 @@ mod test {
 
     #[actix_web::main]
     #[test]
-    async fn decodes_valid_token_and_for_existing_user() {
+    async fn decodes_valid_token_for_existing_user() {
         let ctx = setup_ctx();
         let account = setup_account(&ctx).await;
         let token = get_token(false);
@@ -232,6 +241,7 @@ mod test {
             .header("Authorization", format!("Bearer {}", token))
             .to_http_request();
         let res = protect_route(&req, &ctx).await;
+        println!("res: {:?}", res);
         assert!(res.is_ok());
     }
 

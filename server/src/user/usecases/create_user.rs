@@ -1,5 +1,4 @@
 use crate::{
-    account::domain::Account,
     service::repos::IServiceRepo,
     shared::auth::{protect_account_route, AccountAuthContext},
 };
