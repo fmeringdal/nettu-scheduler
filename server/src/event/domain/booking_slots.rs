@@ -141,6 +141,12 @@ pub fn get_booking_slots(
     booking_slots
 }
 
+pub fn validate_slots_interval(interval: i64) -> bool {
+    let min_interval = 1000 * 60 * 10;
+    let max_interval = 1000 * 60 * 60;
+    interval >= min_interval && interval <= max_interval
+}
+
 #[cfg(test)]
 mod test {
 

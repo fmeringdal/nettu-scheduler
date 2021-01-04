@@ -2,7 +2,8 @@ use crate::{
     api::Context,
     calendar::domain::date,
     event::domain::booking_slots::{
-        get_service_bookingslots, BookingSlotsOptions, ServiceBookingSlot, ServiceBookingSlotDTO,
+        get_service_bookingslots, validate_slots_interval, BookingSlotsOptions, ServiceBookingSlot,
+        ServiceBookingSlotDTO,
     },
     shared::auth::ensure_nettu_acct_header,
 };
@@ -58,6 +59,7 @@ pub async fn get_service_bookingslots_controller(
         iana_tz: query_params.iana_tz.clone(),
         date: query_params.date.clone(),
         duration: query_params.duration,
+        interval: query_params.interval,
     };
     let ctx = UsecaseCtx {
         event_repo: ctx.repos.event_repo.clone(),
@@ -90,6 +92,11 @@ pub async fn get_service_bookingslots_controller(
                     msg
                 ))
             }
+            UsecaseErrors::InvalidIntervalError => {
+                HttpResponse::UnprocessableEntity().body(
+                    "Invalid interval specified. It should be between 10 - 60 minutes inclusively and be specified as milliseconds."
+                )
+            }
             UsecaseErrors::ServiceNotFoundError => HttpResponse::NotFound().finish(),
         },
     }
@@ -100,6 +107,7 @@ struct UsecaseReq {
     pub date: String,
     pub iana_tz: Option<String>,
     pub duration: i64,
+    pub interval: i64,
 }
 
 struct UsecaseRes {
@@ -115,6 +123,7 @@ struct UsecaseCtx {
 #[derive(Debug)]
 enum UsecaseErrors {
     ServiceNotFoundError,
+    InvalidIntervalError,
     InvalidDateError(String),
     InvalidTimezoneError(String),
 }
@@ -123,6 +132,10 @@ async fn get_service_bookingslots_usecase(
     req: UsecaseReq,
     ctx: UsecaseCtx,
 ) -> Result<UsecaseRes, UsecaseErrors> {
+    if !validate_slots_interval(req.interval) {
+        return Err(UsecaseErrors::InvalidIntervalError);
+    }
+
     let tz: Tz = match req.iana_tz.unwrap_or(String::from("UTC")).parse() {
         Ok(tz) => tz,
         Err(_) => return Err(UsecaseErrors::InvalidTimezoneError(req.date)),
@@ -176,7 +189,7 @@ async fn get_service_bookingslots_usecase(
     let booking_slots = get_service_bookingslots(
         users_freebusy,
         &BookingSlotsOptions {
-            interval: 1000 * 60 * 15, // 15 minutes
+            interval: req.interval,
             duration: req.duration,
             end_ts: end_of_day.timestamp_millis(),
             start_ts: start_of_day.timestamp_millis(),

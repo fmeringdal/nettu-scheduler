@@ -1,13 +1,12 @@
 use account::domain::Account;
 use actix_web::{HttpRequest, HttpResponse};
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
-
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 use crate::{
     account::{self, repos::IAccountRepo},
-    user::{domain::User, repos::IUserRepo},
+    user::{domain::User, repos::IUserRepo, usecases::create_user},
 };
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -33,25 +32,18 @@ async fn create_user_if_not_exists(
     external_user_id: &str,
     account_id: &str,
     ctx: &AuthContext,
-) -> User {
-    let user_id = User::create_id(account_id, external_user_id);
-    match ctx.user_repo.find(&user_id).await {
-        Some(user) => user,
-        None => {
-            // create user
-            // todo: in future there will be a create user admin endpoint
-            let user = User::new(account_id, external_user_id);
-
-            match ctx.user_repo.insert(&user).await {
-                Ok(_) => (),
-                Err(e) => {
-                    println!("Unable to insert user {:?}", e);
-                    ()
-                }
-            };
-
-            user
-        }
+) -> Option<User> {
+    let req = create_user::UsecaseReq {
+        account_id: String::from(account_id),
+        external_user_id: String::from(external_user_id),
+    };
+    let ctx = create_user::UsecaseCtx {
+        user_repo: Arc::clone(&ctx.user_repo),
+    };
+    let res = create_user::create_user_usecase(req, ctx).await;
+    match res {
+        Ok(res) => Some(res.user),
+        Err(_) => None,
     }
 }
 
@@ -68,10 +60,7 @@ pub async fn auth_user_req(
                 Err(_) => return None,
             };
             match decode_token(account, &token) {
-                Ok(claims) => {
-                    let user = create_user_if_not_exists(&claims.user_id, &account.id, ctx).await;
-                    Some(user)
-                }
+                Ok(claims) => create_user_if_not_exists(&claims.user_id, &account.id, ctx).await,
                 Err(_e) => None,
             }
         }

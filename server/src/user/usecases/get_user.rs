@@ -1,6 +1,7 @@
 use crate::{
     account::domain::Account,
     shared::auth::{protect_account_route, AccountAuthContext},
+    user::domain::UserDTO,
 };
 use crate::{
     api::Context,
@@ -16,7 +17,7 @@ pub struct PathParams {
     pub user_id: String,
 }
 
-pub async fn delete_user_controller(
+pub async fn get_user_controller(
     http_req: HttpRequest,
     path_params: web::Json<PathParams>,
     ctx: web::Data<Context>,
@@ -34,7 +35,7 @@ pub async fn delete_user_controller(
     };
 
     let user_id = User::create_id(&account.id, &path_params.user_id);
-    let res = delete_user_usecase(
+    let res = get_user_usecase(
         UsecaseReq { account, user_id },
         UsecaseCtx {
             user_repo: Arc::clone(&ctx.repos.user_repo),
@@ -43,12 +44,11 @@ pub async fn delete_user_controller(
     .await;
 
     match res {
-        Ok(usecase_res) => HttpResponse::Ok().body(format!(
-            "Used: {} is deleted.",
-            usecase_res.user.external_id
-        )),
+        Ok(usecase_res) => {
+            let dto = UserDTO::new(&usecase_res.user);
+            HttpResponse::Ok().json(dto)
+        }
         Err(e) => match e {
-            UsecaseErrors::StorageError => HttpResponse::InternalServerError().finish(),
             UsecaseErrors::UserNotFoundError => {
                 HttpResponse::NotFound().body("A user with that id was not found.")
             }
@@ -66,7 +66,6 @@ struct UsecaseRes {
 }
 
 enum UsecaseErrors {
-    StorageError,
     UserNotFoundError,
 }
 
@@ -74,21 +73,9 @@ struct UsecaseCtx {
     pub user_repo: Arc<dyn IUserRepo>,
 }
 
-// TODOS:
-// - REMOVE ALL CALENDARS
-// - REMOVE ALL EVENTS
-// - REMOVE FROM ALL SERVICES
-async fn delete_user_usecase(
-    req: UsecaseReq,
-    ctx: UsecaseCtx,
-) -> Result<UsecaseRes, UsecaseErrors> {
+async fn get_user_usecase(req: UsecaseReq, ctx: UsecaseCtx) -> Result<UsecaseRes, UsecaseErrors> {
     let user = match ctx.user_repo.find(&req.user_id).await {
-        Some(u) if u.account_id == req.account.id => {
-            match ctx.user_repo.delete(&req.user_id).await {
-                Some(u) => u,
-                None => return Err(UsecaseErrors::StorageError),
-            }
-        }
+        Some(u) if u.account_id == req.account.id => u,
         _ => return Err(UsecaseErrors::UserNotFoundError),
     };
 

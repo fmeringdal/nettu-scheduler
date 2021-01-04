@@ -2,11 +2,8 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 
 ## Todos
 
-- what needs to be done to make nettu marketplace work with this ? 
-    - account admin routes 
-      - get user with calendar list
-      - create calendar
-- use interval for bookingslots request
+- use common logic for getting service and user booking slots
+- create server binary and main.rs -> lib.rs so that we can make integration tests
 - protect create account
 - reminders with webhook calls
 - account with alloweduseractions
@@ -16,6 +13,7 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 ## Backlog
 
 - smarter mongodb schema
+- is more account admin routes needed?
 - More api tests for [calendarevent, booking]
 - error handling: https://auth0.com/blog/build-an-api-in-rust-with-jwt-authentication-using-actix-web/
 - frontend for booking

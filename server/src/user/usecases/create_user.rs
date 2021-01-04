@@ -1,6 +1,6 @@
 use crate::{
     account::domain::Account,
-    service::{repos::IServiceRepo},
+    service::repos::IServiceRepo,
     shared::auth::{protect_account_route, AccountAuthContext},
 };
 use crate::{
@@ -12,7 +12,7 @@ use crate::{
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 
-use serde::{Deserialize};
+use serde::Deserialize;
 use std::sync::Arc;
 
 #[derive(Deserialize)]
@@ -40,7 +40,7 @@ pub async fn create_user_controller(
 
     let res = create_user_usecase(
         UsecaseReq {
-            account,
+            account_id: account.id.clone(),
             external_user_id: body.user_id.clone(),
         },
         UsecaseCtx {
@@ -62,29 +62,29 @@ pub async fn create_user_controller(
     }
 }
 
-struct UsecaseReq {
-    account: Account,
-    external_user_id: String,
+pub struct UsecaseReq {
+    pub account_id: String,
+    pub external_user_id: String,
 }
 
-struct UsecaseRes {
+pub struct UsecaseRes {
     pub user: User,
 }
 
-enum UsecaseErrors {
+pub enum UsecaseErrors {
     StorageError,
     UserAlreadyExists,
 }
 
-struct UsecaseCtx {
+pub struct UsecaseCtx {
     pub user_repo: Arc<dyn IUserRepo>,
 }
 
-async fn create_user_usecase(
+pub async fn create_user_usecase(
     req: UsecaseReq,
     ctx: UsecaseCtx,
 ) -> Result<UsecaseRes, UsecaseErrors> {
-    let user = User::new(&req.account.id, &req.external_user_id);
+    let user = User::new(&req.account_id, &req.external_user_id);
 
     if let Some(_existing_user) = ctx.user_repo.find(&user.id).await {
         return Err(UsecaseErrors::UserAlreadyExists);
