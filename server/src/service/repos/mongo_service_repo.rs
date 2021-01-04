@@ -7,6 +7,7 @@ use mongodb::{
     bson::{doc, from_bson, oid::ObjectId, to_bson, Bson, Document},
     Collection, Database,
 };
+use serde::{Deserialize, Serialize};
 use std::error::Error;
 use tokio::sync::RwLock;
 
@@ -55,68 +56,63 @@ impl IServiceRepo for ServiceRepo {
     }
 }
 
-impl MongoPersistence for Service {
-    fn to_domain(doc: Document) -> Self {
-        let id = match doc.get("_id").unwrap() {
-            Bson::ObjectId(oid) => oid.to_string(),
-            _ => unreachable!("This should not happen"),
-        };
+#[derive(Debug, Serialize, Deserialize)]
+struct ServiceResourceMongo {
+    pub _id: ObjectId,
+    pub user_id: String,
+    pub calendar_ids: Vec<String>,
+}
 
+#[derive(Debug, Serialize, Deserialize)]
+struct ServiceMongo {
+    pub _id: ObjectId,
+    pub account_id: String,
+    pub users: Vec<ServiceResourceMongo>,
+}
+
+impl ServiceMongo {
+    pub fn to_domain(&self) -> Service {
         Service {
-            id,
-            account_id: from_bson(doc.get("account_id").unwrap().to_owned()).unwrap(),
-            users: doc
-                .get("users")
-                .unwrap()
-                .as_array()
-                .unwrap()
+            id: self._id.to_string(),
+            account_id: self.account_id.clone(),
+            users: self
+                .users
                 .iter()
-                .map(|u| ServiceResource::to_domain(u.as_document().unwrap().to_owned()))
+                .map(|user| ServiceResource {
+                    id: user._id.to_string(),
+                    user_id: user.user_id.clone(),
+                    calendar_ids: user.calendar_ids.clone(),
+                })
                 .collect(),
         }
     }
 
-    fn to_persistence(&self) -> Document {
-        let raw = doc! {
-            "_id": ObjectId::with_string(&self.id).unwrap(),
-            "account_id": to_bson(&self.account_id).unwrap(),
-            "users": self.users
+    pub fn from_domain(service: &Service) -> Self {
+        Self {
+            _id: ObjectId::with_string(&service.id).unwrap(),
+            account_id: service.account_id.clone(),
+            users: service
+                .users
                 .iter()
-                .map(|u| to_bson(&u.to_persistence()).unwrap())
-                .collect::<Vec<_>>()
-        };
-
-        raw
-    }
-
-    fn get_persistence_id(&self) -> anyhow::Result<mongo_repo::MongoPersistenceID> {
-        let oid = ObjectId::with_string(&self.id)?;
-        Ok(mongo_repo::MongoPersistenceID::ObjectId(oid))
+                .map(|user| ServiceResourceMongo {
+                    _id: ObjectId::with_string(&user.id).unwrap(),
+                    user_id: user.user_id.clone(),
+                    calendar_ids: user.calendar_ids.clone(),
+                })
+                .collect(),
+        }
     }
 }
 
-impl MongoPersistence for ServiceResource {
+impl MongoPersistence for Service {
     fn to_domain(doc: Document) -> Self {
-        let id = match doc.get("_id").unwrap() {
-            Bson::ObjectId(oid) => oid.to_string(),
-            _ => unreachable!("This should not happen"),
-        };
-
-        Self {
-            id,
-            user_id: from_bson(doc.get("user_id").unwrap().to_owned()).unwrap(),
-            calendar_ids: from_bson(doc.get("calendar_ids").unwrap().to_owned()).unwrap(),
-        }
+        let doc: ServiceMongo = from_bson(Bson::Document(doc)).unwrap();
+        doc.to_domain()
     }
 
     fn to_persistence(&self) -> Document {
-        let raw = doc! {
-            "_id": ObjectId::with_string(&self.id).unwrap(),
-            "user_id": to_bson(&self.user_id).unwrap(),
-            "calendar_ids": to_bson(&self.calendar_ids).unwrap(),
-        };
-
-        raw
+        let doc = ServiceMongo::from_domain(self);
+        to_bson(&doc).unwrap().as_document().unwrap().to_owned()
     }
 
     fn get_persistence_id(&self) -> anyhow::Result<mongo_repo::MongoPersistenceID> {

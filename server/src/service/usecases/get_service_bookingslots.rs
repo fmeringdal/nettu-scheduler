@@ -1,4 +1,13 @@
-use crate::{api::Context, calendar::{domain::date, usecases::get_user_freebusy::GetUserFreeBusyUseCase}, event::domain::booking_slots::{BookingQueryError, BookingSlotsOptions, BookingSlotsQuery, ServiceBookingSlot, ServiceBookingSlotDTO, get_service_bookingslots, validate_bookingslots_query, validate_slots_interval}, shared::auth::ensure_nettu_acct_header};
+use crate::{
+    api::Context,
+    calendar::{domain::date, usecases::get_user_freebusy::GetUserFreeBusyUseCase},
+    event::domain::booking_slots::{
+        get_service_bookingslots, validate_bookingslots_query, validate_slots_interval,
+        BookingQueryError, BookingSlotsOptions, BookingSlotsQuery, ServiceBookingSlot,
+        ServiceBookingSlotDTO,
+    },
+    shared::auth::ensure_nettu_acct_header,
+};
 use crate::{
     event::domain::booking_slots::UserFreeEvents,
     shared::usecase::{perform, Usecase},
@@ -125,10 +134,16 @@ impl Usecase for GetServiceBookingSlotsUseCase {
         let booking_timespan = match validate_bookingslots_query(&query) {
             Ok(t) => t,
             Err(e) => match e {
-                BookingQueryError::InvalidIntervalError => return Err(UseCaseErrors::InvalidIntervalError),
-                BookingQueryError::InvalidDateError(d) => return Err(UseCaseErrors::InvalidDateError(d)),
-                BookingQueryError::InvalidTimezoneError(d) => return Err(UseCaseErrors::InvalidTimezoneError(d)),
-            }
+                BookingQueryError::InvalidIntervalError => {
+                    return Err(UseCaseErrors::InvalidIntervalError)
+                }
+                BookingQueryError::InvalidDateError(d) => {
+                    return Err(UseCaseErrors::InvalidDateError(d))
+                }
+                BookingQueryError::InvalidTimezoneError(d) => {
+                    return Err(UseCaseErrors::InvalidTimezoneError(d))
+                }
+            },
         };
 
         let service = match ctx.repos.service_repo.find(&self.service_id).await {

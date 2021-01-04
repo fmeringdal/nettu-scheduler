@@ -168,7 +168,9 @@ pub struct BookingTimespan {
     pub end_ts: i64,
 }
 
-pub fn validate_bookingslots_query(query: &BookingSlotsQuery) -> Result<BookingTimespan, BookingQueryError> {
+pub fn validate_bookingslots_query(
+    query: &BookingSlotsQuery,
+) -> Result<BookingTimespan, BookingQueryError> {
     if !validate_slots_interval(query.interval) {
         return Err(BookingQueryError::InvalidIntervalError);
     }

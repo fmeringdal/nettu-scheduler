@@ -1,8 +1,17 @@
 use super::get_user_freebusy::GetUserFreeBusyUseCase;
-use crate::{api::Context, calendar::domain::date, event::domain::booking_slots::{BookingQueryError, BookingSlot, BookingSlotsOptions, BookingSlotsQuery, get_booking_slots, validate_bookingslots_query}, shared::{
+use crate::{
+    api::Context,
+    calendar::domain::date,
+    event::domain::booking_slots::{
+        get_booking_slots, validate_bookingslots_query, BookingQueryError, BookingSlot,
+        BookingSlotsOptions, BookingSlotsQuery,
+    },
+    shared::{
         auth::ensure_nettu_acct_header,
         usecase::{perform, Usecase},
-    }, user::domain::User};
+    },
+    user::domain::User,
+};
 use actix_web::{web, HttpRequest, HttpResponse};
 use chrono::{prelude::*, Duration};
 use chrono_tz::Tz;
@@ -117,10 +126,16 @@ impl Usecase for GetUserBookingSlotsUsecase {
         let booking_timespan = match validate_bookingslots_query(&query) {
             Ok(t) => t,
             Err(e) => match e {
-                BookingQueryError::InvalidIntervalError => return Err(UseCaseErrors::InvalidIntervalError),
-                BookingQueryError::InvalidDateError(d) => return Err(UseCaseErrors::InvalidDateError(d)),
-                BookingQueryError::InvalidTimezoneError(d) => return Err(UseCaseErrors::InvalidTimezoneError(d)),
-            }
+                BookingQueryError::InvalidIntervalError => {
+                    return Err(UseCaseErrors::InvalidIntervalError)
+                }
+                BookingQueryError::InvalidDateError(d) => {
+                    return Err(UseCaseErrors::InvalidDateError(d))
+                }
+                BookingQueryError::InvalidTimezoneError(d) => {
+                    return Err(UseCaseErrors::InvalidTimezoneError(d))
+                }
+            },
         };
 
         let freebusy_usecase = GetUserFreeBusyUseCase {

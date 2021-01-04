@@ -3,9 +3,10 @@ use crate::{shared::mongo_repo::MongoPersistence, user::domain::User};
 use super::IUserRepo;
 use crate::shared::mongo_repo;
 use mongodb::{
-    bson::{doc, from_bson, to_bson, Document},
+    bson::{doc, from_bson, to_bson, Bson, Document},
     Collection, Database,
 };
+use serde::{Deserialize, Serialize};
 use std::error::Error;
 use tokio::sync::RwLock;
 
@@ -48,25 +49,40 @@ impl IUserRepo for UserRepo {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct UserMongo {
+    _id: String,
+    account_id: String,
+    external_id: String,
+}
+
+impl UserMongo {
+    pub fn to_domain(&self) -> User {
+        User {
+            id: self._id.clone(),
+            account_id: self.account_id.clone(),
+            external_id: self.external_id.clone(),
+        }
+    }
+
+    pub fn from_domain(user: &User) -> Self {
+        Self {
+            _id: user.id.clone(),
+            account_id: user.account_id.clone(),
+            external_id: user.external_id.clone(),
+        }
+    }
+}
+
 impl MongoPersistence for User {
     fn to_domain(doc: Document) -> Self {
-        let user = User {
-            id: from_bson(doc.get("_id").unwrap().clone()).unwrap(),
-            account_id: from_bson(doc.get("account_id").unwrap().clone()).unwrap(),
-            external_id: from_bson(doc.get("external_id").unwrap().clone()).unwrap(),
-        };
-
-        user
+        let parsed: UserMongo = from_bson(Bson::Document(doc)).unwrap();
+        parsed.to_domain()
     }
 
     fn to_persistence(&self) -> Document {
-        let raw = doc! {
-            "id": to_bson(&self.id).unwrap(),
-            "account_id": to_bson(&self.account_id).unwrap(),
-            "external_id": to_bson(&self.external_id).unwrap(),
-        };
-
-        raw
+        let raw = UserMongo::from_domain(self);
+        to_bson(&raw).unwrap().as_document().unwrap().to_owned()
     }
 
     fn get_persistence_id(&self) -> anyhow::Result<crate::shared::mongo_repo::MongoPersistenceID> {

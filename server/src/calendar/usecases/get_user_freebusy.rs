@@ -1,15 +1,13 @@
 use crate::event::domain::event_instance::EventInstance;
 use crate::{api::Context, calendar::domain::calendar_view::CalendarView};
-use crate::{shared::auth::ensure_nettu_acct_header, user::domain::User,
-};
 use crate::{
     event::domain::event_instance::get_free_busy,
     shared::usecase::{perform, Usecase},
 };
+use crate::{shared::auth::ensure_nettu_acct_header, user::domain::User};
 use actix_web::{web, HttpRequest, HttpResponse};
 use futures::future::join_all;
 use serde::{Deserialize, Serialize};
-
 
 #[derive(Debug, Deserialize)]
 pub struct UserPathParams {
