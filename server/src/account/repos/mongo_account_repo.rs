@@ -9,6 +9,7 @@ use mongodb::{
 };
 use std::error::Error;
 use tokio::sync::RwLock;
+use serde::{Serialize, Deserialize};
 
 pub struct AccountRepo {
     collection: RwLock<Collection>,
@@ -62,37 +63,41 @@ impl IAccountRepo for AccountRepo {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct AccountMongo {
+    pub _id: ObjectId,
+    pub public_key_b64: Option<String>,
+    pub secret_api_key: String,
+}
+
+impl AccountMongo {
+    pub fn to_domain(&self) -> Account {
+        Account {
+            id: self._id.to_string(),
+            public_key_b64: self.public_key_b64.clone(),
+            secret_api_key: self.secret_api_key.clone(),
+        }
+    }
+
+    pub fn from_domain(account: &Account) -> Self {
+        Self {
+            _id: ObjectId::with_string(&account.id).unwrap(),
+            public_key_b64: account.public_key_b64.clone(),
+            secret_api_key: account.secret_api_key.clone(),
+        }
+    }
+}
+
+
 impl MongoPersistence for Account {
     fn to_domain(doc: Document) -> Self {
-        let id = match doc.get("_id").unwrap() {
-            Bson::ObjectId(oid) => oid.to_string(),
-            _ => unreachable!("This should not happen"),
-        };
-
-        let public_key_b64 = match doc.get("public_key_b64") {
-            Some(bson) => from_bson(bson.clone()).unwrap_or(None),
-            None => None,
-        };
-
-        let account = Account {
-            id,
-            public_key_b64,
-            secret_api_key: from_bson(doc.get("secret_api_key").unwrap().clone()).unwrap(),
-        };
-
-        account
+        let doc: AccountMongo = from_bson(Bson::Document(doc)).unwrap();
+        doc.to_domain()
     }
 
     fn to_persistence(&self) -> Document {
-        let mut raw = doc! {
-            "_id": ObjectId::with_string(&self.id).unwrap(),
-            "secret_api_key": to_bson(&self.secret_api_key).unwrap()
-        };
-        if let Ok(public_key_b64) = to_bson(&self.public_key_b64) {
-            raw.insert("public_key_b64", public_key_b64);
-        }
-
-        raw
+        let doc = AccountMongo::from_domain(self);
+        to_bson(&doc).unwrap().as_document().unwrap().to_owned()
     }
 
     fn get_persistence_id(&self) -> anyhow::Result<mongo_repo::MongoPersistenceID> {
