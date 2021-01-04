@@ -29,14 +29,14 @@ fn get_id_filter<T: MongoPersistence>(val_id: &MongoPersistenceID) -> Document {
     }
 }
 
-pub async fn insert<T: MongoPersistence>(collection: &RwLock<Collection>, val: &T) -> Result<()> {
-    let coll = collection.read().await;
+pub async fn insert<T: MongoPersistence>(collection: &Collection, val: &T) -> Result<()> {
+    let coll = collection;
     let _res = coll.insert_one(val.to_persistence(), None).await;
     Ok(())
 }
 
-pub async fn save<T: MongoPersistence>(collection: &RwLock<Collection>, val: &T) -> Result<()> {
-    let coll = collection.read().await;
+pub async fn save<T: MongoPersistence>(collection: &Collection, val: &T) -> Result<()> {
+    let coll = collection;
     let val_id = val.get_persistence_id()?;
     let filter = get_id_filter::<T>(&val_id);
     let _res = coll.update_one(filter, val.to_persistence(), None).await;
@@ -44,7 +44,7 @@ pub async fn save<T: MongoPersistence>(collection: &RwLock<Collection>, val: &T)
 }
 
 pub async fn find<T: MongoPersistence>(
-    collection: &RwLock<Collection>,
+    collection: &Collection,
     id: &MongoPersistenceID,
 ) -> Option<T> {
     let filter = get_id_filter::<T>(id);
@@ -52,10 +52,10 @@ pub async fn find<T: MongoPersistence>(
 }
 
 pub async fn find_one_by<T: MongoPersistence>(
-    collection: &RwLock<Collection>,
+    collection: &Collection,
     filter: Document,
 ) -> Option<T> {
-    let coll = collection.read().await;
+    let coll = collection;
     let res = coll.find_one(filter, None).await;
     match res {
         Ok(doc) if doc.is_some() => {
@@ -67,10 +67,10 @@ pub async fn find_one_by<T: MongoPersistence>(
 }
 
 pub async fn find_many_by<T: MongoPersistence>(
-    collection: &RwLock<Collection>,
+    collection: &Collection,
     filter: Document,
 ) -> Result<Vec<T>, Box<dyn Error>> {
-    let coll = collection.read().await;
+    let coll = collection;
     let res = coll.find(filter, None).await;
 
     match res {
@@ -94,11 +94,11 @@ pub async fn find_many_by<T: MongoPersistence>(
 }
 
 pub async fn delete<T: MongoPersistence>(
-    collection: &RwLock<Collection>,
+    collection: &Collection,
     id: &MongoPersistenceID,
 ) -> Option<T> {
     let filter = get_id_filter::<T>(id);
-    let coll = collection.read().await;
+    let coll = collection;
     let res = coll.find_one_and_delete(filter, None).await;
     match res {
         Ok(doc) if doc.is_some() => {

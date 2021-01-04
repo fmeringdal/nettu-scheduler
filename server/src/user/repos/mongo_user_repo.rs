@@ -11,13 +11,13 @@ use std::error::Error;
 use tokio::sync::RwLock;
 
 pub struct UserRepo {
-    collection: RwLock<Collection>,
+    collection: Collection,
 }
 
 impl UserRepo {
     pub fn new(db: &Database) -> Self {
         Self {
-            collection: RwLock::new(db.collection("users")),
+            collection: db.collection("users"),
         }
     }
 }

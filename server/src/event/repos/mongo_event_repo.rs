@@ -1,24 +1,24 @@
+use super::repos::{DeleteResult, IEventRepo};
+use crate::{calendar::domain::calendar_view::CalendarView, event::domain::event::CalendarEvent};
+use crate::{event::domain::event::RRuleOptions, shared::mongo_repo};
 use mongo_repo::MongoPersistence;
 use mongodb::{
     bson::doc,
     bson::{from_bson, oid::ObjectId, to_bson, Bson, Document},
     Collection, Database,
 };
-use tokio::sync::RwLock;
-use serde::{Serialize, Deserialize};
-use super::repos::{DeleteResult, IEventRepo};
-use crate::{event::domain::event::RRuleOptions, shared::mongo_repo};
-use crate::{calendar::domain::calendar_view::CalendarView, event::domain::event::CalendarEvent};
+use serde::{Deserialize, Serialize};
 use std::error::Error;
+use tokio::sync::RwLock;
 
 pub struct EventRepo {
-    collection: RwLock<Collection>,
+    collection: Collection,
 }
 
 impl EventRepo {
     pub fn new(db: &Database) -> Self {
         Self {
-            collection: RwLock::new(db.collection("calendar-events")),
+            collection: db.collection("calendar-events"),
         }
     }
 }
@@ -88,8 +88,7 @@ impl IEventRepo for EventRepo {
         let filter = doc! {
             "calendar_id": calendar_id
         };
-        let coll = self.collection.read().await;
-        match coll.delete_many(filter, None).await {
+        match self.collection.delete_many(filter, None).await {
             Ok(res) => Ok(DeleteResult {
                 deleted_count: res.deleted_count,
             }),
@@ -108,7 +107,7 @@ struct CalendarEventMongo {
     user_id: String,
     exdates: Vec<i64>,
     calendar_id: String,
-    recurrence: Option<RRuleOptions>
+    recurrence: Option<RRuleOptions>,
 }
 
 impl CalendarEventMongo {

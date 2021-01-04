@@ -7,18 +7,18 @@ use mongodb::{
     bson::{doc, from_bson, oid::ObjectId, to_bson, Bson, Document},
     Collection, Database,
 };
+use serde::{Deserialize, Serialize};
 use std::error::Error;
 use tokio::sync::RwLock;
-use serde::{Serialize, Deserialize};
 
 pub struct AccountRepo {
-    collection: RwLock<Collection>,
+    collection: Collection,
 }
 
 impl AccountRepo {
     pub fn new(db: &Database) -> Self {
         Self {
-            collection: RwLock::new(db.collection("accounts")),
+            collection: db.collection("accounts"),
         }
     }
 }
@@ -87,7 +87,6 @@ impl AccountMongo {
         }
     }
 }
-
 
 impl MongoPersistence for Account {
     fn to_domain(doc: Document) -> Self {

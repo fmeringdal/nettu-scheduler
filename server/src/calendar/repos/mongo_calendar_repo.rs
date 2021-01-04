@@ -2,19 +2,22 @@ use super::ICalendarRepo;
 use crate::calendar::domain::calendar::Calendar;
 use crate::shared::mongo_repo;
 use mongo_repo::MongoPersistence;
-use mongodb::{Collection, Database, bson::{Bson, Document, doc, from_bson, oid::ObjectId, to_bson}};
+use mongodb::{
+    bson::{doc, from_bson, oid::ObjectId, to_bson, Bson, Document},
+    Collection, Database,
+};
+use serde::{Deserialize, Serialize};
 use std::error::Error;
 use tokio::sync::RwLock;
-use serde::{Serialize, Deserialize};
 
 pub struct CalendarRepo {
-    collection: RwLock<Collection>,
+    collection: Collection,
 }
 
 impl CalendarRepo {
     pub fn new(db: &Database) -> Self {
         Self {
-            collection: RwLock::new(db.collection("calendars")),
+            collection: db.collection("calendars"),
         }
     }
 }
@@ -65,7 +68,7 @@ impl ICalendarRepo for CalendarRepo {
 #[derive(Debug, Serialize, Deserialize)]
 struct CalendarMongo {
     _id: ObjectId,
-    user_id: String
+    user_id: String,
 }
 
 impl CalendarMongo {
