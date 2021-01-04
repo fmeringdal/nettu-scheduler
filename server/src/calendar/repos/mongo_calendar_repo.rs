@@ -2,12 +2,10 @@ use super::ICalendarRepo;
 use crate::calendar::domain::calendar::Calendar;
 use crate::shared::mongo_repo;
 use mongo_repo::MongoPersistence;
-use mongodb::{
-    bson::{doc, from_bson, oid::ObjectId, Bson, Document},
-    Collection, Database,
-};
+use mongodb::{Collection, Database, bson::{Bson, Document, doc, from_bson, oid::ObjectId, to_bson}};
 use std::error::Error;
 use tokio::sync::RwLock;
+use serde::{Serialize, Deserialize};
 
 pub struct CalendarRepo {
     collection: RwLock<Collection>,
@@ -64,28 +62,37 @@ impl ICalendarRepo for CalendarRepo {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct CalendarMongo {
+    _id: ObjectId,
+    user_id: String
+}
+
+impl CalendarMongo {
+    pub fn to_domain(&self) -> Calendar {
+        Calendar {
+            id: self._id.to_string(),
+            user_id: self.user_id.clone(),
+        }
+    }
+
+    pub fn from_domain(calendar: &Calendar) -> Self {
+        Self {
+            _id: ObjectId::with_string(&calendar.id).unwrap(),
+            user_id: calendar.user_id.clone(),
+        }
+    }
+}
+
 impl MongoPersistence for Calendar {
     fn to_domain(doc: Document) -> Self {
-        let id = match doc.get("_id").unwrap() {
-            Bson::ObjectId(oid) => oid.to_string(),
-            _ => unreachable!("This should not happen"),
-        };
-
-        let calendar = Calendar {
-            id,
-            user_id: from_bson(doc.get("user_id").unwrap().clone()).unwrap(),
-        };
-
-        calendar
+        let doc: CalendarMongo = from_bson(Bson::Document(doc)).unwrap();
+        doc.to_domain()
     }
 
     fn to_persistence(&self) -> Document {
-        let raw = doc! {
-            "_id": ObjectId::with_string(&self.id).unwrap(),
-            "user_id": self.user_id.clone(),
-        };
-
-        raw
+        let doc = CalendarMongo::from_domain(self);
+        to_bson(&doc).unwrap().as_document().unwrap().to_owned()
     }
 
     fn get_persistence_id(&self) -> anyhow::Result<mongo_repo::MongoPersistenceID> {

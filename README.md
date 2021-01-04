@@ -4,6 +4,7 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 
 - Maybe repos dont need to be arc ? Maybe just use new method for collection ??
 - Use serializeable and deserializeable structs for insert to mongodb: https://medium.com/@louis.beaumont/rest-api-with-rust-mongodb-10eeb6bd51d7
+- remove option for end_ts and set max timestamp
 - setup the skeleton for rust integration tests (mongodb docker compose without volume)
 - protect create account
 - reminders with webhook calls

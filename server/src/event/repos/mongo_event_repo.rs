@@ -5,9 +5,9 @@ use mongodb::{
     Collection, Database,
 };
 use tokio::sync::RwLock;
-
+use serde::{Serialize, Deserialize};
 use super::repos::{DeleteResult, IEventRepo};
-use crate::shared::mongo_repo;
+use crate::{event::domain::event::RRuleOptions, shared::mongo_repo};
 use crate::{calendar::domain::calendar_view::CalendarView, event::domain::event::CalendarEvent};
 use std::error::Error;
 
@@ -98,48 +98,58 @@ impl IEventRepo for EventRepo {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct CalendarEventMongo {
+    _id: ObjectId,
+    start_ts: i64,
+    duration: i64,
+    end_ts: Option<i64>,
+    busy: bool,
+    user_id: String,
+    exdates: Vec<i64>,
+    calendar_id: String,
+    recurrence: Option<RRuleOptions>
+}
+
+impl CalendarEventMongo {
+    pub fn to_domain(&self) -> CalendarEvent {
+        CalendarEvent {
+            id: self._id.to_string(),
+            start_ts: self.start_ts,
+            duration: self.duration,
+            end_ts: self.end_ts,
+            busy: self.busy,
+            user_id: self.user_id.clone(),
+            exdates: self.exdates.clone(),
+            calendar_id: self.calendar_id.clone(),
+            recurrence: self.recurrence.clone(),
+        }
+    }
+
+    pub fn from_domain(event: &CalendarEvent) -> Self {
+        Self {
+            _id: ObjectId::with_string(&event.id).unwrap(),
+            start_ts: event.start_ts,
+            duration: event.duration,
+            end_ts: event.end_ts,
+            busy: event.busy,
+            user_id: event.user_id.clone(),
+            exdates: event.exdates.clone(),
+            calendar_id: event.calendar_id.clone(),
+            recurrence: event.recurrence.clone(),
+        }
+    }
+}
+
 impl MongoPersistence for CalendarEvent {
     fn to_domain(doc: Document) -> Self {
-        let id = match doc.get("_id").unwrap() {
-            Bson::ObjectId(oid) => oid.to_string(),
-            _ => unreachable!("This should not happen"),
-        };
-
-        let mut e = CalendarEvent {
-            id,
-            start_ts: from_bson(doc.get("start_ts").unwrap().clone()).unwrap(),
-            duration: from_bson(doc.get("duration").unwrap().clone()).unwrap(),
-            recurrence: from_bson(doc.get("recurrence").unwrap().clone()).unwrap(),
-            end_ts: from_bson(doc.get("end_ts").unwrap().clone()).unwrap(),
-            busy: from_bson(doc.get("busy").unwrap().clone()).unwrap(),
-            exdates: from_bson(doc.get("exdates").unwrap().clone()).unwrap(),
-            calendar_id: from_bson(doc.get("calendar_id").unwrap().clone()).unwrap(),
-            user_id: from_bson(doc.get("user_id").unwrap().clone()).unwrap(),
-        };
-
-        if let Some(rrule_opts_bson) = doc.get("recurrence") {
-            e.set_reccurrence(from_bson(rrule_opts_bson.clone()).unwrap(), false);
-        };
-        e
+        let doc: CalendarEventMongo = from_bson(Bson::Document(doc)).unwrap();
+        doc.to_domain()
     }
 
     fn to_persistence(&self) -> Document {
-        let max_timestamp = 9999999999;
-
-        let mut d = doc! {
-            "_id": ObjectId::with_string(&self.id).unwrap(),
-            "start_ts": Bson::Int64(self.start_ts),
-            "duration": Bson::Int64(self.duration),
-            "busy": Bson::Boolean(self.busy),
-            "end_ts": Bson::Int64(self.end_ts.unwrap_or(max_timestamp)),
-            "user_id": self.user_id.clone(),
-            "exdates": self.exdates.clone(),
-            "calendar_id": self.calendar_id.clone(),
-        };
-        if let Some(recurrence) = &self.recurrence {
-            d.insert("recurrence", to_bson(recurrence).unwrap());
-        }
-        d
+        let doc = CalendarEventMongo::from_domain(self);
+        to_bson(&doc).unwrap().as_document().unwrap().to_owned()
     }
 
     fn get_persistence_id(&self) -> anyhow::Result<mongo_repo::MongoPersistenceID> {
