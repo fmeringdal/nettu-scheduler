@@ -1,10 +1,15 @@
 [package]
-name = "nettu_booking"
+name = "nettu_scheduler"
 version = "0.1.0"
 authors = ["Fredrik Meringdal <fmeringdal@hotmail.com>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[bin]]
+name = "server"
+path = "src/bin/server.rs"
+
 
 [dependencies]
 lazy_static = "1.4.0"

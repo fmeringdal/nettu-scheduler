@@ -1,13 +1,13 @@
 use crate::{
-    service::repos::IServiceRepo,
-    shared::auth::{protect_account_route, AccountAuthContext},
-};
-use crate::{
     api::Context,
     user::{
         domain::{User, UserDTO},
         repos::IUserRepo,
     },
+};
+use crate::{
+    service::repos::IServiceRepo,
+    shared::auth::{protect_account_route, AccountAuthContext},
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 
