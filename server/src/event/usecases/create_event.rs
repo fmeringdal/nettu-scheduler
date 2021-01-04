@@ -123,7 +123,7 @@ mod test {
         };
         ctx.repos.calendar_repo.insert(&calendar).await.unwrap();
 
-        let usecase = CreateEventUseCase {
+        let mut usecase = CreateEventUseCase {
             start_ts: 500,
             duration: 800,
             rrule_options: None,
