@@ -1,11 +1,12 @@
-use crate::calendar::repos::ICalendarRepo;
 use crate::event::repos::IEventRepo;
 use crate::{api::Context, shared::auth::protect_route};
+use crate::{
+    calendar::repos::ICalendarRepo,
+    shared::usecase::{perform, Usecase},
+};
 use actix_web::{web, HttpResponse};
 
 use serde::Deserialize;
-
-use std::sync::Arc;
 
 #[derive(Deserialize)]
 pub struct DeleteCalendarReq {
@@ -21,54 +22,54 @@ pub async fn delete_calendar_controller(
         Ok(u) => u,
         Err(res) => return res,
     };
-    let ctx = DeleteCalendarUseCaseCtx {
-        calendar_repo: Arc::clone(&ctx.repos.calendar_repo),
-        event_repo: Arc::clone(&ctx.repos.event_repo),
-    };
-    let req = DeleteCalendarUseCaseReq {
+
+    let usecase = DeleteCalendarUseCase {
         user_id: user.id,
         calendar_id: req.calendar_id.clone(),
     };
-    let res = delete_calendar_usecase(req, ctx).await;
+
+    let res = perform(usecase, &ctx).await;
     match res {
         Ok(_) => HttpResponse::Ok().body("Calendar deleted"),
         Err(e) => match e {
-            DeleteCalendarErrors::NotFoundError => HttpResponse::NotFound().finish(),
-            DeleteCalendarErrors::UnableToDelete => HttpResponse::InternalServerError().finish(),
+            UseCaseErrors::NotFoundError => HttpResponse::NotFound().finish(),
+            UseCaseErrors::UnableToDelete => HttpResponse::InternalServerError().finish(),
         },
     }
 }
 
-pub enum DeleteCalendarErrors {
+#[derive(Debug)]
+pub enum UseCaseErrors {
     NotFoundError,
     UnableToDelete,
 }
 
-pub struct DeleteCalendarUseCaseCtx {
-    pub calendar_repo: Arc<dyn ICalendarRepo>,
-    pub event_repo: Arc<dyn IEventRepo>,
-}
-
-pub struct DeleteCalendarUseCaseReq {
+pub struct DeleteCalendarUseCase {
     calendar_id: String,
     user_id: String,
 }
 
-async fn delete_calendar_usecase(
-    req: DeleteCalendarUseCaseReq,
-    ctx: DeleteCalendarUseCaseCtx,
-) -> Result<(), DeleteCalendarErrors> {
-    let calendar = ctx.calendar_repo.find(&req.calendar_id).await;
-    match calendar {
-        Some(calendar) if calendar.user_id == req.user_id => {
-            ctx.calendar_repo.delete(&calendar.id).await;
-            let repo_res = ctx.event_repo.delete_by_calendar(&calendar.id).await;
-            if repo_res.is_err() {
-                return Err(DeleteCalendarErrors::UnableToDelete);
-            }
+#[async_trait::async_trait(?Send)]
+impl Usecase for DeleteCalendarUseCase {
+    type Response = ();
 
-            Ok(())
+    type Errors = UseCaseErrors;
+
+    type Context = Context;
+
+    async fn perform(&self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+        let calendar = ctx.repos.calendar_repo.find(&self.calendar_id).await;
+        match calendar {
+            Some(calendar) if calendar.user_id == self.user_id => {
+                ctx.repos.calendar_repo.delete(&calendar.id).await;
+                let repo_res = ctx.repos.event_repo.delete_by_calendar(&calendar.id).await;
+                if repo_res.is_err() {
+                    return Err(UseCaseErrors::UnableToDelete);
+                }
+
+                Ok(())
+            }
+            _ => Err(UseCaseErrors::NotFoundError),
         }
-        _ => Err(DeleteCalendarErrors::NotFoundError {}),
     }
 }

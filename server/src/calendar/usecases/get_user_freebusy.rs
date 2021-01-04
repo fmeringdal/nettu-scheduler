@@ -1,9 +1,12 @@
-use crate::event::domain::event_instance::get_free_busy;
 use crate::event::domain::event_instance::EventInstance;
 use crate::event::repos::IEventRepo;
 use crate::{api::Context, calendar::domain::calendar_view::CalendarView};
 use crate::{
     calendar::repos::ICalendarRepo, shared::auth::ensure_nettu_acct_header, user::domain::User,
+};
+use crate::{
+    event::domain::event_instance::get_free_busy,
+    shared::usecase::{perform, Usecase},
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use futures::future::join_all;
@@ -38,17 +41,13 @@ pub async fn get_user_freebusy_controller(
         None => None,
     };
 
-    let req = GetUserFreeBusyReq {
+    let usecase = GetUserFreeBusyUseCase {
         user_id: User::create_id(&account, &params.external_user_id),
         calendar_ids,
         start_ts: query_params.start_ts,
         end_ts: query_params.end_ts,
     };
-    let ctx = GetUserFreeBusyUseCaseCtx {
-        event_repo: ctx.repos.event_repo.clone(),
-        calendar_repo: ctx.repos.calendar_repo.clone(),
-    };
-    let res = get_user_freebusy_usecase(req, ctx).await;
+    let res = perform(usecase, &ctx).await;
 
     match res {
         Ok(r) => HttpResponse::Ok().json(r),
@@ -60,17 +59,11 @@ pub async fn get_user_freebusy_controller(
     }
 }
 
-#[derive(Debug)]
-pub struct GetUserFreeBusyReq {
+pub struct GetUserFreeBusyUseCase {
     pub user_id: String,
     pub calendar_ids: Option<Vec<String>>,
     pub start_ts: i64,
     pub end_ts: i64,
-}
-
-pub struct GetUserFreeBusyUseCaseCtx {
-    pub event_repo: Arc<dyn IEventRepo>,
-    pub calendar_repo: Arc<dyn ICalendarRepo>,
 }
 
 #[derive(Serialize, Debug)]
@@ -79,53 +72,66 @@ pub struct GetUserFreeBusyResponse {
     pub free: Vec<EventInstance>,
 }
 
-pub async fn get_user_freebusy_usecase(
-    req: GetUserFreeBusyReq,
-    ctx: GetUserFreeBusyUseCaseCtx,
-) -> Result<GetUserFreeBusyResponse, GetUserFreeBusyErrors> {
-    let view = match CalendarView::create(req.start_ts, req.end_ts) {
-        Ok(view) => view,
-        Err(_) => return Err(GetUserFreeBusyErrors::InvalidTimespanError),
-    };
-
-    // can probably make query to event repo instead
-    let mut calendars = ctx.calendar_repo.find_by_user(&req.user_id).await;
-
-    if let Some(calendar_ids) = req.calendar_ids {
-        if !calendar_ids.is_empty() {
-            calendars = calendars
-                .into_iter()
-                .filter(|cal| calendar_ids.contains(&cal.id))
-                .collect();
-        }
-    }
-
-    let all_events_futures = calendars
-        .iter()
-        .map(|calendar| ctx.event_repo.find_by_calendar(&calendar.id, Some(&view)));
-    let mut all_events_instances = join_all(all_events_futures)
-        .await
-        .into_iter()
-        .map(|events_res| events_res.unwrap_or_default())
-        .map(|events| {
-            events
-                .into_iter()
-                .map(|event| event.expand(Some(&view)))
-                // It is possible that there are no instances in the expanded event, should remove them
-                .filter(|instances| !instances.is_empty())
-        })
-        .flatten()
-        .flatten()
-        .collect::<Vec<_>>();
-
-    let freebusy = get_free_busy(&mut all_events_instances);
-
-    Ok(GetUserFreeBusyResponse { free: freebusy })
-}
-
 #[derive(Debug)]
 pub enum GetUserFreeBusyErrors {
     InvalidTimespanError,
+}
+
+#[async_trait::async_trait(?Send)]
+impl Usecase for GetUserFreeBusyUseCase {
+    type Response = GetUserFreeBusyResponse;
+
+    type Errors = GetUserFreeBusyErrors;
+
+    type Context = Context;
+
+    async fn perform(&self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+        let view = match CalendarView::create(self.start_ts, self.end_ts) {
+            Ok(view) => view,
+            Err(_) => return Err(GetUserFreeBusyErrors::InvalidTimespanError),
+        };
+
+        // can probably make query to event repo instead
+        let mut calendars = ctx.repos.calendar_repo.find_by_user(&self.user_id).await;
+
+        if let Some(calendar_ids) = &self.calendar_ids {
+            if !calendar_ids.is_empty() {
+                calendars = calendars
+                    .into_iter()
+                    .filter(|cal| calendar_ids.contains(&cal.id))
+                    .collect();
+            }
+        }
+
+        let all_events_futures = calendars.iter().map(|calendar| {
+            ctx.repos
+                .event_repo
+                .find_by_calendar(&calendar.id, Some(&view))
+        });
+        let mut all_events_instances = join_all(all_events_futures)
+            .await
+            .into_iter()
+            .map(|events_res| events_res.unwrap_or_default())
+            .map(|events| {
+                events
+                    .into_iter()
+                    .map(|event| event.expand(Some(&view)))
+                    // It is possible that there are no instances in the expanded event, should remove them
+                    .filter(|instances| !instances.is_empty())
+            })
+            .flatten()
+            .flatten()
+            .collect::<Vec<_>>();
+
+        let freebusy = get_free_busy(&mut all_events_instances);
+
+        Ok(GetUserFreeBusyResponse { free: freebusy })
+    }
+}
+
+pub struct GetUserFreeBusyUseCaseCtx {
+    pub event_repo: Arc<dyn IEventRepo>,
+    pub calendar_repo: Arc<dyn ICalendarRepo>,
 }
 
 #[cfg(test)]
@@ -145,16 +151,14 @@ mod test {
     #[actix_web::main]
     #[test]
     async fn freebusy_works() {
-        let event_repo = InMemoryEventRepo::new();
-        let calendar_repo = InMemoryCalendarRepo::new();
-
+        let ctx = Context::create_inmemory();
         let user = User::new("yoyoyo", "cool");
 
         let calendar = Calendar {
             id: String::from("312312"),
             user_id: user.id(),
         };
-        calendar_repo.insert(&calendar).await.unwrap();
+        ctx.repos.calendar_repo.insert(&calendar).await.unwrap();
 
         let mut e1 = CalendarEvent {
             calendar_id: calendar.id.clone(),
@@ -228,23 +232,18 @@ mod test {
         };
         e3.set_reccurrence(e3rr, true);
 
-        event_repo.insert(&e1).await.unwrap();
-        event_repo.insert(&e2).await.unwrap();
-        event_repo.insert(&e3).await.unwrap();
+        ctx.repos.event_repo.insert(&e1).await.unwrap();
+        ctx.repos.event_repo.insert(&e2).await.unwrap();
+        ctx.repos.event_repo.insert(&e3).await.unwrap();
 
-        let ctx = GetUserFreeBusyUseCaseCtx {
-            event_repo: Arc::new(event_repo),
-            calendar_repo: Arc::new(calendar_repo),
-        };
-
-        let req = GetUserFreeBusyReq {
+        let usecase = GetUserFreeBusyUseCase {
             user_id: user.id(),
             calendar_ids: Some(vec![calendar.id.clone()]),
             start_ts: 86400000,
             end_ts: 172800000,
         };
 
-        let res = get_user_freebusy_usecase(req, ctx).await;
+        let res = usecase.perform(&ctx).await;
         assert!(res.is_ok());
         let instances = res.unwrap().free.clone();
         assert_eq!(instances.len(), 2);

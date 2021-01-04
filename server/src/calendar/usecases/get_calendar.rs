@@ -1,8 +1,11 @@
-use crate::{api::Context, calendar::domain::calendar::Calendar};
-use crate::{calendar::repos::ICalendarRepo, shared::auth::protect_route};
+use crate::shared::auth::protect_route;
+use crate::{
+    api::Context,
+    calendar::domain::calendar::Calendar,
+    shared::usecase::{perform, Usecase},
+};
 use actix_web::{web, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -19,41 +22,42 @@ pub async fn get_calendar_controller(
         Ok(u) => u,
         Err(res) => return res,
     };
-    let ctx = GetCalendarUseCaseCtx {
-        calendar_repo: ctx.repos.calendar_repo.clone(),
-    };
-    let req = GetCalendarUseCaseReq {
+
+    let usecase = GetCalendarUseCase {
         user_id: user.id.clone(),
         calendar_id: req.calendar_id.clone(),
     };
 
-    let res = get_calendar_usecase(req, ctx).await;
+    let res = perform(usecase, &ctx).await;
     match res {
         Ok(cal) => HttpResponse::Ok().json(cal),
         Err(_) => HttpResponse::NotFound().finish(),
     }
 }
 
-pub struct GetCalendarUseCaseReq {
+struct GetCalendarUseCase {
     pub user_id: String,
     pub calendar_id: String,
 }
 
-pub struct GetCalendarUseCaseCtx {
-    pub calendar_repo: Arc<dyn ICalendarRepo>,
-}
-
-pub enum GetCalendarErrors {
+#[derive(Debug)]
+enum UseCaseErrors {
     NotFoundError,
 }
 
-async fn get_calendar_usecase(
-    req: GetCalendarUseCaseReq,
-    ctx: GetCalendarUseCaseCtx,
-) -> Result<Calendar, GetCalendarErrors> {
-    let cal = ctx.calendar_repo.find(&req.calendar_id).await;
-    match cal {
-        Some(cal) if cal.user_id == req.user_id => Ok(cal),
-        _ => Err(GetCalendarErrors::NotFoundError {}),
+#[async_trait::async_trait(?Send)]
+impl Usecase for GetCalendarUseCase {
+    type Response = Calendar;
+
+    type Errors = UseCaseErrors;
+
+    type Context = Context;
+
+    async fn perform(&self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+        let cal = ctx.repos.calendar_repo.find(&self.calendar_id).await;
+        match cal {
+            Some(cal) if cal.user_id == self.user_id => Ok(cal),
+            _ => Err(UseCaseErrors::NotFoundError),
+        }
     }
 }

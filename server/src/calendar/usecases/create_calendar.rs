@@ -1,8 +1,11 @@
-use crate::calendar::domain::calendar::Calendar;
 use crate::{
     api::Context,
     shared::auth::{protect_account_route, protect_route},
     user::repos::IUserRepo,
+};
+use crate::{
+    calendar::domain::calendar::Calendar,
+    shared::usecase::{perform, Usecase},
 };
 use crate::{calendar::repos::ICalendarRepo, user::domain::User};
 use actix_web::{web, HttpResponse};
@@ -26,14 +29,8 @@ pub async fn create_calendar_admin_controller(
     };
 
     let user_id = User::create_id(&account.id, &path_params.user_id);
-    let res = create_calendar_usecase(
-        UsecaseReq { user_id },
-        UsecaseCtx {
-            calendar_repo: Arc::clone(&ctx.repos.calendar_repo),
-            user_repo: Arc::clone(&ctx.repos.user_repo),
-        },
-    )
-    .await;
+    let usecase = CreateCalendarUseCase { user_id };
+    let res = perform(usecase, &ctx).await;
 
     match res {
         Ok(json) => HttpResponse::Created().json(json),
@@ -49,14 +46,8 @@ pub async fn create_calendar_controller(
         Ok(u) => u,
         Err(res) => return res,
     };
-    let res = create_calendar_usecase(
-        UsecaseReq { user_id: user.id },
-        UsecaseCtx {
-            calendar_repo: Arc::clone(&ctx.repos.calendar_repo),
-            user_repo: Arc::clone(&ctx.repos.user_repo),
-        },
-    )
-    .await;
+    let usecase = CreateCalendarUseCase { user_id: user.id };
+    let res = perform(usecase, &ctx).await;
 
     match res {
         Ok(json) => HttpResponse::Created().json(json),
@@ -64,8 +55,14 @@ pub async fn create_calendar_controller(
     }
 }
 
-struct UsecaseReq {
+struct CreateCalendarUseCase {
     pub user_id: String,
+}
+
+#[derive(Debug)]
+enum UsecaseErrors {
+    UserNotFoundError,
+    StorageError,
 }
 
 #[derive(Serialize)]
@@ -74,34 +71,30 @@ struct UsecaseRes {
     pub calendar_id: String,
 }
 
-enum UsecaseErrors {
-    UserNotFoundError,
-    StorageError,
-}
+#[async_trait::async_trait(?Send)]
+impl Usecase for CreateCalendarUseCase {
+    type Response = UsecaseRes;
 
-struct UsecaseCtx {
-    pub calendar_repo: Arc<dyn ICalendarRepo>,
-    pub user_repo: Arc<dyn IUserRepo>,
-}
+    type Errors = UsecaseErrors;
 
-async fn create_calendar_usecase(
-    req: UsecaseReq,
-    ctx: UsecaseCtx,
-) -> Result<UsecaseRes, UsecaseErrors> {
-    let user = ctx.user_repo.find(&req.user_id).await;
-    if user.is_none() {
-        return Err(UsecaseErrors::UserNotFoundError);
-    }
+    type Context = Context;
 
-    let calendar = Calendar {
-        id: ObjectId::new().to_string(),
-        user_id: req.user_id,
-    };
-    let res = ctx.calendar_repo.insert(&calendar).await;
-    match res {
-        Ok(_) => Ok(UsecaseRes {
-            calendar_id: calendar.id.clone(),
-        }),
-        Err(_) => Err(UsecaseErrors::StorageError),
+    async fn perform(&self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+        let user = ctx.repos.user_repo.find(&self.user_id).await;
+        if user.is_none() {
+            return Err(UsecaseErrors::UserNotFoundError);
+        }
+
+        let calendar = Calendar {
+            id: ObjectId::new().to_string(),
+            user_id: self.user_id.clone(),
+        };
+        let res = ctx.repos.calendar_repo.insert(&calendar).await;
+        match res {
+            Ok(_) => Ok(UsecaseRes {
+                calendar_id: calendar.id.clone(),
+            }),
+            Err(_) => Err(UsecaseErrors::StorageError),
+        }
     }
 }

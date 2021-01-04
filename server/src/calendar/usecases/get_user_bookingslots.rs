@@ -1,11 +1,12 @@
-use super::get_user_freebusy::{
-    get_user_freebusy_usecase, GetUserFreeBusyReq, GetUserFreeBusyUseCaseCtx,
-};
+use super::get_user_freebusy::GetUserFreeBusyUseCase;
 use crate::{
     api::Context,
     calendar::domain::date,
     event::domain::booking_slots::{get_booking_slots, BookingSlot, BookingSlotsOptions},
-    shared::auth::ensure_nettu_acct_header,
+    shared::{
+        auth::ensure_nettu_acct_header,
+        usecase::{perform, Usecase},
+    },
     user::domain::User,
 };
 use actix_web::{web, HttpRequest, HttpResponse};
@@ -42,42 +43,39 @@ pub async fn get_user_bookingslots_controller(
         None => None,
     };
 
-    let req = GetUserBookingSlotsReq {
+    let user_id = User::create_id(&account, &params.external_user_id);
+
+    let usecase = GetUserBookingSlotsUsecase {
         user_id: User::create_id(&account, &params.external_user_id),
         calendar_ids,
         iana_tz: query_params.iana_tz.clone(),
         date: query_params.date.clone(),
         duration: query_params.duration,
     };
-    let ctx = GetUserFreeBusyUseCaseCtx {
-        event_repo: ctx.repos.event_repo.clone(),
-        calendar_repo: ctx.repos.calendar_repo.clone(),
-    };
-    let res = get_user_bookingslots_usecase(req, ctx).await;
+
+    let res = perform(usecase, &ctx).await;
 
     match res {
         Ok(r) => HttpResponse::Ok().json(r),
         Err(e) => match e {
-            GetUserBookingSlotsErrors::InvalidDateError(msg) => HttpResponse::UnprocessableEntity()
-                .body(format!(
+            UseCaseErrors::InvalidDateError(msg) => {
+                HttpResponse::UnprocessableEntity().body(format!(
                     "Invalid datetime: {}. Should be YYYY-MM-DD, e.g. January 1. 2020 => 2020-1-1",
                     msg
-                )),
-            GetUserBookingSlotsErrors::InvalidTimezoneError(msg) => {
+                ))
+            }
+            UseCaseErrors::InvalidTimezoneError(msg) => {
                 HttpResponse::UnprocessableEntity().body(format!(
                     "Invalid timezone: {}. It should be a valid IANA TimeZone.",
                     msg
                 ))
             }
-            GetUserBookingSlotsErrors::UserFreebusyError => {
-                HttpResponse::InternalServerError().finish()
-            }
+            UseCaseErrors::UserFreebusyError => HttpResponse::InternalServerError().finish(),
         },
     }
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct GetUserBookingSlotsReq {
+pub struct GetUserBookingSlotsUsecase {
     pub user_id: String,
     pub calendar_ids: Option<Vec<String>>,
     pub date: String,
@@ -87,64 +85,63 @@ pub struct GetUserBookingSlotsReq {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct GetUserBookingSlotsResponse {
+pub struct UseCaseResponse {
     booking_slots: Vec<BookingSlot>,
 }
 
 #[derive(Debug)]
-pub enum GetUserBookingSlotsErrors {
+pub enum UseCaseErrors {
     InvalidDateError(String),
     InvalidTimezoneError(String),
     UserFreebusyError,
 }
 
-async fn get_user_bookingslots_usecase(
-    req: GetUserBookingSlotsReq,
-    ctx: GetUserFreeBusyUseCaseCtx,
-) -> Result<GetUserBookingSlotsResponse, GetUserBookingSlotsErrors> {
-    let tz: Tz = match req.iana_tz.unwrap_or(String::from("UTC")).parse() {
-        Ok(tz) => tz,
-        Err(_) => return Err(GetUserBookingSlotsErrors::InvalidTimezoneError(req.date)),
-    };
+#[async_trait::async_trait(?Send)]
+impl Usecase for GetUserBookingSlotsUsecase {
+    type Response = UseCaseResponse;
 
-    let parsed_date = match date::is_valid_date(&req.date) {
-        Ok(val) => val,
-        Err(_) => {
-            return Err(GetUserBookingSlotsErrors::InvalidDateError(
-                req.date.clone(),
-            ))
-        }
-    };
-    let date = tz.ymd(parsed_date.0, parsed_date.1, parsed_date.2);
+    type Errors = UseCaseErrors;
 
-    let start_of_day = date.and_hms(0, 0, 0);
-    let end_of_day = (date + Duration::days(1)).and_hms(0, 0, 0);
+    type Context = Context;
 
-    let free_events = get_user_freebusy_usecase(
-        GetUserFreeBusyReq {
-            calendar_ids: req.calendar_ids,
+    async fn perform(&self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+        let tz: Tz = match self.iana_tz.clone().unwrap_or(String::from("UTC")).parse() {
+            Ok(tz) => tz,
+            Err(_) => return Err(UseCaseErrors::InvalidTimezoneError(self.date.clone())),
+        };
+
+        let parsed_date = match date::is_valid_date(&self.date) {
+            Ok(val) => val,
+            Err(_) => return Err(UseCaseErrors::InvalidDateError(self.date.clone())),
+        };
+        let date = tz.ymd(parsed_date.0, parsed_date.1, parsed_date.2);
+
+        let start_of_day = date.and_hms(0, 0, 0);
+        let end_of_day = (date + Duration::days(1)).and_hms(0, 0, 0);
+
+        let freebusy_usecase = GetUserFreeBusyUseCase {
+            calendar_ids: self.calendar_ids.clone(),
             end_ts: end_of_day.timestamp_millis(),
             start_ts: start_of_day.timestamp_millis(),
-            user_id: req.user_id,
-        },
-        ctx,
-    )
-    .await;
+            user_id: self.user_id.clone(),
+        };
+        let free_events = perform(freebusy_usecase, ctx).await;
 
-    match free_events {
-        Ok(free_events) => {
-            let booking_slots = get_booking_slots(
-                &free_events.free,
-                &BookingSlotsOptions {
-                    interval: 1000 * 60 * 15, // 15 minutes
-                    duration: req.duration,
-                    end_ts: end_of_day.timestamp_millis(),
-                    start_ts: start_of_day.timestamp_millis(),
-                },
-            );
+        match free_events {
+            Ok(free_events) => {
+                let booking_slots = get_booking_slots(
+                    &free_events.free,
+                    &BookingSlotsOptions {
+                        interval: 1000 * 60 * 15, // 15 minutes
+                        duration: self.duration,
+                        end_ts: end_of_day.timestamp_millis(),
+                        start_ts: start_of_day.timestamp_millis(),
+                    },
+                );
 
-            Ok(GetUserBookingSlotsResponse { booking_slots })
+                Ok(UseCaseResponse { booking_slots })
+            }
+            Err(_e) => Err(UseCaseErrors::UserFreebusyError),
         }
-        Err(_e) => Err(GetUserBookingSlotsErrors::UserFreebusyError),
     }
 }
