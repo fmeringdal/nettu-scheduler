@@ -1,7 +1,6 @@
 use super::get_user_freebusy::GetUserFreeBusyUseCase;
 use crate::{
     api::Context,
-    calendar::domain::date,
     event::domain::booking_slots::{
         get_booking_slots, validate_bookingslots_query, BookingQueryError, BookingSlot,
         BookingSlotsOptions, BookingSlotsQuery,
@@ -13,8 +12,8 @@ use crate::{
     user::domain::User,
 };
 use actix_web::{web, HttpRequest, HttpResponse};
-use chrono::{prelude::*, Duration};
-use chrono_tz::Tz;
+
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize)]
