@@ -1,4 +1,13 @@
-use crate::{account::domain::Account, calendar::repos::ICalendarRepo, service::{domain::Service, repos::IServiceRepo}, shared::{auth::protect_account_route, usecase::{Usecase, perform}}, user::domain::User};
+use crate::{
+    account::domain::Account,
+    calendar::repos::ICalendarRepo,
+    service::{domain::Service, repos::IServiceRepo},
+    shared::{
+        auth::protect_account_route,
+        usecase::{perform, Usecase},
+    },
+    user::domain::User,
+};
 use crate::{api::Context, user::repos::IUserRepo};
 use actix_web::{web, HttpRequest, HttpResponse};
 
@@ -36,7 +45,6 @@ pub async fn update_service_user_controller(
         user_id,
     };
     let res = perform(usecase, &ctx).await;
-
 
     match res {
         Ok(_) => HttpResponse::Ok().body("Service successfully updated"),
@@ -90,13 +98,14 @@ impl Usecase for UpdateServiceUserUseCase {
             Some(service) if service.account_id == self.account.id => service,
             _ => return Err(UsecaseErrors::ServiceNotFoundError),
         };
-    
+
         let user_resource = match service.find_user_mut(&self.user_id) {
             Some(res) => res,
             _ => return Err(UsecaseErrors::UserNotFoundError),
         };
-    
-        let user_calendars = ctx.repos
+
+        let user_calendars = ctx
+            .repos
             .calendar_repo
             .find_by_user(&self.user_id)
             .await
@@ -108,14 +117,13 @@ impl Usecase for UpdateServiceUserUseCase {
                 return Err(UsecaseErrors::CalendarNotOwnedByUser(calendar_id.clone()));
             }
         }
-    
+
         user_resource.set_calendar_ids(&self.calendar_ids);
-    
+
         let res = ctx.repos.service_repo.save(&service).await;
         match res {
             Ok(_) => Ok(UsecaseRes { service }),
             Err(_) => Err(UsecaseErrors::StorageError),
-        }    
+        }
     }
-
 }

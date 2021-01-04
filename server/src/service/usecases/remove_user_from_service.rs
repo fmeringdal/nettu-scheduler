@@ -1,4 +1,12 @@
-use crate::{account::domain::Account, service::{domain::ServiceResource, repos::IServiceRepo}, shared::{auth::protect_account_route, usecase::{Usecase, perform}}, user::domain::User};
+use crate::{
+    account::domain::Account,
+    service::{domain::ServiceResource, repos::IServiceRepo},
+    shared::{
+        auth::protect_account_route,
+        usecase::{perform, Usecase},
+    },
+    user::domain::User,
+};
 use crate::{api::Context, user::repos::IUserRepo};
 use actix_web::{web, HttpRequest, HttpResponse};
 
@@ -49,11 +57,9 @@ struct RemoveUserFromServiceUsecase {
     pub user_id: String,
 }
 
-
 struct UsecaseRes {
     pub resource: ServiceResource,
 }
-
 
 #[derive(Debug)]
 enum UsecaseErrors {
@@ -61,8 +67,6 @@ enum UsecaseErrors {
     ServiceNotFoundError,
     UserNotFoundError,
 }
-
-
 
 #[async_trait::async_trait(?Send)]
 impl Usecase for RemoveUserFromServiceUsecase {
@@ -77,7 +81,7 @@ impl Usecase for RemoveUserFromServiceUsecase {
             Some(service) if service.account_id == self.account.id => service,
             _ => return Err(UsecaseErrors::ServiceNotFoundError),
         };
-    
+
         match service.remove_user(&self.user_id) {
             Some(resource) => match ctx.repos.service_repo.save(&service).await {
                 Ok(_) => Ok(UsecaseRes { resource }),
