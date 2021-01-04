@@ -3,7 +3,7 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 ## Todos
 
 - use common logic for getting service and user booking slots
-- create server binary and main.rs -> lib.rs so that we can make integration tests
+- setup the skeleton for rust integration tests
 - protect create account
 - reminders with webhook calls
 - account with alloweduseractions
