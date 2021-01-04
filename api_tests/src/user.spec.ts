@@ -101,6 +101,7 @@ describe("User API", () => {
       date: "1970-1-1",
       duration: 1000 * 60 * 30,
       ianaTz: "UTC",
+      interval: 1000 * 60 * 15,
       calendarIds: [calendarId],
     });
     expect(bookingRes.data.bookingSlots.length).toBe(3);
@@ -109,6 +110,7 @@ describe("User API", () => {
       date: "1970-1-2",
       duration: 1000 * 60 * 30,
       ianaTz: "UTC",
+      interval: 1000 * 60 * 15,
       calendarIds: [calendarId],
     });
     expect(bookingRes.data.bookingSlots.length).toBe(6);

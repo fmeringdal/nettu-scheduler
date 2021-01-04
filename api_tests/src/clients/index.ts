@@ -1,5 +1,10 @@
 import { NettuAccountClient } from "./accountClient";
-import { AccountCreds, ICredentials, UserCreds } from "./baseClient";
+import {
+  AccountCreds,
+  EmptyCreds,
+  ICredentials,
+  UserCreds,
+} from "./baseClient";
 import { NettuCalendarClient } from "./calendarClient";
 import { NettuEventClient } from "./eventClient";
 import { NettuHealthClient } from "./healthClient";
@@ -43,6 +48,7 @@ const createCreds = (creds?: PartialCredentials): ICredentials => {
   } else if (creds.nettuAccount) {
     return new UserCreds(creds.nettuAccount, creds.token);
   } else {
-    throw new Error("No api key or nettu account provided to nettu client.");
+    return new EmptyCreds();
+    // throw new Error("No api key or nettu account provided to nettu client.");
   }
 };

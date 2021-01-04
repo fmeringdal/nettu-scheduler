@@ -10,6 +10,7 @@ export type GetUserFeebusyReq = {
 export type GetUserBookingslotsReq = {
   ianaTz: string;
   duration: number;
+  interval: number;
   date: string;
   calendarIds?: string[];
 };
@@ -40,7 +41,7 @@ export class NettuUserClient extends NettuBaseClient {
   }
 
   public bookingslots(userId: string, req: GetUserBookingslotsReq) {
-    let queryString = `date=${req.date}&ianaTz=${req.ianaTz}&duration=${req.duration}`;
+    let queryString = `date=${req.date}&ianaTz=${req.ianaTz}&duration=${req.duration}&interval=${req.interval}`;
     if (req.calendarIds && req.calendarIds.length > 0) {
       queryString += `&calendarIds=${req.calendarIds.join(",")}`;
     }

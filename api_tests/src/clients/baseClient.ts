@@ -101,3 +101,13 @@ export class AccountCreds implements ICredentials {
 export interface ICredentials {
   createAuthHeaders(): object;
 }
+
+export class EmptyCreds implements ICredentials {
+  createAuthHeaders() {
+    return Object.freeze({});
+  }
+}
+
+export interface ICredentials {
+  createAuthHeaders(): object;
+}
