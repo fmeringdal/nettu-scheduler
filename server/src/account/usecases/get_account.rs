@@ -2,7 +2,7 @@ use crate::api::Context;
 use crate::shared::auth::protect_account_route;
 use actix_web::{web, HttpResponse};
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
+
 
 #[derive(Debug, Deserialize)]
 pub struct GetAccountReq {

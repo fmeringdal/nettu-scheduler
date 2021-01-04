@@ -2,7 +2,6 @@ use crate::shared::auth::protect_account_route;
 use crate::shared::usecase::{perform, Usecase};
 use crate::{
     api::Context,
-    shared,
     user::{
         domain::{User, UserDTO},
         repos::IUserRepo,
@@ -11,7 +10,7 @@ use crate::{
 use actix_web::{web, HttpRequest, HttpResponse};
 
 use serde::Deserialize;
-use std::sync::Arc;
+
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
