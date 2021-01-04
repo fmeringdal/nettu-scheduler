@@ -146,7 +146,7 @@ mod test {
         shared::entity::Entity,
         user::domain::User,
     };
-    use std::sync::Arc;
+    
 
     #[actix_web::main]
     #[test]
