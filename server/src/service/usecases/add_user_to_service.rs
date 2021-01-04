@@ -5,7 +5,7 @@ use crate::{
         domain::{Service, ServiceResource},
         repos::IServiceRepo,
     },
-    shared::auth::{protect_account_route, AccountAuthContext},
+    shared::auth::protect_account_route,
     user::domain::User,
 };
 use crate::{api::Context, user::repos::IUserRepo};
@@ -32,14 +32,7 @@ pub async fn add_user_to_service_controller(
     path_params: web::Path<PathParams>,
     ctx: web::Data<Context>,
 ) -> HttpResponse {
-    let account = match protect_account_route(
-        &http_req,
-        &AccountAuthContext {
-            account_repo: Arc::clone(&ctx.repos.account_repo),
-        },
-    )
-    .await
-    {
+    let account = match protect_account_route(&http_req, &ctx).await {
         Ok(a) => a,
         Err(res) => return res,
     };

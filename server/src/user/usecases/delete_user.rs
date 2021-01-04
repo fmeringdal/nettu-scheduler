@@ -1,7 +1,4 @@
-use crate::{
-    account::domain::Account,
-    shared::auth::{protect_account_route, AccountAuthContext},
-};
+use crate::{account::domain::Account, shared::auth::protect_account_route};
 use crate::{
     api::Context,
     user::{domain::User, repos::IUserRepo},
@@ -21,14 +18,7 @@ pub async fn delete_user_controller(
     path_params: web::Json<PathParams>,
     ctx: web::Data<Context>,
 ) -> HttpResponse {
-    let account = match protect_account_route(
-        &http_req,
-        &AccountAuthContext {
-            account_repo: Arc::clone(&ctx.repos.account_repo),
-        },
-    )
-    .await
-    {
+    let account = match protect_account_route(&http_req, &ctx).await {
         Ok(a) => a,
         Err(res) => return res,
     };

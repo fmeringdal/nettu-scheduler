@@ -2,7 +2,7 @@ use crate::api::Context;
 use crate::{
     account::domain::Account,
     service::{domain::Service, repos::IServiceRepo},
-    shared::auth::{protect_account_route, AccountAuthContext},
+    shared::auth::protect_account_route,
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 
@@ -19,14 +19,7 @@ pub async fn create_service_controller(
     http_req: HttpRequest,
     ctx: web::Data<Context>,
 ) -> HttpResponse {
-    let account = match protect_account_route(
-        &http_req,
-        &AccountAuthContext {
-            account_repo: Arc::clone(&ctx.repos.account_repo),
-        },
-    )
-    .await
-    {
+    let account = match protect_account_route(&http_req, &ctx).await {
         Ok(a) => a,
         Err(res) => return res,
     };

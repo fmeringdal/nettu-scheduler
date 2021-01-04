@@ -1,7 +1,7 @@
+use crate::event::domain::event::CalendarEvent;
 use crate::{
     api::Context, event::repos::IEventRepo, shared::auth::protect_route, user::domain::User,
 };
-use crate::{event::domain::event::CalendarEvent, shared::auth::AuthContext};
 use actix_web::{web, HttpRequest, HttpResponse};
 use serde::Deserialize;
 use std::sync::Arc;
@@ -22,15 +22,7 @@ pub async fn create_event_exception_controller(
     body: web::Json<CreateEventExceptionBody>,
     ctx: web::Data<Context>,
 ) -> HttpResponse {
-    let user = match protect_route(
-        &http_req,
-        &AuthContext {
-            account_repo: Arc::clone(&ctx.repos.account_repo),
-            user_repo: Arc::clone(&ctx.repos.user_repo),
-        },
-    )
-    .await
-    {
+    let user = match protect_route(&http_req, &ctx).await {
         Ok(u) => u,
         Err(res) => return res,
     };

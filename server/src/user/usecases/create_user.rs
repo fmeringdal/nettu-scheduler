@@ -1,13 +1,12 @@
+use crate::shared::auth::protect_account_route;
+use crate::shared::usecase::{perform, Usecase};
 use crate::{
     api::Context,
+    shared,
     user::{
         domain::{User, UserDTO},
         repos::IUserRepo,
     },
-};
-use crate::{
-    service::repos::IServiceRepo,
-    shared::auth::{protect_account_route, AccountAuthContext},
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 
@@ -25,28 +24,16 @@ pub async fn create_user_controller(
     body: web::Json<BodyParams>,
     ctx: web::Data<Context>,
 ) -> HttpResponse {
-    let account = match protect_account_route(
-        &http_req,
-        &AccountAuthContext {
-            account_repo: Arc::clone(&ctx.repos.account_repo),
-        },
-    )
-    .await
-    {
+    let account = match protect_account_route(&http_req, &ctx).await {
         Ok(a) => a,
         Err(res) => return res,
     };
 
-    let res = create_user_usecase(
-        UsecaseReq {
-            account_id: account.id.clone(),
-            external_user_id: body.user_id.clone(),
-        },
-        UsecaseCtx {
-            user_repo: Arc::clone(&ctx.repos.user_repo),
-        },
-    )
-    .await;
+    let usecase = CreateUserUseCase {
+        account_id: account.id.clone(),
+        external_user_id: body.user_id.clone(),
+    };
+    let res = perform(usecase, &ctx.into_inner()).await;
 
     match res {
         Ok(usecase_res) => {
@@ -61,37 +48,37 @@ pub async fn create_user_controller(
     }
 }
 
-pub struct UsecaseReq {
+pub struct CreateUserUseCase {
     pub account_id: String,
     pub external_user_id: String,
 }
-
 pub struct UsecaseRes {
     pub user: User,
 }
 
+#[derive(Debug)]
 pub enum UsecaseErrors {
     StorageError,
     UserAlreadyExists,
 }
 
-pub struct UsecaseCtx {
-    pub user_repo: Arc<dyn IUserRepo>,
-}
+#[async_trait::async_trait]
+impl Usecase for CreateUserUseCase {
+    type SuccessRes = UsecaseRes;
+    type Errors = UsecaseErrors;
+    type Context = Context;
 
-pub async fn create_user_usecase(
-    req: UsecaseReq,
-    ctx: UsecaseCtx,
-) -> Result<UsecaseRes, UsecaseErrors> {
-    let user = User::new(&req.account_id, &req.external_user_id);
+    async fn perform(&self, ctx: &Self::Context) -> Result<Self::SuccessRes, Self::Errors> {
+        let user = User::new(&self.account_id, &self.external_user_id);
 
-    if let Some(_existing_user) = ctx.user_repo.find(&user.id).await {
-        return Err(UsecaseErrors::UserAlreadyExists);
-    }
+        if let Some(_existing_user) = ctx.repos.user_repo.find(&user.id).await {
+            return Err(UsecaseErrors::UserAlreadyExists);
+        }
 
-    let res = ctx.user_repo.insert(&user).await;
-    match res {
-        Ok(_) => Ok(UsecaseRes { user }),
-        Err(_) => Err(UsecaseErrors::StorageError),
+        let res = ctx.repos.user_repo.insert(&user).await;
+        match res {
+            Ok(_) => Ok(UsecaseRes { user }),
+            Err(_) => Err(UsecaseErrors::StorageError),
+        }
     }
 }

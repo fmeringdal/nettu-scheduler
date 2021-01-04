@@ -1,9 +1,9 @@
+use crate::calendar::domain::calendar::Calendar;
 use crate::{
     api::Context,
-    shared::auth::{protect_account_route, protect_route, AccountAuthContext},
+    shared::auth::{protect_account_route, protect_route},
     user::repos::IUserRepo,
 };
-use crate::{calendar::domain::calendar::Calendar, shared::auth::AuthContext};
 use crate::{calendar::repos::ICalendarRepo, user::domain::User};
 use actix_web::{web, HttpResponse};
 use mongodb::bson::oid::ObjectId;
@@ -20,14 +20,7 @@ pub async fn create_calendar_admin_controller(
     path_params: web::Json<AdminControllerPathParams>,
     ctx: web::Data<Context>,
 ) -> HttpResponse {
-    let account = match protect_account_route(
-        &http_req,
-        &AccountAuthContext {
-            account_repo: Arc::clone(&ctx.repos.account_repo),
-        },
-    )
-    .await
-    {
+    let account = match protect_account_route(&http_req, &ctx).await {
         Ok(u) => u,
         Err(res) => return res,
     };
@@ -52,15 +45,7 @@ pub async fn create_calendar_controller(
     http_req: web::HttpRequest,
     ctx: web::Data<Context>,
 ) -> HttpResponse {
-    let user = match protect_route(
-        &http_req,
-        &AuthContext {
-            account_repo: Arc::clone(&ctx.repos.account_repo),
-            user_repo: Arc::clone(&ctx.repos.user_repo),
-        },
-    )
-    .await
-    {
+    let user = match protect_route(&http_req, &ctx).await {
         Ok(u) => u,
         Err(res) => return res,
     };

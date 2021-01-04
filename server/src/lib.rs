@@ -6,6 +6,10 @@ mod service;
 mod shared;
 mod user;
 
+// lazy_static::lazy_static! {
+//     static ref five = 5;
+// }
+
 use actix_web::web;
 
 async fn status() -> &'static str {

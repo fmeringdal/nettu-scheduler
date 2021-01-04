@@ -1,9 +1,6 @@
 use crate::account::domain::Account;
 use crate::api::Context;
-use crate::{
-    account::repos::IAccountRepo,
-    shared::auth::{protect_account_route, AccountAuthContext},
-};
+use crate::{account::repos::IAccountRepo, shared::auth::protect_account_route};
 use actix_web::{web, HttpResponse};
 use serde::Deserialize;
 use std::sync::Arc;
@@ -19,14 +16,7 @@ pub async fn set_account_pub_key_controller(
     ctx: web::Data<Context>,
     body: web::Json<SetAccountPubKeyReq>,
 ) -> HttpResponse {
-    let account = match protect_account_route(
-        &http_req,
-        &AccountAuthContext {
-            account_repo: Arc::clone(&ctx.repos.account_repo),
-        },
-    )
-    .await
-    {
+    let account = match protect_account_route(&http_req, &ctx).await {
         Ok(a) => a,
         Err(res) => return res,
     };

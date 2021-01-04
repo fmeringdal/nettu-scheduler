@@ -8,6 +8,7 @@ use crate::{
 use mongodb::{options::ClientOptions, Client};
 use std::sync::Arc;
 
+#[derive(Clone)]
 pub struct Repos {
     pub event_repo: Arc<dyn IEventRepo>,
     pub calendar_repo: Arc<dyn ICalendarRepo>,
@@ -55,18 +56,6 @@ impl Repos {
     }
 }
 
-impl Clone for Repos {
-    fn clone(&self) -> Self {
-        Self {
-            event_repo: Arc::clone(&self.event_repo),
-            calendar_repo: Arc::clone(&self.calendar_repo),
-            account_repo: Arc::clone(&self.account_repo),
-            user_repo: Arc::clone(&self.user_repo),
-            service_repo: Arc::clone(&self.service_repo),
-        }
-    }
-}
-
 pub struct Config {}
 
 impl Config {
@@ -78,6 +67,15 @@ impl Config {
 pub struct Context {
     pub repos: Repos,
     pub config: Config,
+}
+
+impl Context {
+    pub fn create_inmemory() -> Self {
+        Self {
+            repos: Repos::create_inmemory(),
+            config: Config::new(),
+        }
+    }
 }
 
 #[derive(Debug)]

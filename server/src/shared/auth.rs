@@ -2,11 +2,12 @@ use account::domain::Account;
 use actix_web::{HttpRequest, HttpResponse};
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
 
+use crate::shared::usecase::perform;
 use crate::{
     account::{self, repos::IAccountRepo},
-    user::{domain::User, repos::IUserRepo, usecases::create_user},
+    user::{domain::User, repos::IUserRepo, usecases::create_user::CreateUserUseCase},
+    Context,
 };
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -23,30 +24,22 @@ fn parse_authtoken_header(token_header_value: &str) -> String {
     String::from(token.trim())
 }
 
-pub struct AuthContext {
-    pub user_repo: Arc<dyn IUserRepo>,
-    pub account_repo: Arc<dyn IAccountRepo>,
-}
-
 async fn create_user_if_not_exists(
     external_user_id: &str,
     account_id: &str,
-    ctx: &AuthContext,
+    ctx: &Context,
 ) -> Option<User> {
     let user_id = User::create_id(account_id, external_user_id);
-    let user = ctx.user_repo.find(&user_id).await;
+    let user = ctx.repos.user_repo.find(&user_id).await;
     if let Some(user) = user {
         return Some(user);
     }
 
-    let req = create_user::UsecaseReq {
+    let usecase = CreateUserUseCase {
         account_id: String::from(account_id),
         external_user_id: String::from(external_user_id),
     };
-    let ctx = create_user::UsecaseCtx {
-        user_repo: Arc::clone(&ctx.user_repo),
-    };
-    let res = create_user::create_user_usecase(req, ctx).await;
+    let res = perform(usecase, ctx).await;
     // println!("ENd {:?}", res);
     match res {
         Ok(res) => Some(res.user),
@@ -54,11 +47,7 @@ async fn create_user_if_not_exists(
     }
 }
 
-pub async fn auth_user_req(
-    req: &HttpRequest,
-    account: &Account,
-    ctx: &AuthContext,
-) -> Option<User> {
+pub async fn auth_user_req(req: &HttpRequest, account: &Account, ctx: &Context) -> Option<User> {
     let token = req.headers().get("authorization");
     match token {
         Some(token) => {
@@ -75,11 +64,11 @@ pub async fn auth_user_req(
     }
 }
 
-pub async fn get_client_account(req: &HttpRequest, ctx: &AuthContext) -> Option<Account> {
+pub async fn get_client_account(req: &HttpRequest, ctx: &Context) -> Option<Account> {
     let account = req.headers().get("nettu-account");
     match account {
         Some(acc) => match acc.to_str() {
-            Ok(acc) => ctx.account_repo.find(acc).await,
+            Ok(acc) => ctx.repos.account_repo.find(acc).await,
             Err(_) => None,
         },
         None => None,
@@ -97,7 +86,7 @@ fn decode_token(account: &Account, token: &str) -> anyhow::Result<Claims> {
     Ok(token_data.claims)
 }
 
-pub async fn protect_route(req: &HttpRequest, ctx: &AuthContext) -> Result<User, HttpResponse> {
+pub async fn protect_route(req: &HttpRequest, ctx: &Context) -> Result<User, HttpResponse> {
     let account = match get_client_account(req, ctx).await {
         Some(account) => account,
         None => {
@@ -130,13 +119,9 @@ pub fn ensure_nettu_acct_header(req: &HttpRequest) -> Result<String, HttpRespons
     }
 }
 
-pub struct AccountAuthContext {
-    pub account_repo: Arc<dyn IAccountRepo>,
-}
-
 pub async fn protect_account_route(
     req: &HttpRequest,
-    ctx: &AccountAuthContext,
+    ctx: &Context,
 ) -> Result<Account, HttpResponse> {
     let api_key = match req.headers().get("x-api-key") {
         Some(api_key) => match api_key.to_str() {
@@ -150,7 +135,7 @@ pub async fn protect_account_route(
         }
     };
 
-    let account = ctx.account_repo.find_by_apikey(api_key).await;
+    let account = ctx.repos.account_repo.find_by_apikey(api_key).await;
 
     match account {
         Some(acc) => Ok(acc),
@@ -161,23 +146,18 @@ pub async fn protect_account_route(
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{account::repos::InMemoryAccountRepo, user::repos::InMemoryUserRepo};
+    use crate::api::Context;
     use actix_web::test::TestRequest;
     use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
 
-    async fn setup_account(ctx: &AuthContext) -> Account {
+    async fn setup_account(ctx: &Context) -> Account {
         let account = get_account();
-        ctx.account_repo.insert(&account).await.unwrap();
+        ctx.repos.account_repo.insert(&account).await.unwrap();
         account
     }
 
-    fn setup_ctx() -> AuthContext {
-        let account_repo = InMemoryAccountRepo::new();
-        let user_repo = InMemoryUserRepo::new();
-        AuthContext {
-            account_repo: Arc::new(account_repo),
-            user_repo: Arc::new(user_repo),
-        }
+    fn setup_ctx() -> Context {
+        Context::create_inmemory()
     }
 
     fn get_token(expired: bool) -> String {
@@ -223,7 +203,7 @@ mod test {
         let res = protect_route(&req, &ctx).await;
         assert!(res.is_ok());
         let user_id = User::create_id(&account.id, &get_external_user_id());
-        assert!(ctx.user_repo.find(&user_id).await.is_some());
+        assert!(ctx.repos.user_repo.find(&user_id).await.is_some());
     }
 
     #[actix_web::main]
@@ -233,7 +213,7 @@ mod test {
         let account = setup_account(&ctx).await;
         let token = get_token(false);
         let user = User::new(&account.id, &get_external_user_id());
-        ctx.user_repo.insert(&user).await.unwrap();
+        ctx.repos.user_repo.insert(&user).await.unwrap();
 
         let req = TestRequest::with_header("nettu-account", account.id)
             .header("Authorization", format!("Bearer {}", token))
