@@ -1,12 +1,4 @@
-use crate::{
-    api::Context,
-    calendar::{domain::date, usecases::get_user_freebusy::GetUserFreeBusyUseCase},
-    event::domain::booking_slots::{
-        get_service_bookingslots, validate_slots_interval, BookingSlotsOptions, ServiceBookingSlot,
-        ServiceBookingSlotDTO,
-    },
-    shared::auth::ensure_nettu_acct_header,
-};
+use crate::{api::Context, calendar::{domain::date, usecases::get_user_freebusy::GetUserFreeBusyUseCase}, event::domain::booking_slots::{BookingQueryError, BookingSlotsOptions, BookingSlotsQuery, ServiceBookingSlot, ServiceBookingSlotDTO, get_service_bookingslots, validate_bookingslots_query, validate_slots_interval}, shared::auth::ensure_nettu_acct_header};
 use crate::{
     event::domain::booking_slots::UserFreeEvents,
     shared::usecase::{perform, Usecase},
@@ -124,21 +116,20 @@ impl Usecase for GetServiceBookingSlotsUseCase {
             return Err(UseCaseErrors::InvalidIntervalError);
         }
 
-        let iana_tz = self.iana_tz.clone().unwrap_or(String::from("UTC"));
-        let tz: Tz = match iana_tz.parse() {
-            Ok(tz) => tz,
-            Err(_) => return Err(UseCaseErrors::InvalidTimezoneError(iana_tz)),
+        let query = BookingSlotsQuery {
+            date: self.date.clone(),
+            iana_tz: self.iana_tz.clone(),
+            interval: self.interval.clone(),
+            duration: self.duration.clone(),
         };
-
-        let parsed_date = match date::is_valid_date(&self.date) {
-            Ok(val) => val,
-            Err(_) => return Err(UseCaseErrors::InvalidDateError(self.date.clone())),
+        let booking_timespan = match validate_bookingslots_query(&query) {
+            Ok(t) => t,
+            Err(e) => match e {
+                BookingQueryError::InvalidIntervalError => return Err(UseCaseErrors::InvalidIntervalError),
+                BookingQueryError::InvalidDateError(d) => return Err(UseCaseErrors::InvalidDateError(d)),
+                BookingQueryError::InvalidTimezoneError(d) => return Err(UseCaseErrors::InvalidTimezoneError(d)),
+            }
         };
-
-        let date = tz.ymd(parsed_date.0, parsed_date.1, parsed_date.2);
-
-        let start_of_day = date.and_hms(0, 0, 0);
-        let end_of_day = (date + Duration::days(1)).and_hms(0, 0, 0);
 
         let service = match ctx.repos.service_repo.find(&self.service_id).await {
             Some(s) => s,
@@ -150,8 +141,8 @@ impl Usecase for GetServiceBookingSlotsUseCase {
         for user in &service.users {
             let usecase = GetUserFreeBusyUseCase {
                 calendar_ids: Some(user.calendar_ids.clone()),
-                end_ts: end_of_day.timestamp_millis(),
-                start_ts: start_of_day.timestamp_millis(),
+                end_ts: booking_timespan.end_ts,
+                start_ts: booking_timespan.start_ts,
                 user_id: user.user_id.clone(),
             };
 
@@ -175,8 +166,8 @@ impl Usecase for GetServiceBookingSlotsUseCase {
             &BookingSlotsOptions {
                 interval: self.interval,
                 duration: self.duration,
-                end_ts: end_of_day.timestamp_millis(),
-                start_ts: start_of_day.timestamp_millis(),
+                end_ts: booking_timespan.end_ts,
+                start_ts: booking_timespan.start_ts,
             },
         );
 

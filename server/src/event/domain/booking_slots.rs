@@ -1,8 +1,11 @@
 use std::collections::HashMap;
 
+use chrono::prelude::*;
+use chrono::Duration;
+use chrono_tz::Tz;
 use serde::Serialize;
 
-use crate::user::domain::User;
+use crate::{calendar::domain::date, user::domain::User};
 
 use super::event_instance::EventInstance;
 
@@ -145,6 +148,50 @@ pub fn validate_slots_interval(interval: i64) -> bool {
     let min_interval = 1000 * 60 * 10;
     let max_interval = 1000 * 60 * 60;
     interval >= min_interval && interval <= max_interval
+}
+
+pub struct BookingSlotsQuery {
+    pub date: String,
+    pub iana_tz: Option<String>,
+    pub duration: i64,
+    pub interval: i64,
+}
+
+pub enum BookingQueryError {
+    InvalidIntervalError,
+    InvalidDateError(String),
+    InvalidTimezoneError(String),
+}
+
+pub struct BookingTimespan {
+    pub start_ts: i64,
+    pub end_ts: i64,
+}
+
+pub fn validate_bookingslots_query(query: &BookingSlotsQuery) -> Result<BookingTimespan, BookingQueryError> {
+    if !validate_slots_interval(query.interval) {
+        return Err(BookingQueryError::InvalidIntervalError);
+    }
+
+    let iana_tz = query.iana_tz.clone().unwrap_or(String::from("UTC"));
+    let tz: Tz = match iana_tz.parse() {
+        Ok(tz) => tz,
+        Err(_) => return Err(BookingQueryError::InvalidTimezoneError(iana_tz)),
+    };
+
+    let parsed_date = match date::is_valid_date(&query.date) {
+        Ok(val) => val,
+        Err(_) => return Err(BookingQueryError::InvalidDateError(query.date.clone())),
+    };
+
+    let date = tz.ymd(parsed_date.0, parsed_date.1, parsed_date.2);
+    let start_of_day = date.and_hms(0, 0, 0);
+    let end_of_day = (date + Duration::days(1)).and_hms(0, 0, 0);
+
+    Ok(BookingTimespan {
+        start_ts: start_of_day.timestamp_millis(),
+        end_ts: end_of_day.timestamp_millis(),
+    })
 }
 
 #[cfg(test)]

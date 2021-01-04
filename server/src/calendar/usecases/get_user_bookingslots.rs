@@ -1,14 +1,8 @@
 use super::get_user_freebusy::GetUserFreeBusyUseCase;
-use crate::{
-    api::Context,
-    calendar::domain::date,
-    event::domain::booking_slots::{get_booking_slots, BookingSlot, BookingSlotsOptions},
-    shared::{
+use crate::{api::Context, calendar::domain::date, event::domain::booking_slots::{BookingQueryError, BookingSlot, BookingSlotsOptions, BookingSlotsQuery, get_booking_slots, validate_bookingslots_query}, shared::{
         auth::ensure_nettu_acct_header,
         usecase::{perform, Usecase},
-    },
-    user::domain::User,
-};
+    }, user::domain::User};
 use actix_web::{web, HttpRequest, HttpResponse};
 use chrono::{prelude::*, Duration};
 use chrono_tz::Tz;
@@ -24,6 +18,7 @@ pub struct UserPathParams {
 pub struct UserBookingQuery {
     iana_tz: Option<String>,
     duration: i64,
+    interval: i64,
     date: String,
     calendar_ids: Option<String>,
 }
@@ -51,6 +46,7 @@ pub async fn get_user_bookingslots_controller(
         iana_tz: query_params.iana_tz.clone(),
         date: query_params.date.clone(),
         duration: query_params.duration,
+        interval: query_params.interval,
     };
 
     let res = perform(usecase, &ctx).await;
@@ -70,6 +66,11 @@ pub async fn get_user_bookingslots_controller(
                     msg
                 ))
             }
+            UseCaseErrors::InvalidIntervalError => {
+                HttpResponse::UnprocessableEntity().body(
+                    "Invalid interval specified. It should be between 10 - 60 minutes inclusively and be specified as milliseconds."
+                )
+            }
             UseCaseErrors::UserFreebusyError => HttpResponse::InternalServerError().finish(),
         },
     }
@@ -81,6 +82,7 @@ pub struct GetUserBookingSlotsUsecase {
     pub date: String,
     pub iana_tz: Option<String>,
     pub duration: i64,
+    pub interval: i64,
 }
 
 #[derive(Serialize)]
@@ -93,6 +95,7 @@ pub struct UseCaseResponse {
 pub enum UseCaseErrors {
     InvalidDateError(String),
     InvalidTimezoneError(String),
+    InvalidIntervalError,
     UserFreebusyError,
 }
 
@@ -105,24 +108,25 @@ impl Usecase for GetUserBookingSlotsUsecase {
     type Context = Context;
 
     async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
-        let tz: Tz = match self.iana_tz.clone().unwrap_or(String::from("UTC")).parse() {
-            Ok(tz) => tz,
-            Err(_) => return Err(UseCaseErrors::InvalidTimezoneError(self.date.clone())),
+        let query = BookingSlotsQuery {
+            date: self.date.clone(),
+            iana_tz: self.iana_tz.clone(),
+            interval: self.interval.clone(),
+            duration: self.duration.clone(),
         };
-
-        let parsed_date = match date::is_valid_date(&self.date) {
-            Ok(val) => val,
-            Err(_) => return Err(UseCaseErrors::InvalidDateError(self.date.clone())),
+        let booking_timespan = match validate_bookingslots_query(&query) {
+            Ok(t) => t,
+            Err(e) => match e {
+                BookingQueryError::InvalidIntervalError => return Err(UseCaseErrors::InvalidIntervalError),
+                BookingQueryError::InvalidDateError(d) => return Err(UseCaseErrors::InvalidDateError(d)),
+                BookingQueryError::InvalidTimezoneError(d) => return Err(UseCaseErrors::InvalidTimezoneError(d)),
+            }
         };
-        let date = tz.ymd(parsed_date.0, parsed_date.1, parsed_date.2);
-
-        let start_of_day = date.and_hms(0, 0, 0);
-        let end_of_day = (date + Duration::days(1)).and_hms(0, 0, 0);
 
         let freebusy_usecase = GetUserFreeBusyUseCase {
             calendar_ids: self.calendar_ids.clone(),
-            end_ts: end_of_day.timestamp_millis(),
-            start_ts: start_of_day.timestamp_millis(),
+            end_ts: booking_timespan.end_ts,
+            start_ts: booking_timespan.start_ts,
             user_id: self.user_id.clone(),
         };
         let free_events = perform(freebusy_usecase, ctx).await;
@@ -132,10 +136,10 @@ impl Usecase for GetUserBookingSlotsUsecase {
                 let booking_slots = get_booking_slots(
                     &free_events.free,
                     &BookingSlotsOptions {
-                        interval: 1000 * 60 * 15, // 15 minutes
+                        interval: self.interval,
                         duration: self.duration,
-                        end_ts: end_of_day.timestamp_millis(),
-                        start_ts: start_of_day.timestamp_millis(),
+                        end_ts: booking_timespan.end_ts,
+                        start_ts: booking_timespan.start_ts,
                     },
                 );
 
