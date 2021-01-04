@@ -8,7 +8,6 @@ use crate::{event::repos::IEventRepo, shared::auth::protect_route};
 use actix_web::{web, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
 
-
 #[derive(Deserialize)]
 pub struct EventPathParams {
     event_id: String,

@@ -5,8 +5,7 @@ use crate::{
 };
 use crate::{event::repos::IEventRepo, shared::auth::protect_route};
 use actix_web::{web, HttpRequest, HttpResponse};
-use serde::{Deserialize};
-
+use serde::Deserialize;
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]

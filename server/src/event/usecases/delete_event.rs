@@ -4,8 +4,7 @@ use crate::{
     shared::usecase::{perform, Usecase},
 };
 use actix_web::{web, HttpRequest, HttpResponse};
-use serde::{Deserialize};
-
+use serde::Deserialize;
 
 #[derive(Deserialize)]
 pub struct PathParams {

@@ -12,7 +12,6 @@ use actix_web::{web, HttpResponse};
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
-
 #[derive(Deserialize)]
 pub struct AdminControllerPathParams {
     user_id: String,

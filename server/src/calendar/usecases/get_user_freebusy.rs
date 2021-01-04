@@ -129,24 +129,15 @@ impl Usecase for GetUserFreeBusyUseCase {
     }
 }
 
-pub struct GetUserFreeBusyUseCaseCtx {
-    pub event_repo: Arc<dyn IEventRepo>,
-    pub calendar_repo: Arc<dyn ICalendarRepo>,
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
     use crate::{
-        calendar::{domain::calendar::Calendar, repos::InMemoryCalendarRepo},
-        event::{
-            domain::event::{CalendarEvent, RRuleFrequenzy, RRuleOptions},
-            repos::InMemoryEventRepo,
-        },
+        calendar::domain::calendar::Calendar,
+        event::domain::event::{CalendarEvent, RRuleFrequenzy, RRuleOptions},
         shared::entity::Entity,
         user::domain::User,
     };
-    
 
     #[actix_web::main]
     #[test]

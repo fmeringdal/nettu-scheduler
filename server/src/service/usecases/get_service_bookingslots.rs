@@ -16,7 +16,6 @@ use chrono::{prelude::*, Duration};
 use chrono_tz::Tz;
 use serde::{Deserialize, Serialize};
 
-
 #[derive(Debug, Deserialize)]
 pub struct PathParams {
     service_id: String,
