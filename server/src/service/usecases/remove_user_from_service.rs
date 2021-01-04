@@ -12,7 +12,6 @@ use actix_web::{web, HttpRequest, HttpResponse};
 
 use serde::Deserialize;
 
-
 #[derive(Deserialize)]
 pub struct PathParams {
     service_id: String,

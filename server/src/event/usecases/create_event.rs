@@ -1,14 +1,14 @@
+use crate::event::domain::event::{CalendarEvent, RRuleOptions};
 use crate::{
-    api::Context, event::repos::IEventRepo, shared::auth::protect_route, user::domain::User,
-};
-use crate::{
-    calendar::repos::ICalendarRepo,
-    event::domain::event::{CalendarEvent, RRuleOptions},
+    api::Context,
+    shared::{
+        auth::protect_route,
+        usecase::{perform, Usecase},
+    },
 };
 use actix_web::{web, HttpResponse};
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -36,12 +36,16 @@ pub async fn create_event_controller(
         Err(res) => return res,
     };
 
-    let ctx = CreateEventUseCaseCtx {
-        event_repo: ctx.repos.event_repo.clone(),
-        calendar_repo: ctx.repos.calendar_repo.clone(),
+    let usecase = CreateEventUseCase {
+        busy: req.busy.clone(),
+        start_ts: req.start_ts.clone(),
+        duration: req.duration.clone(),
+        calendar_id: req.calendar_id.clone(),
+        rrule_options: req.rrule_options.clone(),
+        user_id: user.id.clone(),
     };
 
-    let res = create_event_usecase(req.0, user, ctx).await;
+    let res = perform(usecase, &ctx).await;
     match res {
         Ok(e) => HttpResponse::Created().json(CreateEventRes { event_id: e.id }),
         Err(e) => match e {
@@ -51,87 +55,84 @@ pub async fn create_event_controller(
     }
 }
 
-pub struct CreateEventUseCaseCtx {
-    pub event_repo: Arc<dyn IEventRepo>,
-    pub calendar_repo: Arc<dyn ICalendarRepo>,
+struct CreateEventUseCase {
+    calendar_id: String,
+    user_id: String,
+    start_ts: i64,
+    duration: i64,
+    busy: Option<bool>,
+    rrule_options: Option<RRuleOptions>,
 }
+
 #[derive(Debug)]
 pub enum CreateCalendarEventErrors {
     NotFoundError,
     StorageError,
 }
 
-async fn create_event_usecase(
-    event: CreateEventReq,
-    user: User,
-    ctx: CreateEventUseCaseCtx,
-) -> Result<CalendarEvent, CreateCalendarEventErrors> {
-    let calendar = match ctx.calendar_repo.find(&event.calendar_id).await {
-        Some(calendar) if calendar.user_id == user.id => calendar,
-        _ => return Err(CreateCalendarEventErrors::NotFoundError),
-    };
+#[async_trait::async_trait(?Send)]
+impl Usecase for CreateEventUseCase {
+    type Response = CalendarEvent;
 
-    let mut e = CalendarEvent {
-        id: ObjectId::new().to_string(),
-        busy: event.busy.unwrap_or(false),
-        start_ts: event.start_ts,
-        duration: event.duration,
-        recurrence: None,
-        end_ts: Some(event.start_ts + event.duration), // default, if recurrence changes, this will be updated
-        exdates: vec![],
-        calendar_id: calendar.id,
-        user_id: user.id,
-    };
-    if let Some(rrule_opts) = event.rrule_options.clone() {
-        e.set_reccurrence(rrule_opts, true);
+    type Errors = CreateCalendarEventErrors;
+
+    type Context = Context;
+
+    async fn perform(&self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+        let calendar = match ctx.repos.calendar_repo.find(&self.calendar_id).await {
+            Some(calendar) if calendar.user_id == self.user_id => calendar,
+            _ => return Err(CreateCalendarEventErrors::NotFoundError),
+        };
+
+        let mut e = CalendarEvent {
+            id: ObjectId::new().to_string(),
+            busy: self.busy.unwrap_or(false),
+            start_ts: self.start_ts,
+            duration: self.duration,
+            recurrence: None,
+            end_ts: Some(self.start_ts + self.duration), // default, if recurrence changes, this will be updated
+            exdates: vec![],
+            calendar_id: calendar.id,
+            user_id: self.user_id.clone(),
+        };
+        if let Some(rrule_opts) = self.rrule_options.clone() {
+            e.set_reccurrence(rrule_opts, true);
+        }
+        let repo_res = ctx.repos.event_repo.insert(&e).await;
+        if repo_res.is_err() {
+            return Err(CreateCalendarEventErrors::StorageError);
+        }
+        Ok(e)
     }
-    let repo_res = ctx.event_repo.insert(&e).await;
-    if repo_res.is_err() {
-        return Err(CreateCalendarEventErrors::StorageError);
-    }
-    Ok(e)
 }
 
 #[cfg(test)]
 mod test {
-    use crate::{
-        calendar::{domain::calendar::Calendar, repos::InMemoryCalendarRepo},
-        event::repos::InMemoryEventRepo,
-    };
-
     use super::*;
+    use crate::{calendar::domain::calendar::Calendar, user::domain::User};
 
     #[actix_web::main]
     #[test]
     async fn create_event_use_case_test() {
-        let event_repo = Arc::new(InMemoryEventRepo::new());
-        let calendar_repo = Arc::new(InMemoryCalendarRepo::new());
-
+        let ctx = Context::create_inmemory();
         let user = User::new("cool2", "cool");
 
         let calendar = Calendar {
             id: String::from("312312"),
             user_id: user.id.clone(),
         };
-        calendar_repo.insert(&calendar).await.unwrap();
+        ctx.repos.calendar_repo.insert(&calendar).await.unwrap();
 
-        let req = CreateEventReq {
+        let usecase = CreateEventUseCase {
             start_ts: 500,
             duration: 800,
             rrule_options: None,
             busy: Some(false),
             calendar_id: calendar.id.clone(),
+            user_id: user.id.clone(),
         };
 
-        let res = create_event_usecase(
-            req,
-            user,
-            CreateEventUseCaseCtx {
-                calendar_repo,
-                event_repo,
-            },
-        )
-        .await;
+        let res = usecase.perform(&ctx).await;
 
         assert!(res.is_ok());
     }

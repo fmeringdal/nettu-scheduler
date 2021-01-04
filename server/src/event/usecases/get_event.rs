@@ -1,20 +1,23 @@
 use crate::{
     api::Context,
     event::{domain::event::CalendarEvent, repos::IEventRepo},
-    shared::auth::protect_route,
+    shared::{
+        auth::protect_route,
+        usecase::{perform, Usecase},
+    },
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 #[derive(Deserialize)]
-pub struct EventPathParams {
+pub struct PathParams {
     event_id: String,
 }
 
 pub async fn get_event_controller(
     http_req: HttpRequest,
-    params: web::Path<EventPathParams>,
+    params: web::Path<PathParams>,
     ctx: web::Data<Context>,
 ) -> HttpResponse {
     let user = match protect_route(&http_req, &ctx).await {
@@ -22,40 +25,40 @@ pub async fn get_event_controller(
         Err(res) => return res,
     };
 
-    let req = GetEventReq {
+    let usecase = GetEventUseCase {
         event_id: params.event_id.clone(),
         user_id: user.id.clone(),
     };
-    let ctx = GetEventUseCaseCtx {
-        event_repo: ctx.repos.event_repo.clone(),
-    };
-    let res = get_event_usecase(req, ctx).await;
-    return match res {
+    let res = perform(usecase, &ctx).await;
+    match res {
         Ok(r) => HttpResponse::Ok().json(r),
         Err(_) => HttpResponse::NotFound().finish(),
-    };
+    }
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct GetEventReq {
+pub struct GetEventUseCase {
     pub event_id: String,
     pub user_id: String,
 }
 
-pub struct GetEventUseCaseCtx {
-    pub event_repo: Arc<dyn IEventRepo>,
-}
-
-pub enum GetEventErrors {
+#[derive(Debug)]
+pub enum UseCaseErrors {
     NotFoundError,
 }
-async fn get_event_usecase(
-    req: GetEventReq,
-    ctx: GetEventUseCaseCtx,
-) -> Result<CalendarEvent, GetEventErrors> {
-    let e = ctx.event_repo.find(&req.event_id).await;
-    match e {
-        Some(event) if event.user_id == req.user_id => Ok(event),
-        _ => Err(GetEventErrors::NotFoundError {}),
+
+#[async_trait::async_trait(?Send)]
+impl Usecase for GetEventUseCase {
+    type Response = CalendarEvent;
+
+    type Errors = UseCaseErrors;
+
+    type Context = Context;
+
+    async fn perform(&self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+        let e = ctx.repos.event_repo.find(&self.event_id).await;
+        match e {
+            Some(event) if event.user_id == self.user_id => Ok(event),
+            _ => Err(UseCaseErrors::NotFoundError),
+        }
     }
 }

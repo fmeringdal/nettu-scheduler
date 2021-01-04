@@ -1,17 +1,20 @@
-use crate::event::repos::IEventRepo;
 use crate::{api::Context, shared::auth::protect_route};
+use crate::{
+    event::repos::IEventRepo,
+    shared::usecase::{perform, Usecase},
+};
 use actix_web::{web, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 #[derive(Deserialize)]
-pub struct EventPathParams {
+pub struct PathParams {
     event_id: String,
 }
 
 pub async fn delete_event_controller(
     http_req: HttpRequest,
-    params: web::Path<EventPathParams>,
+    params: web::Path<PathParams>,
     ctx: web::Data<Context>,
 ) -> HttpResponse {
     let user = match protect_route(&http_req, &ctx).await {
@@ -19,44 +22,44 @@ pub async fn delete_event_controller(
         Err(res) => return res,
     };
 
-    let req = DeleteEventReq {
+    let usecase = DeleteEventUseCase {
         user_id: user.id.clone(),
         event_id: params.event_id.clone(),
     };
-    let ctx = DeleteEventUseCaseCtx {
-        event_repo: ctx.repos.event_repo.clone(),
-    };
-    let res = delete_event_usecase(req, ctx).await;
+    let res = perform(usecase, &ctx).await;
     return match res {
         Ok(_) => HttpResponse::Ok().body("Event deleted"),
         Err(_) => HttpResponse::NotFound().finish(),
     };
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct DeleteEventReq {
+pub struct DeleteEventUseCase {
     pub user_id: String,
     pub event_id: String,
 }
 
-pub struct DeleteEventUseCaseCtx {
-    pub event_repo: Arc<dyn IEventRepo>,
-}
-pub enum DeleteEventErrors {
+#[derive(Debug)]
+pub enum UseCaseErrors {
     NotFoundError,
 }
 
-// TODO: use only one db call
-async fn delete_event_usecase(
-    req: DeleteEventReq,
-    ctx: DeleteEventUseCaseCtx,
-) -> Result<(), DeleteEventErrors> {
-    let e = ctx.event_repo.find(&req.event_id).await;
-    match e {
-        Some(event) if event.user_id == req.user_id => {
-            ctx.event_repo.delete(&event.id).await;
-            Ok(())
+#[async_trait::async_trait(?Send)]
+impl Usecase for DeleteEventUseCase {
+    type Response = ();
+
+    type Errors = UseCaseErrors;
+
+    type Context = Context;
+
+    // TODO: use only one db call
+    async fn perform(&self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+        let e = ctx.repos.event_repo.find(&self.event_id).await;
+        match e {
+            Some(event) if event.user_id == self.user_id => {
+                ctx.repos.event_repo.delete(&event.id).await;
+                Ok(())
+            }
+            _ => Err(UseCaseErrors::NotFoundError {}),
         }
-        _ => Err(DeleteEventErrors::NotFoundError {}),
     }
 }

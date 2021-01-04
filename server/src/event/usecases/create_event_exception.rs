@@ -1,6 +1,9 @@
-use crate::event::domain::event::CalendarEvent;
 use crate::{
     api::Context, event::repos::IEventRepo, shared::auth::protect_route, user::domain::User,
+};
+use crate::{
+    event::domain::event::CalendarEvent,
+    shared::usecase::{perform, Usecase},
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use serde::Deserialize;
@@ -27,57 +30,55 @@ pub async fn create_event_exception_controller(
         Err(res) => return res,
     };
 
-    let ctx = CreateEventExceptionUseCaseCtx {
-        event_repo: ctx.repos.event_repo.clone(),
-    };
-    let req = CreateEventExceptionReq {
+    let usecase = CreateEventExceptionUseCase {
         event_id: path_params.event_id.clone(),
         exception_ts: body.exception_ts.clone(),
+        user_id: user.id.clone(),
     };
 
-    let res = create_event_exception_usecase(req, user, ctx).await;
+    let res = perform(usecase, &ctx).await;
     match res {
         Ok(_) => HttpResponse::Ok().finish(),
         Err(e) => match e {
-            CreateCalendarEventExceptionErrors::NotFoundError => HttpResponse::NotFound().finish(),
-            CreateCalendarEventExceptionErrors::StorageError => {
-                HttpResponse::InternalServerError().finish()
-            }
+            UsecaseErrors::NotFoundError => HttpResponse::NotFound().finish(),
+            UsecaseErrors::StorageError => HttpResponse::InternalServerError().finish(),
         },
     }
 }
 
-pub struct CreateEventExceptionReq {
+pub struct CreateEventExceptionUseCase {
     event_id: String,
     exception_ts: i64,
-}
-
-pub struct CreateEventExceptionUseCaseCtx {
-    pub event_repo: Arc<dyn IEventRepo>,
+    user_id: String,
 }
 
 #[derive(Debug)]
-pub enum CreateCalendarEventExceptionErrors {
+pub enum UsecaseErrors {
     NotFoundError,
     StorageError,
 }
 
-async fn create_event_exception_usecase(
-    req: CreateEventExceptionReq,
-    user: User,
-    ctx: CreateEventExceptionUseCaseCtx,
-) -> Result<CalendarEvent, CreateCalendarEventExceptionErrors> {
-    let mut event = match ctx.event_repo.find(&req.event_id).await {
-        Some(event) if event.user_id == user.id => event,
-        _ => return Err(CreateCalendarEventExceptionErrors::NotFoundError),
-    };
+#[async_trait::async_trait(?Send)]
+impl Usecase for CreateEventExceptionUseCase {
+    type Response = ();
 
-    event.exdates.push(req.exception_ts);
+    type Errors = UsecaseErrors;
 
-    let repo_res = ctx.event_repo.save(&event).await;
-    if repo_res.is_err() {
-        return Err(CreateCalendarEventExceptionErrors::StorageError);
+    type Context = Context;
+
+    async fn perform(&self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+        let mut event = match ctx.repos.event_repo.find(&self.event_id).await {
+            Some(event) if event.user_id == self.user_id => event,
+            _ => return Err(UsecaseErrors::NotFoundError),
+        };
+
+        event.exdates.push(self.exception_ts);
+
+        let repo_res = ctx.repos.event_repo.save(&event).await;
+        if repo_res.is_err() {
+            return Err(UsecaseErrors::StorageError);
+        }
+
+        Ok(())
     }
-
-    Ok(event)
 }

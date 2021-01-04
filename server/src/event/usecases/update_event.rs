@@ -1,4 +1,8 @@
-use crate::{api::Context, event::domain::event::RRuleOptions};
+use crate::{
+    api::Context,
+    event::domain::event::RRuleOptions,
+    shared::usecase::{perform, Usecase},
+};
 use crate::{event::repos::IEventRepo, shared::auth::protect_route};
 use actix_web::{web, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
@@ -29,7 +33,7 @@ pub async fn update_event_controller(
         Err(res) => return res,
     };
 
-    let req = UpdateEventReq {
+    let usecase = UpdateEventUseCase {
         user_id: user.id.clone(),
         duration: body.duration,
         start_ts: body.start_ts,
@@ -37,21 +41,17 @@ pub async fn update_event_controller(
         event_id: params.event_id.clone(),
         busy: body.busy,
     };
-    let ctx = UpdateEventUseCaseCtx {
-        event_repo: ctx.repos.event_repo.clone(),
-    };
-    let res = update_event_usecase(req, ctx).await;
+    let res = perform(usecase, &ctx).await;
     match res {
         Ok(_) => HttpResponse::Ok().finish(),
         Err(e) => match e {
-            UpdateEventErrors::NotFoundError => HttpResponse::NotFound().finish(),
-            UpdateEventErrors::StorageError => HttpResponse::InternalServerError().finish(),
+            UseCaseErrors::NotFoundError => HttpResponse::NotFound().finish(),
+            UseCaseErrors::StorageError => HttpResponse::InternalServerError().finish(),
         },
     }
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct UpdateEventReq {
+pub struct UpdateEventUseCase {
     pub user_id: String,
     pub event_id: String,
     pub start_ts: Option<i64>,
@@ -60,56 +60,59 @@ pub struct UpdateEventReq {
     pub rrule_options: Option<RRuleOptions>,
 }
 
-pub struct UpdateEventUseCaseCtx {
-    pub event_repo: Arc<dyn IEventRepo>,
-}
-
-pub enum UpdateEventErrors {
+#[derive(Debug)]
+pub enum UseCaseErrors {
     NotFoundError,
     StorageError,
 }
 
-async fn update_event_usecase(
-    req: UpdateEventReq,
-    ctx: UpdateEventUseCaseCtx,
-) -> Result<(), UpdateEventErrors> {
-    let mut e = match ctx.event_repo.find(&req.event_id).await {
-        Some(event) if event.user_id == req.user_id => event,
-        _ => return Err(UpdateEventErrors::NotFoundError {}),
-    };
+#[async_trait::async_trait(?Send)]
+impl Usecase for UpdateEventUseCase {
+    type Response = ();
 
-    let mut should_update_endtime = false;
+    type Errors = UseCaseErrors;
 
-    if let Some(start_ts) = req.start_ts {
-        if e.start_ts != start_ts {
-            e.start_ts = start_ts;
-            e.exdates = vec![];
-            should_update_endtime = true;
+    type Context = Context;
+
+    async fn perform(&self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+        let mut e = match ctx.repos.event_repo.find(&self.event_id).await {
+            Some(event) if event.user_id == self.user_id => event,
+            _ => return Err(UseCaseErrors::NotFoundError),
+        };
+
+        let mut should_update_endtime = false;
+
+        if let Some(start_ts) = self.start_ts {
+            if e.start_ts != start_ts {
+                e.start_ts = start_ts;
+                e.exdates = vec![];
+                should_update_endtime = true;
+            }
         }
-    }
-    if let Some(duration) = req.duration {
-        if e.duration != duration {
-            e.duration = duration;
-            should_update_endtime = true;
+        if let Some(duration) = self.duration {
+            if e.duration != duration {
+                e.duration = duration;
+                should_update_endtime = true;
+            }
         }
-    }
-    if let Some(busy) = req.busy {
-        e.busy = busy;
-    }
+        if let Some(busy) = self.busy {
+            e.busy = busy;
+        }
 
-    if let Some(rrule_opts) = req.rrule_options.clone() {
-        // should we clear exdates when rrules are updated ?
-        e.set_reccurrence(rrule_opts, true);
-    } else if should_update_endtime && e.recurrence.is_some() {
-        e.set_reccurrence(e.recurrence.clone().unwrap(), true);
-    }
+        if let Some(rrule_opts) = self.rrule_options.clone() {
+            // should we clear exdates when rrules are updated ?
+            e.set_reccurrence(rrule_opts, true);
+        } else if should_update_endtime && e.recurrence.is_some() {
+            e.set_reccurrence(e.recurrence.clone().unwrap(), true);
+        }
 
-    let repo_res = ctx.event_repo.save(&e).await;
-    if repo_res.is_err() {
-        return Err(UpdateEventErrors::StorageError);
-    }
+        let repo_res = ctx.repos.event_repo.save(&e).await;
+        if repo_res.is_err() {
+            return Err(UseCaseErrors::StorageError);
+        }
 
-    Ok(())
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -122,8 +125,7 @@ mod test {
     async fn update_notexisting_event() {
         let event_repo = Arc::new(InMemoryEventRepo::new());
 
-        let ctx = UpdateEventUseCaseCtx { event_repo };
-        let req = UpdateEventReq {
+        let usecase = UpdateEventUseCase {
             event_id: String::from(""),
             start_ts: Some(500),
             duration: Some(800),
@@ -131,7 +133,8 @@ mod test {
             busy: Some(false),
             user_id: String::from("cool"),
         };
-        let res = update_event_usecase(req, ctx).await;
+        let ctx = Context::create_inmemory();
+        let res = usecase.perform(&ctx).await;
         assert!(res.is_err());
     }
 }
