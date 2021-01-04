@@ -12,7 +12,7 @@ use crate::{api::Context, user::repos::IUserRepo};
 use actix_web::{web, HttpRequest, HttpResponse};
 
 use serde::Deserialize;
-use std::sync::Arc;
+
 
 #[derive(Deserialize)]
 pub struct PathParams {
