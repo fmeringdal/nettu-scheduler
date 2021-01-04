@@ -23,7 +23,7 @@ services:
       MONGODB_NAME: nettubooking
     volumes:
       - ../:/var/application
-    command: bash -c "cargo watch -x run"
+    command: bash -c "cargo watch -x run server"
     init: true
 
 volumes:
