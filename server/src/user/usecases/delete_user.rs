@@ -1,12 +1,11 @@
-use crate::{account::domain::Account, shared::auth::protect_account_route};
+use crate::{account::{domain::Account, usecases}, shared::auth::protect_account_route};
 use crate::{
     api::Context,
     user::{domain::User, repos::IUserRepo},
+    shared::usecase::{perform, Usecase}
 };
 use actix_web::{web, HttpRequest, HttpResponse};
-
 use serde::Deserialize;
-use std::sync::Arc;
 
 #[derive(Deserialize)]
 pub struct PathParams {
@@ -24,13 +23,8 @@ pub async fn delete_user_controller(
     };
 
     let user_id = User::create_id(&account.id, &path_params.user_id);
-    let res = delete_user_usecase(
-        UsecaseReq { account, user_id },
-        UsecaseCtx {
-            user_repo: Arc::clone(&ctx.repos.user_repo),
-        },
-    )
-    .await;
+    let usecase = DeleteUserUseCase { account, user_id };
+    let res = perform(usecase, &ctx).await;
 
     match res {
         Ok(usecase_res) => HttpResponse::Ok().body(format!(
@@ -46,7 +40,7 @@ pub async fn delete_user_controller(
     }
 }
 
-struct UsecaseReq {
+struct DeleteUserUseCase {
     account: Account,
     user_id: String,
 }
@@ -55,32 +49,36 @@ struct UsecaseRes {
     pub user: User,
 }
 
+#[derive(Debug)]
 enum UsecaseErrors {
     StorageError,
     UserNotFoundError,
 }
 
-struct UsecaseCtx {
-    pub user_repo: Arc<dyn IUserRepo>,
-}
+#[async_trait::async_trait]
+impl Usecase for DeleteUserUseCase {
+    type Response = UsecaseRes;
 
-// TODOS:
-// - REMOVE ALL CALENDARS
-// - REMOVE ALL EVENTS
-// - REMOVE FROM ALL SERVICES
-async fn delete_user_usecase(
-    req: UsecaseReq,
-    ctx: UsecaseCtx,
-) -> Result<UsecaseRes, UsecaseErrors> {
-    let user = match ctx.user_repo.find(&req.user_id).await {
-        Some(u) if u.account_id == req.account.id => {
-            match ctx.user_repo.delete(&req.user_id).await {
-                Some(u) => u,
-                None => return Err(UsecaseErrors::StorageError),
+    type Errors = UsecaseErrors;
+
+    type Context = Context;
+
+
+    // TODOS:
+    // - REMOVE ALL CALENDARS
+    // - REMOVE ALL EVENTS
+    // - REMOVE FROM ALL SERVICES
+    async fn perform(&self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+        let user = match ctx.repos.user_repo.find(&self.user_id).await {
+            Some(u) if u.account_id == self.account.id => {
+                match ctx.repos.user_repo.delete(&self.user_id).await {
+                    Some(u) => u,
+                    None => return Err(UsecaseErrors::StorageError),
+                }
             }
-        }
-        _ => return Err(UsecaseErrors::UserNotFoundError),
-    };
-
-    Ok(UsecaseRes { user })
+            _ => return Err(UsecaseErrors::UserNotFoundError),
+        };
+    
+        Ok(UsecaseRes { user })
+    }
 }

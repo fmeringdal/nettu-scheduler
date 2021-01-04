@@ -4,7 +4,6 @@ use crate::{
     api::Context,
     user::{
         domain::{User, UserDTO},
-        repos::IUserRepo,
     },
 };
 use actix_web::{web, HttpRequest, HttpResponse};
@@ -63,11 +62,11 @@ pub enum UsecaseErrors {
 
 #[async_trait::async_trait]
 impl Usecase for CreateUserUseCase {
-    type SuccessRes = UsecaseRes;
+    type Response = UsecaseRes;
     type Errors = UsecaseErrors;
     type Context = Context;
 
-    async fn perform(&self, ctx: &Self::Context) -> Result<Self::SuccessRes, Self::Errors> {
+    async fn perform(&self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let user = User::new(&self.account_id, &self.external_user_id);
 
         if let Some(_existing_user) = ctx.repos.user_repo.find(&user.id).await {
