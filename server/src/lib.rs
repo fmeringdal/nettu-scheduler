@@ -5,6 +5,7 @@ mod event;
 mod service;
 mod shared;
 mod user;
+
 use actix_web::web;
 
 async fn status() -> &'static str {
