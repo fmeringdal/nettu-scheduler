@@ -1,10 +1,10 @@
-pub mod account;
+mod account;
 mod api;
-pub mod calendar;
-pub mod event;
-pub mod service;
+mod calendar;
+mod event;
+mod service;
 mod shared;
-pub mod user;
+mod user;
 use actix_web::web;
 
 async fn status() -> &'static str {
