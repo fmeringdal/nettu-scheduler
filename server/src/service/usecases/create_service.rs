@@ -1,13 +1,12 @@
-use crate::api::Context;
 use crate::{
-    account::domain::Account,
-    service::{domain::Service, repos::IServiceRepo},
-    shared::auth::protect_account_route,
+    account::domain::Account, service::domain::Service, shared::auth::protect_account_route,
+};
+use crate::{
+    api::Context,
+    shared::usecase::{perform, Usecase},
 };
 use actix_web::{web, HttpRequest, HttpResponse};
-
 use serde::Serialize;
-use std::sync::Arc;
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -24,13 +23,8 @@ pub async fn create_service_controller(
         Err(res) => return res,
     };
 
-    let res = create_service_usecase(
-        CreateServiceReq { account },
-        CreateServiceUseCaseCtx {
-            service_repo: Arc::clone(&ctx.repos.service_repo),
-        },
-    )
-    .await;
+    let usecase = CreateServiceUseCase { account };
+    let res = perform(usecase, &ctx).await;
 
     match res {
         Ok(usecase_res) => {
@@ -45,30 +39,32 @@ pub async fn create_service_controller(
     }
 }
 
-struct CreateServiceReq {
+struct CreateServiceUseCase {
     account: Account,
 }
-
-struct CreateServiceUsecaseRes {
+struct UseCaseRes {
     pub service: Service,
 }
 
+#[derive(Debug)]
 enum UsecaseErrors {
     StorageError,
 }
 
-struct CreateServiceUseCaseCtx {
-    pub service_repo: Arc<dyn IServiceRepo>,
-}
+#[async_trait::async_trait(?Send)]
+impl Usecase for CreateServiceUseCase {
+    type Response = UseCaseRes;
 
-async fn create_service_usecase(
-    req: CreateServiceReq,
-    ctx: CreateServiceUseCaseCtx,
-) -> Result<CreateServiceUsecaseRes, UsecaseErrors> {
-    let service = Service::new(&req.account.id);
-    let res = ctx.service_repo.insert(&service).await;
-    match res {
-        Ok(_) => Ok(CreateServiceUsecaseRes { service }),
-        Err(_) => Err(UsecaseErrors::StorageError),
+    type Errors = UsecaseErrors;
+
+    type Context = Context;
+
+    async fn perform(&self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+        let service = Service::new(&self.account.id);
+        let res = ctx.repos.service_repo.insert(&service).await;
+        match res {
+            Ok(_) => Ok(UseCaseRes { service }),
+            Err(_) => Err(UsecaseErrors::StorageError),
+        }
     }
 }

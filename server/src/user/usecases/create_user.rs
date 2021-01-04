@@ -2,14 +2,11 @@ use crate::shared::auth::protect_account_route;
 use crate::shared::usecase::{perform, Usecase};
 use crate::{
     api::Context,
-    user::{
-        domain::{User, UserDTO},
-    },
+    user::domain::{User, UserDTO},
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 
 use serde::Deserialize;
-
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -60,7 +57,7 @@ pub enum UsecaseErrors {
     UserAlreadyExists,
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl Usecase for CreateUserUseCase {
     type Response = UsecaseRes;
     type Errors = UsecaseErrors;

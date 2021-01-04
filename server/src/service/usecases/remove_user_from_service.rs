@@ -1,9 +1,4 @@
-use crate::{
-    account::domain::Account,
-    service::{domain::ServiceResource, repos::IServiceRepo},
-    shared::auth::protect_account_route,
-    user::domain::User,
-};
+use crate::{account::domain::Account, service::{domain::ServiceResource, repos::IServiceRepo}, shared::{auth::protect_account_route, usecase::{Usecase, perform}}, user::domain::User};
 use crate::{api::Context, user::repos::IUserRepo};
 use actix_web::{web, HttpRequest, HttpResponse};
 
@@ -27,20 +22,12 @@ pub async fn remove_user_from_service_controller(
     };
 
     let user_id = User::create_id(&account.id, &path_params.user_id);
-    let req = UsecaseReq {
+    let usecase = RemoveUserFromServiceUsecase {
         account,
         service_id: path_params.service_id.to_owned(),
         user_id,
     };
-
-    let res = remove_user_from_service_usecase(
-        req,
-        UsecaseCtx {
-            service_repo: Arc::clone(&ctx.repos.service_repo),
-            user_repo: Arc::clone(&ctx.repos.user_repo),
-        },
-    )
-    .await;
+    let res = perform(usecase, &ctx).await;
 
     match res {
         Ok(_) => HttpResponse::Ok().body("Service successfully updated"),
@@ -56,41 +43,47 @@ pub async fn remove_user_from_service_controller(
     }
 }
 
-struct UsecaseReq {
+struct RemoveUserFromServiceUsecase {
     pub account: Account,
     pub service_id: String,
     pub user_id: String,
 }
 
+
 struct UsecaseRes {
     pub resource: ServiceResource,
 }
 
+
+#[derive(Debug)]
 enum UsecaseErrors {
     StorageError,
     ServiceNotFoundError,
     UserNotFoundError,
 }
 
-struct UsecaseCtx {
-    pub service_repo: Arc<dyn IServiceRepo>,
-    pub user_repo: Arc<dyn IUserRepo>,
-}
 
-async fn remove_user_from_service_usecase(
-    req: UsecaseReq,
-    ctx: UsecaseCtx,
-) -> Result<UsecaseRes, UsecaseErrors> {
-    let mut service = match ctx.service_repo.find(&req.service_id).await {
-        Some(service) if service.account_id == req.account.id => service,
-        _ => return Err(UsecaseErrors::ServiceNotFoundError),
-    };
 
-    match service.remove_user(&req.user_id) {
-        Some(resource) => match ctx.service_repo.save(&service).await {
-            Ok(_) => Ok(UsecaseRes { resource }),
-            Err(_) => Err(UsecaseErrors::StorageError),
-        },
-        None => Err(UsecaseErrors::UserNotFoundError),
+#[async_trait::async_trait(?Send)]
+impl Usecase for RemoveUserFromServiceUsecase {
+    type Response = UsecaseRes;
+
+    type Errors = UsecaseErrors;
+
+    type Context = Context;
+
+    async fn perform(&self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+        let mut service = match ctx.repos.service_repo.find(&self.service_id).await {
+            Some(service) if service.account_id == self.account.id => service,
+            _ => return Err(UsecaseErrors::ServiceNotFoundError),
+        };
+    
+        match service.remove_user(&self.user_id) {
+            Some(resource) => match ctx.repos.service_repo.save(&service).await {
+                Ok(_) => Ok(UsecaseRes { resource }),
+                Err(_) => Err(UsecaseErrors::StorageError),
+            },
+            None => Err(UsecaseErrors::UserNotFoundError),
+        }
     }
 }

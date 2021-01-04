@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 
 // how to get context ??
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 pub trait Usecase {
     type Response;
     type Errors;

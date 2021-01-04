@@ -1,10 +1,4 @@
-use crate::{
-    account::domain::Account,
-    calendar::repos::ICalendarRepo,
-    service::{domain::Service, repos::IServiceRepo},
-    shared::auth::protect_account_route,
-    user::domain::User,
-};
+use crate::{account::domain::Account, calendar::repos::ICalendarRepo, service::{domain::Service, repos::IServiceRepo}, shared::{auth::protect_account_route, usecase::{Usecase, perform}}, user::domain::User};
 use crate::{api::Context, user::repos::IUserRepo};
 use actix_web::{web, HttpRequest, HttpResponse};
 
@@ -35,22 +29,14 @@ pub async fn update_service_user_controller(
     };
 
     let user_id = User::create_id(&account.id, &path_params.user_id);
-    let req = UsecaseReq {
+    let usecase = UpdateServiceUserUseCase {
         account,
         calendar_ids: body.calendar_ids.to_owned(),
         service_id: path_params.service_id.to_owned(),
         user_id,
     };
+    let res = perform(usecase, &ctx).await;
 
-    let res = update_service_user_usecase(
-        req,
-        UsecaseCtx {
-            service_repo: Arc::clone(&ctx.repos.service_repo),
-            user_repo: Arc::clone(&ctx.repos.user_repo),
-            calendar_repo: Arc::clone(&ctx.repos.calendar_repo),
-        },
-    )
-    .await;
 
     match res {
         Ok(_) => HttpResponse::Ok().body("Service successfully updated"),
@@ -72,7 +58,7 @@ pub async fn update_service_user_controller(
     }
 }
 
-struct UsecaseReq {
+struct UpdateServiceUserUseCase {
     pub account: Account,
     pub service_id: String,
     pub user_id: String,
@@ -83,6 +69,7 @@ struct UsecaseRes {
     pub service: Service,
 }
 
+#[derive(Debug)]
 enum UsecaseErrors {
     StorageError,
     ServiceNotFoundError,
@@ -90,44 +77,45 @@ enum UsecaseErrors {
     CalendarNotOwnedByUser(String),
 }
 
-struct UsecaseCtx {
-    pub service_repo: Arc<dyn IServiceRepo>,
-    pub calendar_repo: Arc<dyn ICalendarRepo>,
-    pub user_repo: Arc<dyn IUserRepo>,
-}
+#[async_trait::async_trait(?Send)]
+impl Usecase for UpdateServiceUserUseCase {
+    type Response = UsecaseRes;
 
-async fn update_service_user_usecase(
-    req: UsecaseReq,
-    ctx: UsecaseCtx,
-) -> Result<UsecaseRes, UsecaseErrors> {
-    let mut service = match ctx.service_repo.find(&req.service_id).await {
-        Some(service) if service.account_id == req.account.id => service,
-        _ => return Err(UsecaseErrors::ServiceNotFoundError),
-    };
+    type Errors = UsecaseErrors;
 
-    let user_resource = match service.find_user_mut(&req.user_id) {
-        Some(res) => res,
-        _ => return Err(UsecaseErrors::UserNotFoundError),
-    };
+    type Context = Context;
 
-    let user_calendars = ctx
-        .calendar_repo
-        .find_by_user(&req.user_id)
-        .await
-        .into_iter()
-        .map(|cal| cal.id)
-        .collect::<Vec<_>>();
-    for calendar_id in &req.calendar_ids {
-        if !user_calendars.contains(calendar_id) {
-            return Err(UsecaseErrors::CalendarNotOwnedByUser(calendar_id.clone()));
+    async fn perform(&self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+        let mut service = match ctx.repos.service_repo.find(&self.service_id).await {
+            Some(service) if service.account_id == self.account.id => service,
+            _ => return Err(UsecaseErrors::ServiceNotFoundError),
+        };
+    
+        let user_resource = match service.find_user_mut(&self.user_id) {
+            Some(res) => res,
+            _ => return Err(UsecaseErrors::UserNotFoundError),
+        };
+    
+        let user_calendars = ctx.repos
+            .calendar_repo
+            .find_by_user(&self.user_id)
+            .await
+            .into_iter()
+            .map(|cal| cal.id)
+            .collect::<Vec<_>>();
+        for calendar_id in &self.calendar_ids {
+            if !user_calendars.contains(calendar_id) {
+                return Err(UsecaseErrors::CalendarNotOwnedByUser(calendar_id.clone()));
+            }
         }
+    
+        user_resource.set_calendar_ids(&self.calendar_ids);
+    
+        let res = ctx.repos.service_repo.save(&service).await;
+        match res {
+            Ok(_) => Ok(UsecaseRes { service }),
+            Err(_) => Err(UsecaseErrors::StorageError),
+        }    
     }
 
-    user_resource.set_calendar_ids(&req.calendar_ids);
-
-    let res = ctx.service_repo.save(&service).await;
-    match res {
-        Ok(_) => Ok(UsecaseRes { service }),
-        Err(_) => Err(UsecaseErrors::StorageError),
-    }
 }

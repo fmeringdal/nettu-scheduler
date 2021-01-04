@@ -1,18 +1,16 @@
+use crate::api::Context;
 use crate::{
     account::domain::Account,
-    calendar::repos::ICalendarRepo,
-    service::{
-        domain::{Service, ServiceResource},
-        repos::IServiceRepo,
+    service::domain::{Service, ServiceResource},
+    shared::{
+        auth::protect_account_route,
+        usecase::{perform, Usecase},
     },
-    shared::auth::protect_account_route,
     user::domain::User,
 };
-use crate::{api::Context, user::repos::IUserRepo};
 use actix_web::{web, HttpRequest, HttpResponse};
 
 use serde::Deserialize;
-use std::sync::Arc;
 
 #[derive(Deserialize)]
 pub struct PathParams {
@@ -38,22 +36,13 @@ pub async fn add_user_to_service_controller(
     };
 
     let user_id = User::create_id(&account.id, &body.user_id);
-    let req = UsecaseReq {
+    let usecase = AddUserToServiceUseCase {
         account,
         calendar_ids: body.calendar_ids.to_owned(),
         service_id: path_params.service_id.to_owned(),
         user_id,
     };
-
-    let res = add_user_to_service_usecase(
-        req,
-        UsecaseCtx {
-            service_repo: Arc::clone(&ctx.repos.service_repo),
-            user_repo: Arc::clone(&ctx.repos.user_repo),
-            calendar_repo: Arc::clone(&ctx.repos.calendar_repo),
-        },
-    )
-    .await;
+    let res = perform(usecase, &ctx).await;
 
     match res {
         Ok(_) =>
@@ -68,7 +57,7 @@ pub async fn add_user_to_service_controller(
     }
 }
 
-struct UsecaseReq {
+struct AddUserToServiceUseCase {
     pub account: Account,
     pub service_id: String,
     pub user_id: String,
@@ -79,6 +68,7 @@ struct UsecaseRes {
     pub service: Service,
 }
 
+#[derive(Debug)]
 enum UsecaseErrors {
     StorageError,
     ServiceNotFoundError,
@@ -87,49 +77,50 @@ enum UsecaseErrors {
     CalendarNotOwnedByUser(String),
 }
 
-struct UsecaseCtx {
-    pub service_repo: Arc<dyn IServiceRepo>,
-    pub calendar_repo: Arc<dyn ICalendarRepo>,
-    pub user_repo: Arc<dyn IUserRepo>,
-}
+#[async_trait::async_trait(?Send)]
+impl Usecase for AddUserToServiceUseCase {
+    type Response = UsecaseRes;
 
-async fn add_user_to_service_usecase(
-    req: UsecaseReq,
-    ctx: UsecaseCtx,
-) -> Result<UsecaseRes, UsecaseErrors> {
-    let _user = match ctx.user_repo.find(&req.user_id).await {
-        Some(user) if user.account_id == req.account.id => user,
-        _ => return Err(UsecaseErrors::UserNotFoundError),
-    };
+    type Errors = UsecaseErrors;
 
-    let mut service = match ctx.service_repo.find(&req.service_id).await {
-        Some(service) if service.account_id == req.account.id => service,
-        _ => return Err(UsecaseErrors::ServiceNotFoundError),
-    };
+    type Context = Context;
 
-    if let Some(_user_resource) = service.find_user(&req.user_id) {
-        return Err(UsecaseErrors::UserAlreadyInService);
-    }
+    async fn perform(&self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+        let _user = match ctx.repos.user_repo.find(&self.user_id).await {
+            Some(user) if user.account_id == self.account.id => user,
+            _ => return Err(UsecaseErrors::UserNotFoundError),
+        };
 
-    let user_calendars = ctx
-        .calendar_repo
-        .find_by_user(&req.user_id)
-        .await
-        .into_iter()
-        .map(|cal| cal.id)
-        .collect::<Vec<_>>();
-    for calendar_id in &req.calendar_ids {
-        if !user_calendars.contains(calendar_id) {
-            return Err(UsecaseErrors::CalendarNotOwnedByUser(calendar_id.clone()));
+        let mut service = match ctx.repos.service_repo.find(&self.service_id).await {
+            Some(service) if service.account_id == self.account.id => service,
+            _ => return Err(UsecaseErrors::ServiceNotFoundError),
+        };
+
+        if let Some(_user_resource) = service.find_user(&self.user_id) {
+            return Err(UsecaseErrors::UserAlreadyInService);
         }
-    }
 
-    let user_resource = ServiceResource::new(&req.user_id, &req.calendar_ids);
-    service.add_user(user_resource);
+        let user_calendars = ctx
+            .repos
+            .calendar_repo
+            .find_by_user(&self.user_id)
+            .await
+            .into_iter()
+            .map(|cal| cal.id)
+            .collect::<Vec<_>>();
+        for calendar_id in &self.calendar_ids {
+            if !user_calendars.contains(calendar_id) {
+                return Err(UsecaseErrors::CalendarNotOwnedByUser(calendar_id.clone()));
+            }
+        }
 
-    let res = ctx.service_repo.save(&service).await;
-    match res {
-        Ok(_) => Ok(UsecaseRes { service }),
-        Err(_) => Err(UsecaseErrors::StorageError),
+        let user_resource = ServiceResource::new(&self.user_id, &self.calendar_ids);
+        service.add_user(user_resource);
+
+        let res = ctx.repos.service_repo.save(&service).await;
+        match res {
+            Ok(_) => Ok(UsecaseRes { service }),
+            Err(_) => Err(UsecaseErrors::StorageError),
+        }
     }
 }

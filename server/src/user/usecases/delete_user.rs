@@ -1,8 +1,8 @@
-use crate::{account::{domain::Account, usecases}, shared::auth::protect_account_route};
+use crate::{account::domain::Account, shared::auth::protect_account_route};
 use crate::{
     api::Context,
-    user::{domain::User, repos::IUserRepo},
-    shared::usecase::{perform, Usecase}
+    shared::usecase::{perform, Usecase},
+    user::domain::User,
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use serde::Deserialize;
@@ -55,14 +55,13 @@ enum UsecaseErrors {
     UserNotFoundError,
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl Usecase for DeleteUserUseCase {
     type Response = UsecaseRes;
 
     type Errors = UsecaseErrors;
 
     type Context = Context;
-
 
     // TODOS:
     // - REMOVE ALL CALENDARS
@@ -78,7 +77,7 @@ impl Usecase for DeleteUserUseCase {
             }
             _ => return Err(UsecaseErrors::UserNotFoundError),
         };
-    
+
         Ok(UsecaseRes { user })
     }
 }

@@ -8,14 +8,11 @@ use crate::{
     shared::auth::ensure_nettu_acct_header,
 };
 use crate::{
-    calendar::{
-        repos::ICalendarRepo,
-        usecases::get_user_freebusy::{
-            get_user_freebusy_usecase, GetUserFreeBusyReq, GetUserFreeBusyUseCaseCtx,
-        },
+    calendar::usecases::get_user_freebusy::{
+        get_user_freebusy_usecase, GetUserFreeBusyReq, GetUserFreeBusyUseCaseCtx,
     },
-    event::{domain::booking_slots::UserFreeEvents, repos::IEventRepo},
-    service::repos::IServiceRepo,
+    event::domain::booking_slots::UserFreeEvents,
+    shared::usecase::{perform, Usecase},
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use chrono::{prelude::*, Duration};
@@ -54,19 +51,15 @@ pub async fn get_service_bookingslots_controller(
         Err(e) => return e,
     };
 
-    let req = UsecaseReq {
+    let usecase = GetServiceBookingSlotsUseCase {
         service_id: path_params.service_id.clone(),
         iana_tz: query_params.iana_tz.clone(),
         date: query_params.date.clone(),
         duration: query_params.duration,
         interval: query_params.interval,
     };
-    let ctx = UsecaseCtx {
-        event_repo: ctx.repos.event_repo.clone(),
-        calendar_repo: ctx.repos.calendar_repo.clone(),
-        service_repo: ctx.repos.service_repo.clone(),
-    };
-    let res = get_service_bookingslots_usecase(req, ctx).await;
+
+    let res = perform(usecase, &ctx).await;
 
     match res {
         Ok(r) => {
@@ -102,7 +95,7 @@ pub async fn get_service_bookingslots_controller(
     }
 }
 
-struct UsecaseReq {
+struct GetServiceBookingSlotsUseCase {
     pub service_id: String,
     pub date: String,
     pub iana_tz: Option<String>,
@@ -110,14 +103,8 @@ struct UsecaseReq {
     pub interval: i64,
 }
 
-struct UsecaseRes {
+struct UseCaseRes {
     booking_slots: Vec<ServiceBookingSlot>,
-}
-
-struct UsecaseCtx {
-    pub service_repo: Arc<dyn IServiceRepo>,
-    pub calendar_repo: Arc<dyn ICalendarRepo>,
-    pub event_repo: Arc<dyn IEventRepo>,
 }
 
 #[derive(Debug)]
@@ -128,73 +115,80 @@ enum UsecaseErrors {
     InvalidTimezoneError(String),
 }
 
-async fn get_service_bookingslots_usecase(
-    req: UsecaseReq,
-    ctx: UsecaseCtx,
-) -> Result<UsecaseRes, UsecaseErrors> {
-    if !validate_slots_interval(req.interval) {
-        return Err(UsecaseErrors::InvalidIntervalError);
-    }
+#[async_trait::async_trait(?Send)]
+impl Usecase for GetServiceBookingSlotsUseCase {
+    type Response = UseCaseRes;
 
-    let tz: Tz = match req.iana_tz.unwrap_or(String::from("UTC")).parse() {
-        Ok(tz) => tz,
-        Err(_) => return Err(UsecaseErrors::InvalidTimezoneError(req.date)),
-    };
+    type Errors = UsecaseErrors;
 
-    let parsed_date = match date::is_valid_date(&req.date) {
-        Ok(val) => val,
-        Err(_) => return Err(UsecaseErrors::InvalidDateError(req.date.clone())),
-    };
+    type Context = Context;
 
-    let date = tz.ymd(parsed_date.0, parsed_date.1, parsed_date.2);
+    async fn perform(&self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+        if !validate_slots_interval(self.interval) {
+            return Err(UsecaseErrors::InvalidIntervalError);
+        }
 
-    let start_of_day = date.and_hms(0, 0, 0);
-    let end_of_day = (date + Duration::days(1)).and_hms(0, 0, 0);
+        let iana_tz = self.iana_tz.clone().unwrap_or(String::from("UTC"));
+        let tz: Tz = match iana_tz.parse() {
+            Ok(tz) => tz,
+            Err(_) => return Err(UsecaseErrors::InvalidTimezoneError(iana_tz)),
+        };
 
-    let service = match ctx.service_repo.find(&req.service_id).await {
-        Some(s) => s,
-        None => return Err(UsecaseErrors::ServiceNotFoundError),
-    };
+        let parsed_date = match date::is_valid_date(&self.date) {
+            Ok(val) => val,
+            Err(_) => return Err(UsecaseErrors::InvalidDateError(self.date.clone())),
+        };
 
-    let mut users_freebusy: Vec<UserFreeEvents> = Vec::with_capacity(service.users.len());
+        let date = tz.ymd(parsed_date.0, parsed_date.1, parsed_date.2);
 
-    for user in &service.users {
-        let free_events = get_user_freebusy_usecase(
-            GetUserFreeBusyReq {
-                calendar_ids: Some(user.calendar_ids.clone()),
-                end_ts: end_of_day.timestamp_millis(),
-                start_ts: start_of_day.timestamp_millis(),
-                user_id: user.user_id.clone(),
-            },
-            GetUserFreeBusyUseCaseCtx {
-                calendar_repo: Arc::clone(&ctx.calendar_repo),
-                event_repo: Arc::clone(&ctx.event_repo),
-            },
-        )
-        .await;
+        let start_of_day = date.and_hms(0, 0, 0);
+        let end_of_day = (date + Duration::days(1)).and_hms(0, 0, 0);
 
-        match free_events {
-            Ok(free_events) => {
-                users_freebusy.push(UserFreeEvents {
-                    free_events: free_events.free,
+        let service = match ctx.repos.service_repo.find(&self.service_id).await {
+            Some(s) => s,
+            None => return Err(UsecaseErrors::ServiceNotFoundError),
+        };
+
+        let mut users_freebusy: Vec<UserFreeEvents> = Vec::with_capacity(service.users.len());
+
+        for user in &service.users {
+            let free_events = get_user_freebusy_usecase(
+                GetUserFreeBusyReq {
+                    calendar_ids: Some(user.calendar_ids.clone()),
+                    end_ts: end_of_day.timestamp_millis(),
+                    start_ts: start_of_day.timestamp_millis(),
                     user_id: user.user_id.clone(),
-                });
-            }
-            Err(e) => {
-                println!("Error getting user freebusy: {:?}", e);
+                },
+                GetUserFreeBusyUseCaseCtx {
+                    calendar_repo: Arc::clone(&ctx.repos.calendar_repo),
+                    event_repo: Arc::clone(&ctx.repos.event_repo),
+                },
+            )
+            .await;
+
+            match free_events {
+                Ok(free_events) => {
+                    users_freebusy.push(UserFreeEvents {
+                        free_events: free_events.free,
+                        user_id: user.user_id.clone(),
+                    });
+                }
+                Err(e) => {
+                    println!("Error getting user freebusy: {:?}", e);
+                }
             }
         }
+
+        let booking_slots = get_service_bookingslots(
+            users_freebusy,
+            &BookingSlotsOptions {
+                interval: self.interval,
+                duration: self.duration,
+                end_ts: end_of_day.timestamp_millis(),
+                start_ts: start_of_day.timestamp_millis(),
+            },
+        );
+
+        Ok(UseCaseRes { booking_slots })
     }
-
-    let booking_slots = get_service_bookingslots(
-        users_freebusy,
-        &BookingSlotsOptions {
-            interval: req.interval,
-            duration: req.duration,
-            end_ts: end_of_day.timestamp_millis(),
-            start_ts: start_of_day.timestamp_millis(),
-        },
-    );
-
-    Ok(UsecaseRes { booking_slots })
 }

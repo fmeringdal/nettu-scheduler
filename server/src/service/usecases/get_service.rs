@@ -1,13 +1,14 @@
 use crate::{
     account::domain::Account,
     service::{domain::Service, repos::IServiceRepo},
-    shared::auth::protect_account_route,
+    shared::{
+        auth::protect_account_route,
+        usecase::{perform, Usecase},
+    },
 };
 use crate::{api::Context, service::domain::ServiceDTO};
 use actix_web::{web, HttpRequest, HttpResponse};
-
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
 
 #[derive(Deserialize)]
 pub struct PathParams {
@@ -30,16 +31,12 @@ pub async fn get_service_controller(
         Err(res) => return res,
     };
 
-    let res = get_service_usecase(
-        UsecaseReq {
-            account,
-            service_id: path_params.service_id.clone(),
-        },
-        UsecaseCtx {
-            service_repo: Arc::clone(&ctx.repos.service_repo),
-        },
-    )
-    .await;
+    let usecase = GetServiceUseCase {
+        account,
+        service_id: path_params.service_id.clone(),
+    };
+
+    let res = perform(usecase, &ctx).await;
 
     match res {
         Ok(res) => {
@@ -52,7 +49,7 @@ pub async fn get_service_controller(
     }
 }
 
-struct UsecaseReq {
+struct GetServiceUseCase {
     account: Account,
     service_id: String,
 }
@@ -61,21 +58,24 @@ struct UsecaseRes {
     pub service: Service,
 }
 
+#[derive(Debug)]
 enum UsecaseErrors {
     NotFoundError,
 }
 
-struct UsecaseCtx {
-    pub service_repo: Arc<dyn IServiceRepo>,
-}
+#[async_trait::async_trait(?Send)]
+impl Usecase for GetServiceUseCase {
+    type Response = UsecaseRes;
 
-async fn get_service_usecase(
-    req: UsecaseReq,
-    ctx: UsecaseCtx,
-) -> Result<UsecaseRes, UsecaseErrors> {
-    let res = ctx.service_repo.find(&req.service_id).await;
-    match res {
-        Some(service) if service.account_id == req.account.id => Ok(UsecaseRes { service }),
-        _ => Err(UsecaseErrors::NotFoundError),
+    type Errors = UsecaseErrors;
+
+    type Context = Context;
+
+    async fn perform(&self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+        let res = ctx.repos.service_repo.find(&self.service_id).await;
+        match res {
+            Some(service) if service.account_id == self.account.id => Ok(UsecaseRes { service }),
+            _ => Err(UsecaseErrors::NotFoundError),
+        }
     }
 }

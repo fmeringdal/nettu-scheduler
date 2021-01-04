@@ -3,7 +3,6 @@ use crate::shared::auth::protect_account_route;
 use actix_web::{web, HttpResponse};
 use serde::{Deserialize, Serialize};
 
-
 #[derive(Debug, Deserialize)]
 pub struct GetAccountReq {
     pub public_key_b64: Option<String>,

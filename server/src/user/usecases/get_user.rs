@@ -1,4 +1,11 @@
-use crate::{account::domain::Account, shared::{auth::protect_account_route, usecase::{Usecase, perform}}, user::domain::UserDTO};
+use crate::{
+    account::domain::Account,
+    shared::{
+        auth::protect_account_route,
+        usecase::{perform, Usecase},
+    },
+    user::domain::UserDTO,
+};
 use crate::{
     api::Context,
     user::{domain::User, repos::IUserRepo},
@@ -52,7 +59,7 @@ enum UsecaseErrors {
     UserNotFoundError,
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl Usecase for GetUserUseCase {
     type Response = UsecaseRes;
 
@@ -65,7 +72,7 @@ impl Usecase for GetUserUseCase {
             Some(u) if u.account_id == self.account.id => u,
             _ => return Err(UsecaseErrors::UserNotFoundError),
         };
-    
+
         Ok(UsecaseRes { user })
     }
 }
