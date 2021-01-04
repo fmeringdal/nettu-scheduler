@@ -5,8 +5,8 @@ use crate::{
 };
 use crate::{event::repos::IEventRepo, shared::auth::protect_route};
 use actix_web::{web, HttpRequest, HttpResponse};
-use serde::{Deserialize, Serialize};
-use std::sync::Arc;
+use serde::{Deserialize};
+
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -118,14 +118,11 @@ impl Usecase for UpdateEventUseCase {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::event::repos::InMemoryEventRepo;
 
     #[actix_web::main]
     #[test]
     async fn update_notexisting_event() {
-        let event_repo = Arc::new(InMemoryEventRepo::new());
-
-        let usecase = UpdateEventUseCase {
+        let mut usecase = UpdateEventUseCase {
             event_id: String::from(""),
             start_ts: Some(500),
             duration: Some(800),

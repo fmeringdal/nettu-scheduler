@@ -7,7 +7,7 @@ use crate::{calendar::domain::calendar_view::CalendarView, event::domain::event:
 use crate::{event::repos::IEventRepo, shared::auth::protect_route};
 use actix_web::{web, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
+
 
 #[derive(Deserialize)]
 pub struct EventPathParams {

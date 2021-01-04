@@ -43,7 +43,7 @@ pub async fn get_user_bookingslots_controller(
         None => None,
     };
 
-    let user_id = User::create_id(&account, &params.external_user_id);
+    let _user_id = User::create_id(&account, &params.external_user_id);
 
     let usecase = GetUserBookingSlotsUsecase {
         user_id: User::create_id(&account, &params.external_user_id),

@@ -1,13 +1,12 @@
 use crate::{
-    api::Context, event::repos::IEventRepo, shared::auth::protect_route, user::domain::User,
+    api::Context, event::repos::IEventRepo, shared::auth::protect_route,
 };
 use crate::{
-    event::domain::event::CalendarEvent,
     shared::usecase::{perform, Usecase},
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use serde::Deserialize;
-use std::sync::Arc;
+
 
 #[derive(Deserialize)]
 pub struct CreateEventExceptionPathParams {

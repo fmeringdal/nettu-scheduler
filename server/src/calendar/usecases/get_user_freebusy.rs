@@ -236,7 +236,7 @@ mod test {
         ctx.repos.event_repo.insert(&e2).await.unwrap();
         ctx.repos.event_repo.insert(&e3).await.unwrap();
 
-        let usecase = GetUserFreeBusyUseCase {
+        let mut usecase = GetUserFreeBusyUseCase {
             user_id: user.id(),
             calendar_ids: Some(vec![calendar.id.clone()]),
             start_ts: 86400000,

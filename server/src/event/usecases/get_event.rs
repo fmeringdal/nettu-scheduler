@@ -7,8 +7,8 @@ use crate::{
     },
 };
 use actix_web::{web, HttpRequest, HttpResponse};
-use serde::{Deserialize, Serialize};
-use std::sync::Arc;
+use serde::{Deserialize};
+
 
 #[derive(Deserialize)]
 pub struct PathParams {

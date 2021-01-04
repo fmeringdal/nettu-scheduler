@@ -11,7 +11,7 @@ use crate::{calendar::repos::ICalendarRepo, user::domain::User};
 use actix_web::{web, HttpResponse};
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
+
 
 #[derive(Deserialize)]
 pub struct AdminControllerPathParams {
