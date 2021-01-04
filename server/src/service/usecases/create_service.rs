@@ -59,7 +59,7 @@ impl Usecase for CreateServiceUseCase {
 
     type Context = Context;
 
-    async fn perform(&self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let service = Service::new(&self.account.id);
         let res = ctx.repos.service_repo.insert(&service).await;
         match res {

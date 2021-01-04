@@ -85,7 +85,7 @@ impl Usecase for GetCalendarEventsUseCase {
 
     type Context = Context;
 
-    async fn perform(&self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let calendar = ctx.repos.calendar_repo.find(&self.calendar_id).await;
 
         let view = CalendarView::create(self.start_ts, self.end_ts);

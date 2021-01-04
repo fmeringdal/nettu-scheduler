@@ -85,7 +85,7 @@ impl Usecase for GetUserFreeBusyUseCase {
 
     type Context = Context;
 
-    async fn perform(&self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let view = match CalendarView::create(self.start_ts, self.end_ts) {
             Ok(view) => view,
             Err(_) => return Err(GetUserFreeBusyErrors::InvalidTimespanError),

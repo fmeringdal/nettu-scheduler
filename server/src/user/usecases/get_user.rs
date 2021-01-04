@@ -67,7 +67,7 @@ impl Usecase for GetUserUseCase {
 
     type Context = Context;
 
-    async fn perform(&self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let user = match ctx.repos.user_repo.find(&self.user_id).await {
             Some(u) if u.account_id == self.account.id => u,
             _ => return Err(UsecaseErrors::UserNotFoundError),

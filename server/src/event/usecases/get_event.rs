@@ -54,7 +54,7 @@ impl Usecase for GetEventUseCase {
 
     type Context = Context;
 
-    async fn perform(&self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let e = ctx.repos.event_repo.find(&self.event_id).await;
         match e {
             Some(event) if event.user_id == self.user_id => Ok(event),

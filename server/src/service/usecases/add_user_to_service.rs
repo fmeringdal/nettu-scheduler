@@ -85,7 +85,7 @@ impl Usecase for AddUserToServiceUseCase {
 
     type Context = Context;
 
-    async fn perform(&self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let _user = match ctx.repos.user_repo.find(&self.user_id).await {
             Some(user) if user.account_id == self.account.id => user,
             _ => return Err(UsecaseErrors::UserNotFoundError),

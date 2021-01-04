@@ -1,19 +1,14 @@
-use crate::account::domain::Account;
-use crate::account::repos::IAccountRepo;
 use crate::api::Context;
+use crate::{
+    account::domain::Account,
+    shared::usecase::{perform, Usecase},
+};
 use actix_web::{web, HttpResponse};
-
 use serde::Serialize;
-use std::sync::Arc;
 
 pub async fn create_account_controller(ctx: web::Data<Context>) -> HttpResponse {
-    let res = create_account_usecase(
-        CreateAccountReq {},
-        CreateAccountUseCaseCtx {
-            account_repo: Arc::clone(&ctx.repos.account_repo),
-        },
-    )
-    .await;
+    let usecase = CreateAccountUseCase {};
+    let res = perform(usecase, &ctx).await;
 
     match res {
         Ok(json) => HttpResponse::Created().json(json),
@@ -23,34 +18,37 @@ pub async fn create_account_controller(ctx: web::Data<Context>) -> HttpResponse 
     }
 }
 
-struct CreateAccountReq {}
+struct CreateAccountUseCase {}
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-struct CreateAccountRes {
+struct UseCaseResponse {
     pub account_id: String,
     pub secret_api_key: String,
 }
 
+#[derive(Debug)]
 enum UsecaseErrors {
     StorageError,
 }
 
-struct CreateAccountUseCaseCtx {
-    pub account_repo: Arc<dyn IAccountRepo>,
-}
+#[async_trait::async_trait(?Send)]
+impl Usecase for CreateAccountUseCase {
+    type Response = UseCaseResponse;
 
-async fn create_account_usecase(
-    _req: CreateAccountReq,
-    ctx: CreateAccountUseCaseCtx,
-) -> Result<CreateAccountRes, UsecaseErrors> {
-    let account = Account::new();
-    let res = ctx.account_repo.insert(&account).await;
-    match res {
-        Ok(_) => Ok(CreateAccountRes {
-            account_id: account.id.clone(),
-            secret_api_key: account.secret_api_key.clone(),
-        }),
-        Err(_) => Err(UsecaseErrors::StorageError),
+    type Errors = UsecaseErrors;
+
+    type Context = Context;
+
+    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+        let account = Account::new();
+        let res = ctx.repos.account_repo.insert(&account).await;
+        match res {
+            Ok(_) => Ok(UseCaseResponse {
+                account_id: account.id.clone(),
+                secret_api_key: account.secret_api_key.clone(),
+            }),
+            Err(_) => Err(UsecaseErrors::StorageError),
+        }
     }
 }

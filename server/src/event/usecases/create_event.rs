@@ -78,7 +78,7 @@ impl Usecase for CreateEventUseCase {
 
     type Context = Context;
 
-    async fn perform(&self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let calendar = match ctx.repos.calendar_repo.find(&self.calendar_id).await {
             Some(calendar) if calendar.user_id == self.user_id => calendar,
             _ => return Err(CreateCalendarEventErrors::NotFoundError),

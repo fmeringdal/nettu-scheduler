@@ -74,7 +74,7 @@ impl Usecase for UpdateEventUseCase {
 
     type Context = Context;
 
-    async fn perform(&self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let mut e = match ctx.repos.event_repo.find(&self.event_id).await {
             Some(event) if event.user_id == self.user_id => event,
             _ => return Err(UseCaseErrors::NotFoundError),

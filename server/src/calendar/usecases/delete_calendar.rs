@@ -57,7 +57,7 @@ impl Usecase for DeleteCalendarUseCase {
 
     type Context = Context;
 
-    async fn perform(&self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let calendar = ctx.repos.calendar_repo.find(&self.calendar_id).await;
         match calendar {
             Some(calendar) if calendar.user_id == self.user_id => {

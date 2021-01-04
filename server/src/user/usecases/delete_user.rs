@@ -67,7 +67,7 @@ impl Usecase for DeleteUserUseCase {
     // - REMOVE ALL CALENDARS
     // - REMOVE ALL EVENTS
     // - REMOVE FROM ALL SERVICES
-    async fn perform(&self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let user = match ctx.repos.user_repo.find(&self.user_id).await {
             Some(u) if u.account_id == self.account.id => {
                 match ctx.repos.user_repo.delete(&self.user_id).await {

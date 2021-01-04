@@ -71,7 +71,7 @@ impl Usecase for GetServiceUseCase {
 
     type Context = Context;
 
-    async fn perform(&self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let res = ctx.repos.service_repo.find(&self.service_id).await;
         match res {
             Some(service) if service.account_id == self.account.id => Ok(UsecaseRes { service }),

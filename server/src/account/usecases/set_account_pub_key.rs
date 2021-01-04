@@ -1,9 +1,11 @@
-use crate::account::domain::Account;
 use crate::api::Context;
-use crate::{account::repos::IAccountRepo, shared::auth::protect_account_route};
+use crate::shared::auth::protect_account_route;
+use crate::{
+    account::domain::Account,
+    shared::usecase::{perform, Usecase},
+};
 use actix_web::{web, HttpResponse};
 use serde::Deserialize;
-use std::sync::Arc;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -21,57 +23,55 @@ pub async fn set_account_pub_key_controller(
         Err(res) => return res,
     };
 
-    let res = set_account_pub_key_usecase(
-        SetAccountPubKeyUseCaseReq {
-            account,
-            public_key_b64: body.public_key_b64.clone(),
-        },
-        SetAccountPubKeyUseCaseCtx {
-            account_repo: Arc::clone(&ctx.repos.account_repo),
-        },
-    )
-    .await;
+    let usecase = SetAccountPubKeyUseCase {
+        account,
+        public_key_b64: body.public_key_b64.clone(),
+    };
+
+    let res = perform(usecase, &ctx).await;
 
     match res {
         Ok(()) => HttpResponse::Ok().finish(),
         Err(e) => match e {
-            UsecaseErrors::InvalidBase64Key => {
+            UseCaseErrors::InvalidBase64Key => {
                 HttpResponse::UnprocessableEntity().body("Invalid base64 encoding of public key")
             }
-            UsecaseErrors::StorageError => HttpResponse::InternalServerError().finish(),
+            UseCaseErrors::StorageError => HttpResponse::InternalServerError().finish(),
         },
     }
 }
 
-struct SetAccountPubKeyUseCaseReq {
+struct SetAccountPubKeyUseCase {
     pub account: Account,
     pub public_key_b64: Option<String>,
 }
 
-struct SetAccountPubKeyUseCaseCtx {
-    pub account_repo: Arc<dyn IAccountRepo>,
-}
-
-enum UsecaseErrors {
+#[derive(Debug)]
+enum UseCaseErrors {
     InvalidBase64Key,
     StorageError,
 }
 
-async fn set_account_pub_key_usecase(
-    req: SetAccountPubKeyUseCaseReq,
-    ctx: SetAccountPubKeyUseCaseCtx,
-) -> Result<(), UsecaseErrors> {
-    let SetAccountPubKeyUseCaseReq {
-        mut account,
-        public_key_b64,
-    } = req;
+#[async_trait::async_trait(?Send)]
+impl Usecase for SetAccountPubKeyUseCase {
+    type Response = ();
 
-    if account.set_public_key_b64(public_key_b64).is_err() {
-        return Err(UsecaseErrors::InvalidBase64Key);
-    }
+    type Errors = UseCaseErrors;
 
-    match ctx.account_repo.save(&account).await {
-        Ok(_) => Ok(()),
-        Err(_) => Err(UsecaseErrors::StorageError),
+    type Context = Context;
+
+    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+        if self
+            .account
+            .set_public_key_b64(self.public_key_b64.clone())
+            .is_err()
+        {
+            return Err(UseCaseErrors::InvalidBase64Key);
+        }
+
+        match ctx.repos.account_repo.save(&self.account).await {
+            Ok(_) => Ok(()),
+            Err(_) => Err(UseCaseErrors::StorageError),
+        }
     }
 }

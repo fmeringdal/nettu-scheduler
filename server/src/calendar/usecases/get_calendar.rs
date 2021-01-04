@@ -53,7 +53,7 @@ impl Usecase for GetCalendarUseCase {
 
     type Context = Context;
 
-    async fn perform(&self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let cal = ctx.repos.calendar_repo.find(&self.calendar_id).await;
         match cal {
             Some(cal) if cal.user_id == self.user_id => Ok(cal),

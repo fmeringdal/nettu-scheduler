@@ -104,7 +104,7 @@ impl Usecase for GetUserBookingSlotsUsecase {
 
     type Context = Context;
 
-    async fn perform(&self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let tz: Tz = match self.iana_tz.clone().unwrap_or(String::from("UTC")).parse() {
             Ok(tz) => tz,
             Err(_) => return Err(UseCaseErrors::InvalidTimezoneError(self.date.clone())),

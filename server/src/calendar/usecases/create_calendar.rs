@@ -79,7 +79,7 @@ impl Usecase for CreateCalendarUseCase {
 
     type Context = Context;
 
-    async fn perform(&self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let user = ctx.repos.user_repo.find(&self.user_id).await;
         if user.is_none() {
             return Err(UsecaseErrors::UserNotFoundError);

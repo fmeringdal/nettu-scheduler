@@ -92,7 +92,7 @@ impl Usecase for UpdateServiceUserUseCase {
 
     type Context = Context;
 
-    async fn perform(&self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let mut service = match ctx.repos.service_repo.find(&self.service_id).await {
             Some(service) if service.account_id == self.account.id => service,
             _ => return Err(UsecaseErrors::ServiceNotFoundError),

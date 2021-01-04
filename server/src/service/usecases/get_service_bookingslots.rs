@@ -1,6 +1,6 @@
 use crate::{
     api::Context,
-    calendar::domain::date,
+    calendar::{domain::date, usecases::get_user_freebusy::GetUserFreeBusyUseCase},
     event::domain::booking_slots::{
         get_service_bookingslots, validate_slots_interval, BookingSlotsOptions, ServiceBookingSlot,
         ServiceBookingSlotDTO,
@@ -8,9 +8,6 @@ use crate::{
     shared::auth::ensure_nettu_acct_header,
 };
 use crate::{
-    calendar::usecases::get_user_freebusy::{
-        get_user_freebusy_usecase, GetUserFreeBusyReq, GetUserFreeBusyUseCaseCtx,
-    },
     event::domain::booking_slots::UserFreeEvents,
     shared::usecase::{perform, Usecase},
 };
@@ -123,7 +120,7 @@ impl Usecase for GetServiceBookingSlotsUseCase {
 
     type Context = Context;
 
-    async fn perform(&self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         if !validate_slots_interval(self.interval) {
             return Err(UsecaseErrors::InvalidIntervalError);
         }
@@ -152,19 +149,14 @@ impl Usecase for GetServiceBookingSlotsUseCase {
         let mut users_freebusy: Vec<UserFreeEvents> = Vec::with_capacity(service.users.len());
 
         for user in &service.users {
-            let free_events = get_user_freebusy_usecase(
-                GetUserFreeBusyReq {
-                    calendar_ids: Some(user.calendar_ids.clone()),
-                    end_ts: end_of_day.timestamp_millis(),
-                    start_ts: start_of_day.timestamp_millis(),
-                    user_id: user.user_id.clone(),
-                },
-                GetUserFreeBusyUseCaseCtx {
-                    calendar_repo: Arc::clone(&ctx.repos.calendar_repo),
-                    event_repo: Arc::clone(&ctx.repos.event_repo),
-                },
-            )
-            .await;
+            let usecase = GetUserFreeBusyUseCase {
+                calendar_ids: Some(user.calendar_ids.clone()),
+                end_ts: end_of_day.timestamp_millis(),
+                start_ts: start_of_day.timestamp_millis(),
+                user_id: user.user_id.clone(),
+            };
+
+            let free_events = perform(usecase, &ctx).await;
 
             match free_events {
                 Ok(free_events) => {
