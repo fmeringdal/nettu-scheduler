@@ -44,7 +44,7 @@ pub async fn get_service_controller(
             HttpResponse::Ok().json(dto)
         }
         Err(e) => match e {
-            UsecaseErrors::NotFoundError => HttpResponse::NotFound().finish(),
+            UseCaseErrors::NotFoundError => HttpResponse::NotFound().finish(),
         },
     }
 }
@@ -54,28 +54,28 @@ struct GetServiceUseCase {
     service_id: String,
 }
 
-struct UsecaseRes {
+struct UseCaseRes {
     pub service: Service,
 }
 
 #[derive(Debug)]
-enum UsecaseErrors {
+enum UseCaseErrors {
     NotFoundError,
 }
 
 #[async_trait::async_trait(?Send)]
 impl Usecase for GetServiceUseCase {
-    type Response = UsecaseRes;
+    type Response = UseCaseRes;
 
-    type Errors = UsecaseErrors;
+    type Errors = UseCaseErrors;
 
     type Context = Context;
 
     async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let res = ctx.repos.service_repo.find(&self.service_id).await;
         match res {
-            Some(service) if service.account_id == self.account.id => Ok(UsecaseRes { service }),
-            _ => Err(UsecaseErrors::NotFoundError),
+            Some(service) if service.account_id == self.account.id => Ok(UseCaseRes { service }),
+            _ => Err(UseCaseErrors::NotFoundError),
         }
     }
 }

@@ -39,11 +39,11 @@ pub async fn remove_user_from_service_controller(
     match res {
         Ok(_) => HttpResponse::Ok().body("Service successfully updated"),
         Err(e) => match e {
-            UsecaseErrors::StorageError => HttpResponse::InternalServerError().finish(),
-            UsecaseErrors::ServiceNotFoundError => {
+            UseCaseErrors::StorageError => HttpResponse::InternalServerError().finish(),
+            UseCaseErrors::ServiceNotFoundError => {
                 HttpResponse::NotFound().body("The requested service was not found")
             }
-            UsecaseErrors::UserNotFoundError => {
+            UseCaseErrors::UserNotFoundError => {
                 HttpResponse::NotFound().body("The specified user was not found in the service")
             }
         },
@@ -56,12 +56,12 @@ struct RemoveUserFromServiceUsecase {
     pub user_id: String,
 }
 
-struct UsecaseRes {
+struct UseCaseRes {
     pub resource: ServiceResource,
 }
 
 #[derive(Debug)]
-enum UsecaseErrors {
+enum UseCaseErrors {
     StorageError,
     ServiceNotFoundError,
     UserNotFoundError,
@@ -69,24 +69,24 @@ enum UsecaseErrors {
 
 #[async_trait::async_trait(?Send)]
 impl Usecase for RemoveUserFromServiceUsecase {
-    type Response = UsecaseRes;
+    type Response = UseCaseRes;
 
-    type Errors = UsecaseErrors;
+    type Errors = UseCaseErrors;
 
     type Context = Context;
 
     async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let mut service = match ctx.repos.service_repo.find(&self.service_id).await {
             Some(service) if service.account_id == self.account.id => service,
-            _ => return Err(UsecaseErrors::ServiceNotFoundError),
+            _ => return Err(UseCaseErrors::ServiceNotFoundError),
         };
 
         match service.remove_user(&self.user_id) {
             Some(resource) => match ctx.repos.service_repo.save(&service).await {
-                Ok(_) => Ok(UsecaseRes { resource }),
-                Err(_) => Err(UsecaseErrors::StorageError),
+                Ok(_) => Ok(UseCaseRes { resource }),
+                Err(_) => Err(UseCaseErrors::StorageError),
             },
-            None => Err(UsecaseErrors::UserNotFoundError),
+            None => Err(UseCaseErrors::UserNotFoundError),
         }
     }
 }

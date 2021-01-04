@@ -13,7 +13,7 @@ pub async fn create_account_controller(ctx: web::Data<Context>) -> HttpResponse 
     match res {
         Ok(json) => HttpResponse::Created().json(json),
         Err(e) => match e {
-            UsecaseErrors::StorageError => HttpResponse::InternalServerError().finish(),
+            UseCaseErrors::StorageError => HttpResponse::InternalServerError().finish(),
         },
     }
 }
@@ -28,7 +28,7 @@ struct UseCaseResponse {
 }
 
 #[derive(Debug)]
-enum UsecaseErrors {
+enum UseCaseErrors {
     StorageError,
 }
 
@@ -36,7 +36,7 @@ enum UsecaseErrors {
 impl Usecase for CreateAccountUseCase {
     type Response = UseCaseResponse;
 
-    type Errors = UsecaseErrors;
+    type Errors = UseCaseErrors;
 
     type Context = Context;
 
@@ -48,7 +48,7 @@ impl Usecase for CreateAccountUseCase {
                 account_id: account.id.clone(),
                 secret_api_key: account.secret_api_key.clone(),
             }),
-            Err(_) => Err(UsecaseErrors::StorageError),
+            Err(_) => Err(UseCaseErrors::StorageError),
         }
     }
 }

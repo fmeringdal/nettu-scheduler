@@ -48,11 +48,11 @@ pub async fn add_user_to_service_controller(
         Ok(_) =>
             HttpResponse::Ok().body("Service successfully updated"),
         Err(e) => match e {
-            UsecaseErrors::StorageError => HttpResponse::InternalServerError().finish(),
-            UsecaseErrors::ServiceNotFoundError => HttpResponse::NotFound().body("The requested service was not found"),
-            UsecaseErrors::UserNotFoundError => HttpResponse::NotFound().body("The specified user was not found"),
-            UsecaseErrors::UserAlreadyInService => HttpResponse::Forbidden().body("The specified user is already registered on the service, can not add the user more than once."),
-            UsecaseErrors::CalendarNotOwnedByUser(calendar_id) => HttpResponse::Forbidden().body(format!("The calendar: {}, was not found among the calendars for the specified user", calendar_id)),
+            UseCaseErrors::StorageError => HttpResponse::InternalServerError().finish(),
+            UseCaseErrors::ServiceNotFoundError => HttpResponse::NotFound().body("The requested service was not found"),
+            UseCaseErrors::UserNotFoundError => HttpResponse::NotFound().body("The specified user was not found"),
+            UseCaseErrors::UserAlreadyInService => HttpResponse::Forbidden().body("The specified user is already registered on the service, can not add the user more than once."),
+            UseCaseErrors::CalendarNotOwnedByUser(calendar_id) => HttpResponse::Forbidden().body(format!("The calendar: {}, was not found among the calendars for the specified user", calendar_id)),
         }
     }
 }
@@ -64,12 +64,12 @@ struct AddUserToServiceUseCase {
     pub calendar_ids: Vec<String>,
 }
 
-struct UsecaseRes {
+struct UseCaseRes {
     pub service: Service,
 }
 
 #[derive(Debug)]
-enum UsecaseErrors {
+enum UseCaseErrors {
     StorageError,
     ServiceNotFoundError,
     UserNotFoundError,
@@ -79,25 +79,25 @@ enum UsecaseErrors {
 
 #[async_trait::async_trait(?Send)]
 impl Usecase for AddUserToServiceUseCase {
-    type Response = UsecaseRes;
+    type Response = UseCaseRes;
 
-    type Errors = UsecaseErrors;
+    type Errors = UseCaseErrors;
 
     type Context = Context;
 
     async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let _user = match ctx.repos.user_repo.find(&self.user_id).await {
             Some(user) if user.account_id == self.account.id => user,
-            _ => return Err(UsecaseErrors::UserNotFoundError),
+            _ => return Err(UseCaseErrors::UserNotFoundError),
         };
 
         let mut service = match ctx.repos.service_repo.find(&self.service_id).await {
             Some(service) if service.account_id == self.account.id => service,
-            _ => return Err(UsecaseErrors::ServiceNotFoundError),
+            _ => return Err(UseCaseErrors::ServiceNotFoundError),
         };
 
         if let Some(_user_resource) = service.find_user(&self.user_id) {
-            return Err(UsecaseErrors::UserAlreadyInService);
+            return Err(UseCaseErrors::UserAlreadyInService);
         }
 
         let user_calendars = ctx
@@ -110,7 +110,7 @@ impl Usecase for AddUserToServiceUseCase {
             .collect::<Vec<_>>();
         for calendar_id in &self.calendar_ids {
             if !user_calendars.contains(calendar_id) {
-                return Err(UsecaseErrors::CalendarNotOwnedByUser(calendar_id.clone()));
+                return Err(UseCaseErrors::CalendarNotOwnedByUser(calendar_id.clone()));
             }
         }
 
@@ -119,8 +119,8 @@ impl Usecase for AddUserToServiceUseCase {
 
         let res = ctx.repos.service_repo.save(&service).await;
         match res {
-            Ok(_) => Ok(UsecaseRes { service }),
-            Err(_) => Err(UsecaseErrors::StorageError),
+            Ok(_) => Ok(UseCaseRes { service }),
+            Err(_) => Err(UseCaseErrors::StorageError),
         }
     }
 }

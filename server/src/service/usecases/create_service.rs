@@ -34,7 +34,7 @@ pub async fn create_service_controller(
             HttpResponse::Created().json(res)
         }
         Err(e) => match e {
-            UsecaseErrors::StorageError => HttpResponse::InternalServerError().finish(),
+            UseCaseErrors::StorageError => HttpResponse::InternalServerError().finish(),
         },
     }
 }
@@ -47,7 +47,7 @@ struct UseCaseRes {
 }
 
 #[derive(Debug)]
-enum UsecaseErrors {
+enum UseCaseErrors {
     StorageError,
 }
 
@@ -55,7 +55,7 @@ enum UsecaseErrors {
 impl Usecase for CreateServiceUseCase {
     type Response = UseCaseRes;
 
-    type Errors = UsecaseErrors;
+    type Errors = UseCaseErrors;
 
     type Context = Context;
 
@@ -64,7 +64,7 @@ impl Usecase for CreateServiceUseCase {
         let res = ctx.repos.service_repo.insert(&service).await;
         match res {
             Ok(_) => Ok(UseCaseRes { service }),
-            Err(_) => Err(UsecaseErrors::StorageError),
+            Err(_) => Err(UseCaseErrors::StorageError),
         }
     }
 }

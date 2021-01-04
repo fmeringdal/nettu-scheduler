@@ -34,8 +34,8 @@ pub async fn create_event_exception_controller(
     match res {
         Ok(_) => HttpResponse::Ok().finish(),
         Err(e) => match e {
-            UsecaseErrors::NotFoundError => HttpResponse::NotFound().finish(),
-            UsecaseErrors::StorageError => HttpResponse::InternalServerError().finish(),
+            UseCaseErrors::NotFoundError => HttpResponse::NotFound().finish(),
+            UseCaseErrors::StorageError => HttpResponse::InternalServerError().finish(),
         },
     }
 }
@@ -47,7 +47,7 @@ pub struct CreateEventExceptionUseCase {
 }
 
 #[derive(Debug)]
-pub enum UsecaseErrors {
+pub enum UseCaseErrors {
     NotFoundError,
     StorageError,
 }
@@ -56,21 +56,21 @@ pub enum UsecaseErrors {
 impl Usecase for CreateEventExceptionUseCase {
     type Response = ();
 
-    type Errors = UsecaseErrors;
+    type Errors = UseCaseErrors;
 
     type Context = Context;
 
     async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let mut event = match ctx.repos.event_repo.find(&self.event_id).await {
             Some(event) if event.user_id == self.user_id => event,
-            _ => return Err(UsecaseErrors::NotFoundError),
+            _ => return Err(UseCaseErrors::NotFoundError),
         };
 
         event.exdates.push(self.exception_ts);
 
         let repo_res = ctx.repos.event_repo.save(&event).await;
         if repo_res.is_err() {
-            return Err(UsecaseErrors::StorageError);
+            return Err(UseCaseErrors::StorageError);
         }
 
         Ok(())

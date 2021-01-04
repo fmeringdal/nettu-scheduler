@@ -38,7 +38,7 @@ pub async fn get_user_controller(
             HttpResponse::Ok().json(dto)
         }
         Err(e) => match e {
-            UsecaseErrors::UserNotFoundError => {
+            UseCaseErrors::UserNotFoundError => {
                 HttpResponse::NotFound().body("A user with that id was not found.")
             }
         },
@@ -50,29 +50,29 @@ struct GetUserUseCase {
     user_id: String,
 }
 
-struct UsecaseRes {
+struct UseCaseRes {
     pub user: User,
 }
 
 #[derive(Debug)]
-enum UsecaseErrors {
+enum UseCaseErrors {
     UserNotFoundError,
 }
 
 #[async_trait::async_trait(?Send)]
 impl Usecase for GetUserUseCase {
-    type Response = UsecaseRes;
+    type Response = UseCaseRes;
 
-    type Errors = UsecaseErrors;
+    type Errors = UseCaseErrors;
 
     type Context = Context;
 
     async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let user = match ctx.repos.user_repo.find(&self.user_id).await {
             Some(u) if u.account_id == self.account.id => u,
-            _ => return Err(UsecaseErrors::UserNotFoundError),
+            _ => return Err(UseCaseErrors::UserNotFoundError),
         };
 
-        Ok(UsecaseRes { user })
+        Ok(UseCaseRes { user })
     }
 }

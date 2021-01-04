@@ -11,15 +11,15 @@ pub struct ServiceResource {
 }
 
 impl ServiceResource {
-    pub fn new(user_id: &str, calendar_ids: &Vec<String>) -> Self {
+    pub fn new(user_id: &str, calendar_ids: &[String]) -> Self {
         Self {
             id: ObjectId::new().to_string(),
             user_id: String::from(user_id),
-            calendar_ids: calendar_ids.clone(),
+            calendar_ids: calendar_ids.to_owned(),
         }
     }
 
-    pub fn set_calendar_ids(&mut self, calendar_ids: &Vec<String>) {
+    pub fn set_calendar_ids(&mut self, calendar_ids: &[String]) {
         self.calendar_ids = calendar_ids.to_owned();
     }
 }

@@ -32,8 +32,8 @@ pub async fn delete_user_controller(
             usecase_res.user.external_id
         )),
         Err(e) => match e {
-            UsecaseErrors::StorageError => HttpResponse::InternalServerError().finish(),
-            UsecaseErrors::UserNotFoundError => {
+            UseCaseErrors::StorageError => HttpResponse::InternalServerError().finish(),
+            UseCaseErrors::UserNotFoundError => {
                 HttpResponse::NotFound().body("A user with that id was not found.")
             }
         },
@@ -45,21 +45,21 @@ struct DeleteUserUseCase {
     user_id: String,
 }
 
-struct UsecaseRes {
+struct UseCaseRes {
     pub user: User,
 }
 
 #[derive(Debug)]
-enum UsecaseErrors {
+enum UseCaseErrors {
     StorageError,
     UserNotFoundError,
 }
 
 #[async_trait::async_trait(?Send)]
 impl Usecase for DeleteUserUseCase {
-    type Response = UsecaseRes;
+    type Response = UseCaseRes;
 
-    type Errors = UsecaseErrors;
+    type Errors = UseCaseErrors;
 
     type Context = Context;
 
@@ -72,12 +72,12 @@ impl Usecase for DeleteUserUseCase {
             Some(u) if u.account_id == self.account.id => {
                 match ctx.repos.user_repo.delete(&self.user_id).await {
                     Some(u) => u,
-                    None => return Err(UsecaseErrors::StorageError),
+                    None => return Err(UseCaseErrors::StorageError),
                 }
             }
-            _ => return Err(UsecaseErrors::UserNotFoundError),
+            _ => return Err(UseCaseErrors::UserNotFoundError),
         };
 
-        Ok(UsecaseRes { user })
+        Ok(UseCaseRes { user })
     }
 }

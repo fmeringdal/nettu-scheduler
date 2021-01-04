@@ -69,24 +69,24 @@ pub async fn get_service_bookingslots_controller(
             HttpResponse::Ok().json(res)
         }
         Err(e) => match e {
-            UsecaseErrors::InvalidDateError(msg) => {
+            UseCaseErrors::InvalidDateError(msg) => {
                 HttpResponse::UnprocessableEntity().body(format!(
                     "Invalid datetime: {}. Should be YYYY-MM-DD, e.g. January 1. 2020 => 2020-1-1",
                     msg
                 ))
             }
-            UsecaseErrors::InvalidTimezoneError(msg) => {
+            UseCaseErrors::InvalidTimezoneError(msg) => {
                 HttpResponse::UnprocessableEntity().body(format!(
                     "Invalid timezone: {}. It should be a valid IANA TimeZone.",
                     msg
                 ))
             }
-            UsecaseErrors::InvalidIntervalError => {
+            UseCaseErrors::InvalidIntervalError => {
                 HttpResponse::UnprocessableEntity().body(
                     "Invalid interval specified. It should be between 10 - 60 minutes inclusively and be specified as milliseconds."
                 )
             }
-            UsecaseErrors::ServiceNotFoundError => HttpResponse::NotFound().finish(),
+            UseCaseErrors::ServiceNotFoundError => HttpResponse::NotFound().finish(),
         },
     }
 }
@@ -104,7 +104,7 @@ struct UseCaseRes {
 }
 
 #[derive(Debug)]
-enum UsecaseErrors {
+enum UseCaseErrors {
     ServiceNotFoundError,
     InvalidIntervalError,
     InvalidDateError(String),
@@ -115,24 +115,24 @@ enum UsecaseErrors {
 impl Usecase for GetServiceBookingSlotsUseCase {
     type Response = UseCaseRes;
 
-    type Errors = UsecaseErrors;
+    type Errors = UseCaseErrors;
 
     type Context = Context;
 
     async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         if !validate_slots_interval(self.interval) {
-            return Err(UsecaseErrors::InvalidIntervalError);
+            return Err(UseCaseErrors::InvalidIntervalError);
         }
 
         let iana_tz = self.iana_tz.clone().unwrap_or(String::from("UTC"));
         let tz: Tz = match iana_tz.parse() {
             Ok(tz) => tz,
-            Err(_) => return Err(UsecaseErrors::InvalidTimezoneError(iana_tz)),
+            Err(_) => return Err(UseCaseErrors::InvalidTimezoneError(iana_tz)),
         };
 
         let parsed_date = match date::is_valid_date(&self.date) {
             Ok(val) => val,
-            Err(_) => return Err(UsecaseErrors::InvalidDateError(self.date.clone())),
+            Err(_) => return Err(UseCaseErrors::InvalidDateError(self.date.clone())),
         };
 
         let date = tz.ymd(parsed_date.0, parsed_date.1, parsed_date.2);
@@ -142,7 +142,7 @@ impl Usecase for GetServiceBookingSlotsUseCase {
 
         let service = match ctx.repos.service_repo.find(&self.service_id).await {
             Some(s) => s,
-            None => return Err(UsecaseErrors::ServiceNotFoundError),
+            None => return Err(UseCaseErrors::ServiceNotFoundError),
         };
 
         let mut users_freebusy: Vec<UserFreeEvents> = Vec::with_capacity(service.users.len());

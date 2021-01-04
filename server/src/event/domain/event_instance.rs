@@ -76,19 +76,18 @@ fn sort_and_merge_instances(instances: &mut Vec<&mut EventInstance>) -> Vec<Even
     // sort with least start_ts first
     instances.sort_by(|i1, i2| i1.start_ts.cmp(&i2.start_ts));
 
-    let mut sorted = vec![];
+    let mut sorted: Vec<EventInstance> = vec![];
 
-    for i in 0..instances.len() {
-        let instance = instances[i].clone();
+    for (i, instance) in instances.into_iter().enumerate() {
         if i == 0 {
-            sorted.push(instance);
+            sorted.push(instance.to_owned());
             continue;
         }
         if let Some(merged) = EventInstance::merge(&instance, &sorted.last().unwrap()) {
             let len = sorted.len();
             sorted[len - 1] = merged;
         } else {
-            sorted.push(instance);
+            sorted.push(instance.to_owned());
         }
     }
 

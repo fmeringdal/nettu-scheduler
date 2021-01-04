@@ -59,29 +59,29 @@ struct CreateCalendarUseCase {
 }
 
 #[derive(Debug)]
-enum UsecaseErrors {
+enum UseCaseErrors {
     UserNotFoundError,
     StorageError,
 }
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-struct UsecaseRes {
+struct UseCaseRes {
     pub calendar_id: String,
 }
 
 #[async_trait::async_trait(?Send)]
 impl Usecase for CreateCalendarUseCase {
-    type Response = UsecaseRes;
+    type Response = UseCaseRes;
 
-    type Errors = UsecaseErrors;
+    type Errors = UseCaseErrors;
 
     type Context = Context;
 
     async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let user = ctx.repos.user_repo.find(&self.user_id).await;
         if user.is_none() {
-            return Err(UsecaseErrors::UserNotFoundError);
+            return Err(UseCaseErrors::UserNotFoundError);
         }
 
         let calendar = Calendar {
@@ -90,10 +90,10 @@ impl Usecase for CreateCalendarUseCase {
         };
         let res = ctx.repos.calendar_repo.insert(&calendar).await;
         match res {
-            Ok(_) => Ok(UsecaseRes {
+            Ok(_) => Ok(UseCaseRes {
                 calendar_id: calendar.id.clone(),
             }),
-            Err(_) => Err(UsecaseErrors::StorageError),
+            Err(_) => Err(UseCaseErrors::StorageError),
         }
     }
 }
