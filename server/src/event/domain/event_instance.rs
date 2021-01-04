@@ -380,7 +380,7 @@ mod test {
             end_ts: 75,
             busy: false,
         };
-        let res = remove_busy_from_free(&vec![free1], &vec![busy1, busy2, busy3]);
+        let res = remove_busy_from_free(&vec![free1], &[busy1, busy2, busy3]);
         assert_eq!(res.len(), 3);
         assert_eq!(
             res[0],
@@ -441,7 +441,7 @@ mod test {
             end_ts: 75,
             busy: false,
         };
-        let res = remove_busy_from_free(&vec![free1, free2, free3], &vec![busy1, busy2, busy3]);
+        let res = remove_busy_from_free(&vec![free1, free2, free3], &[busy1, busy2, busy3]);
         assert_eq!(res.len(), 4);
         assert_eq!(
             res[0],
@@ -651,7 +651,7 @@ mod test {
             busy: true,
         };
 
-        let mut instances = vec![e1.clone()];
+        let mut instances = vec![e1];
         let freebusy = get_free_busy(&mut instances);
         assert_eq!(freebusy.len(), 0);
     }

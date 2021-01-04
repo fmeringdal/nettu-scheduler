@@ -31,7 +31,7 @@ pub async fn create_event_exception_controller(
 
     let usecase = CreateEventExceptionUseCase {
         event_id: path_params.event_id.clone(),
-        exception_ts: body.exception_ts.clone(),
+        exception_ts: body.exception_ts,
         user_id: user.id.clone(),
     };
 

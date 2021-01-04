@@ -25,7 +25,7 @@ pub async fn get_account_controller(
 
     let res = GetAccountRes {
         id: account.id.clone(),
-        public_key_b64: account.public_key_b64.clone(),
+        public_key_b64: account.public_key_b64,
     };
 
     HttpResponse::Ok().json(res)

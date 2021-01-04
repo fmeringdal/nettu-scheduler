@@ -37,9 +37,9 @@ pub async fn create_event_controller(
     };
 
     let usecase = CreateEventUseCase {
-        busy: req.busy.clone(),
-        start_ts: req.start_ts.clone(),
-        duration: req.duration.clone(),
+        busy: req.busy,
+        start_ts: req.start_ts,
+        duration: req.duration,
         calendar_id: req.calendar_id.clone(),
         rrule_options: req.rrule_options.clone(),
         user_id: user.id.clone(),

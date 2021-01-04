@@ -15,7 +15,7 @@ pub fn is_valid_date(datestr: &str) -> anyhow::Result<(i32, u32, u32)> {
     let year = year.unwrap();
     let month = month.unwrap();
     let day = day.unwrap();
-    if year < 1970 || year > 2100 || month < 1 || month > 12 {
+    if !(1970..=2100).contains(&year) || month < 1 || month > 12 {
         return Err(anyhow::Error::msg(datestr));
     }
 

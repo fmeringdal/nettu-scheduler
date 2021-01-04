@@ -39,7 +39,7 @@ pub async fn get_user_bookingslots_controller(
         Err(e) => return e,
     };
     let calendar_ids = match &query_params.calendar_ids {
-        Some(calendar_ids) => Some(calendar_ids.split(",").map(|s| String::from(s)).collect()),
+        Some(calendar_ids) => Some(calendar_ids.split(',').map(String::from).collect()),
         None => None,
     };
 

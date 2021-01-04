@@ -37,7 +37,7 @@ pub async fn get_user_freebusy_controller(
         Err(e) => return e,
     };
     let calendar_ids = match &query_params.calendar_ids {
-        Some(calendar_ids) => Some(calendar_ids.split(",").map(|s| String::from(s)).collect()),
+        Some(calendar_ids) => Some(calendar_ids.split(',').map(String::from).collect()),
         None => None,
     };
 
@@ -245,7 +245,7 @@ mod test {
 
         let res = usecase.perform(&ctx).await;
         assert!(res.is_ok());
-        let instances = res.unwrap().free.clone();
+        let instances = res.unwrap().free;
         assert_eq!(instances.len(), 2);
         assert_eq!(
             instances[0],

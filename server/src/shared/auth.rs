@@ -107,14 +107,14 @@ pub fn ensure_nettu_acct_header(req: &HttpRequest) -> Result<String, HttpRespons
         Some(acc_id) => match acc_id.to_str() {
             Ok(acc_id) => Ok(String::from(acc_id)),
             Err(_) => {
-                return Err(HttpResponse::Unauthorized().body(format!(
+                Err(HttpResponse::Unauthorized().body(format!(
                     "Malformed nettu account header provided: {:?}",
                     acc_id
                 )))
             }
         },
         None => {
-            return Err(HttpResponse::Unauthorized().body("Unable to find nettu account header"))
+            Err(HttpResponse::Unauthorized().body("Unable to find nettu account header"))
         }
     }
 }

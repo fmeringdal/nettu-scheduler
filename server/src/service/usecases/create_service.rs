@@ -29,7 +29,7 @@ pub async fn create_service_controller(
     match res {
         Ok(usecase_res) => {
             let res = CreateServiceRes {
-                service_id: usecase_res.service.id.clone(),
+                service_id: usecase_res.service.id,
             };
             HttpResponse::Created().json(res)
         }
