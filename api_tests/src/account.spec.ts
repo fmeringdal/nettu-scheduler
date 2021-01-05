@@ -1,18 +1,26 @@
 import { NettuClient } from "./clients";
-import { setupAccount, setupUserClientForAccount } from "./helpers/fixtures";
+import {
+  setupAccount,
+  setupUserClientForAccount,
+  CREATE_ACCOUNT_CODE,
+} from "./helpers/fixtures";
 import { readPrivateKey, readPublicKeyBase64 } from "./helpers/utils";
 
 describe("Account API", () => {
   const client = NettuClient();
 
   it("should create account", async () => {
-    const { status, data } = await client.account.insert(undefined);
+    const { status, data } = await client.account.insert({
+      code: CREATE_ACCOUNT_CODE,
+    });
     expect(status).toBe(201);
     expect(data.secretApiKey).toBeDefined();
   });
 
   it("should find account", async () => {
-    const { status, data } = await client.account.insert(undefined);
+    const { status, data } = await client.account.insert({
+      code: CREATE_ACCOUNT_CODE,
+    });
     const accountClient = NettuClient({ apiKey: data.secretApiKey });
     const res = await accountClient.account.find();
     expect(res.status).toBe(200);
@@ -20,7 +28,7 @@ describe("Account API", () => {
   });
 
   it("should not find account when not signed in", async () => {
-    await client.account.insert(undefined);
+    await client.account.insert({ code: CREATE_ACCOUNT_CODE });
     const res = await client.account.find();
     expect(res.status).toBe(401);
     expect(res.data.id).toBeUndefined();

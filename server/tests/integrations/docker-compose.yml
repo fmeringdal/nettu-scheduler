@@ -14,8 +14,8 @@ services:
     build: ../..
     ports:
       - "5000:5000"
-    logging:
-      driver: none
+    # logging:
+    #   driver: none
     environment:
       MONGODB_CONNECTION_STRING: mongodb://root:rootpassword@mongodb:27017
       MONGODB_NAME: nettubooking

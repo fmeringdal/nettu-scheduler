@@ -4,9 +4,18 @@ use crate::{
     shared::usecase::{perform, Usecase},
 };
 use actix_web::{web, HttpResponse};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-pub async fn create_account_controller(ctx: web::Data<Context>) -> HttpResponse {
+#[derive(Deserialize)]
+pub struct BodyParams {
+    code: String
+}
+
+pub async fn create_account_controller(ctx: web::Data<Context>, body: web::Json<BodyParams>) -> HttpResponse {
+    if body.code != "verysecretcode123" {
+        return HttpResponse::Unauthorized().finish()
+    }
+    
     let usecase = CreateAccountUseCase {};
     let res = perform(usecase, &ctx).await;
 

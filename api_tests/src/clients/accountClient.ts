@@ -7,9 +7,13 @@ export type CreatedAccountResponse = {
   secretApiKey: string;
 };
 
+export type CreatedAccountRequest = {
+  code: string;
+};
+
 export class NettuAccountClient extends NettuBaseClient {
   // data will be something in the future
-  public insert(data: undefined) {
+  public insert(data: CreatedAccountRequest) {
     return this.post<CreatedAccountResponse>("/account", data);
   }
 

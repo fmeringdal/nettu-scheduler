@@ -3,9 +3,11 @@ import { readPrivateKey, readPublicKeyBase64, toBase64 } from "./utils";
 import jwt from "jsonwebtoken";
 import { Account } from "../domain/account";
 
+export const CREATE_ACCOUNT_CODE = "verysecretcode123";
+
 export const setupAccount = async () => {
   const client = NettuClient();
-  const account = await client.account.insert(undefined);
+  const account = await client.account.insert({ code: CREATE_ACCOUNT_CODE });
   return {
     client: NettuClient({ apiKey: account.data.secretApiKey }),
     accountId: account.data.accountId,
