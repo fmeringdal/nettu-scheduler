@@ -235,7 +235,6 @@ mod test {
         };
 
         let oc = event.expand(None);
-        println!("Occ: {:?}", oc);
         assert_eq!(oc.len(), 3);
     }
 }

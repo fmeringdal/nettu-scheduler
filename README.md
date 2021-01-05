@@ -2,7 +2,6 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 
 ## Todos
 
-- setup the skeleton for rust integration tests (mongodb docker compose without volume)
 - take another look at the way domain objects are ser- and deserialized into mongodb
 - protect create account
 - reminders with webhook calls

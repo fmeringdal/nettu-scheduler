@@ -33,15 +33,12 @@ impl ICalendarRepo for InMemoryCalendarRepo {
 
     async fn find_by_user(&self, user_id: &str) -> Vec<Calendar> {
         let calendars = self.calendars.lock().unwrap();
-        println!("Looking for calendar for userid: {}", user_id);
-        println!("All calendars: {:?}", calendars);
         let mut res = vec![];
         for i in 0..calendars.len() {
             if calendars[i].user_id == user_id {
                 res.push(calendars[i].clone());
             }
         }
-        println!("Res {:?}", res);
         res
     }
 

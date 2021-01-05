@@ -23,12 +23,16 @@ wait_for() {
   for i in `seq $TIMEOUT` ; do
     nc -z "$HOST" "$PORT" > /dev/null 2>&1
     result=$?
-    if [ $result -eq 0 ] ; then
+    echo "Result $result: port: $PORT"
+      if [ $result -eq 0 ] ; then
       if [ $# -gt 0 ] ; then
         exec "$@"
       fi
+      echo "Done: port: $PORT"
       exit 0
     fi
+    echo "waiting for port: $PORT"
+    echo "going to sleep"
     sleep 1
   done
   echo "Operation timed out for $HOST:$PORT" >&2

@@ -6,29 +6,26 @@ services:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: rootpassword
       MONGO_INITDB_DATABASE: nettubooking
-
     ports:
       - 27017:27017
-    volumes:
-      - mongodb_data_nettubooking_container:/data/nettubooking/db
     logging:
       driver: none
-
-  app:
-    build: ..
+  apptest:
+    build: ../..
     ports:
       - "5000:5000"
+    logging:
+      driver: none
     environment:
       MONGODB_CONNECTION_STRING: mongodb://root:rootpassword@mongodb:27017
       MONGODB_NAME: nettubooking
-    volumes:
-      - ../:/var/application
-    command: bash -c "cargo watch -x run server"
     init: true
     entrypoint:
       - "integrations/wait-for.sh"
-      - "localhost:27017"
+      - "mongodb:27017"
       - "--"
-
-volumes:
-  mongodb_data_nettubooking_container:
+    volumes:
+      - ../../:/var/application
+    command: bash -c "cargo watch -x run"
+    depends_on:
+      - mongodb

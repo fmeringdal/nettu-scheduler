@@ -40,7 +40,6 @@ async fn create_user_if_not_exists(
         external_user_id: String::from(external_user_id),
     };
     let res = perform(usecase, ctx).await;
-    // println!("ENd {:?}", res);
     match res {
         Ok(res) => Some(res.user),
         Err(_) => None,
@@ -215,7 +214,6 @@ mod test {
             .header("Authorization", format!("Bearer {}", token))
             .to_http_request();
         let res = protect_route(&req, &ctx).await;
-        println!("res: {:?}", res);
         assert!(res.is_ok());
     }
 
