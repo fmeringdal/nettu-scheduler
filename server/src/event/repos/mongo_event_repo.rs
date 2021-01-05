@@ -102,7 +102,7 @@ struct CalendarEventMongo {
     _id: ObjectId,
     start_ts: i64,
     duration: i64,
-    end_ts: Option<i64>,
+    end_ts: i64,
     busy: bool,
     user_id: String,
     exdates: Vec<i64>,

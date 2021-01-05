@@ -49,8 +49,9 @@ pub async fn create_event_controller(
     match res {
         Ok(e) => HttpResponse::Created().json(CreateEventRes { event_id: e.id }),
         Err(e) => match e {
-            CreateCalendarEventErrors::NotFoundError => HttpResponse::NotFound().finish(),
-            CreateCalendarEventErrors::StorageError => HttpResponse::InternalServerError().finish(),
+            UseCaseErrors::NotFoundError => HttpResponse::NotFound().finish(),
+            UseCaseErrors::InvalidRecurrenceRule => HttpResponse::UnprocessableEntity().body("Invalid recurrence rule specified for the event"),
+            UseCaseErrors::StorageError => HttpResponse::InternalServerError().finish(),
         },
     }
 }
@@ -65,7 +66,8 @@ struct CreateEventUseCase {
 }
 
 #[derive(Debug)]
-pub enum CreateCalendarEventErrors {
+pub enum UseCaseErrors {
+    InvalidRecurrenceRule,
     NotFoundError,
     StorageError,
 }
@@ -74,14 +76,14 @@ pub enum CreateCalendarEventErrors {
 impl Usecase for CreateEventUseCase {
     type Response = CalendarEvent;
 
-    type Errors = CreateCalendarEventErrors;
+    type Errors = UseCaseErrors;
 
     type Context = Context;
 
     async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let calendar = match ctx.repos.calendar_repo.find(&self.calendar_id).await {
             Some(calendar) if calendar.user_id == self.user_id => calendar,
-            _ => return Err(CreateCalendarEventErrors::NotFoundError),
+            _ => return Err(UseCaseErrors::NotFoundError),
         };
 
         let mut e = CalendarEvent {
@@ -90,17 +92,23 @@ impl Usecase for CreateEventUseCase {
             start_ts: self.start_ts,
             duration: self.duration,
             recurrence: None,
-            end_ts: Some(self.start_ts + self.duration), // default, if recurrence changes, this will be updated
+            end_ts: self.start_ts + self.duration, // default, if recurrence changes, this will be updated
             exdates: vec![],
             calendar_id: calendar.id,
             user_id: self.user_id.clone(),
         };
         if let Some(rrule_opts) = self.rrule_options.clone() {
-            e.set_reccurrence(rrule_opts, true);
+            match e.set_reccurrence(rrule_opts, true) {
+                Err(_) => return Err(UseCaseErrors::InvalidRecurrenceRule),
+                _ => ()
+            };
         }
+
+
+
         let repo_res = ctx.repos.event_repo.insert(&e).await;
         if repo_res.is_err() {
-            return Err(CreateCalendarEventErrors::StorageError);
+            return Err(UseCaseErrors::StorageError);
         }
         Ok(e)
     }

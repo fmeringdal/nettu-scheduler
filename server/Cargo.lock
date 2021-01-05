@@ -1557,7 +1557,6 @@ dependencies = [
  "env_logger",
  "futures",
  "jsonwebtoken",
- "lazy_static",
  "mongodb",
  "rand 0.8.0",
  "rrule",
@@ -2017,9 +2016,9 @@ dependencies = [
 
 [[package]]
 name = "rrule"
-version = "0.3.7"
+version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "96940ac44221f9ea48fb22f36a9eebff3b1f16b03bbd4b63257f40d0d56369bf"
+checksum = "ca45e540f0c9984d84272d8cd24f6f8af96aafd07c906ced5dfc878e5440cb11"
 dependencies = [
  "chrono",
  "chrono-tz",

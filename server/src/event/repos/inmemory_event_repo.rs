@@ -43,7 +43,7 @@ impl IEventRepo for InMemoryEventRepo {
             if event.calendar_id == calendar_id {
                 if let Some(v) = view {
                     // TODO: Consider if this should be strict equals or not
-                    if v.get_start() <= event.end_ts.unwrap() && v.get_end() >= event.start_ts {
+                    if v.get_start() <= event.end_ts && v.get_end() >= event.start_ts {
                         res.push(event.clone());
                     }
                 } else {

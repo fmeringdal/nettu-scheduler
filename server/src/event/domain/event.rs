@@ -3,7 +3,7 @@ use crate::{calendar::domain::calendar_view::CalendarView, shared::entity::Entit
 use super::event_instance::EventInstance;
 use chrono::{prelude::*, Duration};
 use chrono_tz::Tz;
-use rrule::{Frequenzy, ParsedOptions, RRule, RRuleSet};
+use rrule::{Frequenzy, ParsedOptions, Options, RRule, RRuleSet, NWeekday};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -27,6 +27,7 @@ pub struct RRuleOptions {
     pub byweekday: Option<Vec<isize>>,
     pub bynweekday: Option<Vec<Vec<isize>>>,
 }
+
 #[derive(Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CalendarEvent {
@@ -34,33 +35,67 @@ pub struct CalendarEvent {
     pub start_ts: i64,
     pub duration: i64,
     pub busy: bool,
-    pub end_ts: Option<i64>,
+    pub end_ts: i64,
     pub recurrence: Option<RRuleOptions>,
     pub exdates: Vec<i64>,
     pub calendar_id: String,
     pub user_id: String,
 }
 
+fn is_none_or_empty<T>(v: &Option<Vec<T>>) -> bool {
+    match v {
+        Some(v) if !v.is_empty() => false,
+        _ => true
+    }
+}
+
 impl CalendarEvent {
+    fn validate_recurrence(start_ts: i64, recurrence: &RRuleOptions) -> Result<(), ()> {
+        if let Some(count) = recurrence.count {
+            if count > 740 || count < 1 {
+                return Err(());
+            }
+        }
+        let two_years_in_millis = 1000*60*60*24*366*2;
+        if let Some(until) = recurrence.until.map(|val| val as i64) {
+            if until < start_ts || until - start_ts > two_years_in_millis  {
+                return Err(());
+            }
+        }
+
+        if !is_none_or_empty(&recurrence.bysetpos) && is_none_or_empty(&recurrence.byweekday) {
+            return Err(());
+        }
+
+        if !is_none_or_empty(&recurrence.bysetpos) && !is_none_or_empty(&recurrence.bynweekday) {
+            return Err(());
+        }
+
+
+        Ok(())
+    }
+
     fn update_endtime(&mut self) {
         let opts = self.get_rrule_options();
         if (opts.count.is_some() && opts.count.unwrap() > 0) || opts.until.is_some() {
             let expand = self.expand(None);
-            if let Some(last_occurence) = expand.last() {
-                self.end_ts = Some(last_occurence.end_ts);
-            } else {
-                self.end_ts = None;
-            }
+            self.end_ts = expand.last().unwrap().end_ts;
         } else {
-            self.end_ts = None;
+            self.end_ts = Self::get_max_timestamp();
         }
     }
 
-    pub fn set_reccurrence(&mut self, reccurence: RRuleOptions, update_endtime: bool) {
+    pub fn set_reccurrence(&mut self, reccurence: RRuleOptions, update_endtime: bool) -> Result<(), ()> {
+        Self::validate_recurrence(self.start_ts, &reccurence)?;
         self.recurrence = Some(reccurence);
         if update_endtime {
             self.update_endtime();
         }
+        Ok(())
+    }
+
+    pub fn get_max_timestamp() -> i64 {
+        5609882500905 // Mon Oct 09 2147 06:41:40 GMT+0200 (Central European Summer Time)
     }
 
     pub fn expand(&self, view: Option<&CalendarView>) -> Vec<EventInstance> {
@@ -193,7 +228,7 @@ mod test {
                 byweekday: None,
                 bysetpos: None,
             }),
-            end_ts: None,
+            end_ts: 2521317491239,
             exdates: vec![1521317491239],
             calendar_id: String::from(""),
             user_id: String::from(""),

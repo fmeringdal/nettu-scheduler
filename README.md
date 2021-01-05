@@ -2,7 +2,6 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 
 ## Todos
 
-- remove option for end_ts and set max timestamp
 - setup the skeleton for rust integration tests (mongodb docker compose without volume)
 - take another look at the way domain objects are ser- and deserialized into mongodb
 - protect create account
@@ -15,7 +14,9 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 - smarter mongodb schema
 - is more account admin routes needed?
 - More api tests for [calendarevent, booking]
-- error handling: https://auth0.com/blog/build-an-api-in-rust-with-jwt-authentication-using-actix-web/
+- error handling: 
+    1: https://auth0.com/blog/build-an-api-in-rust-with-jwt-authentication-using-actix-web/
+    2: https://theomn.com/rust-error-handling-for-pythonistas/
 - frontend for booking
 
 ## Need to have a data model that will support google and outlook calendars in the future

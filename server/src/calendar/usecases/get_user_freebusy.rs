@@ -146,13 +146,13 @@ mod test {
             user_id: user.id(),
         };
         ctx.repos.calendar_repo.insert(&calendar).await.unwrap();
-
+        let one_hour = 1000 * 60 * 60;
         let mut e1 = CalendarEvent {
             calendar_id: calendar.id.clone(),
             user_id: user.id.clone(),
             busy: false,
-            duration: 1000 * 60 * 60,
-            end_ts: None,
+            duration: one_hour,
+            end_ts: CalendarEvent::get_max_timestamp(),
             exdates: vec![],
             id: String::from("1"),
             start_ts: 0,
@@ -169,17 +169,17 @@ mod test {
             until: None,
             wkst: 0,
         };
-        e1.set_reccurrence(e1rr, true);
+        e1.set_reccurrence(e1rr, true).unwrap();
 
         let mut e2 = CalendarEvent {
             calendar_id: calendar.id.clone(),
             user_id: user.id.clone(),
             busy: false,
-            duration: 1000 * 60 * 60,
-            end_ts: None,
+            duration: one_hour,
+            end_ts: CalendarEvent::get_max_timestamp(),
             exdates: vec![],
             id: String::from("2"),
-            start_ts: 1000 * 60 * 60 * 4,
+            start_ts: one_hour * 4,
             recurrence: None,
         };
         let e2rr = RRuleOptions {
@@ -193,14 +193,14 @@ mod test {
             until: None,
             wkst: 0,
         };
-        e2.set_reccurrence(e2rr, true);
+        e2.set_reccurrence(e2rr, true).unwrap();
 
         let mut e3 = CalendarEvent {
             calendar_id: calendar.id.clone(),
             user_id: user.id.clone(),
             busy: false,
-            duration: 1000 * 60 * 60,
-            end_ts: None,
+            duration: one_hour,
+            end_ts: one_hour,
             exdates: vec![],
             id: String::from("3"),
             start_ts: 0,
@@ -217,7 +217,7 @@ mod test {
             until: None,
             wkst: 0,
         };
-        e3.set_reccurrence(e3rr, true);
+        e3.set_reccurrence(e3rr, true).unwrap();
 
         ctx.repos.event_repo.insert(&e1).await.unwrap();
         ctx.repos.event_repo.insert(&e2).await.unwrap();
