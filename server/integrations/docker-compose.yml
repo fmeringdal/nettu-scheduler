@@ -27,7 +27,7 @@ services:
     init: true
     entrypoint:
       - "integrations/wait-for.sh"
-      - "localhost:27017"
+      - "mongodb:27017"
       - "--"
 
 volumes:
