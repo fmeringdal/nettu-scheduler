@@ -12,7 +12,7 @@ pub struct BodyParams {
 }
 
 pub async fn create_account_controller(ctx: web::Data<Context>, body: web::Json<BodyParams>) -> HttpResponse {
-    if body.code != "verysecretcode123" {
+    if body.code != "FW4KbTC2loN1Ckr8KkIcwE3Av" {
         return HttpResponse::Unauthorized().finish()
     }
     
