@@ -3,7 +3,7 @@ use crate::{calendar::domain::calendar_view::CalendarView, shared::entity::Entit
 use super::event_instance::EventInstance;
 use chrono::{prelude::*, Duration};
 use chrono_tz::Tz;
-use rrule::{Frequenzy, NWeekday, Options, ParsedOptions, RRule, RRuleSet};
+use rrule::{Frequenzy, ParsedOptions, RRule, RRuleSet};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

@@ -3,10 +3,10 @@ use crate::{shared::mongo_repo::MongoDocument, user::domain::User};
 use super::IUserRepo;
 use crate::shared::mongo_repo;
 use mongodb::{
-    bson::{doc, oid::ObjectId, Document},
+    bson::{doc, Document},
     Collection, Database,
 };
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use std::error::Error;
 
 pub struct UserRepo {

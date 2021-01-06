@@ -3,7 +3,7 @@ extern crate nettu_scheduler;
 mod helpers;
 
 use actix_web::{
-    http::{Method, StatusCode},
+    http::{StatusCode},
     test::TestRequest,
 };
 
