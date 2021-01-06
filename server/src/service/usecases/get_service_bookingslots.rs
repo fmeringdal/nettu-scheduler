@@ -1,6 +1,6 @@
 use crate::{
     api::Context,
-    calendar::{usecases::get_user_freebusy::GetUserFreeBusyUseCase},
+    calendar::usecases::get_user_freebusy::GetUserFreeBusyUseCase,
     event::domain::booking_slots::{
         get_service_bookingslots, validate_bookingslots_query, validate_slots_interval,
         BookingQueryError, BookingSlotsOptions, BookingSlotsQuery, ServiceBookingSlot,
@@ -13,7 +13,6 @@ use crate::{
     shared::usecase::{perform, Usecase},
 };
 use actix_web::{web, HttpRequest, HttpResponse};
-
 
 use serde::{Deserialize, Serialize};
 

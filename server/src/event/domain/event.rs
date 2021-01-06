@@ -3,7 +3,7 @@ use crate::{calendar::domain::calendar_view::CalendarView, shared::entity::Entit
 use super::event_instance::EventInstance;
 use chrono::{prelude::*, Duration};
 use chrono_tz::Tz;
-use rrule::{Frequenzy, ParsedOptions, Options, RRule, RRuleSet, NWeekday};
+use rrule::{Frequenzy, NWeekday, Options, ParsedOptions, RRule, RRuleSet};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -45,7 +45,7 @@ pub struct CalendarEvent {
 fn is_none_or_empty<T>(v: &Option<Vec<T>>) -> bool {
     match v {
         Some(v) if !v.is_empty() => false,
-        _ => true
+        _ => true,
     }
 }
 
@@ -56,9 +56,9 @@ impl CalendarEvent {
                 return Err(());
             }
         }
-        let two_years_in_millis = 1000*60*60*24*366*2;
+        let two_years_in_millis = 1000 * 60 * 60 * 24 * 366 * 2;
         if let Some(until) = recurrence.until.map(|val| val as i64) {
-            if until < start_ts || until - start_ts > two_years_in_millis  {
+            if until < start_ts || until - start_ts > two_years_in_millis {
                 return Err(());
             }
         }
@@ -70,7 +70,6 @@ impl CalendarEvent {
         if !is_none_or_empty(&recurrence.bysetpos) && !is_none_or_empty(&recurrence.bynweekday) {
             return Err(());
         }
-
 
         Ok(())
     }
@@ -85,7 +84,11 @@ impl CalendarEvent {
         }
     }
 
-    pub fn set_reccurrence(&mut self, reccurence: RRuleOptions, update_endtime: bool) -> Result<(), ()> {
+    pub fn set_reccurrence(
+        &mut self,
+        reccurence: RRuleOptions,
+        update_endtime: bool,
+    ) -> Result<(), ()> {
         Self::validate_recurrence(self.start_ts, &reccurence)?;
         self.recurrence = Some(reccurence);
         if update_endtime {

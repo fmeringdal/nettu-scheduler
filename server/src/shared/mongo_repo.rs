@@ -1,24 +1,30 @@
 use anyhow::Result;
 use futures::stream::StreamExt;
 use mongodb::{
-    bson::{doc, oid::ObjectId, Document},
+    bson::{self, doc, oid::ObjectId, to_bson, Document},
     Collection,
 };
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::error::Error;
-
 
 pub enum MongoPersistenceID {
     ObjectId(ObjectId),
     String(String),
 }
 
-pub trait MongoPersistence {
-    fn to_domain(doc: Document) -> Self;
-    fn to_persistence(&self) -> Document;
-    fn get_persistence_id(&self) -> Result<MongoPersistenceID>;
+pub trait MongoDocument<E>: Serialize + DeserializeOwned {
+    fn to_domain(&self) -> E;
+    fn from_domain(entity: &E) -> Self;
+    fn get_id_filter(&self) -> Document;
 }
 
-fn get_id_filter<T: MongoPersistence>(val_id: &MongoPersistenceID) -> Document {
+// pub trait MongoPersistence<Document: MongoDocument<Self>> {
+//     fn to_domain(doc: Document) -> Self;
+//     fn to_persistence(&self) -> Document;
+//     fn get_persistence_id(&self) -> Result<MongoPersistenceID>;
+// }
+
+fn get_id_filter(val_id: &MongoPersistenceID) -> Document {
     match val_id {
         MongoPersistenceID::ObjectId(oid) => doc! {
             "_id": oid
@@ -29,47 +35,62 @@ fn get_id_filter<T: MongoPersistence>(val_id: &MongoPersistenceID) -> Document {
     }
 }
 
-pub async fn insert<T: MongoPersistence>(collection: &Collection, val: &T) -> Result<()> {
-    let coll = collection;
-    let _res = coll.insert_one(val.to_persistence(), None).await;
+fn entity_to_persistence<E, D: MongoDocument<E>>(entity: &E) -> Document {
+    let raw = D::from_domain(entity);
+    doc_to_persistence(&raw)
+}
+
+fn persistence_to_entity<E, D: MongoDocument<E>>(doc: Document) -> E {
+    // let bson = bson::Bson::Document(doc);
+    let raw: D = bson::from_document(doc).unwrap();
+    raw.to_domain()
+}
+
+fn doc_to_persistence<E, D: MongoDocument<E>>(raw: &D) -> Document {
+    to_bson(raw).unwrap().as_document().unwrap().to_owned()
+}
+
+pub async fn insert<E, D: MongoDocument<E>>(collection: &Collection, entity: &E) -> Result<()> {
+    let doc = entity_to_persistence::<E, D>(entity);
+    let _res = collection.insert_one(doc, None).await;
     Ok(())
 }
 
-pub async fn save<T: MongoPersistence>(collection: &Collection, val: &T) -> Result<()> {
-    let coll = collection;
-    let val_id = val.get_persistence_id()?;
-    let filter = get_id_filter::<T>(&val_id);
-    let _res = coll.update_one(filter, val.to_persistence(), None).await;
+pub async fn save<E, D: MongoDocument<E>>(collection: &Collection, entity: &E) -> Result<()> {
+    let raw = D::from_domain(entity);
+    let filter = raw.get_id_filter();
+    let doc = doc_to_persistence(&raw);
+    let _res = collection.update_one(filter, doc, None).await;
     Ok(())
 }
 
-pub async fn find<T: MongoPersistence>(
+pub async fn find<E, D: MongoDocument<E>>(
     collection: &Collection,
     id: &MongoPersistenceID,
-) -> Option<T> {
-    let filter = get_id_filter::<T>(id);
-    find_one_by(collection, filter).await
+) -> Option<E> {
+    let filter = get_id_filter(id);
+    find_one_by::<E, D>(collection, filter).await
 }
 
-pub async fn find_one_by<T: MongoPersistence>(
+pub async fn find_one_by<E, D: MongoDocument<E>>(
     collection: &Collection,
     filter: Document,
-) -> Option<T> {
-    let coll = collection;
-    let res = coll.find_one(filter, None).await;
+) -> Option<E> {
+    let res = collection.find_one(filter, None).await;
     match res {
         Ok(doc) if doc.is_some() => {
-            let event = T::to_domain(doc.unwrap());
-            Some(event)
+            let doc = doc.unwrap();
+            let e = persistence_to_entity::<E, D>(doc);
+            Some(e)
         }
         _ => None,
     }
 }
 
-pub async fn find_many_by<T: MongoPersistence>(
+pub async fn find_many_by<E, D: MongoDocument<E>>(
     collection: &Collection,
     filter: Document,
-) -> Result<Vec<T>, Box<dyn Error>> {
+) -> Result<Vec<E>, Box<dyn Error>> {
     let coll = collection;
     let res = coll.find(filter, None).await;
 
@@ -79,7 +100,7 @@ pub async fn find_many_by<T: MongoPersistence>(
             while let Some(result) = cursor.next().await {
                 match result {
                     Ok(document) => {
-                        documents.push(T::to_domain(document));
+                        documents.push(persistence_to_entity::<E, D>(document));
                     }
                     Err(e) => {
                         println!("Error getting cursor calendar event: {:?}", e);
@@ -93,16 +114,15 @@ pub async fn find_many_by<T: MongoPersistence>(
     }
 }
 
-pub async fn delete<T: MongoPersistence>(
+pub async fn delete<E, D: MongoDocument<E>>(
     collection: &Collection,
     id: &MongoPersistenceID,
-) -> Option<T> {
-    let filter = get_id_filter::<T>(id);
-    let coll = collection;
-    let res = coll.find_one_and_delete(filter, None).await;
+) -> Option<E> {
+    let filter = get_id_filter(id);
+    let res = collection.find_one_and_delete(filter, None).await;
     match res {
         Ok(doc) if doc.is_some() => {
-            let event = T::to_domain(doc.unwrap());
+            let event = persistence_to_entity::<E, D>(doc.unwrap());
             Some(event)
         }
         _ => None,

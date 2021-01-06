@@ -44,7 +44,8 @@ pub async fn update_event_controller(
     match res {
         Ok(_) => HttpResponse::Ok().finish(),
         Err(e) => match e {
-            UseCaseErrors::InvalidRecurrenceRule => HttpResponse::UnprocessableEntity().body("Invalid recurrence rule specified for the event"),
+            UseCaseErrors::InvalidRecurrenceRule => HttpResponse::UnprocessableEntity()
+                .body("Invalid recurrence rule specified for the event"),
             UseCaseErrors::NotFoundError => HttpResponse::NotFound().finish(),
             UseCaseErrors::StorageError => HttpResponse::InternalServerError().finish(),
         },
@@ -64,7 +65,7 @@ pub struct UpdateEventUseCase {
 pub enum UseCaseErrors {
     NotFoundError,
     StorageError,
-    InvalidRecurrenceRule
+    InvalidRecurrenceRule,
 }
 
 #[async_trait::async_trait(?Send)]
@@ -100,7 +101,6 @@ impl Usecase for UpdateEventUseCase {
             e.busy = busy;
         }
 
-
         let recurrence_res = if let Some(rrule_opts) = self.rrule_options.clone() {
             // should we clear exdates when rrules are updated ?
             e.set_reccurrence(rrule_opts, true)
@@ -113,7 +113,6 @@ impl Usecase for UpdateEventUseCase {
         if recurrence_res.is_err() {
             return Err(UseCaseErrors::InvalidRecurrenceRule);
         };
-
 
         let repo_res = ctx.repos.event_repo.save(&e).await;
         if repo_res.is_err() {

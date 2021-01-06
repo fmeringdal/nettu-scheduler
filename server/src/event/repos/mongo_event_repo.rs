@@ -1,7 +1,7 @@
 use super::repos::{DeleteResult, IEventRepo};
 use crate::{calendar::domain::calendar_view::CalendarView, event::domain::event::CalendarEvent};
 use crate::{event::domain::event::RRuleOptions, shared::mongo_repo};
-use mongo_repo::MongoPersistence;
+use mongo_repo::MongoDocument;
 use mongodb::{
     bson::doc,
     bson::{from_bson, oid::ObjectId, to_bson, Bson, Document},
@@ -9,7 +9,6 @@ use mongodb::{
 };
 use serde::{Deserialize, Serialize};
 use std::error::Error;
-
 
 pub struct EventRepo {
     collection: Collection,
@@ -26,14 +25,14 @@ impl EventRepo {
 #[async_trait::async_trait]
 impl IEventRepo for EventRepo {
     async fn insert(&self, e: &CalendarEvent) -> Result<(), Box<dyn Error>> {
-        match mongo_repo::insert(&self.collection, e).await {
+        match mongo_repo::insert::<_, CalendarEventMongo>(&self.collection, e).await {
             Ok(_) => Ok(()),
             Err(_) => Ok(()), // fix this
         }
     }
 
     async fn save(&self, e: &CalendarEvent) -> Result<(), Box<dyn Error>> {
-        match mongo_repo::save(&self.collection, e).await {
+        match mongo_repo::save::<_, CalendarEventMongo>(&self.collection, e).await {
             Ok(_) => Ok(()),
             Err(_) => Ok(()), // fix this
         }
@@ -44,7 +43,7 @@ impl IEventRepo for EventRepo {
             Ok(oid) => mongo_repo::MongoPersistenceID::ObjectId(oid),
             Err(_) => return None,
         };
-        mongo_repo::find(&self.collection, &id).await
+        mongo_repo::find::<_, CalendarEventMongo>(&self.collection, &id).await
     }
 
     async fn find_by_calendar(
@@ -73,7 +72,7 @@ impl IEventRepo for EventRepo {
             };
         }
 
-        mongo_repo::find_many_by(&self.collection, filter).await
+        mongo_repo::find_many_by::<_, CalendarEventMongo>(&self.collection, filter).await
     }
 
     async fn delete(&self, event_id: &str) -> Option<CalendarEvent> {
@@ -81,7 +80,7 @@ impl IEventRepo for EventRepo {
             Ok(oid) => mongo_repo::MongoPersistenceID::ObjectId(oid),
             Err(_) => return None,
         };
-        mongo_repo::delete(&self.collection, &id).await
+        mongo_repo::delete::<_, CalendarEventMongo>(&self.collection, &id).await
     }
 
     async fn delete_by_calendar(&self, calendar_id: &str) -> Result<DeleteResult, Box<dyn Error>> {
@@ -110,8 +109,8 @@ struct CalendarEventMongo {
     recurrence: Option<RRuleOptions>,
 }
 
-impl CalendarEventMongo {
-    pub fn to_domain(&self) -> CalendarEvent {
+impl MongoDocument<CalendarEvent> for CalendarEventMongo {
+    fn to_domain(&self) -> CalendarEvent {
         CalendarEvent {
             id: self._id.to_string(),
             start_ts: self.start_ts,
@@ -125,7 +124,7 @@ impl CalendarEventMongo {
         }
     }
 
-    pub fn from_domain(event: &CalendarEvent) -> Self {
+    fn from_domain(event: &CalendarEvent) -> Self {
         Self {
             _id: ObjectId::with_string(&event.id).unwrap(),
             start_ts: event.start_ts,
@@ -138,21 +137,27 @@ impl CalendarEventMongo {
             recurrence: event.recurrence.clone(),
         }
     }
-}
 
-impl MongoPersistence for CalendarEvent {
-    fn to_domain(doc: Document) -> Self {
-        let doc: CalendarEventMongo = from_bson(Bson::Document(doc)).unwrap();
-        doc.to_domain()
-    }
-
-    fn to_persistence(&self) -> Document {
-        let doc = CalendarEventMongo::from_domain(self);
-        to_bson(&doc).unwrap().as_document().unwrap().to_owned()
-    }
-
-    fn get_persistence_id(&self) -> anyhow::Result<mongo_repo::MongoPersistenceID> {
-        let oid = ObjectId::with_string(&self.id)?;
-        Ok(mongo_repo::MongoPersistenceID::ObjectId(oid))
+    fn get_id_filter(&self) -> Document {
+        doc! {
+            "_id": self._id.clone()
+        }
     }
 }
+
+// impl MongoPersistence for CalendarEvent {
+//     fn to_domain(doc: Document) -> Self {
+//         let doc: CalendarEventMongo = from_bson(Bson::Document(doc)).unwrap();
+//         doc.to_domain()
+//     }
+
+//     fn to_persistence(&self) -> Document {
+//         let doc = CalendarEventMongo::from_domain(self);
+//         to_bson(&doc).unwrap().as_document().unwrap().to_owned()
+//     }
+
+//     fn get_persistence_id(&self) -> anyhow::Result<mongo_repo::MongoPersistenceID> {
+//         let oid = ObjectId::with_string(&self.id)?;
+//         Ok(mongo_repo::MongoPersistenceID::ObjectId(oid))
+//     }
+// }

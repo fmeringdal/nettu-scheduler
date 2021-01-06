@@ -50,7 +50,8 @@ pub async fn create_event_controller(
         Ok(e) => HttpResponse::Created().json(CreateEventRes { event_id: e.id }),
         Err(e) => match e {
             UseCaseErrors::NotFoundError => HttpResponse::NotFound().finish(),
-            UseCaseErrors::InvalidRecurrenceRule => HttpResponse::UnprocessableEntity().body("Invalid recurrence rule specified for the event"),
+            UseCaseErrors::InvalidRecurrenceRule => HttpResponse::UnprocessableEntity()
+                .body("Invalid recurrence rule specified for the event"),
             UseCaseErrors::StorageError => HttpResponse::InternalServerError().finish(),
         },
     }
@@ -100,11 +101,9 @@ impl Usecase for CreateEventUseCase {
         if let Some(rrule_opts) = self.rrule_options.clone() {
             match e.set_reccurrence(rrule_opts, true) {
                 Err(_) => return Err(UseCaseErrors::InvalidRecurrenceRule),
-                _ => ()
+                _ => (),
             };
         }
-
-
 
         let repo_res = ctx.repos.event_repo.insert(&e).await;
         if repo_res.is_err() {

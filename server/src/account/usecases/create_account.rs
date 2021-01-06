@@ -8,14 +8,17 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]
 pub struct BodyParams {
-    code: String
+    code: String,
 }
 
-pub async fn create_account_controller(ctx: web::Data<Context>, body: web::Json<BodyParams>) -> HttpResponse {
+pub async fn create_account_controller(
+    ctx: web::Data<Context>,
+    body: web::Json<BodyParams>,
+) -> HttpResponse {
     if body.code != "FW4KbTC2loN1Ckr8KkIcwE3Av" {
-        return HttpResponse::Unauthorized().finish()
+        return HttpResponse::Unauthorized().finish();
     }
-    
+
     let usecase = CreateAccountUseCase {};
     let res = perform(usecase, &ctx).await;
 
