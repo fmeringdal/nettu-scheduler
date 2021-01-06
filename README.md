@@ -2,7 +2,6 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 
 ## Todos
 
-- take another look at the way domain objects are ser- and deserialized into mongodb
 - More api tests for [calendarevent, booking]
 - reminders with webhook calls
 - account with alloweduseractions
