@@ -3,6 +3,7 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 ## Todos
 
 - take another look at the way domain objects are ser- and deserialized into mongodb
+- More api tests for [calendarevent, booking]
 - reminders with webhook calls
 - account with alloweduseractions
 - delete user cleanup actions
@@ -11,7 +12,6 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 
 - smarter mongodb schema
 - is more account admin routes needed?
-- More api tests for [calendarevent, booking]
 - protect create account with real emails
 - error handling: 
     1: https://auth0.com/blog/build-an-api-in-rust-with-jwt-authentication-using-actix-web/
