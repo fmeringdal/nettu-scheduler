@@ -4,7 +4,7 @@ use mongodb::{
     bson::{self, doc, oid::ObjectId, to_bson, Document},
     Collection,
 };
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Serialize};
 use std::error::Error;
 
 pub enum MongoPersistenceID {
@@ -17,12 +17,6 @@ pub trait MongoDocument<E>: Serialize + DeserializeOwned {
     fn from_domain(entity: &E) -> Self;
     fn get_id_filter(&self) -> Document;
 }
-
-// pub trait MongoPersistence<Document: MongoDocument<Self>> {
-//     fn to_domain(doc: Document) -> Self;
-//     fn to_persistence(&self) -> Document;
-//     fn get_persistence_id(&self) -> Result<MongoPersistenceID>;
-// }
 
 fn get_id_filter(val_id: &MongoPersistenceID) -> Document {
     match val_id {

@@ -144,20 +144,3 @@ impl MongoDocument<CalendarEvent> for CalendarEventMongo {
         }
     }
 }
-
-// impl MongoPersistence for CalendarEvent {
-//     fn to_domain(doc: Document) -> Self {
-//         let doc: CalendarEventMongo = from_bson(Bson::Document(doc)).unwrap();
-//         doc.to_domain()
-//     }
-
-//     fn to_persistence(&self) -> Document {
-//         let doc = CalendarEventMongo::from_domain(self);
-//         to_bson(&doc).unwrap().as_document().unwrap().to_owned()
-//     }
-
-//     fn get_persistence_id(&self) -> anyhow::Result<mongo_repo::MongoPersistenceID> {
-//         let oid = ObjectId::with_string(&self.id)?;
-//         Ok(mongo_repo::MongoPersistenceID::ObjectId(oid))
-//     }
-// }
