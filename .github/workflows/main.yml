@@ -29,6 +29,8 @@ jobs:
           node-version: '12'
       - name: install jest
         run: npm i -g jest
+      - name: install deps
+        run: npm i --prefix ./api_tests
       - name: Run integration tests
         run: ./run_api_tests.sh
       - uses: actions-rs/toolchain@v1
