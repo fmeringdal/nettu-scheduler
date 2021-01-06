@@ -24,14 +24,14 @@ impl UserRepo {
 #[async_trait::async_trait]
 impl IUserRepo for UserRepo {
     async fn insert(&self, user: &User) -> Result<(), Box<dyn Error>> {
-        match mongo_repo::insert::<User, UserMongo>(&self.collection, user).await {
+        match mongo_repo::insert::<_, UserMongo>(&self.collection, user).await {
             Ok(_) => Ok(()),
             Err(_) => Ok(()), // fix this
         }
     }
 
     async fn save(&self, user: &User) -> Result<(), Box<dyn Error>> {
-        match mongo_repo::save::<User, UserMongo>(&self.collection, user).await {
+        match mongo_repo::save::<_, UserMongo>(&self.collection, user).await {
             Ok(_) => Ok(()),
             Err(_) => Ok(()), // fix this
         }
@@ -39,12 +39,12 @@ impl IUserRepo for UserRepo {
 
     async fn find(&self, user_id: &str) -> Option<User> {
         let id = mongo_repo::MongoPersistenceID::String(String::from(user_id));
-        mongo_repo::find::<User, UserMongo>(&self.collection, &id).await
+        mongo_repo::find::<_, UserMongo>(&self.collection, &id).await
     }
 
     async fn delete(&self, user_id: &str) -> Option<User> {
         let id = mongo_repo::MongoPersistenceID::String(String::from(user_id));
-        mongo_repo::delete::<User, UserMongo>(&self.collection, &id).await
+        mongo_repo::delete::<_, UserMongo>(&self.collection, &id).await
     }
 }
 

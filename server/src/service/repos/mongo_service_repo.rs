@@ -25,14 +25,14 @@ impl ServiceRepo {
 #[async_trait::async_trait]
 impl IServiceRepo for ServiceRepo {
     async fn insert(&self, service: &Service) -> Result<(), Box<dyn Error>> {
-        match mongo_repo::insert::<Service, ServiceMongo>(&self.collection, service).await {
+        match mongo_repo::insert::<_, ServiceMongo>(&self.collection, service).await {
             Ok(_) => Ok(()),
             Err(_) => Ok(()), // fix this
         }
     }
 
     async fn save(&self, service: &Service) -> Result<(), Box<dyn Error>> {
-        match mongo_repo::save::<Service, ServiceMongo>(&self.collection, service).await {
+        match mongo_repo::save::<_, ServiceMongo>(&self.collection, service).await {
             Ok(_) => Ok(()),
             Err(_) => Ok(()), // fix this
         }
@@ -43,7 +43,7 @@ impl IServiceRepo for ServiceRepo {
             Ok(oid) => mongo_repo::MongoPersistenceID::ObjectId(oid),
             Err(_) => return None,
         };
-        mongo_repo::find::<Service, ServiceMongo>(&self.collection, &id).await
+        mongo_repo::find::<_, ServiceMongo>(&self.collection, &id).await
     }
 
     async fn delete(&self, service_id: &str) -> Option<Service> {
@@ -51,7 +51,7 @@ impl IServiceRepo for ServiceRepo {
             Ok(oid) => mongo_repo::MongoPersistenceID::ObjectId(oid),
             Err(_) => return None,
         };
-        mongo_repo::delete::<Service, ServiceMongo>(&self.collection, &id).await
+        mongo_repo::delete::<_, ServiceMongo>(&self.collection, &id).await
     }
 }
 
