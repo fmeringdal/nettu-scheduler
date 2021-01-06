@@ -78,7 +78,7 @@ fn sort_and_merge_instances(instances: &mut Vec<&mut EventInstance>) -> Vec<Even
 
     let mut sorted: Vec<EventInstance> = vec![];
 
-    for (i, instance) in instances.into_iter().enumerate() {
+    for (i, instance) in instances.iter_mut().enumerate() {
         if i == 0 {
             sorted.push(instance.to_owned());
             continue;

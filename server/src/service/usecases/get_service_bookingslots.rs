@@ -127,8 +127,8 @@ impl Usecase for GetServiceBookingSlotsUseCase {
         let query = BookingSlotsQuery {
             date: self.date.clone(),
             iana_tz: self.iana_tz.clone(),
-            interval: self.interval.clone(),
-            duration: self.duration.clone(),
+            interval: self.interval,
+            duration: self.duration,
         };
         let booking_timespan = match validate_bookingslots_query(&query) {
             Ok(t) => t,
