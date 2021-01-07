@@ -36,20 +36,17 @@ impl IEventRepo for InMemoryEventRepo {
         calendar_id: &str,
         view: Option<&CalendarView>,
     ) -> Result<Vec<CalendarEvent>, Box<dyn Error>> {
-        let events = self.calendar_events.lock().unwrap();
-        let mut res = vec![];
-        for event in events.iter() {
+        let res = find_by(&self.calendar_events, |event| {
             if event.calendar_id == calendar_id {
                 if let Some(v) = view {
                     // TODO: Consider if this should be strict equals or not
-                    if v.get_start() <= event.end_ts && v.get_end() >= event.start_ts {
-                        res.push(event.clone());
-                    }
+                    return v.get_start() <= event.end_ts && v.get_end() >= event.start_ts;
                 } else {
-                    res.push(event.clone());
+                    return true;
                 }
             }
-        }
+            return false;
+        });
         Ok(res)
     }
 
@@ -58,15 +55,7 @@ impl IEventRepo for InMemoryEventRepo {
     }
 
     async fn delete_by_calendar(&self, calendar_id: &str) -> Result<DeleteResult, Box<dyn Error>> {
-        let mut events = self.calendar_events.lock().unwrap();
-        let mut deleted_count = 0;
-        for i in 0..events.len() {
-            let index = events.len() - i - 1;
-            if events[index].calendar_id == calendar_id {
-                events.remove(index);
-                deleted_count += 1;
-            }
-        }
-        Ok(DeleteResult { deleted_count })
+        let res = delete_by(&self.calendar_events, |cal| cal.calendar_id == calendar_id);
+        Ok(res)
     }
 }

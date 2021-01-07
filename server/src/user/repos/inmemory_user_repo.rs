@@ -32,12 +32,6 @@ impl IUserRepo for InMemoryUserRepo {
     }
 
     async fn find(&self, user_id: &str) -> Option<User> {
-        let users = self.users.lock().unwrap();
-        for i in 0..users.len() {
-            if users[i].id == user_id {
-                return Some(users[i].clone());
-            }
-        }
-        None
+        find(user_id, &self.users)
     }
 }

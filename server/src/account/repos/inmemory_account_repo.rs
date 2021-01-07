@@ -36,12 +36,10 @@ impl IAccountRepo for InMemoryAccountRepo {
     }
 
     async fn find_by_apikey(&self, api_key: &str) -> Option<Account> {
-        let accounts = self.accounts.lock().unwrap();
-        for i in 0..accounts.len() {
-            if accounts[i].secret_api_key == api_key {
-                return Some(accounts[i].clone());
-            }
+        let accounts = find_by(&self.accounts, |account| account.secret_api_key == api_key);
+        if accounts.is_empty() {
+            return None;
         }
-        None
+        Some(accounts[0].clone())
     }
 }
