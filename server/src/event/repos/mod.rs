@@ -1,8 +1,8 @@
-mod inmemory_event_repo;
-mod mongo_event_repo;
+mod inmemory;
+mod mongo;
 
-pub use inmemory_event_repo::InMemoryEventRepo;
-pub use mongo_event_repo::EventRepo;
+pub use inmemory::InMemoryEventRepo;
+pub use mongo::EventRepo;
 
 use crate::{calendar::domain::calendar_view::CalendarView, event::domain::event::CalendarEvent};
 use std::error::Error;

@@ -1,10 +1,10 @@
 use crate::account::domain::Account;
-mod inmemory_account_repo;
-mod mongo_account_repo;
+mod inmemory;
+mod mongo;
 use std::error::Error;
 
-pub use inmemory_account_repo::InMemoryAccountRepo;
-pub use mongo_account_repo::AccountRepo;
+pub use inmemory::InMemoryAccountRepo;
+pub use mongo::AccountRepo;
 
 #[async_trait::async_trait]
 pub trait IAccountRepo: Send + Sync {

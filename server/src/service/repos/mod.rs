@@ -1,11 +1,11 @@
-mod inmemory_service_repo;
-mod mongo_service_repo;
+mod inmemory;
+mod mongo;
 
 use crate::service::domain::Service;
 use std::error::Error;
 
-pub use inmemory_service_repo::InMemoryServiceRepo;
-pub use mongo_service_repo::ServiceRepo;
+pub use inmemory::InMemoryServiceRepo;
+pub use mongo::ServiceRepo;
 
 #[async_trait::async_trait]
 pub trait IServiceRepo: Send + Sync {

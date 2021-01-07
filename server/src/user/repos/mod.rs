@@ -1,9 +1,9 @@
-mod inmemory_user_repo;
-mod mongo_user_repo;
+mod inmemory;
+mod mongo;
 
 use crate::user::domain::User;
-pub use inmemory_user_repo::InMemoryUserRepo;
-pub use mongo_user_repo::UserRepo;
+pub use inmemory::InMemoryUserRepo;
+pub use mongo::UserRepo;
 
 use std::error::Error;
 

@@ -1,8 +1,8 @@
-mod inmemory_calendar_repo;
-mod mongo_calendar_repo;
+mod inmemory;
+mod mongo;
 
-pub use inmemory_calendar_repo::InMemoryCalendarRepo;
-pub use mongo_calendar_repo::CalendarRepo;
+pub use inmemory::InMemoryCalendarRepo;
+pub use mongo::CalendarRepo;
 
 use crate::calendar::domain::calendar::Calendar;
 
