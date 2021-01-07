@@ -1,4 +1,4 @@
-use crate::event::domain::event_instance::EventInstance;
+use crate::{api::NettuError, event::domain::event_instance::EventInstance};
 use crate::{api::Context, calendar::domain::calendar_view::CalendarView};
 use crate::{
     event::domain::event_instance::get_free_busy,
@@ -27,11 +27,9 @@ pub async fn get_user_freebusy_controller(
     query_params: web::Query<UserFreebusyQuery>,
     params: web::Path<UserPathParams>,
     ctx: web::Data<Context>,
-) -> HttpResponse {
-    let account = match ensure_nettu_acct_header(&http_req) {
-        Ok(a) => a,
-        Err(e) => return e,
-    };
+) -> Result<HttpResponse, NettuError> {
+    let account = ensure_nettu_acct_header(&http_req)?;
+
     let calendar_ids = match &query_params.calendar_ids {
         Some(calendar_ids) => Some(calendar_ids.split(',').map(String::from).collect()),
         None => None,
@@ -43,16 +41,14 @@ pub async fn get_user_freebusy_controller(
         start_ts: query_params.start_ts,
         end_ts: query_params.end_ts,
     };
-    let res = execute(usecase, &ctx).await;
-
-    match res {
-        Ok(r) => HttpResponse::Ok().json(r),
-        Err(e) => match e {
+    
+    execute(usecase, &ctx).await
+        .map(|usecase_res| HttpResponse::Ok().json(usecase_res))
+        .map_err(|e| match e {
             GetUserFreeBusyErrors::InvalidTimespanError => {
-                HttpResponse::UnprocessableEntity().finish()
+                NettuError::BadClientData("The provided start_ts and end_ts is invalid".into())
             }
-        },
-    }
+        })
 }
 
 pub struct GetUserFreeBusyUseCase {

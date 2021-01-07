@@ -30,7 +30,7 @@ pub async fn set_account_pub_key_controller(
         .map(|_| HttpResponse::Ok().finish())
         .map_err(|e| match e {
             UseCaseErrors::InvalidBase64Key => {
-                NettuError::BadClientData(format!("Invalid base64 encoding of public key"))
+                NettuError::BadClientData("Invalid base64 encoding of public key".into())
             }
             UseCaseErrors::StorageError => NettuError::InternalError,
         })

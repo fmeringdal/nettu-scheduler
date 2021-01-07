@@ -32,7 +32,7 @@ pub async fn delete_user_controller(
         .map_err(|e| match e {
             UseCaseErrors::StorageError => NettuError::InternalError,
             UseCaseErrors::UserNotFoundError => {
-                NettuError::NotFound(format!("A user with that id was not found."))
+                NettuError::NotFound(format!("A user with id: {}, was not found.", path_params.user_id))
             }
         })
 }

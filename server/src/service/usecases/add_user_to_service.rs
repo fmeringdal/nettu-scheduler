@@ -44,10 +44,10 @@ pub async fn add_user_to_service_controller(
         .map(|_| HttpResponse::Ok().body("Service successfully updated"))
         .map_err(|e| match e {
             UseCaseErrors::StorageError => NettuError::InternalError,
-            UseCaseErrors::ServiceNotFoundError => NettuError::NotFound(format!("The requested service was not found")),
-            UseCaseErrors::UserNotFoundError => NettuError::NotFound(format!("The specified user was not found")),
+            UseCaseErrors::ServiceNotFoundError => NettuError::NotFound("The requested service was not found".into()),
+            UseCaseErrors::UserNotFoundError => NettuError::NotFound("The specified user was not found".into()),
             UseCaseErrors::CalendarNotOwnedByUser(calendar_id) => NettuError::NotFound(format!("The calendar: {}, was not found among the calendars for the specified user", calendar_id)),
-            UseCaseErrors::UserAlreadyInService => NettuError::Conflict(format!("The specified user is already registered on the service, can not add the user more than once.")),
+            UseCaseErrors::UserAlreadyInService => NettuError::Conflict("The specified user is already registered on the service, can not add the user more than once.".into()),
         })
 }
 

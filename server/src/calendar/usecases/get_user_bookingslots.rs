@@ -1,16 +1,11 @@
 use super::get_user_freebusy::GetUserFreeBusyUseCase;
-use crate::{
-    api::Context,
-    event::domain::booking_slots::{
+use crate::{api::{Context, NettuError}, event::domain::booking_slots::{
         get_booking_slots, validate_bookingslots_query, BookingQueryError, BookingSlot,
         BookingSlotsOptions, BookingSlotsQuery,
-    },
-    shared::{
+    }, shared::{
         auth::ensure_nettu_acct_header,
         usecase::{execute, Usecase},
-    },
-    user::domain::User,
-};
+    }, user::domain::User};
 use actix_web::{web, HttpRequest, HttpResponse};
 
 use serde::{Deserialize, Serialize};
@@ -35,11 +30,8 @@ pub async fn get_user_bookingslots_controller(
     query_params: web::Query<UserBookingQuery>,
     params: web::Path<UserPathParams>,
     ctx: web::Data<Context>,
-) -> HttpResponse {
-    let account = match ensure_nettu_acct_header(&http_req) {
-        Ok(a) => a,
-        Err(e) => return e,
-    };
+) -> Result<HttpResponse, NettuError> {
+    let account = ensure_nettu_acct_header(&http_req)?;
     let calendar_ids = match &query_params.calendar_ids {
         Some(calendar_ids) => Some(calendar_ids.split(',').map(String::from).collect()),
         None => None,
@@ -56,31 +48,28 @@ pub async fn get_user_bookingslots_controller(
         interval: query_params.interval,
     };
 
-    let res = execute(usecase, &ctx).await;
-
-    match res {
-        Ok(r) => HttpResponse::Ok().json(r),
-        Err(e) => match e {
+    execute(usecase, &ctx).await
+        .map(|usecase_res| HttpResponse::Ok().json(usecase_res))
+        .map_err(|e| match e {
             UseCaseErrors::InvalidDateError(msg) => {
-                HttpResponse::UnprocessableEntity().body(format!(
+                NettuError::BadClientData(format!(
                     "Invalid datetime: {}. Should be YYYY-MM-DD, e.g. January 1. 2020 => 2020-1-1",
                     msg
                 ))
             }
             UseCaseErrors::InvalidTimezoneError(msg) => {
-                HttpResponse::UnprocessableEntity().body(format!(
+                NettuError::BadClientData(format!(
                     "Invalid timezone: {}. It should be a valid IANA TimeZone.",
                     msg
                 ))
             }
             UseCaseErrors::InvalidIntervalError => {
-                HttpResponse::UnprocessableEntity().body(
-                    "Invalid interval specified. It should be between 10 - 60 minutes inclusively and be specified as milliseconds."
+                NettuError::BadClientData(
+                    "Invalid interval specified. It should be between 10 - 60 minutes inclusively and be specified as milliseconds.".into()
                 )
             }
-            UseCaseErrors::UserFreebusyError => HttpResponse::InternalServerError().finish(),
-        },
-    }
+            UseCaseErrors::UserFreebusyError => NettuError::InternalError,
+        })
 }
 
 pub struct GetUserBookingSlotsUsecase {

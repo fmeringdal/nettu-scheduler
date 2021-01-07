@@ -1,13 +1,8 @@
-use crate::{
-    api::Context,
-    calendar::usecases::get_user_freebusy::GetUserFreeBusyUseCase,
-    event::domain::booking_slots::{
+use crate::{api::{Context, NettuError}, calendar::usecases::get_user_freebusy::GetUserFreeBusyUseCase, event::domain::booking_slots::{
         get_service_bookingslots, validate_bookingslots_query, validate_slots_interval,
         BookingQueryError, BookingSlotsOptions, BookingSlotsQuery, ServiceBookingSlot,
         ServiceBookingSlotDTO,
-    },
-    shared::auth::ensure_nettu_acct_header,
-};
+    }, shared::auth::ensure_nettu_acct_header};
 use crate::{
     event::domain::booking_slots::UserFreeEvents,
     shared::usecase::{execute, Usecase},
@@ -41,11 +36,8 @@ pub async fn get_service_bookingslots_controller(
     query_params: web::Query<QueryParams>,
     path_params: web::Path<PathParams>,
     ctx: web::Data<Context>,
-) -> HttpResponse {
-    let _account = match ensure_nettu_acct_header(&http_req) {
-        Ok(a) => a,
-        Err(e) => return e,
-    };
+) -> Result<HttpResponse, NettuError> {
+    let _account = ensure_nettu_acct_header(&http_req)?;
 
     let usecase = GetServiceBookingSlotsUseCase {
         service_id: path_params.service_id.clone(),
@@ -55,40 +47,37 @@ pub async fn get_service_bookingslots_controller(
         interval: query_params.interval,
     };
 
-    let res = execute(usecase, &ctx).await;
-
-    match res {
-        Ok(r) => {
+    execute(usecase, &ctx).await
+        .map(|usecase_res| {
             let res = APIRes {
-                booking_slots: r
+                booking_slots: usecase_res
                     .booking_slots
                     .iter()
                     .map(|slot| ServiceBookingSlotDTO::new(slot))
                     .collect(),
             };
             HttpResponse::Ok().json(res)
-        }
-        Err(e) => match e {
+        })
+        .map_err(|e| match e {
             UseCaseErrors::InvalidDateError(msg) => {
-                HttpResponse::UnprocessableEntity().body(format!(
+                NettuError::BadClientData(format!(
                     "Invalid datetime: {}. Should be YYYY-MM-DD, e.g. January 1. 2020 => 2020-1-1",
                     msg
                 ))
             }
             UseCaseErrors::InvalidTimezoneError(msg) => {
-                HttpResponse::UnprocessableEntity().body(format!(
+                NettuError::BadClientData(format!(
                     "Invalid timezone: {}. It should be a valid IANA TimeZone.",
                     msg
                 ))
             }
             UseCaseErrors::InvalidIntervalError => {
-                HttpResponse::UnprocessableEntity().body(
-                    "Invalid interval specified. It should be between 10 - 60 minutes inclusively and be specified as milliseconds."
+                NettuError::BadClientData(
+                    "Invalid interval specified. It should be between 10 - 60 minutes inclusively and be specified as milliseconds.".into()
                 )
             }
-            UseCaseErrors::ServiceNotFoundError => HttpResponse::NotFound().finish(),
-        },
-    }
+            UseCaseErrors::ServiceNotFoundError => NettuError::NotFound(format!("Service with id: {}, was not found.", path_params.service_id)),
+        })
 }
 
 struct GetServiceBookingSlotsUseCase {

@@ -54,7 +54,7 @@ pub async fn create_calendar_controller(
                 UseCaseErrors::StorageError => NettuError::InternalError,
                 // This should never happen
                 UseCaseErrors::UserNotFoundError => {
-                    NettuError::NotFound(format!("The user was not found."))
+                    NettuError::NotFound("The user was not found.".into())
                 }
             }
         })

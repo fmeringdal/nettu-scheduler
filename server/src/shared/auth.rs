@@ -103,16 +103,16 @@ pub async fn protect_route(req: &HttpRequest, ctx: &Context) -> Result<User, Net
     }
 }
 
-pub fn ensure_nettu_acct_header(req: &HttpRequest) -> Result<String, HttpResponse> {
+pub fn ensure_nettu_acct_header(req: &HttpRequest) -> Result<String, NettuError> {
     match req.headers().get("nettu-account") {
         Some(acc_id) => match acc_id.to_str() {
             Ok(acc_id) => Ok(String::from(acc_id)),
-            Err(_) => Err(HttpResponse::Unauthorized().body(format!(
+            Err(_) => Err(NettuError::UnidentifiableClient(format!(
                 "Malformed nettu account header provided: {:?}",
                 acc_id
             ))),
         },
-        None => Err(HttpResponse::Unauthorized().body("Unable to find nettu account header")),
+        None => Err(NettuError::UnidentifiableClient("Unable to find nettu account header".into())),
     }
 }
 
