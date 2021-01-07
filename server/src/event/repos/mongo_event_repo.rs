@@ -1,4 +1,4 @@
-use super::repos::{DeleteResult, IEventRepo};
+use super::{DeleteResult, IEventRepo};
 use crate::{calendar::domain::calendar_view::CalendarView, event::domain::event::CalendarEvent};
 use crate::{event::domain::event::RRuleOptions, shared::mongo_repo};
 use mongo_repo::MongoDocument;

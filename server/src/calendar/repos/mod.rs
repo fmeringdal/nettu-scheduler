@@ -1,7 +1,18 @@
 mod inmemory_calendar_repo;
 mod mongo_calendar_repo;
-mod repos;
 
 pub use inmemory_calendar_repo::InMemoryCalendarRepo;
 pub use mongo_calendar_repo::CalendarRepo;
-pub use repos::ICalendarRepo;
+
+use crate::calendar::domain::calendar::Calendar;
+
+use std::error::Error;
+
+#[async_trait::async_trait]
+pub trait ICalendarRepo: Send + Sync {
+    async fn insert(&self, calendar: &Calendar) -> Result<(), Box<dyn Error>>;
+    async fn save(&self, calendar: &Calendar) -> Result<(), Box<dyn Error>>;
+    async fn find(&self, calendar_id: &str) -> Option<Calendar>;
+    async fn find_by_user(&self, user_id: &str) -> Vec<Calendar>;
+    async fn delete(&self, calendar_id: &str) -> Option<Calendar>;
+}

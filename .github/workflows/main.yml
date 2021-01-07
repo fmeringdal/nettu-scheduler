@@ -33,9 +33,9 @@ jobs:
         run: npm i --prefix ./api_tests
       - name: Run integration tests
         run: ./run_api_tests.sh
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
+      #- uses: actions-rs/toolchain@v1
+        #with:
+          #toolchain: stable
+      #- uses: actions-rs/cargo@v1
+        #with:
+          #command: test
