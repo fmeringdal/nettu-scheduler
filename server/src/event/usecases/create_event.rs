@@ -1,10 +1,13 @@
-use crate::event::domain::event::{CalendarEvent, RRuleOptions};
 use crate::{
     api::Context,
     shared::{
         auth::protect_route,
         usecase::{execute, Usecase},
     },
+};
+use crate::{
+    api::NettuError,
+    event::domain::event::{CalendarEvent, RRuleOptions},
 };
 use actix_web::{web, HttpResponse};
 use mongodb::bson::oid::ObjectId;
@@ -30,11 +33,8 @@ pub async fn create_event_controller(
     http_req: web::HttpRequest,
     req: web::Json<CreateEventReq>,
     ctx: web::Data<Context>,
-) -> HttpResponse {
-    let user = match protect_route(&http_req, &ctx).await {
-        Ok(u) => u,
-        Err(res) => return res,
-    };
+) -> Result<HttpResponse, NettuError> {
+    let user = protect_route(&http_req, &ctx).await?;
 
     let usecase = CreateEventUseCase {
         busy: req.busy,
@@ -45,16 +45,23 @@ pub async fn create_event_controller(
         user_id: user.id.clone(),
     };
 
-    let res = execute(usecase, &ctx).await;
-    match res {
-        Ok(e) => HttpResponse::Created().json(CreateEventRes { event_id: e.id }),
-        Err(e) => match e {
-            UseCaseErrors::NotFoundError => HttpResponse::NotFound().finish(),
-            UseCaseErrors::InvalidRecurrenceRule => HttpResponse::UnprocessableEntity()
-                .body("Invalid recurrence rule specified for the event"),
-            UseCaseErrors::StorageError => HttpResponse::InternalServerError().finish(),
-        },
-    }
+    execute(usecase, &ctx)
+        .await
+        .map(|calendar_event| {
+            HttpResponse::Created().json(CreateEventRes {
+                event_id: calendar_event.id,
+            })
+        })
+        .map_err(|e| match e {
+            UseCaseErrors::NotFoundError => NettuError::NotFound(format!(
+                "The calendar with id: {}, was not found.",
+                req.calendar_id
+            )),
+            UseCaseErrors::InvalidRecurrenceRule => {
+                NettuError::BadClientData("Invalid recurrence rule specified for the event".into())
+            }
+            UseCaseErrors::StorageError => NettuError::InternalError,
+        })
 }
 
 struct CreateEventUseCase {

@@ -1,9 +1,9 @@
-use crate::shared::auth::protect_route;
 use crate::{
     api::Context,
     event::domain::event_instance::EventInstance,
     shared::usecase::{execute, Usecase},
 };
+use crate::{api::NettuError, shared::auth::protect_route};
 use crate::{calendar::domain::calendar_view::CalendarView, event::domain::event::CalendarEvent};
 use actix_web::{web, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
@@ -21,29 +21,30 @@ pub struct GetEventInstancesReqView {
 
 pub async fn get_event_instances_controller(
     http_req: HttpRequest,
-    params: web::Path<EventPathParams>,
+    path_params: web::Path<EventPathParams>,
     query_params: web::Query<GetEventInstancesReqView>,
     ctx: web::Data<Context>,
-) -> HttpResponse {
-    let user = match protect_route(&http_req, &ctx).await {
-        Ok(u) => u,
-        Err(res) => return res,
-    };
+) -> Result<HttpResponse, NettuError> {
+    let user = protect_route(&http_req, &ctx).await?;
 
     let usecase = GetEventInstancesUseCase {
         user_id: user.id.clone(),
-        event_id: params.event_id.clone(),
+        event_id: path_params.event_id.clone(),
         view: query_params.0,
     };
-    let res = execute(usecase, &ctx).await;
 
-    match res {
-        Ok(r) => HttpResponse::Ok().json(r),
-        Err(e) => match e {
-            UseCaseErrors::InvalidTimespanError => HttpResponse::UnprocessableEntity().finish(),
-            UseCaseErrors::NotFoundError => HttpResponse::NotFound().finish(),
-        },
-    }
+    execute(usecase, &ctx)
+        .await
+        .map(|usecase_res| HttpResponse::Ok().json(usecase_res))
+        .map_err(|e| match e {
+            UseCaseErrors::InvalidTimespanError => {
+                NettuError::BadClientData("The provided start_ts and end_ts is invalid".into())
+            }
+            UseCaseErrors::NotFoundError => NettuError::NotFound(format!(
+                "The event with id: {}, was not found",
+                path_params.event_id
+            )),
+        })
 }
 
 pub struct GetEventInstancesUseCase {

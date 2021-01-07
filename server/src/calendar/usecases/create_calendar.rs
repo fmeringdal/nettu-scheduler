@@ -41,18 +41,23 @@ pub async fn create_calendar_admin_controller(
 pub async fn create_calendar_controller(
     http_req: web::HttpRequest,
     ctx: web::Data<Context>,
-) -> HttpResponse {
-    let user = match protect_route(&http_req, &ctx).await {
-        Ok(u) => u,
-        Err(res) => return res,
-    };
-    let usecase = CreateCalendarUseCase { user_id: user.id };
-    let res = execute(usecase, &ctx).await;
+) -> Result<HttpResponse, NettuError> {
+    let user = protect_route(&http_req, &ctx).await?;
 
-    match res {
-        Ok(json) => HttpResponse::Created().json(json),
-        Err(_) => HttpResponse::UnprocessableEntity().finish(),
-    }
+    let usecase = CreateCalendarUseCase { user_id: user.id };
+
+    execute(usecase, &ctx)
+        .await
+        .map(|usecase_res| HttpResponse::Created().json(usecase_res))
+        .map_err(|e| {
+            match e {
+                UseCaseErrors::StorageError => NettuError::InternalError,
+                // This should never happen
+                UseCaseErrors::UserNotFoundError => {
+                    NettuError::NotFound(format!("The user was not found."))
+                }
+            }
+        })
 }
 
 struct CreateCalendarUseCase {

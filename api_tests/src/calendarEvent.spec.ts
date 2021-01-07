@@ -94,7 +94,7 @@ describe("CalendarEvent API", () => {
     const res2 = await client.events.createException(eventId, {
       exceptionTs: 1000 + 24 * 60 * 60 * 1000,
     });
-    expect(res2.status).toBe(200);
+    expect(res2.status).toBe(201);
 
     const instancesAfterException = await getInstances();
     expect(instancesAfterException.length).toBe(
@@ -130,7 +130,7 @@ describe("CalendarEvent API", () => {
     const res2 = await client.events.createException(eventId, {
       exceptionTs: 1000 + 24 * 60 * 60 * 1000,
     });
-    expect(res2.status).toBe(200);
+    expect(res2.status).toBe(201);
 
     const instancesAfterException = await getInstances();
     expect(instancesAfterException.length).toBe(

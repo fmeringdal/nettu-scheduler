@@ -1,5 +1,8 @@
-use crate::shared::usecase::{execute, Usecase};
 use crate::{api::Context, shared::auth::protect_route};
+use crate::{
+    api::NettuError,
+    shared::usecase::{execute, Usecase},
+};
 use actix_web::{web, HttpRequest, HttpResponse};
 use serde::Deserialize;
 
@@ -18,11 +21,8 @@ pub async fn create_event_exception_controller(
     path_params: web::Path<CreateEventExceptionPathParams>,
     body: web::Json<CreateEventExceptionBody>,
     ctx: web::Data<Context>,
-) -> HttpResponse {
-    let user = match protect_route(&http_req, &ctx).await {
-        Ok(u) => u,
-        Err(res) => return res,
-    };
+) -> Result<HttpResponse, NettuError> {
+    let user = protect_route(&http_req, &ctx).await?;
 
     let usecase = CreateEventExceptionUseCase {
         event_id: path_params.event_id.clone(),
@@ -30,14 +30,16 @@ pub async fn create_event_exception_controller(
         user_id: user.id.clone(),
     };
 
-    let res = execute(usecase, &ctx).await;
-    match res {
-        Ok(_) => HttpResponse::Ok().finish(),
-        Err(e) => match e {
-            UseCaseErrors::NotFoundError => HttpResponse::NotFound().finish(),
-            UseCaseErrors::StorageError => HttpResponse::InternalServerError().finish(),
-        },
-    }
+    execute(usecase, &ctx)
+        .await
+        .map(|_| HttpResponse::Created().finish())
+        .map_err(|e| match e {
+            UseCaseErrors::NotFoundError => NettuError::NotFound(format!(
+                "The event with id: {}, was not found",
+                path_params.event_id
+            )),
+            UseCaseErrors::StorageError => NettuError::InternalError,
+        })
 }
 
 pub struct CreateEventExceptionUseCase {

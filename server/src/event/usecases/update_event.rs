@@ -1,9 +1,9 @@
-use crate::shared::auth::protect_route;
 use crate::{
     api::Context,
     event::domain::event::RRuleOptions,
     shared::usecase::{execute, Usecase},
 };
+use crate::{api::NettuError, shared::auth::protect_route};
 use actix_web::{web, HttpRequest, HttpResponse};
 use serde::Deserialize;
 
@@ -24,32 +24,33 @@ pub struct EventPathParams {
 pub async fn update_event_controller(
     http_req: HttpRequest,
     body: web::Json<UpdateEventBody>,
-    params: web::Path<EventPathParams>,
+    path_params: web::Path<EventPathParams>,
     ctx: web::Data<Context>,
-) -> HttpResponse {
-    let user = match protect_route(&http_req, &ctx).await {
-        Ok(u) => u,
-        Err(res) => return res,
-    };
+) -> Result<HttpResponse, NettuError> {
+    let user = protect_route(&http_req, &ctx).await?;
 
     let usecase = UpdateEventUseCase {
         user_id: user.id.clone(),
         duration: body.duration,
         start_ts: body.start_ts,
         rrule_options: body.rrule_options.clone(),
-        event_id: params.event_id.clone(),
+        event_id: path_params.event_id.clone(),
         busy: body.busy,
     };
-    let res = execute(usecase, &ctx).await;
-    match res {
-        Ok(_) => HttpResponse::Ok().finish(),
-        Err(e) => match e {
-            UseCaseErrors::InvalidRecurrenceRule => HttpResponse::UnprocessableEntity()
-                .body("Invalid recurrence rule specified for the event"),
-            UseCaseErrors::NotFoundError => HttpResponse::NotFound().finish(),
-            UseCaseErrors::StorageError => HttpResponse::InternalServerError().finish(),
-        },
-    }
+
+    execute(usecase, &ctx)
+        .await
+        .map(|_| HttpResponse::Ok().finish())
+        .map_err(|e| match e {
+            UseCaseErrors::NotFoundError => NettuError::NotFound(format!(
+                "The event with id: {}, was not found.",
+                path_params.event_id
+            )),
+            UseCaseErrors::InvalidRecurrenceRule => {
+                NettuError::BadClientData("Invalid recurrence rule specified for the event".into())
+            }
+            UseCaseErrors::StorageError => NettuError::InternalError,
+        })
 }
 
 pub struct UpdateEventUseCase {

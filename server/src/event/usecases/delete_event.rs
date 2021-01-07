@@ -1,5 +1,8 @@
-use crate::shared::usecase::{execute, Usecase};
 use crate::{api::Context, shared::auth::protect_route};
+use crate::{
+    api::NettuError,
+    shared::usecase::{execute, Usecase},
+};
 use actix_web::{web, HttpRequest, HttpResponse};
 use serde::Deserialize;
 
@@ -10,23 +13,25 @@ pub struct PathParams {
 
 pub async fn delete_event_controller(
     http_req: HttpRequest,
-    params: web::Path<PathParams>,
+    path_params: web::Path<PathParams>,
     ctx: web::Data<Context>,
-) -> HttpResponse {
-    let user = match protect_route(&http_req, &ctx).await {
-        Ok(u) => u,
-        Err(res) => return res,
-    };
+) -> Result<HttpResponse, NettuError> {
+    let user = protect_route(&http_req, &ctx).await?;
 
     let usecase = DeleteEventUseCase {
         user_id: user.id.clone(),
-        event_id: params.event_id.clone(),
+        event_id: path_params.event_id.clone(),
     };
-    let res = execute(usecase, &ctx).await;
-    return match res {
-        Ok(_) => HttpResponse::Ok().body("Event deleted"),
-        Err(_) => HttpResponse::NotFound().finish(),
-    };
+
+    execute(usecase, &ctx)
+        .await
+        .map(|_| HttpResponse::Ok().body("Event deleted"))
+        .map_err(|e| match e {
+            UseCaseErrors::NotFound => NettuError::NotFound(format!(
+                "The event with id: {}, was not found",
+                path_params.event_id
+            )),
+        })
 }
 
 pub struct DeleteEventUseCase {
@@ -36,7 +41,7 @@ pub struct DeleteEventUseCase {
 
 #[derive(Debug)]
 pub enum UseCaseErrors {
-    NotFoundError,
+    NotFound,
 }
 
 #[async_trait::async_trait(?Send)]
@@ -55,7 +60,7 @@ impl Usecase for DeleteEventUseCase {
                 ctx.repos.event_repo.delete(&event.id).await;
                 Ok(())
             }
-            _ => Err(UseCaseErrors::NotFoundError {}),
+            _ => Err(UseCaseErrors::NotFound),
         }
     }
 }

@@ -1,5 +1,5 @@
-use crate::event::domain::event_instance::EventInstance;
 use crate::shared::auth::protect_route;
+use crate::{api::NettuError, event::domain::event_instance::EventInstance};
 use crate::{
     event::domain::event::CalendarEvent,
     shared::usecase::{execute, Usecase},
@@ -29,11 +29,8 @@ pub async fn get_calendar_events_controller(
     query_params: web::Query<TimespanParams>,
     params: web::Path<CalendarPathParams>,
     ctx: web::Data<Context>,
-) -> HttpResponse {
-    let user = match protect_route(&http_req, &ctx).await {
-        Ok(u) => u,
-        Err(res) => return res,
-    };
+) -> Result<HttpResponse, NettuError> {
+    let user = protect_route(&http_req, &ctx).await?;
 
     let usecase = GetCalendarEventsUseCase {
         user_id: user.id,
@@ -41,15 +38,19 @@ pub async fn get_calendar_events_controller(
         start_ts: query_params.start_ts,
         end_ts: query_params.end_ts,
     };
-    let res = execute(usecase, &ctx).await;
 
-    match res {
-        Ok(calendar_events) => HttpResponse::Ok().json(calendar_events),
-        Err(e) => match e {
-            UseCaseErrors::InvalidTimespanError => HttpResponse::UnprocessableEntity().finish(),
-            UseCaseErrors::NotFoundError => HttpResponse::NotFound().finish(),
-        },
-    }
+    execute(usecase, &ctx)
+        .await
+        .map(|calendar_events| HttpResponse::Ok().json(calendar_events))
+        .map_err(|e| match e {
+            UseCaseErrors::InvalidTimespanError => {
+                NettuError::BadClientData("The start and end timestamps is invalid".into())
+            }
+            UseCaseErrors::NotFoundError => NettuError::NotFound(format!(
+                "The calendar with id: {}, was not found.",
+                params.calendar_id
+            )),
+        })
 }
 pub struct GetCalendarEventsUseCase {
     pub calendar_id: String,

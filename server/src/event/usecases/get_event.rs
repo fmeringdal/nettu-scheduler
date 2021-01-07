@@ -1,5 +1,5 @@
 use crate::{
-    api::Context,
+    api::{Context, NettuError},
     event::domain::event::CalendarEvent,
     shared::{
         auth::protect_route,
@@ -16,23 +16,25 @@ pub struct PathParams {
 
 pub async fn get_event_controller(
     http_req: HttpRequest,
-    params: web::Path<PathParams>,
+    path_params: web::Path<PathParams>,
     ctx: web::Data<Context>,
-) -> HttpResponse {
-    let user = match protect_route(&http_req, &ctx).await {
-        Ok(u) => u,
-        Err(res) => return res,
-    };
+) -> Result<HttpResponse, NettuError> {
+    let user = protect_route(&http_req, &ctx).await?;
 
     let usecase = GetEventUseCase {
-        event_id: params.event_id.clone(),
+        event_id: path_params.event_id.clone(),
         user_id: user.id.clone(),
     };
-    let res = execute(usecase, &ctx).await;
-    match res {
-        Ok(r) => HttpResponse::Ok().json(r),
-        Err(_) => HttpResponse::NotFound().finish(),
-    }
+
+    execute(usecase, &ctx)
+        .await
+        .map(|calendar_event| HttpResponse::Ok().json(calendar_event))
+        .map_err(|e| match e {
+            UseCaseErrors::NotFoundError => NettuError::NotFound(format!(
+                "The event with id: {}, was not found",
+                path_params.event_id
+            )),
+        })
 }
 
 pub struct GetEventUseCase {

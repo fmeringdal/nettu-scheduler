@@ -1,5 +1,8 @@
-use crate::shared::usecase::{execute, Usecase};
 use crate::{api::Context, shared::auth::protect_route};
+use crate::{
+    api::NettuError,
+    shared::usecase::{execute, Usecase},
+};
 use actix_web::{web, HttpResponse};
 
 use serde::Deserialize;
@@ -13,25 +16,24 @@ pub async fn delete_calendar_controller(
     http_req: web::HttpRequest,
     req: web::Path<DeleteCalendarReq>,
     ctx: web::Data<Context>,
-) -> HttpResponse {
-    let user = match protect_route(&http_req, &ctx).await {
-        Ok(u) => u,
-        Err(res) => return res,
-    };
+) -> Result<HttpResponse, NettuError> {
+    let user = protect_route(&http_req, &ctx).await?;
 
     let usecase = DeleteCalendarUseCase {
         user_id: user.id,
         calendar_id: req.calendar_id.clone(),
     };
 
-    let res = execute(usecase, &ctx).await;
-    match res {
-        Ok(_) => HttpResponse::Ok().body("Calendar deleted"),
-        Err(e) => match e {
-            UseCaseErrors::NotFoundError => HttpResponse::NotFound().finish(),
-            UseCaseErrors::UnableToDelete => HttpResponse::InternalServerError().finish(),
-        },
-    }
+    execute(usecase, &ctx)
+        .await
+        .map(|_| HttpResponse::Ok().body("Calendar deleted"))
+        .map_err(|e| match e {
+            UseCaseErrors::NotFoundError => NettuError::NotFound(format!(
+                "The calendar with id: {}, was not found.",
+                req.calendar_id
+            )),
+            UseCaseErrors::UnableToDelete => NettuError::InternalError,
+        })
 }
 
 #[derive(Debug)]

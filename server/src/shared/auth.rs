@@ -84,19 +84,22 @@ fn decode_token(account: &Account, token: &str) -> anyhow::Result<Claims> {
     Ok(token_data.claims)
 }
 
-pub async fn protect_route(req: &HttpRequest, ctx: &Context) -> Result<User, HttpResponse> {
+pub async fn protect_route(req: &HttpRequest, ctx: &Context) -> Result<User, NettuError> {
     let account = match get_client_account(req, ctx).await {
         Some(account) => account,
         None => {
-            return Err(HttpResponse::Unauthorized()
-                .body("Unable to find the account the client belongs to"))
+            return Err(NettuError::Unauthorized(
+                "Unable to find the account the client belongs to".into(),
+            ));
         }
     };
     let res = auth_user_req(req, &account, ctx).await;
 
     match res {
         Some(user) => Ok(user),
-        None => Err(HttpResponse::Unauthorized().finish()),
+        None => Err(NettuError::Unauthorized(
+            "Unable to find user from credentials".into(),
+        )),
     }
 }
 
