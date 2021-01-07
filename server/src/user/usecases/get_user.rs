@@ -2,7 +2,7 @@ use crate::{
     account::domain::Account,
     shared::{
         auth::protect_account_route,
-        usecase::{perform, Usecase},
+        usecase::{execute, Usecase},
     },
     user::domain::UserDTO,
 };
@@ -30,7 +30,7 @@ pub async fn get_user_controller(
 
     let user_id = User::create_id(&account.id, &path_params.user_id);
     let usecase = GetUserUseCase { account, user_id };
-    let res = perform(usecase, &ctx).await;
+    let res = execute(usecase, &ctx).await;
 
     match res {
         Ok(usecase_res) => {
@@ -67,7 +67,7 @@ impl Usecase for GetUserUseCase {
 
     type Context = Context;
 
-    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let user = match ctx.repos.user_repo.find(&self.user_id).await {
             Some(u) if u.account_id == self.account.id => u,
             _ => return Err(UseCaseErrors::UserNotFoundError),

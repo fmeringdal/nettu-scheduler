@@ -3,7 +3,7 @@ use crate::{
     event::{domain::event::CalendarEvent, repos::IEventRepo},
     shared::{
         auth::protect_route,
-        usecase::{perform, Usecase},
+        usecase::{execute, Usecase},
     },
 };
 use actix_web::{web, HttpRequest, HttpResponse};
@@ -28,7 +28,7 @@ pub async fn get_event_controller(
         event_id: params.event_id.clone(),
         user_id: user.id.clone(),
     };
-    let res = perform(usecase, &ctx).await;
+    let res = execute(usecase, &ctx).await;
     match res {
         Ok(r) => HttpResponse::Ok().json(r),
         Err(_) => HttpResponse::NotFound().finish(),
@@ -53,7 +53,7 @@ impl Usecase for GetEventUseCase {
 
     type Context = Context;
 
-    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let e = ctx.repos.event_repo.find(&self.event_id).await;
         match e {
             Some(event) if event.user_id == self.user_id => Ok(event),

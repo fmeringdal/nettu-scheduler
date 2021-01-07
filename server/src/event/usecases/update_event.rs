@@ -1,7 +1,7 @@
 use crate::{
     api::Context,
     event::domain::event::RRuleOptions,
-    shared::usecase::{perform, Usecase},
+    shared::usecase::{execute, Usecase},
 };
 use crate::{event::repos::IEventRepo, shared::auth::protect_route};
 use actix_web::{web, HttpRequest, HttpResponse};
@@ -40,7 +40,7 @@ pub async fn update_event_controller(
         event_id: params.event_id.clone(),
         busy: body.busy,
     };
-    let res = perform(usecase, &ctx).await;
+    let res = execute(usecase, &ctx).await;
     match res {
         Ok(_) => HttpResponse::Ok().finish(),
         Err(e) => match e {
@@ -76,7 +76,7 @@ impl Usecase for UpdateEventUseCase {
 
     type Context = Context;
 
-    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let mut e = match ctx.repos.event_repo.find(&self.event_id).await {
             Some(event) if event.user_id == self.user_id => event,
             _ => return Err(UseCaseErrors::NotFoundError),
@@ -139,7 +139,7 @@ mod test {
             user_id: String::from("cool"),
         };
         let ctx = Context::create_inmemory();
-        let res = usecase.perform(&ctx).await;
+        let res = usecase.execute(&ctx).await;
         assert!(res.is_err());
     }
 }

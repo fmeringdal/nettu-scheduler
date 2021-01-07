@@ -3,7 +3,7 @@ use crate::{
     api::Context,
     shared::{
         auth::protect_route,
-        usecase::{perform, Usecase},
+        usecase::{execute, Usecase},
     },
 };
 use actix_web::{web, HttpResponse};
@@ -45,7 +45,7 @@ pub async fn create_event_controller(
         user_id: user.id.clone(),
     };
 
-    let res = perform(usecase, &ctx).await;
+    let res = execute(usecase, &ctx).await;
     match res {
         Ok(e) => HttpResponse::Created().json(CreateEventRes { event_id: e.id }),
         Err(e) => match e {
@@ -81,7 +81,7 @@ impl Usecase for CreateEventUseCase {
 
     type Context = Context;
 
-    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let calendar = match ctx.repos.calendar_repo.find(&self.calendar_id).await {
             Some(calendar) if calendar.user_id == self.user_id => calendar,
             _ => return Err(UseCaseErrors::NotFoundError),
@@ -139,7 +139,7 @@ mod test {
             user_id: user.id.clone(),
         };
 
-        let res = usecase.perform(&ctx).await;
+        let res = usecase.execute(&ctx).await;
 
         assert!(res.is_ok());
     }

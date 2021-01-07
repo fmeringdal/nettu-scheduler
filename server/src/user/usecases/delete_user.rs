@@ -1,7 +1,7 @@
 use crate::{account::domain::Account, shared::auth::protect_account_route};
 use crate::{
     api::Context,
-    shared::usecase::{perform, Usecase},
+    shared::usecase::{execute, Usecase},
     user::domain::User,
 };
 use actix_web::{web, HttpRequest, HttpResponse};
@@ -24,7 +24,7 @@ pub async fn delete_user_controller(
 
     let user_id = User::create_id(&account.id, &path_params.user_id);
     let usecase = DeleteUserUseCase { account, user_id };
-    let res = perform(usecase, &ctx).await;
+    let res = execute(usecase, &ctx).await;
 
     match res {
         Ok(usecase_res) => HttpResponse::Ok().body(format!(
@@ -67,7 +67,7 @@ impl Usecase for DeleteUserUseCase {
     // - REMOVE ALL CALENDARS
     // - REMOVE ALL EVENTS
     // - REMOVE FROM ALL SERVICES
-    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let user = match ctx.repos.user_repo.find(&self.user_id).await {
             Some(u) if u.account_id == self.account.id => {
                 match ctx.repos.user_repo.delete(&self.user_id).await {

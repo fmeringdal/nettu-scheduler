@@ -5,7 +5,7 @@ use crate::{
 };
 use crate::{
     calendar::domain::calendar::Calendar,
-    shared::usecase::{perform, Usecase},
+    shared::usecase::{execute, Usecase},
 };
 use crate::{calendar::repos::ICalendarRepo, user::domain::User};
 use actix_web::{web, HttpResponse};
@@ -29,7 +29,7 @@ pub async fn create_calendar_admin_controller(
 
     let user_id = User::create_id(&account.id, &path_params.user_id);
     let usecase = CreateCalendarUseCase { user_id };
-    let res = perform(usecase, &ctx).await;
+    let res = execute(usecase, &ctx).await;
 
     match res {
         Ok(json) => HttpResponse::Created().json(json),
@@ -46,7 +46,7 @@ pub async fn create_calendar_controller(
         Err(res) => return res,
     };
     let usecase = CreateCalendarUseCase { user_id: user.id };
-    let res = perform(usecase, &ctx).await;
+    let res = execute(usecase, &ctx).await;
 
     match res {
         Ok(json) => HttpResponse::Created().json(json),
@@ -78,7 +78,7 @@ impl Usecase for CreateCalendarUseCase {
 
     type Context = Context;
 
-    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let user = ctx.repos.user_repo.find(&self.user_id).await;
         if user.is_none() {
             return Err(UseCaseErrors::UserNotFoundError);

@@ -7,7 +7,7 @@ use crate::{
     },
     shared::{
         auth::ensure_nettu_acct_header,
-        usecase::{perform, Usecase},
+        usecase::{execute, Usecase},
     },
     user::domain::User,
 };
@@ -56,7 +56,7 @@ pub async fn get_user_bookingslots_controller(
         interval: query_params.interval,
     };
 
-    let res = perform(usecase, &ctx).await;
+    let res = execute(usecase, &ctx).await;
 
     match res {
         Ok(r) => HttpResponse::Ok().json(r),
@@ -114,7 +114,7 @@ impl Usecase for GetUserBookingSlotsUsecase {
 
     type Context = Context;
 
-    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let query = BookingSlotsQuery {
             date: self.date.clone(),
             iana_tz: self.iana_tz.clone(),
@@ -142,7 +142,7 @@ impl Usecase for GetUserBookingSlotsUsecase {
             start_ts: booking_timespan.start_ts,
             user_id: self.user_id.clone(),
         };
-        let free_events = perform(freebusy_usecase, ctx).await;
+        let free_events = execute(freebusy_usecase, ctx).await;
 
         match free_events {
             Ok(free_events) => {

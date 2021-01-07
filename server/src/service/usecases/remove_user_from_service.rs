@@ -3,7 +3,7 @@ use crate::{
     service::{domain::ServiceResource, repos::IServiceRepo},
     shared::{
         auth::protect_account_route,
-        usecase::{perform, Usecase},
+        usecase::{execute, Usecase},
     },
     user::domain::User,
 };
@@ -34,7 +34,7 @@ pub async fn remove_user_from_service_controller(
         service_id: path_params.service_id.to_owned(),
         user_id,
     };
-    let res = perform(usecase, &ctx).await;
+    let res = execute(usecase, &ctx).await;
 
     match res {
         Ok(_) => HttpResponse::Ok().body("Service successfully updated"),
@@ -75,7 +75,7 @@ impl Usecase for RemoveUserFromServiceUsecase {
 
     type Context = Context;
 
-    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let mut service = match ctx.repos.service_repo.find(&self.service_id).await {
             Some(service) if service.account_id == self.account.id => service,
             _ => return Err(UseCaseErrors::ServiceNotFoundError),

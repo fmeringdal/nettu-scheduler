@@ -4,7 +4,7 @@ use crate::{
     service::domain::{Service, ServiceResource},
     shared::{
         auth::protect_account_route,
-        usecase::{perform, Usecase},
+        usecase::{execute, Usecase},
     },
     user::domain::User,
 };
@@ -42,7 +42,7 @@ pub async fn add_user_to_service_controller(
         service_id: path_params.service_id.to_owned(),
         user_id,
     };
-    let res = perform(usecase, &ctx).await;
+    let res = execute(usecase, &ctx).await;
 
     match res {
         Ok(_) =>
@@ -85,7 +85,7 @@ impl Usecase for AddUserToServiceUseCase {
 
     type Context = Context;
 
-    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let _user = match ctx.repos.user_repo.find(&self.user_id).await {
             Some(user) if user.account_id == self.account.id => user,
             _ => return Err(UseCaseErrors::UserNotFoundError),

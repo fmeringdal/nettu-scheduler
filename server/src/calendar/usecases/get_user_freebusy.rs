@@ -2,7 +2,7 @@ use crate::event::domain::event_instance::EventInstance;
 use crate::{api::Context, calendar::domain::calendar_view::CalendarView};
 use crate::{
     event::domain::event_instance::get_free_busy,
-    shared::usecase::{perform, Usecase},
+    shared::usecase::{execute, Usecase},
 };
 use crate::{shared::auth::ensure_nettu_acct_header, user::domain::User};
 use actix_web::{web, HttpRequest, HttpResponse};
@@ -43,7 +43,7 @@ pub async fn get_user_freebusy_controller(
         start_ts: query_params.start_ts,
         end_ts: query_params.end_ts,
     };
-    let res = perform(usecase, &ctx).await;
+    let res = execute(usecase, &ctx).await;
 
     match res {
         Ok(r) => HttpResponse::Ok().json(r),
@@ -81,7 +81,7 @@ impl Usecase for GetUserFreeBusyUseCase {
 
     type Context = Context;
 
-    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let view = match CalendarView::create(self.start_ts, self.end_ts) {
             Ok(view) => view,
             Err(_) => return Err(GetUserFreeBusyErrors::InvalidTimespanError),
@@ -230,7 +230,7 @@ mod test {
             end_ts: 172800000,
         };
 
-        let res = usecase.perform(&ctx).await;
+        let res = usecase.execute(&ctx).await;
         assert!(res.is_ok());
         let instances = res.unwrap().free;
         assert_eq!(instances.len(), 2);

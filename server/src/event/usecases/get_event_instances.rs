@@ -1,7 +1,7 @@
 use crate::{
     api::Context,
     event::domain::event_instance::EventInstance,
-    shared::usecase::{perform, Usecase},
+    shared::usecase::{execute, Usecase},
 };
 use crate::{calendar::domain::calendar_view::CalendarView, event::domain::event::CalendarEvent};
 use crate::{event::repos::IEventRepo, shared::auth::protect_route};
@@ -35,7 +35,7 @@ pub async fn get_event_instances_controller(
         event_id: params.event_id.clone(),
         view: query_params.0,
     };
-    let res = perform(usecase, &ctx).await;
+    let res = execute(usecase, &ctx).await;
 
     match res {
         Ok(r) => HttpResponse::Ok().json(r),
@@ -73,7 +73,7 @@ impl Usecase for GetEventInstancesUseCase {
 
     type Context = Context;
 
-    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let e = ctx.repos.event_repo.find(&self.event_id).await;
         match e {
             Some(event) if self.user_id == event.user_id => {

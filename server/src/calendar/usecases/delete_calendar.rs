@@ -2,7 +2,7 @@ use crate::event::repos::IEventRepo;
 use crate::{api::Context, shared::auth::protect_route};
 use crate::{
     calendar::repos::ICalendarRepo,
-    shared::usecase::{perform, Usecase},
+    shared::usecase::{execute, Usecase},
 };
 use actix_web::{web, HttpResponse};
 
@@ -28,7 +28,7 @@ pub async fn delete_calendar_controller(
         calendar_id: req.calendar_id.clone(),
     };
 
-    let res = perform(usecase, &ctx).await;
+    let res = execute(usecase, &ctx).await;
     match res {
         Ok(_) => HttpResponse::Ok().body("Calendar deleted"),
         Err(e) => match e {
@@ -57,7 +57,7 @@ impl Usecase for DeleteCalendarUseCase {
 
     type Context = Context;
 
-    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let calendar = ctx.repos.calendar_repo.find(&self.calendar_id).await;
         match calendar {
             Some(calendar) if calendar.user_id == self.user_id => {

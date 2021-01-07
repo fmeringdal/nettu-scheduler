@@ -1,4 +1,4 @@
-use crate::shared::usecase::{perform, Usecase};
+use crate::shared::usecase::{execute, Usecase};
 use crate::{api::Context, event::repos::IEventRepo, shared::auth::protect_route};
 use actix_web::{web, HttpRequest, HttpResponse};
 use serde::Deserialize;
@@ -30,7 +30,7 @@ pub async fn create_event_exception_controller(
         user_id: user.id.clone(),
     };
 
-    let res = perform(usecase, &ctx).await;
+    let res = execute(usecase, &ctx).await;
     match res {
         Ok(_) => HttpResponse::Ok().finish(),
         Err(e) => match e {
@@ -60,7 +60,7 @@ impl Usecase for CreateEventExceptionUseCase {
 
     type Context = Context;
 
-    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let mut event = match ctx.repos.event_repo.find(&self.event_id).await {
             Some(event) if event.user_id == self.user_id => event,
             _ => return Err(UseCaseErrors::NotFoundError),

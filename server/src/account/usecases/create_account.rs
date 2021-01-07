@@ -1,7 +1,7 @@
 use crate::api::Context;
 use crate::{
     account::domain::Account,
-    shared::usecase::{perform, Usecase},
+    shared::usecase::{execute, Usecase},
 };
 use actix_web::{web, HttpResponse};
 use serde::{Deserialize, Serialize};
@@ -20,7 +20,7 @@ pub async fn create_account_controller(
     }
 
     let usecase = CreateAccountUseCase {};
-    let res = perform(usecase, &ctx).await;
+    let res = execute(usecase, &ctx).await;
 
     match res {
         Ok(json) => HttpResponse::Created().json(json),
@@ -52,7 +52,7 @@ impl Usecase for CreateAccountUseCase {
 
     type Context = Context;
 
-    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let account = Account::new();
         let res = ctx.repos.account_repo.insert(&account).await;
         match res {

@@ -3,7 +3,7 @@ use actix_web::{HttpRequest, HttpResponse};
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use serde::{Deserialize, Serialize};
 
-use crate::shared::usecase::perform;
+use crate::shared::usecase::execute;
 use crate::{
     account::{self, repos::IAccountRepo},
     user::{domain::User, repos::IUserRepo, usecases::create_user::CreateUserUseCase},
@@ -39,7 +39,7 @@ async fn create_user_if_not_exists(
         account_id: String::from(account_id),
         external_user_id: String::from(external_user_id),
     };
-    let res = perform(usecase, ctx).await;
+    let res = execute(usecase, ctx).await;
     match res {
         Ok(res) => Some(res.user),
         Err(_) => None,

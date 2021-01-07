@@ -3,7 +3,7 @@ use crate::{
     service::{domain::Service, repos::IServiceRepo},
     shared::{
         auth::protect_account_route,
-        usecase::{perform, Usecase},
+        usecase::{execute, Usecase},
     },
 };
 use crate::{api::Context, service::domain::ServiceDTO};
@@ -36,7 +36,7 @@ pub async fn get_service_controller(
         service_id: path_params.service_id.clone(),
     };
 
-    let res = perform(usecase, &ctx).await;
+    let res = execute(usecase, &ctx).await;
 
     match res {
         Ok(res) => {
@@ -71,7 +71,7 @@ impl Usecase for GetServiceUseCase {
 
     type Context = Context;
 
-    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let res = ctx.repos.service_repo.find(&self.service_id).await;
         match res {
             Some(service) if service.account_id == self.account.id => Ok(UseCaseRes { service }),

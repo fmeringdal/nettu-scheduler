@@ -2,7 +2,7 @@ use crate::api::Context;
 use crate::shared::auth::protect_account_route;
 use crate::{
     account::domain::Account,
-    shared::usecase::{perform, Usecase},
+    shared::usecase::{execute, Usecase},
 };
 use actix_web::{web, HttpResponse};
 use serde::Deserialize;
@@ -28,7 +28,7 @@ pub async fn set_account_pub_key_controller(
         public_key_b64: body.public_key_b64.clone(),
     };
 
-    let res = perform(usecase, &ctx).await;
+    let res = execute(usecase, &ctx).await;
 
     match res {
         Ok(()) => HttpResponse::Ok().finish(),
@@ -60,7 +60,7 @@ impl Usecase for SetAccountPubKeyUseCase {
 
     type Context = Context;
 
-    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         if self
             .account
             .set_public_key_b64(self.public_key_b64.clone())

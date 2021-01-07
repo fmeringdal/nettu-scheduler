@@ -7,15 +7,15 @@ pub trait Usecase {
     type Errors;
     type Context;
 
-    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors>;
+    async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors>;
 }
 
-pub async fn perform<U>(mut usecase: U, ctx: &U::Context) -> Result<U::Response, U::Errors>
+pub async fn execute<U>(mut usecase: U, ctx: &U::Context) -> Result<U::Response, U::Errors>
 where
     U: Usecase,
     U::Errors: Debug,
 {
-    let res = usecase.perform(ctx).await;
+    let res = usecase.execute(ctx).await;
 
     if let Err(e) = &res {
         println!("Usecase error: {:?}", e);

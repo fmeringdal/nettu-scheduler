@@ -2,7 +2,7 @@ use crate::event::domain::event_instance::EventInstance;
 use crate::shared::auth::protect_route;
 use crate::{
     event::domain::event::CalendarEvent,
-    shared::usecase::{perform, Usecase},
+    shared::usecase::{execute, Usecase},
 };
 
 use crate::{
@@ -41,7 +41,7 @@ pub async fn get_calendar_events_controller(
         start_ts: query_params.start_ts,
         end_ts: query_params.end_ts,
     };
-    let res = perform(usecase, &ctx).await;
+    let res = execute(usecase, &ctx).await;
 
     match res {
         Ok(calendar_events) => HttpResponse::Ok().json(calendar_events),
@@ -85,7 +85,7 @@ impl Usecase for GetCalendarEventsUseCase {
 
     type Context = Context;
 
-    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let calendar = ctx.repos.calendar_repo.find(&self.calendar_id).await;
 
         let view = CalendarView::create(self.start_ts, self.end_ts);

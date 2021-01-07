@@ -2,7 +2,7 @@ use crate::shared::auth::protect_route;
 use crate::{
     api::Context,
     calendar::domain::calendar::Calendar,
-    shared::usecase::{perform, Usecase},
+    shared::usecase::{execute, Usecase},
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
@@ -28,7 +28,7 @@ pub async fn get_calendar_controller(
         calendar_id: req.calendar_id.clone(),
     };
 
-    let res = perform(usecase, &ctx).await;
+    let res = execute(usecase, &ctx).await;
     match res {
         Ok(cal) => HttpResponse::Ok().json(cal),
         Err(_) => HttpResponse::NotFound().finish(),
@@ -53,7 +53,7 @@ impl Usecase for GetCalendarUseCase {
 
     type Context = Context;
 
-    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let cal = ctx.repos.calendar_repo.find(&self.calendar_id).await;
         match cal {
             Some(cal) if cal.user_id == self.user_id => Ok(cal),

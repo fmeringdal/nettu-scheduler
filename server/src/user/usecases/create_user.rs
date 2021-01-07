@@ -1,5 +1,5 @@
 use crate::shared::auth::protect_account_route;
-use crate::shared::usecase::{perform, Usecase};
+use crate::shared::usecase::{execute, Usecase};
 use crate::{
     api::Context,
     user::domain::{User, UserDTO},
@@ -28,7 +28,7 @@ pub async fn create_user_controller(
         account_id: account.id.clone(),
         external_user_id: body.user_id.clone(),
     };
-    let res = perform(usecase, &ctx.into_inner()).await;
+    let res = execute(usecase, &ctx.into_inner()).await;
 
     match res {
         Ok(usecase_res) => {
@@ -63,7 +63,7 @@ impl Usecase for CreateUserUseCase {
     type Errors = UseCaseErrors;
     type Context = Context;
 
-    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let user = User::new(&self.account_id, &self.external_user_id);
 
         if let Some(_existing_user) = ctx.repos.user_repo.find(&user.id).await {

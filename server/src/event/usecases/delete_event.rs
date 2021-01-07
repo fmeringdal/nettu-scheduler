@@ -1,7 +1,7 @@
 use crate::{api::Context, shared::auth::protect_route};
 use crate::{
     event::repos::IEventRepo,
-    shared::usecase::{perform, Usecase},
+    shared::usecase::{execute, Usecase},
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use serde::Deserialize;
@@ -25,7 +25,7 @@ pub async fn delete_event_controller(
         user_id: user.id.clone(),
         event_id: params.event_id.clone(),
     };
-    let res = perform(usecase, &ctx).await;
+    let res = execute(usecase, &ctx).await;
     return match res {
         Ok(_) => HttpResponse::Ok().body("Event deleted"),
         Err(_) => HttpResponse::NotFound().finish(),
@@ -51,7 +51,7 @@ impl Usecase for DeleteEventUseCase {
     type Context = Context;
 
     // TODO: use only one db call
-    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let e = ctx.repos.event_repo.find(&self.event_id).await;
         match e {
             Some(event) if event.user_id == self.user_id => {

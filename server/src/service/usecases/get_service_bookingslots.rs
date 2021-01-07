@@ -10,7 +10,7 @@ use crate::{
 };
 use crate::{
     event::domain::booking_slots::UserFreeEvents,
-    shared::usecase::{perform, Usecase},
+    shared::usecase::{execute, Usecase},
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 
@@ -55,7 +55,7 @@ pub async fn get_service_bookingslots_controller(
         interval: query_params.interval,
     };
 
-    let res = perform(usecase, &ctx).await;
+    let res = execute(usecase, &ctx).await;
 
     match res {
         Ok(r) => {
@@ -119,7 +119,7 @@ impl Usecase for GetServiceBookingSlotsUseCase {
 
     type Context = Context;
 
-    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         if !validate_slots_interval(self.interval) {
             return Err(UseCaseErrors::InvalidIntervalError);
         }
@@ -160,7 +160,7 @@ impl Usecase for GetServiceBookingSlotsUseCase {
                 user_id: user.user_id.clone(),
             };
 
-            let free_events = perform(usecase, &ctx).await;
+            let free_events = execute(usecase, &ctx).await;
 
             match free_events {
                 Ok(free_events) => {

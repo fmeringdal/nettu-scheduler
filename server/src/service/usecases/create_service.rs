@@ -3,7 +3,7 @@ use crate::{
 };
 use crate::{
     api::Context,
-    shared::usecase::{perform, Usecase},
+    shared::usecase::{execute, Usecase},
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use serde::Serialize;
@@ -24,7 +24,7 @@ pub async fn create_service_controller(
     };
 
     let usecase = CreateServiceUseCase { account };
-    let res = perform(usecase, &ctx).await;
+    let res = execute(usecase, &ctx).await;
 
     match res {
         Ok(usecase_res) => {
@@ -59,7 +59,7 @@ impl Usecase for CreateServiceUseCase {
 
     type Context = Context;
 
-    async fn perform(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let service = Service::new(&self.account.id);
         let res = ctx.repos.service_repo.insert(&service).await;
         match res {
