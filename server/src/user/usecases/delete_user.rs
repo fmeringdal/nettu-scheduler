@@ -1,4 +1,4 @@
-use crate::{account::domain::Account, shared::auth::protect_account_route};
+use crate::{account::domain::Account, api::NettuError, shared::auth::protect_account_route};
 use crate::{
     api::Context,
     shared::usecase::{execute, Usecase},
@@ -16,28 +16,25 @@ pub async fn delete_user_controller(
     http_req: HttpRequest,
     path_params: web::Json<PathParams>,
     ctx: web::Data<Context>,
-) -> HttpResponse {
-    let account = match protect_account_route(&http_req, &ctx).await {
-        Ok(a) => a,
-        Err(res) => return res,
-    };
+) -> Result<HttpResponse, NettuError> {
+    let account = protect_account_route(&http_req, &ctx).await?;
 
     let user_id = User::create_id(&account.id, &path_params.user_id);
     let usecase = DeleteUserUseCase { account, user_id };
-    let res = execute(usecase, &ctx).await;
-
-    match res {
-        Ok(usecase_res) => HttpResponse::Ok().body(format!(
-            "Used: {} is deleted.",
-            usecase_res.user.external_id
-        )),
-        Err(e) => match e {
-            UseCaseErrors::StorageError => HttpResponse::InternalServerError().finish(),
+    execute(usecase, &ctx)
+        .await
+        .map(|usecase_res| {
+            HttpResponse::Ok().body(format!(
+                "Used: {} is deleted.",
+                usecase_res.user.external_id
+            ))
+        })
+        .map_err(|e| match e {
+            UseCaseErrors::StorageError => NettuError::InternalError,
             UseCaseErrors::UserNotFoundError => {
-                HttpResponse::NotFound().body("A user with that id was not found.")
+                NettuError::NotFound(format!("A user with that id was not found."))
             }
-        },
-    }
+        })
 }
 
 struct DeleteUserUseCase {

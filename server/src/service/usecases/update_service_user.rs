@@ -1,13 +1,14 @@
+use crate::api::Context;
 use crate::{
     account::domain::Account,
-    service::{domain::Service, repos::IServiceRepo},
+    api::NettuError,
+    service::domain::Service,
     shared::{
         auth::protect_account_route,
         usecase::{execute, Usecase},
     },
     user::domain::User,
 };
-use crate::{api::Context, user::repos::IUserRepo};
 use actix_web::{web, HttpRequest, HttpResponse};
 
 use serde::Deserialize;
@@ -29,11 +30,8 @@ pub async fn update_service_user_controller(
     body: web::Json<BodyParams>,
     path_params: web::Path<PathParams>,
     ctx: web::Data<Context>,
-) -> HttpResponse {
-    let account = match protect_account_route(&http_req, &ctx).await {
-        Ok(a) => a,
-        Err(res) => return res,
-    };
+) -> Result<HttpResponse, NettuError> {
+    let account = protect_account_route(&http_req, &ctx).await?;
 
     let user_id = User::create_id(&account.id, &path_params.user_id);
     let usecase = UpdateServiceUserUseCase {
@@ -42,26 +40,24 @@ pub async fn update_service_user_controller(
         service_id: path_params.service_id.to_owned(),
         user_id,
     };
-    let res = execute(usecase, &ctx).await;
 
-    match res {
-        Ok(_) => HttpResponse::Ok().body("Service successfully updated"),
-        Err(e) => match e {
-            UseCaseErrors::StorageError => HttpResponse::InternalServerError().finish(),
+    execute(usecase, &ctx).await
+        .map(|_| HttpResponse::Ok().body("Service successfully updated"))
+        .map_err(|e| match e {
+            UseCaseErrors::StorageError => NettuError::InternalError,
             UseCaseErrors::ServiceNotFoundError => {
-                HttpResponse::NotFound().body("The requested service was not found")
+                NettuError::NotFound("The requested service was not found".into())
             }
             UseCaseErrors::UserNotFoundError => {
-                HttpResponse::NotFound().body("The specified user was not found")
+                NettuError::NotFound("The specified user was not found".into())
             }
             UseCaseErrors::CalendarNotOwnedByUser(calendar_id) => {
-                HttpResponse::Forbidden().body(format!(
-                    "The calendar: {}, was not found among the calendars for the specified user",
+                NettuError::NotFound(format!(
+                    "The calendar with id: {}, was not found among the calendars for the specified user",
                     calendar_id
                 ))
             }
-        },
-    }
+        })
 }
 
 struct UpdateServiceUserUseCase {

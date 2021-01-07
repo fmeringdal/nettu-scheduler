@@ -1,5 +1,6 @@
 use crate::{
-    account::domain::Account, service::domain::Service, shared::auth::protect_account_route,
+    account::domain::Account, api::NettuError, service::domain::Service,
+    shared::auth::protect_account_route,
 };
 use crate::{
     api::Context,
@@ -17,26 +18,22 @@ struct CreateServiceRes {
 pub async fn create_service_controller(
     http_req: HttpRequest,
     ctx: web::Data<Context>,
-) -> HttpResponse {
-    let account = match protect_account_route(&http_req, &ctx).await {
-        Ok(a) => a,
-        Err(res) => return res,
-    };
+) -> Result<HttpResponse, NettuError> {
+    let account = protect_account_route(&http_req, &ctx).await?;
 
     let usecase = CreateServiceUseCase { account };
-    let res = execute(usecase, &ctx).await;
 
-    match res {
-        Ok(usecase_res) => {
+    execute(usecase, &ctx)
+        .await
+        .map(|usecase_res| {
             let res = CreateServiceRes {
                 service_id: usecase_res.service.id,
             };
             HttpResponse::Created().json(res)
-        }
-        Err(e) => match e {
-            UseCaseErrors::StorageError => HttpResponse::InternalServerError().finish(),
-        },
-    }
+        })
+        .map_err(|e| match e {
+            UseCaseErrors::StorageError => NettuError::InternalError,
+        })
 }
 
 struct CreateServiceUseCase {

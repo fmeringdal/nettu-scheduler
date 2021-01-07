@@ -1,14 +1,13 @@
-use account::domain::Account;
 use actix_web::{HttpRequest, HttpResponse};
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use serde::{Deserialize, Serialize};
 
-use crate::shared::usecase::execute;
 use crate::{
-    account::{self, repos::IAccountRepo},
-    user::{domain::User, repos::IUserRepo, usecases::create_user::CreateUserUseCase},
+    account::domain::Account,
+    user::{domain::User, usecases::create_user::CreateUserUseCase},
     Context,
 };
+use crate::{api::NettuError, shared::usecase::execute};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -117,16 +116,20 @@ pub fn ensure_nettu_acct_header(req: &HttpRequest) -> Result<String, HttpRespons
 pub async fn protect_account_route(
     req: &HttpRequest,
     ctx: &Context,
-) -> Result<Account, HttpResponse> {
+) -> Result<Account, NettuError> {
     let api_key = match req.headers().get("x-api-key") {
         Some(api_key) => match api_key.to_str() {
             Ok(api_key) => api_key,
-            Err(_) => return Err(HttpResponse::Unauthorized().body("Malformed api key provided")),
+            Err(_) => {
+                return Err(NettuError::Unauthorized(format!(
+                    "Malformed api key provided"
+                )))
+            }
         },
         None => {
-            return Err(
-                HttpResponse::Unauthorized().body("Unable to find api-key in x-api-key header")
-            )
+            return Err(NettuError::Unauthorized(format!(
+                "Unable to find api-key in x-api-key header"
+            )))
         }
     };
 
@@ -134,7 +137,9 @@ pub async fn protect_account_route(
 
     match account {
         Some(acc) => Ok(acc),
-        None => Err(HttpResponse::Unauthorized().body("Invalid api key provided")),
+        None => Err(NettuError::Unauthorized(format!(
+            "Invalid api-key provided in x-api-key header"
+        ))),
     }
 }
 

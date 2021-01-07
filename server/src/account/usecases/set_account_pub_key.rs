@@ -1,4 +1,4 @@
-use crate::api::Context;
+use crate::api::{Context, NettuError};
 use crate::shared::auth::protect_account_route;
 use crate::{
     account::domain::Account,
@@ -17,28 +17,23 @@ pub async fn set_account_pub_key_controller(
     http_req: web::HttpRequest,
     ctx: web::Data<Context>,
     body: web::Json<SetAccountPubKeyReq>,
-) -> HttpResponse {
-    let account = match protect_account_route(&http_req, &ctx).await {
-        Ok(a) => a,
-        Err(res) => return res,
-    };
+) -> Result<HttpResponse, NettuError> {
+    let account = protect_account_route(&http_req, &ctx).await?;
 
     let usecase = SetAccountPubKeyUseCase {
         account,
         public_key_b64: body.public_key_b64.clone(),
     };
 
-    let res = execute(usecase, &ctx).await;
-
-    match res {
-        Ok(()) => HttpResponse::Ok().finish(),
-        Err(e) => match e {
+    execute(usecase, &ctx)
+        .await
+        .map(|_| HttpResponse::Ok().finish())
+        .map_err(|e| match e {
             UseCaseErrors::InvalidBase64Key => {
-                HttpResponse::UnprocessableEntity().body("Invalid base64 encoding of public key")
+                NettuError::BadClientData(format!("Invalid base64 encoding of public key"))
             }
-            UseCaseErrors::StorageError => HttpResponse::InternalServerError().finish(),
-        },
-    }
+            UseCaseErrors::StorageError => NettuError::InternalError,
+        })
 }
 
 struct SetAccountPubKeyUseCase {

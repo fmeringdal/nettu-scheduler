@@ -4,7 +4,7 @@ use crate::{
     user::domain::{User, UserDTO},
 };
 use crate::{api::NettuError, shared::auth::protect_account_route};
-use actix_web::{web, HttpRequest, HttpResponse, Responder};
+use actix_web::{web, HttpRequest, HttpResponse};
 
 use serde::Deserialize;
 
@@ -18,11 +18,8 @@ pub async fn create_user_controller(
     http_req: HttpRequest,
     body: web::Json<BodyParams>,
     ctx: web::Data<Context>,
-) -> impl Responder {
-    let account = match protect_account_route(&http_req, &ctx).await {
-        Ok(a) => a,
-        Err(_) => return Err(NettuError::Unauthorized),
-    };
+) -> Result<HttpResponse, NettuError> {
+    let account = protect_account_route(&http_req, &ctx).await?;
 
     let usecase = CreateUserUseCase {
         account_id: account.id.clone(),

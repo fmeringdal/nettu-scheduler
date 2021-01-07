@@ -1,6 +1,6 @@
 use crate::{
     api::Context,
-    event::{domain::event::CalendarEvent, repos::IEventRepo},
+    event::domain::event::CalendarEvent,
     shared::{
         auth::protect_route,
         usecase::{execute, Usecase},

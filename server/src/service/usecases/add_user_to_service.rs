@@ -1,4 +1,4 @@
-use crate::api::Context;
+use crate::api::{Context, NettuError};
 use crate::{
     account::domain::Account,
     service::domain::{Service, ServiceResource},
@@ -29,11 +29,8 @@ pub async fn add_user_to_service_controller(
     body: web::Json<BodyParams>,
     path_params: web::Path<PathParams>,
     ctx: web::Data<Context>,
-) -> HttpResponse {
-    let account = match protect_account_route(&http_req, &ctx).await {
-        Ok(a) => a,
-        Err(res) => return res,
-    };
+) -> Result<HttpResponse, NettuError> {
+    let account = protect_account_route(&http_req, &ctx).await?;
 
     let user_id = User::create_id(&account.id, &body.user_id);
     let usecase = AddUserToServiceUseCase {
@@ -42,19 +39,16 @@ pub async fn add_user_to_service_controller(
         service_id: path_params.service_id.to_owned(),
         user_id,
     };
-    let res = execute(usecase, &ctx).await;
 
-    match res {
-        Ok(_) =>
-            HttpResponse::Ok().body("Service successfully updated"),
-        Err(e) => match e {
-            UseCaseErrors::StorageError => HttpResponse::InternalServerError().finish(),
-            UseCaseErrors::ServiceNotFoundError => HttpResponse::NotFound().body("The requested service was not found"),
-            UseCaseErrors::UserNotFoundError => HttpResponse::NotFound().body("The specified user was not found"),
-            UseCaseErrors::UserAlreadyInService => HttpResponse::Forbidden().body("The specified user is already registered on the service, can not add the user more than once."),
-            UseCaseErrors::CalendarNotOwnedByUser(calendar_id) => HttpResponse::Forbidden().body(format!("The calendar: {}, was not found among the calendars for the specified user", calendar_id)),
-        }
-    }
+    execute(usecase, &ctx).await
+        .map(|_| HttpResponse::Ok().body("Service successfully updated"))
+        .map_err(|e| match e {
+            UseCaseErrors::StorageError => NettuError::InternalError,
+            UseCaseErrors::ServiceNotFoundError => NettuError::NotFound(format!("The requested service was not found")),
+            UseCaseErrors::UserNotFoundError => NettuError::NotFound(format!("The specified user was not found")),
+            UseCaseErrors::CalendarNotOwnedByUser(calendar_id) => NettuError::NotFound(format!("The calendar: {}, was not found among the calendars for the specified user", calendar_id)),
+            UseCaseErrors::UserAlreadyInService => NettuError::Conflict(format!("The specified user is already registered on the service, can not add the user more than once.")),
+        })
 }
 
 struct AddUserToServiceUseCase {

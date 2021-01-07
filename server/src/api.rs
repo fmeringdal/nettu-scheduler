@@ -88,12 +88,14 @@ impl Context {
 pub enum NettuError {
     #[error("data store disconnected")]
     InternalError,
-    #[error("data store disconnected")]
-    BadClientData,
-    #[error("There was a conflict with the request. Conflict message: `{0}`")]
+    #[error("Invalid data provided: Error message: `{0}`")]
+    BadClientData(String),
+    #[error("There was a conflict with the request. Error message: `{0}`")]
     Conflict(String),
-    #[error("Unauthorized request")]
-    Unauthorized,
+    #[error("Unauthorized request. Error message: `{0}`")]
+    Unauthorized(String),
+    #[error("404 Not found. Error message: `{0}`")]
+    NotFound(String),
 }
 
 impl actix_web::error::ResponseError for NettuError {
@@ -106,9 +108,10 @@ impl actix_web::error::ResponseError for NettuError {
     fn status_code(&self) -> StatusCode {
         match *self {
             NettuError::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
-            NettuError::BadClientData => StatusCode::BAD_REQUEST,
-            NettuError::Unauthorized => StatusCode::UNAUTHORIZED,
+            NettuError::BadClientData(_) => StatusCode::BAD_REQUEST,
+            NettuError::Unauthorized(_) => StatusCode::UNAUTHORIZED,
             NettuError::Conflict(_) => StatusCode::CONFLICT,
+            NettuError::NotFound(_) => StatusCode::NOT_FOUND,
         }
     }
 }

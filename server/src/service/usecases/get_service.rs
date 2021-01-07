@@ -1,6 +1,7 @@
 use crate::{
     account::domain::Account,
-    service::{domain::Service, repos::IServiceRepo},
+    api::NettuError,
+    service::domain::Service,
     shared::{
         auth::protect_account_route,
         usecase::{execute, Usecase},
@@ -25,28 +26,26 @@ pub async fn get_service_controller(
     http_req: HttpRequest,
     path_params: web::Path<PathParams>,
     ctx: web::Data<Context>,
-) -> HttpResponse {
-    let account = match protect_account_route(&http_req, &ctx).await {
-        Ok(a) => a,
-        Err(res) => return res,
-    };
+) -> Result<HttpResponse, NettuError> {
+    let account = protect_account_route(&http_req, &ctx).await?;
 
     let usecase = GetServiceUseCase {
         account,
         service_id: path_params.service_id.clone(),
     };
 
-    let res = execute(usecase, &ctx).await;
-
-    match res {
-        Ok(res) => {
-            let dto = ServiceDTO::new(&res.service);
+    execute(usecase, &ctx)
+        .await
+        .map(|usecase_res| {
+            let dto = ServiceDTO::new(&usecase_res.service);
             HttpResponse::Ok().json(dto)
-        }
-        Err(e) => match e {
-            UseCaseErrors::NotFoundError => HttpResponse::NotFound().finish(),
-        },
-    }
+        })
+        .map_err(|e| match e {
+            UseCaseErrors::NotFoundError => NettuError::NotFound(format!(
+                "The service with id: {} was not found.",
+                path_params.service_id
+            )),
+        })
 }
 
 struct GetServiceUseCase {

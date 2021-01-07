@@ -1,13 +1,12 @@
+use crate::user::domain::User;
 use crate::{
-    api::Context,
+    api::{Context, NettuError},
     shared::auth::{protect_account_route, protect_route},
-    user::repos::IUserRepo,
 };
 use crate::{
     calendar::domain::calendar::Calendar,
     shared::usecase::{execute, Usecase},
 };
-use crate::{calendar::repos::ICalendarRepo, user::domain::User};
 use actix_web::{web, HttpResponse};
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
@@ -21,20 +20,22 @@ pub async fn create_calendar_admin_controller(
     http_req: web::HttpRequest,
     path_params: web::Json<AdminControllerPathParams>,
     ctx: web::Data<Context>,
-) -> HttpResponse {
-    let account = match protect_account_route(&http_req, &ctx).await {
-        Ok(u) => u,
-        Err(res) => return res,
-    };
+) -> Result<HttpResponse, NettuError> {
+    let account = protect_account_route(&http_req, &ctx).await?;
 
     let user_id = User::create_id(&account.id, &path_params.user_id);
     let usecase = CreateCalendarUseCase { user_id };
-    let res = execute(usecase, &ctx).await;
 
-    match res {
-        Ok(json) => HttpResponse::Created().json(json),
-        Err(_) => HttpResponse::UnprocessableEntity().finish(),
-    }
+    execute(usecase, &ctx)
+        .await
+        .map(|json| HttpResponse::Created().json(json))
+        .map_err(|e| match e {
+            UseCaseErrors::StorageError => NettuError::InternalError,
+            UseCaseErrors::UserNotFoundError => NettuError::NotFound(format!(
+                "The user with id: {}, was not found.",
+                path_params.user_id
+            )),
+        })
 }
 
 pub async fn create_calendar_controller(

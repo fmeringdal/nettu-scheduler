@@ -1,15 +1,13 @@
 use crate::{
     account::domain::Account,
+    api::NettuError,
     shared::{
         auth::protect_account_route,
         usecase::{execute, Usecase},
     },
     user::domain::UserDTO,
 };
-use crate::{
-    api::Context,
-    user::{domain::User, repos::IUserRepo},
-};
+use crate::{api::Context, user::domain::User};
 use actix_web::{web, HttpRequest, HttpResponse};
 use serde::Deserialize;
 
@@ -22,27 +20,22 @@ pub async fn get_user_controller(
     http_req: HttpRequest,
     path_params: web::Json<PathParams>,
     ctx: web::Data<Context>,
-) -> HttpResponse {
-    let account = match protect_account_route(&http_req, &ctx).await {
-        Ok(a) => a,
-        Err(res) => return res,
-    };
+) -> Result<HttpResponse, NettuError> {
+    let account = protect_account_route(&http_req, &ctx).await?;
 
     let user_id = User::create_id(&account.id, &path_params.user_id);
     let usecase = GetUserUseCase { account, user_id };
-    let res = execute(usecase, &ctx).await;
-
-    match res {
-        Ok(usecase_res) => {
+    execute(usecase, &ctx)
+        .await
+        .map(|usecase_res| {
             let dto = UserDTO::new(&usecase_res.user);
             HttpResponse::Ok().json(dto)
-        }
-        Err(e) => match e {
+        })
+        .map_err(|e| match e {
             UseCaseErrors::UserNotFoundError => {
-                HttpResponse::NotFound().body("A user with that id was not found.")
+                NettuError::NotFound(format!("A user with that id was not found."))
             }
-        },
-    }
+        })
 }
 
 struct GetUserUseCase {

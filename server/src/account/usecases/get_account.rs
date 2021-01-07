@@ -1,4 +1,4 @@
-use crate::api::Context;
+use crate::api::{Context, NettuError};
 use crate::shared::auth::protect_account_route;
 use actix_web::{web, HttpResponse};
 use serde::{Deserialize, Serialize};
@@ -17,16 +17,13 @@ pub struct GetAccountRes {
 pub async fn get_account_controller(
     http_req: web::HttpRequest,
     ctx: web::Data<Context>,
-) -> HttpResponse {
-    let account = match protect_account_route(&http_req, &ctx).await {
-        Ok(a) => a,
-        Err(res) => return res,
-    };
+) -> Result<HttpResponse, NettuError> {
+    let account = protect_account_route(&http_req, &ctx).await?;
 
     let res = GetAccountRes {
         id: account.id.clone(),
         public_key_b64: account.public_key_b64,
     };
 
-    HttpResponse::Ok().json(res)
+    Ok(HttpResponse::Ok().json(res))
 }

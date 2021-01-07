@@ -1,9 +1,5 @@
-use crate::event::repos::IEventRepo;
+use crate::shared::usecase::{execute, Usecase};
 use crate::{api::Context, shared::auth::protect_route};
-use crate::{
-    calendar::repos::ICalendarRepo,
-    shared::usecase::{execute, Usecase},
-};
 use actix_web::{web, HttpResponse};
 
 use serde::Deserialize;

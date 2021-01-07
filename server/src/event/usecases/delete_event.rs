@@ -1,8 +1,5 @@
+use crate::shared::usecase::{execute, Usecase};
 use crate::{api::Context, shared::auth::protect_route};
-use crate::{
-    event::repos::IEventRepo,
-    shared::usecase::{execute, Usecase},
-};
 use actix_web::{web, HttpRequest, HttpResponse};
 use serde::Deserialize;
 
