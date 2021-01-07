@@ -28,12 +28,14 @@ pub fn find<T: Clone + Entity>(val_id: &str, collection: &Mutex<Vec<T>>) -> Opti
     None
 }
 
-
-pub fn find_by<T: Clone + Entity, F: Fn(&T) -> bool>(collection: &Mutex<Vec<T>>, compare: F) -> Vec<T> {
+pub fn find_by<T: Clone + Entity, F: Fn(&T) -> bool>(
+    collection: &Mutex<Vec<T>>,
+    compare: F,
+) -> Vec<T> {
     let collection = collection.lock().unwrap();
     let mut items = vec![];
     for item in collection.iter() {
-        if compare(item){
+        if compare(item) {
             items.push(item.clone());
         }
     }
@@ -51,8 +53,10 @@ pub fn delete<T: Clone + Entity>(val_id: &str, collection: &Mutex<Vec<T>>) -> Op
     None
 }
 
-
-pub fn delete_by<T: Clone + Entity, F: Fn(&T) -> bool>(collection: &Mutex<Vec<T>>, compare: F) -> DeleteResult {
+pub fn delete_by<T: Clone + Entity, F: Fn(&T) -> bool>(
+    collection: &Mutex<Vec<T>>,
+    compare: F,
+) -> DeleteResult {
     let mut collection = collection.lock().unwrap();
     let mut deleted_count = 0;
 
@@ -64,7 +68,5 @@ pub fn delete_by<T: Clone + Entity, F: Fn(&T) -> bool>(collection: &Mutex<Vec<T>
         }
     }
 
-    DeleteResult {
-        deleted_count
-    }
+    DeleteResult { deleted_count }
 }

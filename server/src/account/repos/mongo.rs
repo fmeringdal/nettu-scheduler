@@ -4,7 +4,7 @@ use super::IAccountRepo;
 use crate::shared::mongo_repo;
 use mongo_repo::MongoDocument;
 use mongodb::{
-    bson::{doc, from_bson, oid::ObjectId, to_bson, Bson, Document},
+    bson::{doc, oid::ObjectId, Document},
     Collection, Database,
 };
 use serde::{Deserialize, Serialize};

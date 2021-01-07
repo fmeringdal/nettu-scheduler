@@ -4,7 +4,7 @@ use crate::{event::domain::event::RRuleOptions, shared::mongo_repo};
 use mongo_repo::MongoDocument;
 use mongodb::{
     bson::doc,
-    bson::{from_bson, oid::ObjectId, to_bson, Bson, Document},
+    bson::{oid::ObjectId, Document},
     Collection, Database,
 };
 use serde::{Deserialize, Serialize};

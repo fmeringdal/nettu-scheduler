@@ -1561,6 +1561,7 @@ dependencies = [
  "rand 0.8.0",
  "rrule",
  "serde",
+ "thiserror",
  "tokio 1.0.1",
 ]
 

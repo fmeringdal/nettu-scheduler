@@ -5,8 +5,14 @@ use crate::{
     service::repos::{IServiceRepo, InMemoryServiceRepo, ServiceRepo},
     user::repos::{IUserRepo, InMemoryUserRepo, UserRepo},
 };
+use actix_web::{
+    dev::HttpResponseBuilder,
+    http::{header, StatusCode},
+    HttpResponse,
+};
 use mongodb::{options::ClientOptions, Client};
 use std::sync::Arc;
+use thiserror::Error;
 
 #[derive(Clone)]
 pub struct Repos {
@@ -78,24 +84,31 @@ impl Context {
     }
 }
 
-#[derive(Debug)]
-pub struct NettuError {
-    pub inner: anyhow::Error,
+#[derive(Error, Debug)]
+pub enum NettuError {
+    #[error("data store disconnected")]
+    InternalError,
+    #[error("data store disconnected")]
+    BadClientData,
+    #[error("There was a conflict with the request. Conflict message: `{0}`")]
+    Conflict(String),
+    #[error("Unauthorized request")]
+    Unauthorized,
 }
 
-impl<T> From<T> for NettuError
-where
-    T: Into<anyhow::Error>,
-{
-    fn from(t: T) -> Self {
-        NettuError { inner: t.into() }
+impl actix_web::error::ResponseError for NettuError {
+    fn error_response(&self) -> HttpResponse {
+        HttpResponseBuilder::new(self.status_code())
+            .set_header(header::CONTENT_TYPE, "text/html; charset=utf-8")
+            .body(self.to_string())
+    }
+
+    fn status_code(&self) -> StatusCode {
+        match *self {
+            NettuError::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
+            NettuError::BadClientData => StatusCode::BAD_REQUEST,
+            NettuError::Unauthorized => StatusCode::UNAUTHORIZED,
+            NettuError::Conflict(_) => StatusCode::CONFLICT,
+        }
     }
 }
-
-impl std::fmt::Display for NettuError {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        self.inner.fmt(f)
-    }
-}
-
-impl actix_web::error::ResponseError for NettuError {}

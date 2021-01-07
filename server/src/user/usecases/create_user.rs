@@ -1,10 +1,10 @@
-use crate::shared::auth::protect_account_route;
 use crate::shared::usecase::{execute, Usecase};
 use crate::{
     api::Context,
     user::domain::{User, UserDTO},
 };
-use actix_web::{web, HttpRequest, HttpResponse};
+use crate::{api::NettuError, shared::auth::protect_account_route};
+use actix_web::{web, HttpRequest, HttpResponse, Responder};
 
 use serde::Deserialize;
 
@@ -18,29 +18,29 @@ pub async fn create_user_controller(
     http_req: HttpRequest,
     body: web::Json<BodyParams>,
     ctx: web::Data<Context>,
-) -> HttpResponse {
+) -> impl Responder {
     let account = match protect_account_route(&http_req, &ctx).await {
         Ok(a) => a,
-        Err(res) => return res,
+        Err(_) => return Err(NettuError::Unauthorized),
     };
 
     let usecase = CreateUserUseCase {
         account_id: account.id.clone(),
         external_user_id: body.user_id.clone(),
     };
-    let res = execute(usecase, &ctx.into_inner()).await;
 
-    match res {
-        Ok(usecase_res) => {
+    execute(usecase, &ctx.into_inner())
+        .await
+        .map(|usecase_res| {
             let res = UserDTO::new(&usecase_res.user);
             HttpResponse::Created().json(res)
-        }
-        Err(e) => match e {
-            UseCaseErrors::StorageError => HttpResponse::InternalServerError().finish(),
-            UseCaseErrors::UserAlreadyExists => HttpResponse::Conflict()
-                .body("A user with that userId already exist. UserIds need to be unique."),
-        },
-    }
+        })
+        .map_err(|e| match e {
+            UseCaseErrors::StorageError => NettuError::InternalError,
+            UseCaseErrors::UserAlreadyExists => NettuError::Conflict(format!(
+                "A user with that userId already exist. UserIds need to be unique."
+            )),
+        })
 }
 
 pub struct CreateUserUseCase {
