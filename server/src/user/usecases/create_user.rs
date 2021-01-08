@@ -26,7 +26,7 @@ pub async fn create_user_controller(
         external_user_id: body.user_id.clone(),
     };
 
-    execute(usecase, &ctx.into_inner())
+    execute(usecase, &ctx)
         .await
         .map(|usecase_res| {
             let res = UserDTO::new(&usecase_res.user);
