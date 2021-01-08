@@ -73,7 +73,7 @@ struct CreateEventUseCase {
     rrule_options: Option<RRuleOptions>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum UseCaseErrors {
     InvalidRecurrenceRule,
     NotFoundError,
@@ -122,12 +122,19 @@ impl Usecase for CreateEventUseCase {
 
 #[cfg(test)]
 mod test {
+    use chrono::prelude::*;
+    use chrono::Utc;
+
     use super::*;
     use crate::{calendar::domain::calendar::Calendar, user::domain::User};
 
-    #[actix_web::main]
-    #[test]
-    async fn create_event_use_case_test() {
+    struct TestContext {
+        ctx: Context,
+        calendar: Calendar,
+        user: User
+    }
+
+    async fn setup() -> TestContext{
         let ctx = Context::create_inmemory();
         let user = User::new("cool2", "cool");
 
@@ -136,6 +143,17 @@ mod test {
             user_id: user.id.clone(),
         };
         ctx.repos.calendar_repo.insert(&calendar).await.unwrap();
+        TestContext {
+            user,
+            calendar,
+            ctx
+        }
+    }
+
+    #[actix_web::main]
+    #[test]
+    async fn creates_event_without_recurrence() {
+        let TestContext { ctx, calendar, user } = setup().await;
 
         let mut usecase = CreateEventUseCase {
             start_ts: 500,
@@ -149,5 +167,76 @@ mod test {
         let res = usecase.execute(&ctx).await;
 
         assert!(res.is_ok());
+    }
+
+
+    #[actix_web::main]
+    #[test]
+    async fn creates_event_with_recurrence() {
+        let TestContext { ctx, calendar, user } = setup().await;
+        
+
+        let mut usecase = CreateEventUseCase {
+            start_ts: 500,
+            duration: 800,
+            rrule_options: Some(Default::default()),
+            busy: Some(false),
+            calendar_id: calendar.id.clone(),
+            user_id: user.id.clone(),
+        };
+
+        let res = usecase.execute(&ctx).await;
+
+        assert!(res.is_ok());
+    }
+
+    #[actix_web::main]
+    #[test]
+    async fn rejects_invalid_calendar_id() {
+        let TestContext { ctx, calendar, user } = setup().await;
+        
+        let mut usecase = CreateEventUseCase {
+            start_ts: 500,
+            duration: 800,
+            rrule_options: Some(Default::default()),
+            busy: Some(false),
+            calendar_id: format!("1{}", calendar.id),
+            user_id: user.id.clone(),
+        };
+
+        let res = usecase.execute(&ctx).await;
+        assert!(res.is_err());
+        assert_eq!(res.unwrap_err(), UseCaseErrors::NotFoundError);
+    }
+
+    #[actix_web::main]
+    #[test]
+    async fn rejects_event_with_invalid_recurrence(){
+        let TestContext { ctx, calendar, user } = setup().await;
+
+        let mut invalid_rrules = vec![];
+        invalid_rrules.push(RRuleOptions {
+            count: Some(1000), // too big count
+            ..Default::default()
+        });
+        invalid_rrules.push(RRuleOptions {
+            until: Some(Utc.ymd(2150, 1, 1).and_hms(0, 0, 0).timestamp_millis() as isize), // too big until
+            ..Default::default()
+        });
+        for rrule in invalid_rrules {
+            let mut usecase = CreateEventUseCase {
+                start_ts: 500,
+                duration: 800,
+                rrule_options: Some(rrule),
+                busy: Some(false),
+                calendar_id: calendar.id.clone(),
+                user_id: user.id.clone(),
+            };
+    
+            let res = usecase.execute(&ctx).await;
+    
+            assert!(res.is_err());
+        
+        }
     }
 }

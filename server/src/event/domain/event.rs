@@ -28,6 +28,22 @@ pub struct RRuleOptions {
     pub bynweekday: Option<Vec<Vec<isize>>>,
 }
 
+impl Default for RRuleOptions {
+    fn default() -> Self {
+        Self {
+            freq: RRuleFrequenzy::Daily,
+            interval: 1,
+            bynweekday: None,
+            byweekday: None,
+            bysetpos: None,
+            count: None,
+            tzid: Utc.to_string(),
+            until: None,
+            wkst: 0
+        }
+    }
+}
+
 #[derive(Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CalendarEvent {
