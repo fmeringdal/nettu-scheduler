@@ -363,15 +363,17 @@ mod test {
         let booking_slots = res.unwrap().booking_slots;
         assert_eq!(booking_slots.len(), 5);
         assert_eq!(booking_slots[0].user_ids, vec!["1", "2"]);
-        // for i in 0..5 {
-        //     assert_eq!(booking_slots[i].duration, usecase.duration);
-        //     let user_ids = if i == 0 {
-        //         vec!["1", "2"]
-        //     } else {
-        //         vec!["1"]
-        //     };
-        //     assert_eq!(booking_slots[i].user_ids, user_ids);
-        //     assert_eq!(booking_slots[i].start, Utc.ymd(2010, 1, 1).and_hms(4, 15*i as u32, 0).timestamp_millis());
-        // }
+        for i in 0..5 {
+            assert_eq!(booking_slots[i].duration, usecase.duration);
+            if i > 0 {
+                assert_eq!(booking_slots[i].user_ids, vec!["2"]);
+                assert_eq!(
+                    booking_slots[i].start,
+                    Utc.ymd(1970, 1, 1)
+                        .and_hms(4, 15 * (i - 1) as u32, 0)
+                        .timestamp_millis()
+                );
+            }
+        }
     }
 }
