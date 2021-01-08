@@ -2,8 +2,8 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 
 ## Todos
 
-- More api tests for [calendarevent, booking]
 - reminders with webhook calls
+- More api tests for [calendarevent, booking]
 - account with alloweduseractions
 - delete user cleanup actions
 - refactor event domain (maybe add more rruleoptions validation to rrule.rs)
