@@ -106,7 +106,7 @@ impl Usecase for CreateEventUseCase {
             user_id: self.user_id.clone(),
         };
         if let Some(rrule_opts) = self.rrule_options.clone() {
-            if !e.set_reccurrence(rrule_opts, true) {
+            if !e.set_recurrence(rrule_opts, true) {
                 return Err(UseCaseErrors::InvalidRecurrenceRule);
             };
         }

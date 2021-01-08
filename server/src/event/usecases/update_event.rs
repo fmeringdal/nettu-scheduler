@@ -104,9 +104,9 @@ impl Usecase for UpdateEventUseCase {
 
         let recurrence_res = if let Some(rrule_opts) = self.rrule_options.clone() {
             // should we clear exdates when rrules are updated ?
-            e.set_reccurrence(rrule_opts, true)
+            e.set_recurrence(rrule_opts, true)
         } else if should_update_endtime && e.recurrence.is_some() {
-            e.set_reccurrence(e.recurrence.clone().unwrap(), true)
+            e.set_recurrence(e.recurrence.clone().unwrap(), true)
         } else {
             true
         };

@@ -182,3 +182,196 @@ impl Usecase for GetServiceBookingSlotsUseCase {
         Ok(UseCaseRes { booking_slots })
     }
 }
+
+#[cfg(test)]
+mod test {
+    use chrono::prelude::*;
+    use chrono::Utc;
+
+    use crate::{
+        calendar::domain::calendar::Calendar,
+        event::domain::event::{CalendarEvent, RRuleOptions},
+        service::domain::{Service, ServiceResource},
+    };
+
+    use super::*;
+
+    struct TestContext {
+        ctx: Context,
+        service: Service,
+    }
+
+    async fn setup() -> TestContext {
+        let ctx = Context::create_inmemory();
+
+        let service = Service::new("123".into());
+        ctx.repos.service_repo.insert(&service).await.unwrap();
+
+        TestContext { ctx, service }
+    }
+
+    async fn setup_service_users(ctx: &Context, service: &mut Service) {
+        let calendar1id: String = "1".into();
+        let calendar2id: String = "2".into();
+
+        let resource1 = ServiceResource {
+            calendar_ids: vec![calendar1id.clone()],
+            id: "1".into(),
+            user_id: "1".into(),
+        };
+        let resource2 = ServiceResource {
+            calendar_ids: vec![calendar2id.clone()],
+            id: "2".into(),
+            user_id: "2".into(),
+        };
+
+        let calendar_user_1 = Calendar {
+            id: calendar1id,
+            user_id: resource1.user_id.to_owned(),
+        };
+        let calendar_user_2 = Calendar {
+            id: calendar2id,
+            user_id: resource2.user_id.to_owned(),
+        };
+        ctx.repos
+            .calendar_repo
+            .insert(&calendar_user_1)
+            .await
+            .unwrap();
+        ctx.repos
+            .calendar_repo
+            .insert(&calendar_user_2)
+            .await
+            .unwrap();
+
+        let availibility_event1 = CalendarEvent {
+            busy: false,
+            calendar_id: calendar_user_1.id,
+            duration: 1000 * 60 * 60,
+            end_ts: 0,
+            exdates: vec![],
+            id: "1".into(),
+            recurrence: None,
+            start_ts: 1000 * 60 * 60,
+            user_id: resource1.user_id.to_owned(),
+        };
+        let availibility_event2 = CalendarEvent {
+            busy: false,
+            calendar_id: calendar_user_2.id.clone(),
+            duration: 1000 * 60 * 60,
+            end_ts: 0,
+            exdates: vec![],
+            id: "2".into(),
+            recurrence: None,
+            start_ts: 1000 * 60 * 60,
+            user_id: resource2.user_id.to_owned(),
+        };
+        let mut availibility_event3 = CalendarEvent {
+            busy: false,
+            calendar_id: calendar_user_2.id,
+            duration: 1000 * 60 * 105,
+            end_ts: 0,
+            exdates: vec![],
+            id: "3".into(),
+            recurrence: None,
+            start_ts: 1000 * 60 * 60 * 4,
+            user_id: resource1.user_id.to_owned(),
+        };
+        let recurrence = RRuleOptions {
+            ..Default::default()
+        };
+        availibility_event3.set_recurrence(recurrence, true);
+
+        ctx.repos
+            .event_repo
+            .insert(&availibility_event1)
+            .await
+            .unwrap();
+        ctx.repos
+            .event_repo
+            .insert(&availibility_event2)
+            .await
+            .unwrap();
+        ctx.repos
+            .event_repo
+            .insert(&availibility_event3)
+            .await
+            .unwrap();
+
+        service.add_user(resource1);
+        service.add_user(resource2);
+        ctx.repos.service_repo.save(&service).await.unwrap();
+    }
+
+    #[actix_web::main]
+    #[test]
+    async fn get_service_bookingslots() {
+        let TestContext { ctx, service } = setup().await;
+
+        let mut usecase = GetServiceBookingSlotsUseCase {
+            date: "2010-1-1".into(),
+            duration: 1000 * 60 * 60,
+            iana_tz: Utc.to_string().into(),
+            interval: 1000 * 60 * 15,
+            service_id: service.id,
+        };
+
+        let res = usecase.execute(&ctx).await;
+        assert!(res.is_ok());
+        assert!(res.unwrap().booking_slots.is_empty());
+    }
+
+    #[actix_web::main]
+    #[test]
+    async fn get_bookingslots_with_multiple_users_in_service() {
+        let TestContext { ctx, mut service } = setup().await;
+        setup_service_users(&ctx, &mut service).await;
+
+        let mut usecase = GetServiceBookingSlotsUseCase {
+            date: "2010-1-1".into(),
+            duration: 1000 * 60 * 60,
+            iana_tz: Utc.to_string().into(),
+            interval: 1000 * 60 * 15,
+            service_id: service.id.clone(),
+        };
+
+        let res = usecase.execute(&ctx).await;
+        assert!(res.is_ok());
+        let booking_slots = res.unwrap().booking_slots;
+        assert_eq!(booking_slots.len(), 4);
+        for i in 0..4 {
+            assert_eq!(booking_slots[i].duration, usecase.duration);
+            assert_eq!(booking_slots[i].user_ids, vec!["2"]);
+            assert_eq!(
+                booking_slots[i].start,
+                Utc.ymd(2010, 1, 1)
+                    .and_hms(4, 15 * i as u32, 0)
+                    .timestamp_millis()
+            );
+        }
+
+        let mut usecase = GetServiceBookingSlotsUseCase {
+            date: "1970-1-1".into(),
+            duration: 1000 * 60 * 60,
+            iana_tz: Utc.to_string().into(),
+            interval: 1000 * 60 * 15,
+            service_id: service.id,
+        };
+
+        let res = usecase.execute(&ctx).await;
+        assert!(res.is_ok());
+        let booking_slots = res.unwrap().booking_slots;
+        assert_eq!(booking_slots.len(), 5);
+        assert_eq!(booking_slots[0].user_ids, vec!["1", "2"]);
+        // for i in 0..5 {
+        //     assert_eq!(booking_slots[i].duration, usecase.duration);
+        //     let user_ids = if i == 0 {
+        //         vec!["1", "2"]
+        //     } else {
+        //         vec!["1"]
+        //     };
+        //     assert_eq!(booking_slots[i].user_ids, user_ids);
+        //     assert_eq!(booking_slots[i].start, Utc.ymd(2010, 1, 1).and_hms(4, 15*i as u32, 0).timestamp_millis());
+        // }
+    }
+}

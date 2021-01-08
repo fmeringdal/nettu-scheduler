@@ -1,2 +1,3 @@
 target/
+cobertura.xml
 node_modules/

@@ -114,7 +114,7 @@ impl CalendarEvent {
         true
     }
 
-    pub fn set_reccurrence(&mut self, reccurence: RRuleOptions, update_endtime: bool) -> bool {
+    pub fn set_recurrence(&mut self, reccurence: RRuleOptions, update_endtime: bool) -> bool {
         let valid_recurrence = Self::validate_recurrence(self.start_ts, &reccurence);
         if !valid_recurrence {
             return false;
@@ -348,7 +348,7 @@ mod test {
                 recurrence: None,
             };
 
-            assert!(!event.set_reccurrence(rrule, true));
+            assert!(!event.set_recurrence(rrule, true));
         }
     }
 
@@ -387,7 +387,7 @@ mod test {
                 recurrence: None,
             };
 
-            assert!(event.set_reccurrence(rrule, true));
+            assert!(event.set_recurrence(rrule, true));
         }
     }
 }

@@ -166,7 +166,7 @@ mod test {
             until: None,
             wkst: 0,
         };
-        e1.set_reccurrence(e1rr, true);
+        e1.set_recurrence(e1rr, true);
 
         let mut e2 = CalendarEvent {
             calendar_id: calendar.id.clone(),
@@ -190,7 +190,7 @@ mod test {
             until: None,
             wkst: 0,
         };
-        e2.set_reccurrence(e2rr, true);
+        e2.set_recurrence(e2rr, true);
 
         let mut e3 = CalendarEvent {
             calendar_id: calendar.id.clone(),
@@ -214,7 +214,7 @@ mod test {
             until: None,
             wkst: 0,
         };
-        e3.set_reccurrence(e3rr, true);
+        e3.set_recurrence(e3rr, true);
 
         ctx.repos.event_repo.insert(&e1).await.unwrap();
         ctx.repos.event_repo.insert(&e2).await.unwrap();
