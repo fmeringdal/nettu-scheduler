@@ -6,6 +6,7 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 - reminders with webhook calls
 - account with alloweduseractions
 - delete user cleanup actions
+- refactor event domain (maybe add more rruleoptions validation to rrule.rs)
 
 ## Backlog
 
