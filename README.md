@@ -13,9 +13,6 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 - smarter mongodb schema
 - is more account admin routes needed?
 - protect create account with real emails
-- error handling: 
-    1: https://auth0.com/blog/build-an-api-in-rust-with-jwt-authentication-using-actix-web/
-    2: https://theomn.com/rust-error-handling-for-pythonistas/
 - frontend for booking
 
 ## Need to have a data model that will support google and outlook calendars in the future
