@@ -108,10 +108,10 @@ impl Usecase for UpdateEventUseCase {
         } else if should_update_endtime && e.recurrence.is_some() {
             e.set_reccurrence(e.recurrence.clone().unwrap(), true)
         } else {
-            Ok(())
+            true
         };
 
-        if recurrence_res.is_err() {
+        if !recurrence_res {
             return Err(UseCaseErrors::InvalidRecurrenceRule);
         };
 

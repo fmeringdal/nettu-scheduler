@@ -6,7 +6,7 @@ use chrono_tz::Tz;
 use rrule::{Frequenzy, ParsedOptions, RRule, RRuleSet};
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum RRuleFrequenzy {
     Yearly,
@@ -39,7 +39,7 @@ impl Default for RRuleOptions {
             count: None,
             tzid: Utc.to_string(),
             until: None,
-            wkst: 0
+            wkst: 0,
         }
     }
 }
@@ -66,51 +66,65 @@ fn is_none_or_empty<T>(v: &Option<Vec<T>>) -> bool {
 }
 
 impl CalendarEvent {
-    fn validate_recurrence(start_ts: i64, recurrence: &RRuleOptions) -> Result<(), ()> {
+    fn validate_recurrence(start_ts: i64, recurrence: &RRuleOptions) -> bool {
         if let Some(count) = recurrence.count {
             if count > 740 || count < 1 {
-                return Err(());
+                return false;
             }
         }
         let two_years_in_millis = 1000 * 60 * 60 * 24 * 366 * 2;
         if let Some(until) = recurrence.until.map(|val| val as i64) {
             if until < start_ts || until - start_ts > two_years_in_millis {
-                return Err(());
+                return false;
             }
         }
 
+        if !is_none_or_empty(&recurrence.bynweekday) && !is_none_or_empty(&recurrence.byweekday) {
+            return false;
+        }
+
         if !is_none_or_empty(&recurrence.bysetpos) && is_none_or_empty(&recurrence.byweekday) {
-            return Err(());
+            return false;
         }
 
         if !is_none_or_empty(&recurrence.bysetpos) && !is_none_or_empty(&recurrence.bynweekday) {
-            return Err(());
+            return false;
         }
 
-        Ok(())
+        if (!is_none_or_empty(&recurrence.bysetpos) || !is_none_or_empty(&recurrence.bynweekday))
+            && recurrence.freq != RRuleFrequenzy::Monthly
+        {
+            return false;
+        }
+
+        true
     }
 
-    fn update_endtime(&mut self) {
-        let opts = self.get_rrule_options();
+    fn update_endtime(&mut self) -> bool {
+        let opts = match self.get_rrule_options() {
+            Ok(opts) => opts,
+            Err(_) => return false,
+        };
         if (opts.count.is_some() && opts.count.unwrap() > 0) || opts.until.is_some() {
             let expand = self.expand(None);
             self.end_ts = expand.last().unwrap().end_ts;
         } else {
             self.end_ts = Self::get_max_timestamp();
         }
+        true
     }
 
-    pub fn set_reccurrence(
-        &mut self,
-        reccurence: RRuleOptions,
-        update_endtime: bool,
-    ) -> Result<(), ()> {
-        Self::validate_recurrence(self.start_ts, &reccurence)?;
+    pub fn set_reccurrence(&mut self, reccurence: RRuleOptions, update_endtime: bool) -> bool {
+        let valid_recurrence = Self::validate_recurrence(self.start_ts, &reccurence);
+        if !valid_recurrence {
+            return false;
+        }
+
         self.recurrence = Some(reccurence);
         if update_endtime {
-            self.update_endtime();
+            return self.update_endtime();
         }
-        Ok(())
+        true
     }
 
     pub fn get_max_timestamp() -> i64 {
@@ -119,7 +133,10 @@ impl CalendarEvent {
 
     pub fn expand(&self, view: Option<&CalendarView>) -> Vec<EventInstance> {
         if self.recurrence.is_some() {
-            let rrule_options = self.get_rrule_options();
+            let rrule_options = match self.get_rrule_options() {
+                Ok(opts) => opts,
+                Err(_) => return Default::default(),
+            };
 
             let tzid = rrule_options.tzid;
             let mut rrule_set = RRuleSet::new();
@@ -173,10 +190,13 @@ impl CalendarEvent {
         }
     }
 
-    fn get_rrule_options(&self) -> ParsedOptions {
+    fn get_rrule_options(&self) -> anyhow::Result<ParsedOptions> {
         let options = self.recurrence.clone().unwrap();
 
-        let tzid: Tz = options.tzid.parse().unwrap();
+        let tzid: Tz = match options.tzid.parse() {
+            Ok(tzid) => tzid,
+            Err(_) => return Err(anyhow::Error::msg("Invalid tzid")),
+        };
         let until = match options.until {
             Some(ts) => Some(tzid.timestamp(ts as i64 / 1000, 0)),
             None => None,
@@ -189,7 +209,7 @@ impl CalendarEvent {
             None => None,
         };
 
-        return ParsedOptions {
+        Ok(ParsedOptions {
             freq: Self::freq_convert(&options.freq),
             count,
             bymonth: vec![],
@@ -214,7 +234,7 @@ impl CalendarEvent {
             tzid,
             interval: options.interval as usize,
             byeaster: None,
-        };
+        })
     }
 }
 
@@ -255,5 +275,119 @@ mod test {
 
         let oc = event.expand(None);
         assert_eq!(oc.len(), 3);
+    }
+
+    #[test]
+    fn calendar_event_without_recurrence() {
+        let event = CalendarEvent {
+            id: String::from("dsa"),
+            start_ts: 1521317491239,
+            busy: false,
+            duration: 1000 * 60 * 60,
+            recurrence: None,
+            end_ts: 2521317491239,
+            exdates: vec![1521317491239],
+            calendar_id: String::from(""),
+            user_id: String::from(""),
+        };
+
+        let oc = event.expand(None);
+        assert_eq!(oc.len(), 1);
+    }
+
+    #[test]
+    fn rejects_event_with_invalid_recurrence() {
+        let mut invalid_rrules = vec![];
+        invalid_rrules.push(RRuleOptions {
+            count: Some(1000), // too big count
+            ..Default::default()
+        });
+        invalid_rrules.push(RRuleOptions {
+            until: Some(Utc.ymd(2150, 1, 1).and_hms(0, 0, 0).timestamp_millis() as isize), // too big until
+            ..Default::default()
+        });
+        invalid_rrules.push(RRuleOptions {
+            tzid: "safsafsa".into(), // Invalid tzid
+            ..Default::default()
+        });
+        invalid_rrules.push(RRuleOptions {
+            // Both byweekday and bynweekday is set
+            byweekday: Some(vec![1]),
+            bynweekday: Some(vec![vec![1, 1]]),
+            ..Default::default()
+        });
+        invalid_rrules.push(RRuleOptions {
+            // Both bysetpos and bynweekday is set
+            bysetpos: Some(vec![1]),
+            bynweekday: Some(vec![vec![1, 1]]),
+            ..Default::default()
+        });
+        invalid_rrules.push(RRuleOptions {
+            // Only bysetpos and no by*
+            bysetpos: Some(vec![1]),
+            freq: RRuleFrequenzy::Monthly,
+            ..Default::default()
+        });
+        invalid_rrules.push(RRuleOptions {
+            // Bysetpos and freq=monthly
+            bysetpos: Some(vec![1]),
+            byweekday: Some(vec![1]),
+            freq: RRuleFrequenzy::Daily,
+            ..Default::default()
+        });
+        for rrule in invalid_rrules {
+            let mut event = CalendarEvent {
+                id: String::from("dsa"),
+                start_ts: 1521317491239,
+                busy: false,
+                duration: 1000 * 60 * 60,
+                end_ts: 2521317491239,
+                exdates: vec![],
+                calendar_id: String::from(""),
+                user_id: String::from(""),
+                recurrence: None,
+            };
+
+            assert!(!event.set_reccurrence(rrule, true));
+        }
+    }
+
+    #[test]
+    fn allows_event_with_valid_recurrence() {
+        let mut valid_rrules = vec![];
+        let start_ts = 1521317491239;
+        valid_rrules.push(Default::default());
+        valid_rrules.push(RRuleOptions {
+            count: Some(100),
+            ..Default::default()
+        });
+        valid_rrules.push(RRuleOptions {
+            until: Some(start_ts + 1000 * 60 * 60 * 24 * 100),
+            ..Default::default()
+        });
+        valid_rrules.push(RRuleOptions {
+            byweekday: Some(vec![1]),
+            ..Default::default()
+        });
+        valid_rrules.push(RRuleOptions {
+            bynweekday: Some(vec![vec![1, 1]]),
+            freq: RRuleFrequenzy::Monthly,
+            ..Default::default()
+        });
+        for rrule in valid_rrules {
+            let mut event = CalendarEvent {
+                id: String::from("dsa"),
+                start_ts: start_ts as i64,
+                busy: false,
+                duration: 1000 * 60 * 60,
+                end_ts: 2521317491239,
+                exdates: vec![],
+                calendar_id: String::from(""),
+                user_id: String::from(""),
+                recurrence: None,
+            };
+
+            assert!(event.set_reccurrence(rrule, true));
+        }
     }
 }

@@ -1,5 +1,5 @@
-use crate::{api::NettuError, event::domain::event_instance::EventInstance};
 use crate::{api::Context, calendar::domain::calendar_view::CalendarView};
+use crate::{api::NettuError, event::domain::event_instance::EventInstance};
 use crate::{
     event::domain::event_instance::get_free_busy,
     shared::usecase::{execute, Usecase},
@@ -41,8 +41,9 @@ pub async fn get_user_freebusy_controller(
         start_ts: query_params.start_ts,
         end_ts: query_params.end_ts,
     };
-    
-    execute(usecase, &ctx).await
+
+    execute(usecase, &ctx)
+        .await
         .map(|usecase_res| HttpResponse::Ok().json(usecase_res))
         .map_err(|e| match e {
             GetUserFreeBusyErrors::InvalidTimespanError => {
@@ -165,7 +166,7 @@ mod test {
             until: None,
             wkst: 0,
         };
-        e1.set_reccurrence(e1rr, true).unwrap();
+        e1.set_reccurrence(e1rr, true);
 
         let mut e2 = CalendarEvent {
             calendar_id: calendar.id.clone(),
@@ -189,7 +190,7 @@ mod test {
             until: None,
             wkst: 0,
         };
-        e2.set_reccurrence(e2rr, true).unwrap();
+        e2.set_reccurrence(e2rr, true);
 
         let mut e3 = CalendarEvent {
             calendar_id: calendar.id.clone(),
@@ -213,7 +214,7 @@ mod test {
             until: None,
             wkst: 0,
         };
-        e3.set_reccurrence(e3rr, true).unwrap();
+        e3.set_reccurrence(e3rr, true);
 
         ctx.repos.event_repo.insert(&e1).await.unwrap();
         ctx.repos.event_repo.insert(&e2).await.unwrap();

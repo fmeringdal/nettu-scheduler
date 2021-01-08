@@ -1,8 +1,13 @@
-use crate::{api::{Context, NettuError}, calendar::usecases::get_user_freebusy::GetUserFreeBusyUseCase, event::domain::booking_slots::{
+use crate::{
+    api::{Context, NettuError},
+    calendar::usecases::get_user_freebusy::GetUserFreeBusyUseCase,
+    event::domain::booking_slots::{
         get_service_bookingslots, validate_bookingslots_query, validate_slots_interval,
         BookingQueryError, BookingSlotsOptions, BookingSlotsQuery, ServiceBookingSlot,
         ServiceBookingSlotDTO,
-    }, shared::auth::ensure_nettu_acct_header};
+    },
+    shared::auth::ensure_nettu_acct_header,
+};
 use crate::{
     event::domain::booking_slots::UserFreeEvents,
     shared::usecase::{execute, Usecase},

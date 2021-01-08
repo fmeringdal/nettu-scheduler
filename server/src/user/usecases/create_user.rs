@@ -35,8 +35,8 @@ pub async fn create_user_controller(
         .map_err(|e| match e {
             UseCaseErrors::StorageError => NettuError::InternalError,
             UseCaseErrors::UserAlreadyExists => NettuError::Conflict(
-                "A user with that userId already exist. UserIds need to be unique."
-            .into()),
+                "A user with that userId already exist. UserIds need to be unique.".into(),
+            ),
         })
 }
 

@@ -32,9 +32,10 @@ pub async fn get_user_controller(
             HttpResponse::Ok().json(dto)
         })
         .map_err(|e| match e {
-            UseCaseErrors::UserNotFoundError => {
-                NettuError::NotFound(format!("A user with id: {}, was not found.", path_params.user_id))
-            }
+            UseCaseErrors::UserNotFoundError => NettuError::NotFound(format!(
+                "A user with id: {}, was not found.",
+                path_params.user_id
+            )),
         })
 }
 

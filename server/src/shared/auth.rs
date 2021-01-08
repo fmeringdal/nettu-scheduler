@@ -112,7 +112,9 @@ pub fn ensure_nettu_acct_header(req: &HttpRequest) -> Result<String, NettuError>
                 acc_id
             ))),
         },
-        None => Err(NettuError::UnidentifiableClient("Unable to find nettu account header".into())),
+        None => Err(NettuError::UnidentifiableClient(
+            "Unable to find nettu account header".into(),
+        )),
     }
 }
 

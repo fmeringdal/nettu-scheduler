@@ -94,7 +94,9 @@ pub enum NettuError {
     Conflict(String),
     #[error("Unauthorized request. Error message: `{0}`")]
     Unauthorized(String),
-    #[error("Unidentifiable client. Must include the `nettu-account` header. Error message: `{0}`")]
+    #[error(
+        "Unidentifiable client. Must include the `nettu-account` header. Error message: `{0}`"
+    )]
     UnidentifiableClient(String),
     #[error("404 Not found. Error message: `{0}`")]
     NotFound(String),
