@@ -2,11 +2,12 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 
 ## Todos
 
-- reminders with webhook calls
+- Reminders with webhook calls (make sure webhook call url is unique)
+    - how to get the reminders to be sent in a scalable manner
 - More api tests for [calendarevent, booking]
-- account with alloweduseractions
-- delete user cleanup actions
-- refactor event domain (maybe add more rruleoptions validation to rrule.rs)
+- Account with alloweduseractions ? maybe add it to jwt
+- Delete user cleanup actions
+- Refactor event domain (maybe add more rruleoptions validation to rrule.rs)
 
 ## Backlog
 
