@@ -43,6 +43,7 @@ pub async fn create_event_controller(
         calendar_id: req.calendar_id.clone(),
         rrule_options: req.rrule_options.clone(),
         user_id: user.id.clone(),
+        account_id: user.account_id,
     };
 
     execute(usecase, &ctx)
@@ -65,6 +66,7 @@ pub async fn create_event_controller(
 }
 
 struct CreateEventUseCase {
+    account_id: String,
     calendar_id: String,
     user_id: String,
     start_ts: i64,
@@ -104,6 +106,8 @@ impl Usecase for CreateEventUseCase {
             exdates: vec![],
             calendar_id: calendar.id,
             user_id: self.user_id.clone(),
+            account_id: self.account_id.clone(),
+            reminder: None,
         };
         if let Some(rrule_opts) = self.rrule_options.clone() {
             if !e.set_recurrence(rrule_opts, true) {
@@ -165,6 +169,7 @@ mod test {
             busy: Some(false),
             calendar_id: calendar.id.clone(),
             user_id: user.id.clone(),
+            account_id: user.account_id,
         };
 
         let res = usecase.execute(&ctx).await;
@@ -188,6 +193,7 @@ mod test {
             busy: Some(false),
             calendar_id: calendar.id.clone(),
             user_id: user.id.clone(),
+            account_id: user.account_id,
         };
 
         let res = usecase.execute(&ctx).await;
@@ -211,6 +217,7 @@ mod test {
             busy: Some(false),
             calendar_id: format!("1{}", calendar.id),
             user_id: user.id.clone(),
+            account_id: user.account_id,
         };
 
         let res = usecase.execute(&ctx).await;
@@ -244,6 +251,7 @@ mod test {
                 busy: Some(false),
                 calendar_id: calendar.id.clone(),
                 user_id: user.id.clone(),
+            account_id: user.account_id,
             };
 
             let res = usecase.execute(&ctx).await;

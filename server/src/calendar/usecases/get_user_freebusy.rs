@@ -147,6 +147,7 @@ mod test {
         let mut e1 = CalendarEvent {
             calendar_id: calendar.id.clone(),
             user_id: user.id.clone(),
+            account_id: user.account_id.clone(),
             busy: false,
             duration: one_hour,
             end_ts: CalendarEvent::get_max_timestamp(),
@@ -154,6 +155,7 @@ mod test {
             id: String::from("1"),
             start_ts: 0,
             recurrence: None,
+            reminder: None,
         };
         let e1rr = RRuleOptions {
             bynweekday: Default::default(),
@@ -171,6 +173,7 @@ mod test {
         let mut e2 = CalendarEvent {
             calendar_id: calendar.id.clone(),
             user_id: user.id.clone(),
+            account_id: user.account_id.clone(),
             busy: false,
             duration: one_hour,
             end_ts: CalendarEvent::get_max_timestamp(),
@@ -178,6 +181,7 @@ mod test {
             id: String::from("2"),
             start_ts: one_hour * 4,
             recurrence: None,
+            reminder: None,
         };
         let e2rr = RRuleOptions {
             bynweekday: Default::default(),
@@ -195,6 +199,7 @@ mod test {
         let mut e3 = CalendarEvent {
             calendar_id: calendar.id.clone(),
             user_id: user.id.clone(),
+            account_id: user.account_id.clone(),
             busy: false,
             duration: one_hour,
             end_ts: one_hour,
@@ -202,6 +207,7 @@ mod test {
             id: String::from("3"),
             start_ts: 0,
             recurrence: None,
+            reminder: None,
         };
         let e3rr = RRuleOptions {
             bynweekday: Default::default(),

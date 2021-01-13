@@ -50,6 +50,18 @@ pub async fn insert<E, D: MongoDocument<E>>(collection: &Collection, entity: &E)
     Ok(())
 }
 
+pub async fn bulk_insert<E, D: MongoDocument<E>>(
+    collection: &Collection,
+    entities: &[E],
+) -> Result<()> {
+    let docs = entities
+        .iter()
+        .map(|e| entity_to_persistence::<E, D>(e))
+        .collect::<Vec<_>>();
+    let _res = collection.insert_many(docs, None).await;
+    Ok(())
+}
+
 pub async fn save<E, D: MongoDocument<E>>(collection: &Collection, entity: &E) -> Result<()> {
     let raw = D::from_domain(entity);
     let filter = raw.get_id_filter();

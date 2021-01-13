@@ -1,5 +1,8 @@
-use super::{DeleteResult, IEventRepo};
-use crate::{calendar::domain::calendar_view::CalendarView, event::domain::event::CalendarEvent};
+use crate::event::repos::{DeleteResult, IEventRepo};
+use crate::{
+    calendar::domain::calendar_view::CalendarView,
+    event::domain::event::{CalendarEvent, CalendarEventReminder},
+};
 use crate::{event::domain::event::RRuleOptions, shared::mongo_repo};
 use mongo_repo::MongoDocument;
 use mongodb::{
@@ -106,7 +109,9 @@ struct CalendarEventMongo {
     user_id: String,
     exdates: Vec<i64>,
     calendar_id: String,
+    account_id: String,
     recurrence: Option<RRuleOptions>,
+    reminder: Option<CalendarEventReminder>,
 }
 
 impl MongoDocument<CalendarEvent> for CalendarEventMongo {
@@ -118,9 +123,11 @@ impl MongoDocument<CalendarEvent> for CalendarEventMongo {
             end_ts: self.end_ts,
             busy: self.busy,
             user_id: self.user_id.clone(),
+            account_id: self.account_id.clone(),
             exdates: self.exdates.clone(),
             calendar_id: self.calendar_id.clone(),
             recurrence: self.recurrence.clone(),
+            reminder: self.reminder.clone(),
         }
     }
 
@@ -132,9 +139,11 @@ impl MongoDocument<CalendarEvent> for CalendarEventMongo {
             end_ts: event.end_ts,
             busy: event.busy,
             user_id: event.user_id.clone(),
+            account_id: event.account_id.clone(),
             exdates: event.exdates.clone(),
             calendar_id: event.calendar_id.clone(),
             recurrence: event.recurrence.clone(),
+            reminder: event.reminder.clone(),
         }
     }
 

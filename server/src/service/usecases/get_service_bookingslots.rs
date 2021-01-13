@@ -253,7 +253,9 @@ mod test {
             id: "1".into(),
             recurrence: None,
             start_ts: 1000 * 60 * 60,
+            account_id: "1".into(),
             user_id: resource1.user_id.to_owned(),
+            reminder: None,
         };
         let availibility_event2 = CalendarEvent {
             busy: false,
@@ -264,7 +266,9 @@ mod test {
             id: "2".into(),
             recurrence: None,
             start_ts: 1000 * 60 * 60,
+            account_id: "1".into(),
             user_id: resource2.user_id.to_owned(),
+            reminder: None,
         };
         let mut availibility_event3 = CalendarEvent {
             busy: false,
@@ -276,6 +280,8 @@ mod test {
             recurrence: None,
             start_ts: 1000 * 60 * 60 * 4,
             user_id: resource1.user_id.to_owned(),
+            account_id: "1".into(),
+            reminder: None,
         };
         let recurrence = RRuleOptions {
             ..Default::default()

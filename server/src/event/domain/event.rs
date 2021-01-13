@@ -56,6 +56,13 @@ pub struct CalendarEvent {
     pub exdates: Vec<i64>,
     pub calendar_id: String,
     pub user_id: String,
+    pub account_id: String,
+    pub reminder: Option<CalendarEventReminder>,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct CalendarEventReminder {
+    pub minutes_before: i64,
 }
 
 fn is_none_or_empty<T>(v: &Option<Vec<T>>) -> bool {
@@ -271,6 +278,8 @@ mod test {
             exdates: vec![1521317491239],
             calendar_id: String::from(""),
             user_id: String::from(""),
+            account_id: String::from(""),
+            reminder: None,
         };
 
         let oc = event.expand(None);
@@ -289,6 +298,8 @@ mod test {
             exdates: vec![1521317491239],
             calendar_id: String::from(""),
             user_id: String::from(""),
+            account_id: String::from(""),
+            reminder: None,
         };
 
         let oc = event.expand(None);
@@ -345,7 +356,9 @@ mod test {
                 exdates: vec![],
                 calendar_id: String::from(""),
                 user_id: String::from(""),
+            account_id: String::from(""),
                 recurrence: None,
+                reminder: None,
             };
 
             assert!(!event.set_recurrence(rrule, true));
@@ -383,8 +396,10 @@ mod test {
                 end_ts: 2521317491239,
                 exdates: vec![],
                 calendar_id: String::from(""),
+            account_id: String::from(""),
                 user_id: String::from(""),
                 recurrence: None,
+                reminder: None,
             };
 
             assert!(event.set_recurrence(rrule, true));

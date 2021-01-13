@@ -57,16 +57,25 @@ pub fn delete_by<T: Clone + Entity, F: Fn(&T) -> bool>(
     collection: &Mutex<Vec<T>>,
     compare: F,
 ) -> DeleteResult {
+    DeleteResult { deleted_count: find_and_delete_by(collection, compare).len() as i64 }
+}
+
+pub fn find_and_delete_by<T: Clone + Entity, F: Fn(&T) -> bool>(
+    collection: &Mutex<Vec<T>>,
+    compare: F,
+) -> Vec<T> {
     let mut collection = collection.lock().unwrap();
     let mut deleted_count = 0;
+    let mut deleted_items = vec![];
 
     for i in 0..collection.len() {
         let index = collection.len() - i - 1;
         if compare(&collection[index]) {
-            collection.remove(index);
+            let deleted_item = collection.remove(index);
+            deleted_items.push(deleted_item);
             deleted_count += 1;
         }
     }
 
-    DeleteResult { deleted_count }
+    deleted_items
 }

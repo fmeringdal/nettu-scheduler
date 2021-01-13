@@ -1,10 +1,4 @@
-use crate::{
-    account::repos::{AccountRepo, IAccountRepo, InMemoryAccountRepo},
-    calendar::repos::{CalendarRepo, ICalendarRepo, InMemoryCalendarRepo},
-    event::repos::{EventRepo, IEventRepo, InMemoryEventRepo},
-    service::repos::{IServiceRepo, InMemoryServiceRepo, ServiceRepo},
-    user::repos::{IUserRepo, InMemoryUserRepo, UserRepo},
-};
+use crate::{account::repos::{AccountRepo, IAccountRepo, InMemoryAccountRepo}, calendar::repos::{CalendarRepo, ICalendarRepo, InMemoryCalendarRepo}, event::repos::{EventRepo, IEventRepo, IReminderRepo, InMemoryEventRepo, InMemoryReminderRepo, ReminderRepo}, service::repos::{IServiceRepo, InMemoryServiceRepo, ServiceRepo}, user::repos::{IUserRepo, InMemoryUserRepo, UserRepo}};
 use actix_web::{
     dev::HttpResponseBuilder,
     http::{header, StatusCode},
@@ -21,6 +15,7 @@ pub struct Repos {
     pub account_repo: Arc<dyn IAccountRepo>,
     pub user_repo: Arc<dyn IUserRepo>,
     pub service_repo: Arc<dyn IServiceRepo>,
+    pub reminder_repo: Arc<dyn IReminderRepo>,
 }
 
 impl Repos {
@@ -47,6 +42,7 @@ impl Repos {
             account_repo: Arc::new(AccountRepo::new(&db)),
             user_repo: Arc::new(UserRepo::new(&db)),
             service_repo: Arc::new(ServiceRepo::new(&db)),
+            reminder_repo: Arc::new(ReminderRepo::new(&db)),
         })
     }
 
@@ -58,6 +54,7 @@ impl Repos {
             account_repo: Arc::new(InMemoryAccountRepo::new()),
             user_repo: Arc::new(InMemoryUserRepo::new()),
             service_repo: Arc::new(InMemoryServiceRepo::new()),
+            reminder_repo: Arc::new(InMemoryReminderRepo::new()),
         }
     }
 }

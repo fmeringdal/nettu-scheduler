@@ -1,4 +1,4 @@
-use super::{DeleteResult, IEventRepo};
+use crate::event::repos::{DeleteResult, IEventRepo};
 use crate::shared::inmemory_repo::*;
 use crate::{calendar::domain::calendar_view::CalendarView, event::domain::event::CalendarEvent};
 use std::error::Error;
