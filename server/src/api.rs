@@ -1,4 +1,12 @@
-use crate::{account::repos::{AccountRepo, IAccountRepo, InMemoryAccountRepo}, calendar::repos::{CalendarRepo, ICalendarRepo, InMemoryCalendarRepo}, event::repos::{EventRepo, IEventRepo, IReminderRepo, InMemoryEventRepo, InMemoryReminderRepo, ReminderRepo}, service::repos::{IServiceRepo, InMemoryServiceRepo, ServiceRepo}, user::repos::{IUserRepo, InMemoryUserRepo, UserRepo}};
+use crate::{
+    account::repos::{AccountRepo, IAccountRepo, InMemoryAccountRepo},
+    calendar::repos::{CalendarRepo, ICalendarRepo, InMemoryCalendarRepo},
+    event::repos::{
+        EventRepo, IEventRepo, IReminderRepo, InMemoryEventRepo, InMemoryReminderRepo, ReminderRepo,
+    },
+    service::repos::{IServiceRepo, InMemoryServiceRepo, ServiceRepo},
+    user::repos::{IUserRepo, InMemoryUserRepo, UserRepo},
+};
 use actix_web::{
     dev::HttpResponseBuilder,
     http::{header, StatusCode},

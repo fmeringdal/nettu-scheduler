@@ -6,6 +6,8 @@ use crate::{
 use actix_web::{web, HttpRequest, HttpResponse};
 use serde::Deserialize;
 
+use super::sync_event_reminders::{EventOperation, SyncEventRemindersUseCase};
+
 #[derive(Deserialize)]
 pub struct PathParams {
     event_id: String,
@@ -58,6 +60,15 @@ impl Usecase for DeleteEventUseCase {
         match e {
             Some(event) if event.user_id == self.user_id => {
                 ctx.repos.event_repo.delete(&event.id).await;
+                
+                
+                let sync_event_reminders = SyncEventRemindersUseCase {
+                    event: &event,
+                    op: EventOperation::Deleted
+                };
+                // TODO: handl err
+                execute(sync_event_reminders, ctx).await;
+                
                 Ok(())
             }
             _ => Err(UseCaseErrors::NotFound),

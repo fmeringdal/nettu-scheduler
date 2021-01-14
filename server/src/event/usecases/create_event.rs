@@ -13,6 +13,8 @@ use actix_web::{web, HttpResponse};
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
+use super::sync_event_reminders::{EventOperation, SyncEventRemindersUseCase};
+
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateEventReq {
@@ -119,6 +121,14 @@ impl Usecase for CreateEventUseCase {
         if repo_res.is_err() {
             return Err(UseCaseErrors::StorageError);
         }
+
+        let sync_event_reminders = SyncEventRemindersUseCase {
+            event: &e,
+            op: EventOperation::Created
+        };
+        // TODO: handl err
+        execute(sync_event_reminders, ctx).await;
+
         Ok(e)
     }
 }
@@ -251,7 +261,7 @@ mod test {
                 busy: Some(false),
                 calendar_id: calendar.id.clone(),
                 user_id: user.id.clone(),
-            account_id: user.account_id,
+                account_id: user.account_id.to_owned(),
             };
 
             let res = usecase.execute(&ctx).await;

@@ -35,6 +35,11 @@ impl IAccountRepo for InMemoryAccountRepo {
         delete(account_id, &self.accounts)
     }
 
+    async fn find_many(&self, account_ids: &[String]) -> Result<Vec<Account>, Box<dyn Error>> {
+        let res = find_by(&self.accounts, |a| account_ids.contains(&a.id));
+        Ok(res)
+    }
+
     async fn find_by_apikey(&self, api_key: &str) -> Option<Account> {
         let accounts = find_by(&self.accounts, |account| account.secret_api_key == api_key);
         if accounts.is_empty() {

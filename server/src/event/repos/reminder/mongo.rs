@@ -42,13 +42,16 @@ impl IReminderRepo for ReminderRepo {
         };
 
         // Find before deleting
-        let docs = match mongo_repo::find_many_by::<_, ReminderMongo>(&self.collection, filter.clone()).await {
-            Ok(docs) => docs,
-            Err(err) => {
-                println!("Error: {:?}", err);
-                return vec![];
-            }
-        };
+        let docs =
+            match mongo_repo::find_many_by::<_, ReminderMongo>(&self.collection, filter.clone())
+                .await
+            {
+                Ok(docs) => docs,
+                Err(err) => {
+                    println!("Error: {:?}", err);
+                    return vec![];
+                }
+            };
 
         // Now delete
         if let Err(err) = self.collection.delete_many(filter, None).await {

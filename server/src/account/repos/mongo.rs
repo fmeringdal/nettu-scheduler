@@ -1,4 +1,4 @@
-use crate::account::domain::Account;
+use crate::account::domain::{Account, AccountSettings};
 
 use super::IAccountRepo;
 use crate::shared::mongo_repo;
@@ -46,6 +46,16 @@ impl IAccountRepo for AccountRepo {
         mongo_repo::find::<_, AccountMongo>(&self.collection, &id).await
     }
 
+    async fn find_many(&self, accounts_ids: &[String]) -> Result<Vec<Account>, Box<dyn Error>> {
+        let filter = doc! {
+            "event_id": {
+                "$in": accounts_ids
+            }
+        };
+
+        mongo_repo::find_many_by::<_, AccountMongo>(&self.collection, filter).await
+    }
+
     async fn find_by_apikey(&self, api_key: &str) -> Option<Account> {
         let filter = doc! {
             "secret_api_key": api_key
@@ -67,6 +77,13 @@ struct AccountMongo {
     pub _id: ObjectId,
     pub public_key_b64: Option<String>,
     pub secret_api_key: String,
+    pub settings: AccountSettingsMongo,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct AccountSettingsMongo {
+    pub webhook_url: Option<String>,
+    pub webhook_key: Option<String>,
 }
 
 impl<'de> MongoDocument<Account> for AccountMongo {
@@ -75,6 +92,10 @@ impl<'de> MongoDocument<Account> for AccountMongo {
             id: self._id.to_string(),
             public_key_b64: self.public_key_b64.clone(),
             secret_api_key: self.secret_api_key.clone(),
+            settings: AccountSettings {
+                webhook_key: self.settings.webhook_key.clone(),
+                webhook_url: self.settings.webhook_url.clone(),
+            },
         }
     }
 
@@ -83,6 +104,10 @@ impl<'de> MongoDocument<Account> for AccountMongo {
             _id: ObjectId::with_string(&account.id).unwrap(),
             public_key_b64: account.public_key_b64.clone(),
             secret_api_key: account.secret_api_key.clone(),
+            settings: AccountSettingsMongo {
+                webhook_key: account.settings.webhook_key.clone(),
+                webhook_url: account.settings.webhook_url.clone(),
+            },
         }
     }
 

@@ -7,6 +7,8 @@ use crate::{api::NettuError, shared::auth::protect_route};
 use actix_web::{web, HttpRequest, HttpResponse};
 use serde::Deserialize;
 
+use super::sync_event_reminders::{EventOperation, SyncEventRemindersUseCase};
+
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateEventBody {
@@ -103,7 +105,7 @@ impl Usecase for UpdateEventUseCase {
         }
 
         let recurrence_res = if let Some(rrule_opts) = self.rrule_options.clone() {
-            // should we clear exdates when rrules are updated ?
+            // ? should exdates be deleted when rrules are updated
             e.set_recurrence(rrule_opts, true)
         } else if should_update_endtime && e.recurrence.is_some() {
             e.set_recurrence(e.recurrence.clone().unwrap(), true)
@@ -119,6 +121,14 @@ impl Usecase for UpdateEventUseCase {
         if repo_res.is_err() {
             return Err(UseCaseErrors::StorageError);
         }
+
+
+        let sync_event_reminders = SyncEventRemindersUseCase {
+            event: &e,
+            op: EventOperation::Updated
+        };
+        // TODO: handl err
+        execute(sync_event_reminders, ctx).await;
 
         Ok(())
     }

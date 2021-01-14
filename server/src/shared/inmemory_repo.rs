@@ -57,7 +57,9 @@ pub fn delete_by<T: Clone + Entity, F: Fn(&T) -> bool>(
     collection: &Mutex<Vec<T>>,
     compare: F,
 ) -> DeleteResult {
-    DeleteResult { deleted_count: find_and_delete_by(collection, compare).len() as i64 }
+    DeleteResult {
+        deleted_count: find_and_delete_by(collection, compare).len() as i64,
+    }
 }
 
 pub fn find_and_delete_by<T: Clone + Entity, F: Fn(&T) -> bool>(

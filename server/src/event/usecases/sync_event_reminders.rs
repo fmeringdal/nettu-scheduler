@@ -4,16 +4,24 @@ use crate::{calendar::domain::calendar_view::CalendarView, shared::usecase::Usec
 use chrono::prelude::*;
 use mongodb::bson::oid::ObjectId;
 
+#[derive(Debug, PartialEq)]
+pub enum EventOperation {
+    Created,
+    Updated,
+    Deleted
+}
+
 /// Creates EventReminders for a calendar event
-pub struct SyncEventRemindersUseCase {
-    event: CalendarEvent,
+pub struct SyncEventRemindersUseCase<'a> {
+    pub event: &'a CalendarEvent,
+    pub op: EventOperation
 }
 
 struct SyncEventRemindersConfig {
     expansion_interval: i64,
 }
 
-impl SyncEventRemindersUseCase {
+impl<'a> SyncEventRemindersUseCase<'a> {
     fn get_config() -> SyncEventRemindersConfig {
         SyncEventRemindersConfig {
             expansion_interval: 0,
@@ -27,7 +35,7 @@ pub enum UseCaseErrors {
 }
 
 #[async_trait::async_trait(?Send)]
-impl Usecase for SyncEventRemindersUseCase {
+impl<'a> Usecase for SyncEventRemindersUseCase<'a> {
     type Response = ();
 
     type Errors = UseCaseErrors;
@@ -36,8 +44,18 @@ impl Usecase for SyncEventRemindersUseCase {
 
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         // delete existing reminders
-        if ctx.repos.reminder_repo.delete_by_event(&self.event.id).await.is_err() {
+        if self.op != EventOperation::Created && ctx
+            .repos
+            .reminder_repo
+            .delete_by_event(&self.event.id)
+            .await
+            .is_err()
+        {
             return Err(UseCaseErrors::StorageError);
+        }
+
+        if self.op == EventOperation::Deleted {
+            return Ok(());
         }
 
         let conf = Self::get_config();
@@ -62,7 +80,13 @@ impl Usecase for SyncEventRemindersUseCase {
             .collect::<Vec<_>>();
 
         // create reminders for the next `self.expansion_interval`
-        if ctx.repos.reminder_repo.bulk_insert(&reminders).await.is_err() {
+        if ctx
+            .repos
+            .reminder_repo
+            .bulk_insert(&reminders)
+            .await
+            .is_err()
+        {
             return Err(UseCaseErrors::StorageError);
         }
 

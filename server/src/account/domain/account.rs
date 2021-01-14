@@ -14,6 +14,44 @@ pub struct Account {
     pub id: String,
     pub public_key_b64: Option<String>,
     pub secret_api_key: String,
+    pub settings: AccountSettings,
+}
+
+#[derive(Debug, Clone)]
+pub struct AccountSettings {
+    pub webhook_url: Option<String>,
+    pub webhook_key: Option<String>,
+}
+
+impl AccountSettings {
+    pub fn set_webhook_url(&mut self, webhook_url: Option<String>) -> Option<String> {
+        match webhook_url {
+            Some(url) => {
+                if self.webhook_url.is_none() {
+                    self.webhook_key = Some(Self::generate_webhook_key())
+                }
+                self.webhook_url = Some(url);
+            }
+            None => {
+                self.webhook_key = None;
+                self.webhook_url = None;
+            }
+        };
+        self.webhook_key.clone()
+    }
+
+    fn generate_webhook_key() -> String {
+        Account::generate_secret_api_key()
+    }
+}
+
+impl Default for AccountSettings {
+    fn default() -> Self {
+        Self {
+            webhook_url: None,
+            webhook_key: None,
+        }
+    }
 }
 
 impl Account {
@@ -22,10 +60,11 @@ impl Account {
             id: ObjectId::new().to_string(),
             public_key_b64: None,
             secret_api_key: Self::generate_secret_api_key(),
+            settings: Default::default(),
         }
     }
 
-    fn generate_secret_api_key() -> String {
+    pub fn generate_secret_api_key() -> String {
         let mut rng = rand::thread_rng();
 
         let rand_string: String = (0..API_KEY_LEN)

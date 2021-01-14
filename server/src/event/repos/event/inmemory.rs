@@ -50,6 +50,11 @@ impl IEventRepo for InMemoryEventRepo {
         Ok(res)
     }
 
+    async fn find_many(&self, event_ids: &[String]) -> Result<Vec<CalendarEvent>, Box<dyn Error>> {
+        let res = find_by(&self.calendar_events, |event| event_ids.contains(&event.id));
+        Ok(res)
+    }
+
     async fn delete(&self, event_id: &str) -> Option<CalendarEvent> {
         delete(event_id, &self.calendar_events)
     }

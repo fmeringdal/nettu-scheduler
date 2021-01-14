@@ -78,6 +78,16 @@ impl IEventRepo for EventRepo {
         mongo_repo::find_many_by::<_, CalendarEventMongo>(&self.collection, filter).await
     }
 
+    async fn find_many(&self, event_ids: &[String]) -> Result<Vec<CalendarEvent>, Box<dyn Error>> {
+        let filter = doc! {
+            "event_id": {
+                "$in": event_ids
+            }
+        };
+
+        mongo_repo::find_many_by::<_, CalendarEventMongo>(&self.collection, filter).await
+    }
+
     async fn delete(&self, event_id: &str) -> Option<CalendarEvent> {
         let id = match ObjectId::with_string(event_id) {
             Ok(oid) => mongo_repo::MongoPersistenceID::ObjectId(oid),
