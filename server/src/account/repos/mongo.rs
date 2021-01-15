@@ -1,4 +1,4 @@
-use crate::account::domain::{Account, AccountSettings};
+use crate::account::domain::{Account, AccountSettings, AccountWebhookSettings};
 
 use super::IAccountRepo;
 use crate::shared::mongo_repo;
@@ -82,32 +82,47 @@ struct AccountMongo {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct AccountSettingsMongo {
-    pub webhook_url: Option<String>,
-    pub webhook_key: Option<String>,
+    pub webhook: Option<AccountWebhookSettingsMongo>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct AccountWebhookSettingsMongo {
+    pub url: String,
+    pub key: String,
 }
 
 impl<'de> MongoDocument<Account> for AccountMongo {
     fn to_domain(&self) -> Account {
+        let mut settings = AccountSettings { webhook: None };
+        if let Some(webhook_settings) = self.settings.webhook.as_ref() {
+            settings.webhook = Some(AccountWebhookSettings {
+                url: webhook_settings.url.to_owned(),
+                key: webhook_settings.key.to_owned(),
+            });
+        }
+
         Account {
             id: self._id.to_string(),
             public_key_b64: self.public_key_b64.clone(),
             secret_api_key: self.secret_api_key.clone(),
-            settings: AccountSettings {
-                webhook_key: self.settings.webhook_key.clone(),
-                webhook_url: self.settings.webhook_url.clone(),
-            },
+            settings,
         }
     }
 
     fn from_domain(account: &Account) -> Self {
+        let mut settings = AccountSettingsMongo { webhook: None };
+        if let Some(webhook_settings) = account.settings.webhook.as_ref() {
+            settings.webhook = Some(AccountWebhookSettingsMongo {
+                url: webhook_settings.url.to_owned(),
+                key: webhook_settings.key.to_owned(),
+            });
+        }
+
         Self {
             _id: ObjectId::with_string(&account.id).unwrap(),
             public_key_b64: account.public_key_b64.clone(),
             secret_api_key: account.secret_api_key.clone(),
-            settings: AccountSettingsMongo {
-                webhook_key: account.settings.webhook_key.clone(),
-                webhook_url: account.settings.webhook_url.clone(),
-            },
+            settings,
         }
     }
 

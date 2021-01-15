@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-use crate::shared::usecase::Usecase;
 use crate::{account::domain::Account, event::domain::Reminder};
+use crate::{account::domain::AccountWebhookSettings, shared::usecase::Usecase};
 use crate::{api::Context, event::domain::event::CalendarEvent};
 use chrono::prelude::*;
 use serde::Serialize;
@@ -53,11 +53,10 @@ async fn create_reminders_for_accounts(
     reminders: Vec<Reminder>,
     mut event_lookup: HashMap<String, CalendarEvent>,
     ctx: &Context,
-) -> Vec<(Account, AccountEventReminders )> {
+) -> Vec<(Account, AccountEventReminders)> {
     let account_lookup = get_accounts_from_reminders(&reminders, ctx).await;
 
-    let mut account_reminders: HashMap<String, (&Account, Vec<CalendarEvent>)> =
-            HashMap::new();
+    let mut account_reminders: HashMap<String, (&Account, Vec<CalendarEvent>)> = HashMap::new();
 
     for reminder in reminders {
         let account = match account_lookup.get(&reminder.account_id) {
@@ -76,8 +75,7 @@ async fn create_reminders_for_accounts(
                 acc_reminders.1.push(calendar_event);
             }
             None => {
-                account_reminders
-                    .insert(account.id.to_owned(), (account, vec![calendar_event]));
+                account_reminders.insert(account.id.to_owned(), (account, vec![calendar_event]));
             }
         };
     }
@@ -117,20 +115,22 @@ impl Usecase for SendEventRemindersUseCase {
             .collect::<HashMap<_, _>>();
 
         let account_reminders = create_reminders_for_accounts(reminders, event_lookup, ctx).await;
-        
+
         let client = actix_web::client::Client::new();
-        for (acc, reminders) in account_reminders.into_iter().filter(|(acc, _)| acc.settings.webhook_url.is_some()) {
-                if let Err(e) = client
-                    .post(acc.settings.webhook_url.unwrap())
-                    .header(
-                        "nettu-scheduler-webhook-key",
-                        acc.settings.webhook_key.to_owned().unwrap(),
-                    )
-                    .send_json(&reminders)
-                    .await
-                {
-                    println!("Error informing client of reminders: {:?}", e);
+        for (acc, reminders) in account_reminders {
+            match acc.settings.webhook {
+                None => continue,
+                Some(webhook) => {
+                    if let Err(e) = client
+                        .post(webhook.url)
+                        .header("nettu-scheduler-webhook-key", webhook.key)
+                        .send_json(&reminders)
+                        .await
+                    {
+                        println!("Error informing client of reminders: {:?}", e);
+                    }
                 }
+            }
         }
 
         Ok(())

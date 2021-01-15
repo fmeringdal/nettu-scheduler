@@ -19,25 +19,33 @@ pub struct Account {
 
 #[derive(Debug, Clone)]
 pub struct AccountSettings {
-    pub webhook_url: Option<String>,
-    pub webhook_key: Option<String>,
+    pub webhook: Option<AccountWebhookSettings>,
+}
+
+#[derive(Debug, Clone)]
+pub struct AccountWebhookSettings {
+    pub url: String,
+    pub key: String,
 }
 
 impl AccountSettings {
     pub fn set_webhook_url(&mut self, webhook_url: Option<String>) -> Option<String> {
         match webhook_url {
             Some(url) => {
-                if self.webhook_url.is_none() {
-                    self.webhook_key = Some(Self::generate_webhook_key())
+                if let Some(mut webhook_settings) = self.webhook.as_mut() {
+                    webhook_settings.url = url;
+                } else {
+                    self.webhook = Some(AccountWebhookSettings {
+                        url,
+                        key: Self::generate_webhook_key(),
+                    });
                 }
-                self.webhook_url = Some(url);
             }
             None => {
-                self.webhook_key = None;
-                self.webhook_url = None;
+                self.webhook = None;
             }
         };
-        self.webhook_key.clone()
+        self.webhook.clone().map(|s| s.key)
     }
 
     fn generate_webhook_key() -> String {
@@ -47,10 +55,7 @@ impl AccountSettings {
 
 impl Default for AccountSettings {
     fn default() -> Self {
-        Self {
-            webhook_url: None,
-            webhook_key: None,
-        }
+        Self { webhook: None }
     }
 }
 

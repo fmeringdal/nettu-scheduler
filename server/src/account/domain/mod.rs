@@ -1,3 +1,3 @@
 mod account;
 
-pub use account::{Account, AccountSettings};
+pub use account::{Account, AccountSettings, AccountWebhookSettings};
