@@ -8,13 +8,13 @@ use mongodb::bson::oid::ObjectId;
 pub enum EventOperation {
     Created,
     Updated,
-    Deleted
+    Deleted,
 }
 
 /// Creates EventReminders for a calendar event
 pub struct SyncEventRemindersUseCase<'a> {
     pub event: &'a CalendarEvent,
-    pub op: EventOperation
+    pub op: EventOperation,
 }
 
 struct SyncEventRemindersConfig {
@@ -44,12 +44,13 @@ impl<'a> Usecase for SyncEventRemindersUseCase<'a> {
 
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         // delete existing reminders
-        if self.op != EventOperation::Created && ctx
-            .repos
-            .reminder_repo
-            .delete_by_event(&self.event.id)
-            .await
-            .is_err()
+        if self.op != EventOperation::Created
+            && ctx
+                .repos
+                .reminder_repo
+                .delete_by_event(&self.event.id)
+                .await
+                .is_err()
         {
             return Err(UseCaseErrors::StorageError);
         }

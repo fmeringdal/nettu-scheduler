@@ -10,13 +10,13 @@ use serde::Serialize;
 pub struct SendEventRemindersUseCase {}
 
 struct SendEventRemindersConfig {
-    expansion_interval: i64,
+    send_interval: i64,
 }
 
 impl SendEventRemindersUseCase {
     fn get_config() -> SendEventRemindersConfig {
         SendEventRemindersConfig {
-            expansion_interval: 0,
+            send_interval: 60 * 1000, // every minute
         }
     }
 }
@@ -27,8 +27,8 @@ pub enum UseCaseErrors {
 }
 
 #[derive(Debug, Serialize)]
-struct AccountEventReminders<'a> {
-    reminders: Vec<&'a CalendarEvent>,
+struct AccountEventReminders {
+    events: Vec<CalendarEvent>,
 }
 
 async fn get_accounts_from_reminders(
@@ -49,6 +49,45 @@ async fn get_accounts_from_reminders(
         .collect()
 }
 
+async fn create_reminders_for_accounts(
+    reminders: Vec<Reminder>,
+    mut event_lookup: HashMap<String, CalendarEvent>,
+    ctx: &Context,
+) -> Vec<(Account, AccountEventReminders )> {
+    let account_lookup = get_accounts_from_reminders(&reminders, ctx).await;
+
+    let mut account_reminders: HashMap<String, (&Account, Vec<CalendarEvent>)> =
+            HashMap::new();
+
+    for reminder in reminders {
+        let account = match account_lookup.get(&reminder.account_id) {
+            Some(a) => a,
+            None => continue,
+        };
+
+        // Remove instead of get because there shouldnt be multiple reminders for the same event id
+        // and also we get ownership over calendar_event
+        let calendar_event = match event_lookup.remove(&reminder.event_id) {
+            Some(e) => e,
+            None => continue,
+        };
+        match account_reminders.get_mut(&account.id) {
+            Some(acc_reminders) => {
+                acc_reminders.1.push(calendar_event);
+            }
+            None => {
+                account_reminders
+                    .insert(account.id.to_owned(), (account, vec![calendar_event]));
+            }
+        };
+    }
+
+    account_reminders
+        .into_iter()
+        .map(|(_, (acc, events))| (acc.clone(), AccountEventReminders { events }))
+        .collect()
+}
+
 #[async_trait::async_trait(?Send)]
 impl Usecase for SendEventRemindersUseCase {
     type Response = ();
@@ -59,10 +98,10 @@ impl Usecase for SendEventRemindersUseCase {
 
     /// This will run every minute
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
-        // Find all occurences for the next minute and delete them
-        let ts = Utc::now().timestamp_millis() + 60 * 1000;
+        // Find all occurences for the next interval and delete them
+        let ts = ctx.sys.get_utc_timestamp() + Self::get_config().send_interval;
         let reminders = ctx.repos.reminder_repo.delete_all_before(ts).await;
-        let reminder_events = ctx
+        let event_lookup = ctx
             .repos
             .event_repo
             .find_many(
@@ -76,48 +115,22 @@ impl Usecase for SendEventRemindersUseCase {
             .into_iter()
             .map(|e| (e.id.to_owned(), e))
             .collect::<HashMap<_, _>>();
-        let account_lookup = get_accounts_from_reminders(&reminders, ctx).await;
 
-        let mut account_reminders: HashMap<String, (&Account, Vec<&CalendarEvent>)> =
-            HashMap::new();
-
-        for reminder in reminders {
-            let account = match account_lookup.get(&reminder.account_id) {
-                Some(a) => a,
-                None => continue,
-            };
-
-            let calendar_event = match reminder_events.get(&reminder.event_id) {
-                Some(e) => e,
-                None => continue,
-            };
-            match account_reminders.get_mut(&account.id) {
-                Some(acc_reminders) => {
-                    acc_reminders.1.push(calendar_event);
-                }
-                None => {
-                    account_reminders
-                        .insert(account.id.to_owned(), (account, vec![calendar_event]));
-                }
-            };
-        }
-
+        let account_reminders = create_reminders_for_accounts(reminders, event_lookup, ctx).await;
+        
         let client = actix_web::client::Client::new();
-        for (_, (acc, reminders)) in account_reminders.into_iter() {
-            if let Some(webhook_url) = &acc.settings.webhook_url {
-                let req = AccountEventReminders { reminders };
+        for (acc, reminders) in account_reminders.into_iter().filter(|(acc, _)| acc.settings.webhook_url.is_some()) {
                 if let Err(e) = client
-                    .post(webhook_url)
+                    .post(acc.settings.webhook_url.unwrap())
                     .header(
                         "nettu-scheduler-webhook-key",
                         acc.settings.webhook_key.to_owned().unwrap(),
                     )
-                    .send_json(&req)
+                    .send_json(&reminders)
                     .await
                 {
                     println!("Error informing client of reminders: {:?}", e);
                 }
-            }
         }
 
         Ok(())

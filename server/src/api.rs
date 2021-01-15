@@ -12,6 +12,7 @@ use actix_web::{
     http::{header, StatusCode},
     HttpResponse,
 };
+use chrono::prelude::*;
 use mongodb::{options::ClientOptions, Client};
 use std::sync::Arc;
 use thiserror::Error;
@@ -67,6 +68,7 @@ impl Repos {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct Config {}
 
 impl Config {
@@ -75,9 +77,29 @@ impl Config {
     }
 }
 
+pub trait ISys: Send + Sync {
+    fn get_utc_timestamp(&self) -> i64;
+}
+
+struct MockSys {}
+impl ISys for MockSys {
+    fn get_utc_timestamp(&self) -> i64 {
+        0 // 1970
+    }
+}
+
+struct RealSys {}
+impl ISys for RealSys {
+    fn get_utc_timestamp(&self) -> i64 {
+        Utc::now().timestamp_millis()
+    }
+}
+
+#[derive(Clone)]
 pub struct Context {
     pub repos: Repos,
     pub config: Config,
+    pub sys: Arc<dyn ISys>,
 }
 
 impl Context {
@@ -85,6 +107,18 @@ impl Context {
         Self {
             repos: Repos::create_inmemory(),
             config: Config::new(),
+            sys: Arc::new(MockSys {}),
+        }
+    }
+
+    pub async fn create() -> Self {
+        let repos = Repos::create_mongodb()
+            .await
+            .expect("Mongo db creds must be set and valid");
+        Self {
+            repos,
+            config: Config::new(),
+            sys: Arc::new(RealSys {}),
         }
     }
 }

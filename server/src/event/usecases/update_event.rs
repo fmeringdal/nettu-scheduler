@@ -122,10 +122,9 @@ impl Usecase for UpdateEventUseCase {
             return Err(UseCaseErrors::StorageError);
         }
 
-
         let sync_event_reminders = SyncEventRemindersUseCase {
             event: &e,
-            op: EventOperation::Updated
+            op: EventOperation::Updated,
         };
         // TODO: handl err
         execute(sync_event_reminders, ctx).await;

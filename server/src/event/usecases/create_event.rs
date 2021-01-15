@@ -124,7 +124,7 @@ impl Usecase for CreateEventUseCase {
 
         let sync_event_reminders = SyncEventRemindersUseCase {
             event: &e,
-            op: EventOperation::Created
+            op: EventOperation::Created,
         };
         // TODO: handl err
         execute(sync_event_reminders, ctx).await;
