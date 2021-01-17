@@ -23,5 +23,5 @@ pub fn configure_server_app(cfg: &mut web::ServiceConfig) {
     cfg.route("/", web::get().to(status));
 }
 
-pub use api::{Config, Context, Repos};
+pub use api::{Config, Context, RealSys, Repos};
 pub use interval_service::start_interval_service;

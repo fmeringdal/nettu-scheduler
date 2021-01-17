@@ -81,14 +81,14 @@ pub trait ISys: Send + Sync {
     fn get_utc_timestamp(&self) -> i64;
 }
 
-struct MockSys {}
+pub struct MockSys {}
 impl ISys for MockSys {
     fn get_utc_timestamp(&self) -> i64 {
         0 // 1970
     }
 }
 
-struct RealSys {}
+pub struct RealSys {}
 impl ISys for RealSys {
     fn get_utc_timestamp(&self) -> i64 {
         Utc::now().timestamp_millis()

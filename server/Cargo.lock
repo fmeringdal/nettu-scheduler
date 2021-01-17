@@ -1563,6 +1563,7 @@ dependencies = [
  "serde",
  "thiserror",
  "tokio 1.0.1",
+ "url",
 ]
 
 [[package]]

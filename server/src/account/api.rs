@@ -1,3 +1,4 @@
+use super::usecases::delete_account_webhook::delete_account_webhook_controller;
 use super::usecases::set_account_pub_key::set_account_pub_key_controller;
 use super::usecases::set_account_webhook::set_account_webhook_controller;
 use super::usecases::{
@@ -15,5 +16,9 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
     cfg.route(
         "/account/webhook",
         web::put().to(set_account_webhook_controller),
+    );
+    cfg.route(
+        "/account/webhook",
+        web::delete().to(delete_account_webhook_controller),
     );
 }

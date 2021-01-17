@@ -39,10 +39,10 @@ pub async fn remove_user_from_service_controller(
         .map_err(|e| match e {
             UseCaseErrors::StorageError => NettuError::InternalError,
             UseCaseErrors::ServiceNotFoundError => {
-                NettuError::NotFound(format!("The requested service was not found"))
+                NettuError::NotFound("The requested service was not found".to_string())
             }
             UseCaseErrors::UserNotFoundError => {
-                NettuError::NotFound(format!("The specified user was not found in the service"))
+                NettuError::NotFound("The specified user was not found in the service".to_string())
             }
         })
 }

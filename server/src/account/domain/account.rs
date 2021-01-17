@@ -29,9 +29,17 @@ pub struct AccountWebhookSettings {
 }
 
 impl AccountSettings {
-    pub fn set_webhook_url(&mut self, webhook_url: Option<String>) -> Option<String> {
+    pub fn set_webhook_url(&mut self, webhook_url: Option<String>) -> bool {
         match webhook_url {
             Some(url) => {
+                if let Ok(parsed_url) = url::Url::parse(&url) {
+                    if parsed_url.scheme() != "https" {
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+
                 if let Some(mut webhook_settings) = self.webhook.as_mut() {
                     webhook_settings.url = url;
                 } else {
@@ -45,7 +53,7 @@ impl AccountSettings {
                 self.webhook = None;
             }
         };
-        self.webhook.clone().map(|s| s.key)
+        true
     }
 
     fn generate_webhook_key() -> String {

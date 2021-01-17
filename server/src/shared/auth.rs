@@ -18,9 +18,11 @@ struct Claims {
 }
 
 fn parse_authtoken_header(token_header_value: &str) -> String {
-    let mut token = token_header_value.replace("Bearer", "");
-    token = token.replace("bearer", "");
-    String::from(token.trim())
+    token_header_value
+        .replace("Bearer", "")
+        .replace("bearer", "")
+        .trim()
+        .to_string()
 }
 
 async fn create_user_if_not_exists(
@@ -126,15 +128,15 @@ pub async fn protect_account_route(
         Some(api_key) => match api_key.to_str() {
             Ok(api_key) => api_key,
             Err(_) => {
-                return Err(NettuError::Unauthorized(format!(
-                    "Malformed api key provided"
-                )))
+                return Err(NettuError::Unauthorized(
+                    "Malformed api key provided".to_string(),
+                ))
             }
         },
         None => {
-            return Err(NettuError::Unauthorized(format!(
-                "Unable to find api-key in x-api-key header"
-            )))
+            return Err(NettuError::Unauthorized(
+                "Unable to find api-key in x-api-key header".to_string(),
+            ))
         }
     };
 
@@ -151,7 +153,7 @@ pub async fn protect_account_route(
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::api::Context;
+    use crate::{account::domain::AccountSettings, api::Context};
     use actix_web::test::TestRequest;
     use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
 
@@ -192,6 +194,7 @@ mod test {
             id: String::from("nettu"),
             public_key_b64: Some(public_key_b64),
             secret_api_key: String::from("yoyo"),
+            settings: Default::default(),
         }
     }
 
