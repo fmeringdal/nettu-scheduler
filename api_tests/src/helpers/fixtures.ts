@@ -53,3 +53,12 @@ export const setupUserClientForAccount = (
     client: NettuClient({ token, nettuAccount: accountId }),
   };
 };
+
+export const createAccountAndUser = async () => {
+  const data = await setupUserClient();
+  const user = await data.accountClient.user.create("456");
+  return {
+    ...data,
+    user,
+  };
+};

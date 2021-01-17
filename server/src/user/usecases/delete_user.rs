@@ -14,7 +14,7 @@ pub struct PathParams {
 
 pub async fn delete_user_controller(
     http_req: HttpRequest,
-    path_params: web::Json<PathParams>,
+    path_params: web::Path<PathParams>,
     ctx: web::Data<Context>,
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;

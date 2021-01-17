@@ -5,15 +5,40 @@ import { setupUserClient } from "./helpers/fixtures";
 describe("User API", () => {
   let userId: string;
   let calendarId: string;
+  let accountClient: INettuClient;
   let client: INettuClient;
   let unauthClient: INettuClient;
   beforeAll(async () => {
     const data = await setupUserClient();
     client = data.userClient;
+    accountClient = data.accountClient;
     userId = data.userId;
     unauthClient = NettuClient({ nettuAccount: data.accountId });
     const calendarRes = await client.calendar.insert(undefined);
     calendarId = calendarRes.data.calendarId;
+  });
+
+  it("should create user", async () => {
+    const userId = "345677";
+    let res = await accountClient.user.create(userId);
+    expect(res.status).toBe(201);
+    expect(res.data.id).toBe(userId);
+
+    res = await accountClient.user.find(userId);
+    expect(res.status).toBe(200);
+    expect(res.data.id).toBe(userId);
+
+    // Not allow create user with same userid
+    res = await accountClient.user.create(userId);
+    expect(res.status).toBe(409);
+  });
+
+  it("should delete user", async () => {
+    const userId = "345677";
+    await accountClient.user.create(userId);
+    await accountClient.user.remove(userId);
+    const res = await accountClient.user.find(userId);
+    expect(res.status).toBe(404);
   });
 
   it("should not show any freebusy with no events", async () => {

@@ -1,13 +1,8 @@
-use crate::{
-    api::{Context, NettuError},
-    calendar::usecases::get_user_freebusy::GetUserFreeBusyUseCase,
-    event::domain::booking_slots::{
+use crate::{api::{Context, NettuError}, calendar::usecases::get_user_freebusy::GetUserFreeBusyUseCase, event::domain::booking_slots::{
         get_service_bookingslots, validate_bookingslots_query, validate_slots_interval,
         BookingQueryError, BookingSlotsOptions, BookingSlotsQuery, ServiceBookingSlot,
         ServiceBookingSlotDTO,
-    },
-    shared::auth::ensure_nettu_acct_header,
-};
+    }, shared::auth::{ensure_nettu_acct_header, protect_account_route}};
 use crate::{
     event::domain::booking_slots::UserFreeEvents,
     shared::usecase::{execute, Usecase},
@@ -42,7 +37,15 @@ pub async fn get_service_bookingslots_controller(
     path_params: web::Path<PathParams>,
     ctx: web::Data<Context>,
 ) -> Result<HttpResponse, NettuError> {
-    let _account = ensure_nettu_acct_header(&http_req)?;
+    match ensure_nettu_acct_header(&http_req) {
+        Ok(_) => (),
+        Err(e) => {
+            match protect_account_route(&http_req, &ctx).await {
+                Ok(_) => (),
+                Err(_) => return Err(e) 
+            }
+        } 
+    };
 
     let usecase = GetServiceBookingSlotsUseCase {
         service_id: path_params.service_id.clone(),

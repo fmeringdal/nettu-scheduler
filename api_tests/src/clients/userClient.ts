@@ -29,7 +29,26 @@ export type GetUserBookingslotsResponse = {
   bookingSlots: BookingSlot[];
 };
 
+export type User = {
+  id: string;
+  accountId: string;
+};
+
 export class NettuUserClient extends NettuBaseClient {
+  public create(userId: string) {
+    return this.post<User>(`/user`, {
+      userId,
+    });
+  }
+
+  public find(userId: string) {
+    return this.get<User>(`/user/${userId}`);
+  }
+
+  public remove(userId: string) {
+    return this.delete<void>(`/user/${userId}`);
+  }
+
   public freebusy(userId: string, req: GetUserFeebusyReq) {
     let queryString = `startTs=${req.startTs}&endTs=${req.endTs}`;
     if (req.calendarIds && req.calendarIds.length > 0) {
