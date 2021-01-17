@@ -1,11 +1,7 @@
-use crate::user::domain::User;
+use crate::shared::usecase::{execute, Usecase};
 use crate::{
     api::{Context, NettuError},
-    shared::auth::{protect_account_route, protect_route},
-};
-use crate::{
-    calendar::domain::calendar::Calendar,
-    shared::usecase::{execute, Usecase},
+    shared::auth::protect_route,
 };
 use actix_web::{web, HttpResponse};
 use serde::{Deserialize, Serialize};
@@ -104,35 +100,35 @@ impl Usecase for UpdateCalendarSettingsUseCase {
     }
 }
 
-
-
 #[cfg(test)]
 mod test {
-    use crate::event::domain::event::{CalendarEvent, RRuleOptions};
+    use crate::{
+        calendar::domain::calendar::Calendar,
+        event::domain::event::{CalendarEvent, RRuleOptions},
+    };
 
     use super::*;
 
     #[actix_web::main]
     #[test]
-    async fn it_rejects_invalid_wkst(){
+    async fn it_rejects_invalid_wkst() {
         let ctx = Context::create_inmemory();
         let user_id = "1".to_string();
         let calendar = Calendar::new(&user_id);
         ctx.repos.calendar_repo.insert(&calendar).await.unwrap();
-        
+
         let mut usecase = UpdateCalendarSettingsUseCase {
             calendar_id: calendar.id.into(),
             user_id: user_id.into(),
-            wkst: 20
+            wkst: 20,
         };
         let res = usecase.execute(&ctx).await;
         assert!(res.is_err());
     }
 
-
     #[actix_web::main]
     #[test]
-    async fn it_update_settings_with_valid_wkst(){
+    async fn it_update_settings_with_valid_wkst() {
         let ctx = Context::create_inmemory();
         let user_id = "1".to_string();
         let calendar = Calendar::new(&user_id);
@@ -149,12 +145,12 @@ mod test {
             recurrence: Some(Default::default()),
             reminder: None,
             start_ts: 10,
-            user_id: user_id.clone()
+            user_id: user_id.clone(),
         };
         let recurring_event_in_other_calendar = CalendarEvent {
             account_id: "0".into(),
             busy: false,
-            calendar_id: calendar.id.clone()+"9",
+            calendar_id: calendar.id.clone() + "9",
             duration: 60,
             end_ts: 100,
             exdates: vec![],
@@ -162,7 +158,7 @@ mod test {
             recurrence: Some(Default::default()),
             reminder: None,
             start_ts: 10,
-            user_id: user_id.clone()
+            user_id: user_id.clone(),
         };
         let non_recurring_event = CalendarEvent {
             account_id: "0".into(),
@@ -175,18 +171,26 @@ mod test {
             recurrence: None,
             reminder: None,
             start_ts: 10,
-            user_id: user_id.clone()
+            user_id: user_id.clone(),
         };
         ctx.repos.event_repo.insert(&recurring_event).await.unwrap();
-        ctx.repos.event_repo.insert(&recurring_event_in_other_calendar).await.unwrap();
-        ctx.repos.event_repo.insert(&non_recurring_event).await.unwrap();
-        
+        ctx.repos
+            .event_repo
+            .insert(&recurring_event_in_other_calendar)
+            .await
+            .unwrap();
+        ctx.repos
+            .event_repo
+            .insert(&non_recurring_event)
+            .await
+            .unwrap();
+
         assert_eq!(calendar.settings.wkst, 0);
         let new_wkst = 3;
         let mut usecase = UpdateCalendarSettingsUseCase {
             calendar_id: calendar.id.clone(),
             user_id: user_id.into(),
-            wkst: new_wkst
+            wkst: new_wkst,
         };
         let res = usecase.execute(&ctx).await;
         assert!(res.is_ok());
@@ -196,17 +200,30 @@ mod test {
         assert_eq!(calendar.settings.wkst, new_wkst);
 
         // Check that rrule options have been updated for the calendar event
-        let e = ctx.repos.event_repo.find(&recurring_event.id).await.unwrap();
+        let e = ctx
+            .repos
+            .event_repo
+            .find(&recurring_event.id)
+            .await
+            .unwrap();
         assert_eq!(e.recurrence.unwrap().wkst, new_wkst);
 
-
         // Check that rrule options have not been updated for event in other calendar
-        let e = ctx.repos.event_repo.find(&recurring_event_in_other_calendar.id).await.unwrap();
+        let e = ctx
+            .repos
+            .event_repo
+            .find(&recurring_event_in_other_calendar.id)
+            .await
+            .unwrap();
         assert_eq!(e.recurrence.unwrap().wkst, 0);
 
-
         // Check that non recurring event has not been updated
-        let e = ctx.repos.event_repo.find(&non_recurring_event.id).await.unwrap();
+        let e = ctx
+            .repos
+            .event_repo
+            .find(&non_recurring_event.id)
+            .await
+            .unwrap();
         assert!(e.recurrence.is_none());
     }
 }
