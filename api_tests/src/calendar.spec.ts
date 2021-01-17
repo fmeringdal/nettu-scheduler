@@ -1,4 +1,4 @@
-import { INettuClient, NettuClient } from "./clients";
+import { INettuClient, NettuClient, config } from "@nettu/sdk-scheduler";
 import { setupUserClient } from "./helpers/fixtures";
 
 describe("Calendar API", () => {

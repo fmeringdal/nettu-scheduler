@@ -1,4 +1,4 @@
-import { INettuClient, NettuClient } from "./clients";
+import { INettuClient, NettuClient } from "@nettu/sdk-scheduler";
 import { Frequenzy } from "./domain/calendarEvent";
 import { setupUserClient } from "./helpers/fixtures";
 

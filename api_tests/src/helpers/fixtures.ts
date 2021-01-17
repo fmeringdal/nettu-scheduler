@@ -1,7 +1,6 @@
-import { NettuClient } from "../clients";
+import { NettuClient } from "@nettu/sdk-scheduler";
 import { readPrivateKey, readPublicKeyBase64, toBase64 } from "./utils";
 import jwt from "jsonwebtoken";
-import { Account } from "../domain/account";
 
 export const CREATE_ACCOUNT_CODE = "FW4KbTC2loN1Ckr8KkIcwE3Av";
 

@@ -1,4 +1,4 @@
-import { INettuClient } from "./clients";
+import { INettuClient } from "@nettu/sdk-scheduler";
 import { setupAccount } from "./helpers/fixtures";
 
 describe("Service API", () => {
