@@ -1,6 +1,7 @@
-import { INettuClient, NettuClient } from "@nettu/sdk-scheduler";
-import { Frequenzy } from "./domain/calendarEvent";
+import { INettuClient, NettuClient, domain } from "@nettu/sdk-scheduler";
 import { setupUserClient } from "./helpers/fixtures";
+
+const { Frequenzy } = domain;
 
 describe("CalendarEvent API", () => {
   let calendarId: string;
