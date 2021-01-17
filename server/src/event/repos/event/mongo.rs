@@ -107,6 +107,28 @@ impl IEventRepo for EventRepo {
             Err(err) => Err(Box::new(err)),
         }
     }
+
+    async fn update_calendar_wkst(
+        &self,
+        calendar_id: &str,
+        wkst: i32,
+    ) -> Result<(), Box<dyn Error>> {
+        let filter = doc! {
+            "calendar_id": calendar_id,
+            "recurrence": {
+                "$exists": true
+            }
+        };
+        let update = doc! {
+            "recurrence": {
+                "wkst": wkst
+            }
+        };
+        match self.collection.update_many(filter, update, None).await {
+            Ok(res) => Ok(()),
+            Err(err) => Err(Box::new(err)),
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]

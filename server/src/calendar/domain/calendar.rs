@@ -17,6 +17,17 @@ pub struct CalendarSettings {
     pub wkst: isize,
 }
 
+impl CalendarSettings {
+    pub fn set_wkst(&mut self, wkst: isize) -> bool {
+        if wkst >= 0 && wkst <= 6 {
+            self.wkst = wkst;
+            true
+        } else {
+            false
+        }
+    }
+}
+
 impl Calendar {
     pub fn new(user_id: &str) -> Self {
         Self {

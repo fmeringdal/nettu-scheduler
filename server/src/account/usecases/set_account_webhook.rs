@@ -39,7 +39,9 @@ pub async fn set_account_webhook_controller(
         })
         .map_err(|e| match e {
             UseCaseErrors::InvalidURI => NettuError::BadClientData("Invalid URI provided".into()),
-            UseCaseErrors::WebhookUrlTaken => NettuError::BadClientData("URI is already in use by someone else".into()),
+            UseCaseErrors::WebhookUrlTaken => {
+                NettuError::BadClientData("URI is already in use by someone else".into())
+            }
             UseCaseErrors::StorageError => NettuError::InternalError,
         })
 }

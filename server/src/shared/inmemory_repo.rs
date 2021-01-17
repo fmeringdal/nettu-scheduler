@@ -79,3 +79,18 @@ pub fn find_and_delete_by<T: Clone + Entity, F: Fn(&T) -> bool>(
 
     deleted_items
 }
+
+pub fn update_many<T: Clone + Entity, F: Fn(&T) -> bool, U: Fn(&mut T)>(
+    collection: &Mutex<Vec<T>>,
+    compare: F,
+    update: U,
+) {
+    let mut collection = collection.lock().unwrap();
+
+    for i in 0..collection.len() {
+        let index = collection.len() - i - 1;
+        if compare(&collection[index]) {
+            update(&mut collection[index]);
+        }
+    }
+}

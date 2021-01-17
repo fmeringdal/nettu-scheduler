@@ -49,11 +49,9 @@ impl IAccountRepo for InMemoryAccountRepo {
     }
 
     async fn find_by_webhook_url(&self, url: &str) -> Option<Account> {
-        let accounts = find_by(&self.accounts, |account| {
-            match &account.settings.webhook {
-                Some(webhook_settings) => webhook_settings.url == url.to_string(),
-                None => false
-            }
+        let accounts = find_by(&self.accounts, |account| match &account.settings.webhook {
+            Some(webhook_settings) => webhook_settings.url == url.to_string(),
+            None => false,
         });
         if accounts.is_empty() {
             return None;

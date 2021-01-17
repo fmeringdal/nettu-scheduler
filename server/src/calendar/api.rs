@@ -1,11 +1,12 @@
-use super::usecases::create_calendar::{
-    create_calendar_admin_controller, create_calendar_controller,
-};
 use super::usecases::delete_calendar::delete_calendar_controller;
 use super::usecases::get_calendar::get_calendar_controller;
 use super::usecases::get_calendar_events::get_calendar_events_controller;
 use super::usecases::get_user_bookingslots::get_user_bookingslots_controller;
 use super::usecases::get_user_freebusy::get_user_freebusy_controller;
+use super::usecases::{
+    create_calendar::{create_calendar_admin_controller, create_calendar_controller},
+    update_calendar_settings::update_calendar_settings_controller,
+};
 use actix_web::web;
 
 pub fn configure_routes(cfg: &mut web::ServiceConfig) {
@@ -24,6 +25,11 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
     cfg.route(
         "/calendar/{calendar_id}",
         web::delete().to(delete_calendar_controller),
+    );
+
+    cfg.route(
+        "/calendar/{calendar_id}/settings",
+        web::put().to(update_calendar_settings_controller),
     );
     cfg.route(
         "/calendar/{calendar_id}/events",

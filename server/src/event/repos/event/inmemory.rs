@@ -1,4 +1,7 @@
-use crate::event::repos::{DeleteResult, IEventRepo};
+use crate::event::{
+    domain::event::RRuleOptions,
+    repos::{DeleteResult, IEventRepo},
+};
 use crate::shared::inmemory_repo::*;
 use crate::{calendar::domain::calendar_view::CalendarView, event::domain::event::CalendarEvent};
 use std::error::Error;
@@ -60,7 +63,27 @@ impl IEventRepo for InMemoryEventRepo {
     }
 
     async fn delete_by_calendar(&self, calendar_id: &str) -> Result<DeleteResult, Box<dyn Error>> {
-        let res = delete_by(&self.calendar_events, |cal| cal.calendar_id == calendar_id);
+        let res = delete_by(&self.calendar_events, |e| e.calendar_id == calendar_id);
         Ok(res)
+    }
+
+    async fn update_calendar_wkst(
+        &self,
+        calendar_id: &str,
+        wkst: i32,
+    ) -> Result<(), Box<dyn Error>> {
+        update_many(
+            &self.calendar_events,
+            |e| e.calendar_id == calendar_id && e.recurrence.is_some(),
+            |e| {
+                match e.recurrence.as_mut() {
+                    Some(r) => r.wkst = wkst as isize,
+                    None => unreachable!(
+                        "Compare clojure should have just selected events with a recurrence"
+                    ),
+                };
+            },
+        );
+        Ok(())
     }
 }

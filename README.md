@@ -2,15 +2,15 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 
 ## Todos
 
-- More api tests for [calendarevent, booking]
-- Account with alloweduseractions ? maybe add it to jwt
-- Delete user cleanup actions
 - Refactor event domain (maybe add more rruleoptions validation to rrule.rs)
 - Update calendar settings (wkst etc)
-- Webhook verification challenge ? or just have email validation on account
 
 ## Backlog
 
+- Webhook verification challenge ? or just have email validation on account
+- Delete user cleanup actions
+- Account with alloweduseractions ? maybe add it to jwt
+- More api tests for [calendarevent, booking]
 - smarter mongodb schema
 - is more account admin routes needed?
 - protect create account with real emails
