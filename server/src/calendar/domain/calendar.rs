@@ -1,3 +1,4 @@
+use mongodb::bson::oid::ObjectId;
 use serde::Serialize;
 
 use crate::shared::entity::Entity;
@@ -7,6 +8,23 @@ use crate::shared::entity::Entity;
 pub struct Calendar {
     pub id: String,
     pub user_id: String,
+    pub settings: CalendarSettings,
+}
+
+#[derive(Serialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct CalendarSettings {
+    pub wkst: isize,
+}
+
+impl Calendar {
+    pub fn new(user_id: &str) -> Self {
+        Self {
+            id: ObjectId::new().to_hex(),
+            user_id: user_id.to_string(),
+            settings: CalendarSettings { wkst: 0 },
+        }
+    }
 }
 
 impl Entity for Calendar {

@@ -8,7 +8,6 @@ use crate::{
     shared::usecase::{execute, Usecase},
 };
 use actix_web::{web, HttpResponse};
-use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]
@@ -90,10 +89,8 @@ impl Usecase for CreateCalendarUseCase {
             return Err(UseCaseErrors::UserNotFoundError);
         }
 
-        let calendar = Calendar {
-            id: ObjectId::new().to_string(),
-            user_id: self.user_id.clone(),
-        };
+        let calendar = Calendar::new(&self.user_id);
+
         let res = ctx.repos.calendar_repo.insert(&calendar).await;
         match res {
             Ok(_) => Ok(UseCaseRes {

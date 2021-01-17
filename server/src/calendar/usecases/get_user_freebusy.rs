@@ -138,10 +138,8 @@ mod test {
         let ctx = Context::create_inmemory();
         let user = User::new("yoyoyo", "cool");
 
-        let calendar = Calendar {
-            id: String::from("312312"),
-            user_id: user.id(),
-        };
+        let calendar = Calendar::new(&user.id());
+
         ctx.repos.calendar_repo.insert(&calendar).await.unwrap();
         let one_hour = 1000 * 60 * 60;
         let mut e1 = CalendarEvent {

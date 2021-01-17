@@ -80,31 +80,50 @@ impl Usecase for UpdateEventUseCase {
     type Context = Context;
 
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
-        let mut e = match ctx.repos.event_repo.find(&self.event_id).await {
-            Some(event) if event.user_id == self.user_id => event,
+        let UpdateEventUseCase {
+            user_id,
+            event_id,
+            start_ts,
+            busy,
+            duration,
+            rrule_options,
+        } = self;
+
+        let mut e = match ctx.repos.event_repo.find(&event_id).await {
+            Some(event) if event.user_id == *user_id => event,
+            _ => return Err(UseCaseErrors::NotFoundError),
+        };
+
+        let calendar = match ctx.repos.calendar_repo.find(&e.calendar_id).await {
+            Some(cal) => cal,
             _ => return Err(UseCaseErrors::NotFoundError),
         };
 
         let mut should_update_endtime = false;
 
-        if let Some(start_ts) = self.start_ts {
-            if e.start_ts != start_ts {
-                e.start_ts = start_ts;
+        if let Some(start_ts) = start_ts {
+            if e.start_ts != *start_ts {
+                e.start_ts = *start_ts;
                 e.exdates = vec![];
                 should_update_endtime = true;
             }
         }
-        if let Some(duration) = self.duration {
-            if e.duration != duration {
-                e.duration = duration;
+        if let Some(duration) = duration {
+            if e.duration != *duration {
+                e.duration = *duration;
                 should_update_endtime = true;
             }
         }
-        if let Some(busy) = self.busy {
-            e.busy = busy;
+        if let Some(busy) = busy {
+            e.busy = *busy;
         }
 
-        let recurrence_res = if let Some(rrule_opts) = self.rrule_options.clone() {
+        if let Some(mut rrule_opts) = rrule_options.as_mut() {
+            // WKST should be set from calendar settings
+            rrule_opts.wkst = calendar.settings.wkst;
+        }
+
+        let valid_recurrence = if let Some(rrule_opts) = self.rrule_options.clone() {
             // ? should exdates be deleted when rrules are updated
             e.set_recurrence(rrule_opts, true)
         } else if should_update_endtime && e.recurrence.is_some() {
@@ -113,7 +132,7 @@ impl Usecase for UpdateEventUseCase {
             true
         };
 
-        if !recurrence_res {
+        if !valid_recurrence {
             return Err(UseCaseErrors::InvalidRecurrenceRule);
         };
 

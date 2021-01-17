@@ -1,5 +1,5 @@
 use super::ICalendarRepo;
-use crate::calendar::domain::calendar::Calendar;
+use crate::calendar::domain::calendar::{Calendar, CalendarSettings};
 use crate::shared::mongo_repo;
 use mongo_repo::MongoDocument;
 use mongodb::{
@@ -68,6 +68,12 @@ impl ICalendarRepo for CalendarRepo {
 struct CalendarMongo {
     _id: ObjectId,
     user_id: String,
+    settings: CalendarSettingsMongo
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct CalendarSettingsMongo {
+    wkst: isize
 }
 
 impl MongoDocument<Calendar> for CalendarMongo {
@@ -75,6 +81,9 @@ impl MongoDocument<Calendar> for CalendarMongo {
         Calendar {
             id: self._id.to_string(),
             user_id: self.user_id.clone(),
+            settings: CalendarSettings {
+                wkst: self.settings.wkst
+            }
         }
     }
 
@@ -82,6 +91,9 @@ impl MongoDocument<Calendar> for CalendarMongo {
         Self {
             _id: ObjectId::with_string(&calendar.id).unwrap(),
             user_id: calendar.user_id.clone(),
+            settings: CalendarSettingsMongo {
+                wkst: calendar.settings.wkst
+            }
         }
     }
 

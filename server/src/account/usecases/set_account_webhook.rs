@@ -39,6 +39,7 @@ pub async fn set_account_webhook_controller(
         })
         .map_err(|e| match e {
             UseCaseErrors::InvalidURI => NettuError::BadClientData("Invalid URI provided".into()),
+            UseCaseErrors::WebhookUrlTaken => NettuError::BadClientData("URI is already in use by someone else".into()),
             UseCaseErrors::StorageError => NettuError::InternalError,
         })
 }
@@ -55,6 +56,7 @@ pub struct SetAccountWebhookUseCaseResponse {
 #[derive(Debug, PartialEq)]
 pub enum UseCaseErrors {
     InvalidURI,
+    WebhookUrlTaken,
     StorageError,
 }
 
@@ -76,6 +78,14 @@ impl Usecase for SetAccountWebhookUseCase {
             return Err(UseCaseErrors::InvalidURI);
         }
 
+        if let Some(url) = &self.webhook_url {
+            if let Some(acc) = ctx.repos.account_repo.find_by_webhook_url(url).await {
+                if acc.id != self.account.id {
+                    return Err(UseCaseErrors::WebhookUrlTaken);
+                }
+            }
+        }
+
         let webhook_key = if let Some(settings) = &self.account.settings.webhook {
             Some(settings.key.clone())
         } else {
@@ -89,20 +99,28 @@ impl Usecase for SetAccountWebhookUseCase {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
+    use crate::account::domain::{AccountSettings, AccountWebhookSettings};
+
     use super::*;
 
     #[actix_web::main]
     #[test]
     async fn it_rejects_invalid_webhook_url() {
         let ctx = Context::create_inmemory();
-        let bad_uris = vec!["1", "", "test.zzcom", "http://google.com", "test.com", "google.com"];
+        let bad_uris = vec![
+            "1",
+            "",
+            "test.zzcom",
+            "http://google.com",
+            "test.com",
+            "google.com",
+        ];
         for bad_uri in bad_uris {
             let mut use_case = SetAccountWebhookUseCase {
                 webhook_url: Some(bad_uri.to_string()),
-                account: Default::default()
+                account: Default::default(),
             };
             let res = use_case.execute(&ctx).await;
             assert!(res.is_err());
@@ -120,12 +138,11 @@ mod tests {
         for bad_uri in bad_uris {
             let mut use_case = SetAccountWebhookUseCase {
                 webhook_url: Some(bad_uri.to_string()),
-                account: Default::default()
+                account: Default::default(),
             };
             let res = use_case.execute(&ctx).await;
             assert!(res.is_ok());
             assert!(res.unwrap().webhook_key.is_some());
         }
     }
-
 }

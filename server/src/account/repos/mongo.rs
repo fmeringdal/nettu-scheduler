@@ -63,6 +63,13 @@ impl IAccountRepo for AccountRepo {
         mongo_repo::find_one_by::<_, AccountMongo>(&self.collection, filter).await
     }
 
+    async fn find_by_webhook_url(&self, url: &str) -> Option<Account> {
+        let filter = doc! {
+            "settings.webhook.url": url
+        };
+        mongo_repo::find_one_by::<_, AccountMongo>(&self.collection, filter).await
+    }
+
     async fn delete(&self, account_id: &str) -> Option<Account> {
         let id = match ObjectId::with_string(account_id) {
             Ok(oid) => mongo_repo::MongoPersistenceID::ObjectId(oid),

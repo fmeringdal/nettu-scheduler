@@ -111,7 +111,10 @@ impl Usecase for CreateEventUseCase {
             account_id: self.account_id.clone(),
             reminder: None,
         };
-        if let Some(rrule_opts) = self.rrule_options.clone() {
+        if let Some(mut rrule_opts) = self.rrule_options.clone() {
+            // WKST should be set from calendar settings
+            rrule_opts.wkst = calendar.settings.wkst;
+
             if !e.set_recurrence(rrule_opts, true) {
                 return Err(UseCaseErrors::InvalidRecurrenceRule);
             };
@@ -151,10 +154,8 @@ mod test {
         let ctx = Context::create_inmemory();
         let user = User::new("cool2", "cool");
 
-        let calendar = Calendar {
-            id: String::from("312312"),
-            user_id: user.id.clone(),
-        };
+        let calendar = Calendar::new(&user.id);
+
         ctx.repos.calendar_repo.insert(&calendar).await.unwrap();
         TestContext {
             user,

@@ -211,28 +211,22 @@ mod test {
     }
 
     async fn setup_service_users(ctx: &Context, service: &mut Service) {
-        let calendar1id: String = "1".into();
-        let calendar2id: String = "2".into();
-
-        let resource1 = ServiceResource {
-            calendar_ids: vec![calendar1id.clone()],
+        let mut resource1 = ServiceResource {
+            calendar_ids: vec![],
             id: "1".into(),
             user_id: "1".into(),
         };
-        let resource2 = ServiceResource {
-            calendar_ids: vec![calendar2id.clone()],
+        let mut resource2 = ServiceResource {
+            calendar_ids: vec![],
             id: "2".into(),
             user_id: "2".into(),
         };
 
-        let calendar_user_1 = Calendar {
-            id: calendar1id,
-            user_id: resource1.user_id.to_owned(),
-        };
-        let calendar_user_2 = Calendar {
-            id: calendar2id,
-            user_id: resource2.user_id.to_owned(),
-        };
+        let calendar_user_1 = Calendar::new(&resource1.user_id);
+        resource1.calendar_ids.push(calendar_user_1.id.clone());
+        let calendar_user_2 = Calendar::new(&resource2.user_id);
+        resource2.calendar_ids.push(calendar_user_2.id.clone());
+
         ctx.repos
             .calendar_repo
             .insert(&calendar_user_1)
