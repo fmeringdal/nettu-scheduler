@@ -4,7 +4,7 @@ use crate::{
     shared::usecase::{execute, Usecase},
 };
 use crate::{api::NettuError, shared::auth::protect_route};
-use crate::{calendar::domain::calendar_view::CalendarView, event::domain::event::CalendarEvent};
+use crate::{calendar::domain::CalendarView, event::domain::event::CalendarEvent};
 use actix_web::{web, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
 

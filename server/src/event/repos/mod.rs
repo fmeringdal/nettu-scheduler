@@ -6,7 +6,7 @@ pub use event::InMemoryEventRepo;
 pub use reminder::InMemoryReminderRepo;
 pub use reminder::ReminderRepo;
 
-use crate::{calendar::domain::calendar_view::CalendarView, event::domain::event::CalendarEvent};
+use crate::{calendar::domain::CalendarView, event::domain::event::CalendarEvent};
 use std::error::Error;
 
 use super::domain::Reminder;

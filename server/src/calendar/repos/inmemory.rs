@@ -1,5 +1,5 @@
 use super::ICalendarRepo;
-use crate::calendar::domain::calendar::Calendar;
+use crate::calendar::domain::Calendar;
 use crate::shared::inmemory_repo::*;
 use std::error::Error;
 

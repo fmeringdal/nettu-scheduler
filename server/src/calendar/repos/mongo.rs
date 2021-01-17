@@ -1,5 +1,5 @@
 use super::ICalendarRepo;
-use crate::calendar::domain::calendar::{Calendar, CalendarSettings};
+use crate::calendar::domain::{Calendar, CalendarSettings};
 use crate::shared::mongo_repo;
 use mongo_repo::MongoDocument;
 use mongodb::{

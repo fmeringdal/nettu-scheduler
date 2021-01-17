@@ -103,7 +103,7 @@ impl Usecase for UpdateCalendarSettingsUseCase {
 #[cfg(test)]
 mod test {
     use crate::{
-        calendar::domain::calendar::Calendar,
+        calendar::domain::Calendar,
         event::domain::event::{CalendarEvent, RRuleOptions},
     };
 

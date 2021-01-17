@@ -195,7 +195,7 @@ mod test {
     use chrono::Utc;
 
     use crate::{
-        calendar::domain::calendar::Calendar,
+        calendar::domain::Calendar,
         event::domain::event::{CalendarEvent, RRuleOptions},
         service::domain::{Service, ServiceResource},
     };

@@ -4,7 +4,7 @@ mod mongo;
 pub use inmemory::InMemoryCalendarRepo;
 pub use mongo::CalendarRepo;
 
-use crate::calendar::domain::calendar::Calendar;
+use crate::calendar::domain::Calendar;
 
 use std::error::Error;
 

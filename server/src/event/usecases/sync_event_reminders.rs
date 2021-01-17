@@ -1,6 +1,6 @@
 use crate::event::domain::Reminder;
 use crate::{api::Context, event::domain::event::CalendarEvent};
-use crate::{calendar::domain::calendar_view::CalendarView, shared::usecase::Usecase};
+use crate::{calendar::domain::CalendarView, shared::usecase::Usecase};
 use chrono::prelude::*;
 use mongodb::bson::oid::ObjectId;
 

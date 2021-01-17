@@ -1,6 +1,6 @@
 use crate::{
     api::Context,
-    calendar::domain::calendar::Calendar,
+    calendar::domain::Calendar,
     shared::usecase::{execute, Usecase},
 };
 use crate::{api::NettuError, shared::auth::protect_route};

@@ -142,7 +142,7 @@ mod test {
     use chrono::Utc;
 
     use super::*;
-    use crate::{calendar::domain::calendar::Calendar, user::domain::User};
+    use crate::{calendar::domain::Calendar, user::domain::User};
 
     struct TestContext {
         ctx: Context,

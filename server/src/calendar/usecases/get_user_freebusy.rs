@@ -1,4 +1,4 @@
-use crate::{api::Context, calendar::domain::calendar_view::CalendarView};
+use crate::{api::Context, calendar::domain::CalendarView};
 use crate::{api::NettuError, event::domain::event_instance::EventInstance};
 use crate::{
     event::domain::event_instance::get_free_busy,
@@ -126,7 +126,7 @@ impl Usecase for GetUserFreeBusyUseCase {
 mod test {
     use super::*;
     use crate::{
-        calendar::domain::calendar::Calendar,
+        calendar::domain::Calendar,
         event::domain::event::{CalendarEvent, RRuleFrequenzy, RRuleOptions},
         shared::entity::Entity,
         user::domain::User,

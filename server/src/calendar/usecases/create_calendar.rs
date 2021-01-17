@@ -4,7 +4,7 @@ use crate::{
     shared::auth::{protect_account_route, protect_route},
 };
 use crate::{
-    calendar::domain::calendar::Calendar,
+    calendar::domain::Calendar,
     shared::usecase::{execute, Usecase},
 };
 use actix_web::{web, HttpResponse};

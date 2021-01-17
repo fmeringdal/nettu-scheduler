@@ -7,7 +7,7 @@ use crate::{
 
 use crate::{
     api::Context,
-    calendar::domain::{calendar::Calendar, calendar_view::CalendarView},
+    calendar::domain::{Calendar, CalendarView},
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};

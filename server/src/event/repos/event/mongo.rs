@@ -1,6 +1,6 @@
 use crate::event::repos::{DeleteResult, IEventRepo};
 use crate::{
-    calendar::domain::calendar_view::CalendarView,
+    calendar::domain::CalendarView,
     event::domain::event::{CalendarEvent, CalendarEventReminder},
 };
 use crate::{event::domain::event::RRuleOptions, shared::mongo_repo};

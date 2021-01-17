@@ -1,4 +1,4 @@
-use crate::{calendar::domain::calendar_view::CalendarView, shared::entity::Entity};
+use crate::{calendar::domain::CalendarView, shared::entity::Entity};
 
 use super::event_instance::EventInstance;
 use chrono::{prelude::*, Duration};

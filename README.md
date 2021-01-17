@@ -3,7 +3,6 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 ## Todos
 
 - Refactor event domain (maybe add more rruleoptions validation to rrule.rs)
-- Update calendar settings (wkst etc)
 
 ## Backlog
 
