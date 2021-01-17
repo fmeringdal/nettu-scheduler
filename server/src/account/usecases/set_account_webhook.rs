@@ -38,7 +38,9 @@ pub async fn set_account_webhook_controller(
             None => HttpResponse::Ok().finish(),
         })
         .map_err(|e| match e {
-            UseCaseErrors::InvalidURI => NettuError::BadClientData("Invalid URI provided".into()),
+            UseCaseErrors::InvalidURI(err) => {
+                NettuError::BadClientData(format!("Invalid URI provided. Error message: {}", err))
+            }
             UseCaseErrors::WebhookUrlTaken => {
                 NettuError::BadClientData("URI is already in use by someone else".into())
             }
@@ -57,7 +59,7 @@ pub struct SetAccountWebhookUseCaseResponse {
 
 #[derive(Debug, PartialEq)]
 pub enum UseCaseErrors {
-    InvalidURI,
+    InvalidURI(String),
     WebhookUrlTaken,
     StorageError,
 }
@@ -77,7 +79,10 @@ impl Usecase for SetAccountWebhookUseCase {
             .set_webhook_url(self.webhook_url.clone());
 
         if !success {
-            return Err(UseCaseErrors::InvalidURI);
+            return Err(UseCaseErrors::InvalidURI(format!(
+                "Malformed url or scheme is not https: {:?}",
+                self.webhook_url
+            )));
         }
 
         if let Some(url) = &self.webhook_url {
@@ -127,7 +132,13 @@ mod tests {
             let res = use_case.execute(&ctx).await;
             assert!(res.is_err());
             if let Err(err) = res {
-                assert_eq!(err, UseCaseErrors::InvalidURI);
+                assert_eq!(
+                    err,
+                    UseCaseErrors::InvalidURI(format!(
+                        "Malformed url or scheme is not https: {:?}",
+                        Some(bad_uri)
+                    ))
+                );
             }
         }
     }
