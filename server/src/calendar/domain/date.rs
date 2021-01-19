@@ -19,16 +19,41 @@ pub fn is_valid_date(datestr: &str) -> anyhow::Result<(i32, u32, u32)> {
         return Err(anyhow::Error::msg(datestr));
     }
 
-    let mut month_length = vec![31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-    if year % 400 == 0 || (year % 100 != 0 && year % 4 == 0) {
-        month_length[1] = 29;
-    }
+    let month_length = get_month_length(year, month - 1);
 
-    if day < 1 || day > month_length[month as usize - 1] {
+    if day < 1 || day > month_length {
         return Err(anyhow::Error::msg(datestr));
     }
 
     Ok((year, month, day))
+}
+
+pub fn is_leap_year(year: i32) -> bool {
+    year % 400 == 0 || (year % 100 != 0 && year % 4 == 0)
+}
+
+pub fn get_month_length(year: i32, month: u32) -> u32 {
+    match month {
+        0 => 31,
+        1 => {
+            if is_leap_year(year) {
+                29
+            } else {
+                28
+            }
+        }
+        2 => 31,
+        3 => 30,
+        4 => 31,
+        5 => 30,
+        6 => 31,
+        7 => 31,
+        8 => 30,
+        9 => 31,
+        10 => 30,
+        11 => 31,
+        _ => panic!("Invalid month"),
+    }
 }
 
 #[cfg(test)]

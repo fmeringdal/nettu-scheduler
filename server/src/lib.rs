@@ -3,6 +3,7 @@ mod api;
 mod calendar;
 mod event;
 mod interval_service;
+mod schedule;
 mod service;
 mod shared;
 mod user;
