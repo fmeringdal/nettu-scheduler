@@ -57,6 +57,7 @@ impl IScheduleRepo for ScheduleRepo {
 #[derive(Debug, Serialize, Deserialize)]
 struct ScheduleMongo {
     _id: ObjectId,
+    user_id: String,
     rules: Vec<ScheduleRule>,
     timezone: String,
 }
@@ -65,16 +66,18 @@ impl MongoDocument<Schedule> for ScheduleMongo {
     fn to_domain(&self) -> Schedule {
         Schedule {
             id: self._id.to_string(),
+            user_id: self.user_id.to_string(),
             rules: self.rules.to_owned(),
-            timezone: self.timezone.to_owned() 
+            timezone: self.timezone.parse().unwrap(),
         }
     }
 
     fn from_domain(schedule: &Schedule) -> Self {
         Self {
             _id: ObjectId::with_string(&schedule.id).unwrap(),
+            user_id: schedule.user_id.to_owned(),
             rules: schedule.rules.to_owned(),
-            timezone: schedule.timezone.to_owned()
+            timezone: schedule.timezone.to_string(),
         }
     }
 

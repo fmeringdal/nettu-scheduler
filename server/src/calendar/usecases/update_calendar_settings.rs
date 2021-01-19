@@ -32,7 +32,7 @@ pub async fn update_calendar_settings_controller(
 
     execute(usecase, &ctx)
         .await
-        .map(|usecase_res| HttpResponse::Created().json(usecase_res))
+        .map(|usecase_res| HttpResponse::Ok().json(usecase_res))
         .map_err(|e| match e {
             UseCaseErrors::StorageError => NettuError::InternalError,
             UseCaseErrors::CalendarNotFoundError => {

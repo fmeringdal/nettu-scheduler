@@ -17,7 +17,7 @@ pub struct AdminControllerPathParams {
 
 pub async fn create_calendar_admin_controller(
     http_req: web::HttpRequest,
-    path_params: web::Json<AdminControllerPathParams>,
+    path_params: web::Path<AdminControllerPathParams>,
     ctx: web::Data<Context>,
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;

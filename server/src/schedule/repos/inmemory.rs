@@ -30,7 +30,7 @@ impl IScheduleRepo for InMemoryScheduleRepo {
     async fn find(&self, schedule_id: &str) -> Option<Schedule> {
         find(schedule_id, &self.schedules)
     }
-    
+
     async fn delete(&self, schedule_id: &str) -> Option<Schedule> {
         delete(schedule_id, &self.schedules)
     }
