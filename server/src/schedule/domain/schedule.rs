@@ -132,6 +132,8 @@ impl Schedule {
         };
         while cursor < cursor_end {
             let s = cursor.to_string();
+
+
             let intervals = match date_lookup.get(&s) {
                 Some(intervals) => Some(intervals),
                 None => {
@@ -159,6 +161,44 @@ impl Schedule {
 #[cfg(test)]
 mod test {
     use super::*;
+
+
+    #[test]
+    fn day_sanity_tests(){
+        let mut day = Day {
+            year: 2021,
+            month: 1,
+            day: 1
+        };
+        day.inc();
+        assert_eq!(day, Day {
+            year: 2021,
+            month: 1,
+            day: 2
+        });
+        let mut day = Day {
+            year: 2021,
+            month: 1,
+            day: 31
+        };
+        day.inc();
+        assert_eq!(day, Day {
+            year: 2021,
+            month: 2,
+            day: 1
+        });
+        let mut day = Day {
+            year: 2021,
+            month: 12,
+            day: 31
+        };
+        day.inc();
+        assert_eq!(day, Day {
+            year: 2022,
+            month: 1,
+            day: 1
+        });
+    }
 
     #[test]
     fn it_computes_freebusy_for_schedule() {

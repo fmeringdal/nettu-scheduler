@@ -19,7 +19,7 @@ pub fn is_valid_date(datestr: &str) -> anyhow::Result<(i32, u32, u32)> {
         return Err(anyhow::Error::msg(datestr));
     }
 
-    let month_length = get_month_length(year, month - 1);
+    let month_length = get_month_length(year, month);
 
     if day < 1 || day > month_length {
         return Err(anyhow::Error::msg(datestr));
@@ -32,8 +32,9 @@ pub fn is_leap_year(year: i32) -> bool {
     year % 400 == 0 || (year % 100 != 0 && year % 4 == 0)
 }
 
+// month: January -> 1
 pub fn get_month_length(year: i32, month: u32) -> u32 {
-    match month {
+    match month - 1 {
         0 => 31,
         1 => {
             if is_leap_year(year) {
