@@ -20,6 +20,7 @@ pub fn configure_server_app(cfg: &mut web::ServiceConfig) {
     account::api::configure_routes(cfg);
     service::api::configure_routes(cfg);
     user::api::configure_routes(cfg);
+    schedule::api::configure_routes(cfg);
 
     cfg.route("/", web::get().to(status));
 }
