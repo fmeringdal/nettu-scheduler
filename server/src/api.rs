@@ -1,12 +1,6 @@
-use crate::{
-    account::repos::{AccountRepo, IAccountRepo, InMemoryAccountRepo},
-    calendar::repos::{CalendarRepo, ICalendarRepo, InMemoryCalendarRepo},
-    event::repos::{
+use crate::{account::repos::{AccountRepo, IAccountRepo, InMemoryAccountRepo}, calendar::repos::{CalendarRepo, ICalendarRepo, InMemoryCalendarRepo}, event::repos::{
         EventRepo, IEventRepo, IReminderRepo, InMemoryEventRepo, InMemoryReminderRepo, ReminderRepo,
-    },
-    service::repos::{IServiceRepo, InMemoryServiceRepo, ServiceRepo},
-    user::repos::{IUserRepo, InMemoryUserRepo, UserRepo},
-};
+    }, schedule::{self, repos::IScheduleRepo}, service::repos::{IServiceRepo, InMemoryServiceRepo, ServiceRepo}, user::repos::{IUserRepo, InMemoryUserRepo, UserRepo}};
 use actix_web::{
     dev::HttpResponseBuilder,
     http::{header, StatusCode},
@@ -14,6 +8,7 @@ use actix_web::{
 };
 use chrono::prelude::*;
 use mongodb::{options::ClientOptions, Client};
+use schedule::repos::{InMemoryScheduleRepo, ScheduleRepo};
 use std::sync::Arc;
 use thiserror::Error;
 
@@ -24,6 +19,7 @@ pub struct Repos {
     pub account_repo: Arc<dyn IAccountRepo>,
     pub user_repo: Arc<dyn IUserRepo>,
     pub service_repo: Arc<dyn IServiceRepo>,
+    pub schedule_repo: Arc<dyn IScheduleRepo>,
     pub reminder_repo: Arc<dyn IReminderRepo>,
 }
 
@@ -51,6 +47,7 @@ impl Repos {
             account_repo: Arc::new(AccountRepo::new(&db)),
             user_repo: Arc::new(UserRepo::new(&db)),
             service_repo: Arc::new(ServiceRepo::new(&db)),
+            schedule_repo: Arc::new(ScheduleRepo::new(&db)),
             reminder_repo: Arc::new(ReminderRepo::new(&db)),
         })
     }
@@ -63,6 +60,7 @@ impl Repos {
             account_repo: Arc::new(InMemoryAccountRepo::new()),
             user_repo: Arc::new(InMemoryUserRepo::new()),
             service_repo: Arc::new(InMemoryServiceRepo::new()),
+            schedule_repo: Arc::new(InMemoryScheduleRepo::new()),
             reminder_repo: Arc::new(InMemoryReminderRepo::new()),
         }
     }

@@ -1,3 +1,3 @@
 mod schedule;
 
-pub use schedule::Schedule;
+pub use schedule::{Schedule, ScheduleRule};

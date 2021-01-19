@@ -1,28 +1,36 @@
 use std::collections::HashMap;
 
-use crate::{
-    calendar::domain::{date, CalendarView},
-    event::domain::event_instance::EventInstance,
-};
+use crate::{calendar::domain::{date, CalendarView}, event::domain::event_instance::EventInstance, shared::entity::Entity};
 use chrono::prelude::*;
 use chrono_tz::Tz;
+use serde::{Serialize, Deserialize};
 
+#[derive(Debug, Clone)]
 pub struct Schedule {
-    id: String,
-    rules: Vec<ScheduleRule>,
-    timezone: String,
+    pub id: String,
+    pub rules: Vec<ScheduleRule>,
+    pub timezone: String,
 }
 
+impl Entity for Schedule {
+    fn id(&self) -> String {
+        self.id.clone()
+    }
+} 
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum ScheduleRuleVariant {
     WDay(Weekday),
     Date(String),
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
 struct Time {
     hours: u32,
     minutes: u32,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ScheduleRuleInterval {
     start: Time,
     end: Time,
@@ -44,6 +52,7 @@ impl ScheduleRuleInterval {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ScheduleRule {
     pub variant: ScheduleRuleVariant,
     pub intervals: Vec<ScheduleRuleInterval>,
@@ -120,25 +129,24 @@ impl Schedule {
 
         let mut free_instances = vec![];
 
-        let mut cursor = Day {
+        let mut day_cursor = Day {
             year: start.year(),
             month: start.month(),
             day: start.day(),
         };
-        let cursor_end = Day {
+        let last_day = Day {
             year: end.year(),
             month: end.month(),
             day: end.day(),
         };
-        while cursor < cursor_end {
-            let s = cursor.to_string();
+        while day_cursor <= last_day {
+            let day_str = day_cursor.to_string();
 
-
-            let intervals = match date_lookup.get(&s) {
+            let intervals = match date_lookup.get(&day_str) {
                 Some(intervals) => Some(intervals),
                 None => {
                     // check if weekday rule exists
-                    let weekday = cursor.weekday(&tz);
+                    let weekday = day_cursor.weekday(&tz);
                     weekday_lookup.get(&weekday)
                 }
             };
@@ -146,10 +154,10 @@ impl Schedule {
                 free_instances.extend(
                     intervals
                         .into_iter()
-                        .map(|interval| interval.to_event(&cursor, &tz)),
+                        .map(|interval| interval.to_event(&day_cursor, &tz)),
                 );
             }
-            cursor.inc();
+            day_cursor.inc();
         }
         std::mem::drop(date_lookup);
 
@@ -195,6 +203,14 @@ mod test {
         day.inc();
         assert_eq!(day, Day {
             year: 2022,
+            month: 1,
+            day: 1
+        });
+        for _ in 0..365 {
+            day.inc();    
+        }
+        assert_eq!(day, Day {
+            year: 2023,
             month: 1,
             day: 1
         });
