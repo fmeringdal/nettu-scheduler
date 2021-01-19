@@ -61,6 +61,7 @@ impl Entity for Schedule {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(tag = "type", content="value")]
 pub enum ScheduleRuleVariant {
     WDay(Weekday),
     Date(String),
