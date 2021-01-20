@@ -266,6 +266,10 @@ mod test {
 
     #[test]
     fn daily_calendar_event() {
+        let settings = CalendarSettings {
+            timezone: UTC,
+            wkst: 0
+        };
         let event = CalendarEvent {
             id: String::from("dsa"),
             start_ts: 1521317491239,
@@ -274,8 +278,6 @@ mod test {
             recurrence: Some(RRuleOptions {
                 freq: RRuleFrequenzy::Daily,
                 interval: 1,
-                tzid: UTC.to_string(),
-                wkst: 0,
                 until: None,
                 count: Some(4),
                 bynweekday: None,
@@ -290,12 +292,16 @@ mod test {
             reminder: None,
         };
 
-        let oc = event.expand(None);
+        let oc = event.expand(None, &settings);
         assert_eq!(oc.len(), 3);
     }
 
     #[test]
     fn calendar_event_without_recurrence() {
+        let settings = CalendarSettings {
+            timezone: UTC,
+            wkst: 0
+        };
         let event = CalendarEvent {
             id: String::from("dsa"),
             start_ts: 1521317491239,
@@ -310,12 +316,16 @@ mod test {
             reminder: None,
         };
 
-        let oc = event.expand(None);
+        let oc = event.expand(None, &settings);
         assert_eq!(oc.len(), 1);
     }
 
     #[test]
     fn rejects_event_with_invalid_recurrence() {
+        let settings = CalendarSettings {
+            timezone: UTC,
+            wkst: 0
+        };
         let mut invalid_rrules = vec![];
         invalid_rrules.push(RRuleOptions {
             count: Some(1000), // too big count
@@ -323,10 +333,6 @@ mod test {
         });
         invalid_rrules.push(RRuleOptions {
             until: Some(Utc.ymd(2150, 1, 1).and_hms(0, 0, 0).timestamp_millis() as isize), // too big until
-            ..Default::default()
-        });
-        invalid_rrules.push(RRuleOptions {
-            tzid: "safsafsa".into(), // Invalid tzid
             ..Default::default()
         });
         invalid_rrules.push(RRuleOptions {
@@ -369,12 +375,16 @@ mod test {
                 reminder: None,
             };
 
-            assert!(!event.set_recurrence(rrule, true));
+            assert!(!event.set_recurrence(rrule, &settings, true));
         }
     }
 
     #[test]
     fn allows_event_with_valid_recurrence() {
+        let settings = CalendarSettings {
+            timezone: UTC,
+            wkst: 0
+        };
         let mut valid_rrules = vec![];
         let start_ts = 1521317491239;
         valid_rrules.push(Default::default());
@@ -410,7 +420,7 @@ mod test {
                 reminder: None,
             };
 
-            assert!(event.set_recurrence(rrule, true));
+            assert!(event.set_recurrence(rrule, &settings, true));
         }
     }
 }

@@ -172,11 +172,9 @@ mod test {
             count: Some(100),
             freq: RRuleFrequenzy::Daily,
             interval: 1,
-            tzid: String::from("UTC"),
             until: None,
-            wkst: 0,
         };
-        e1.set_recurrence(e1rr, true);
+        e1.set_recurrence(e1rr, &calendar.settings,true);
 
         let mut e2 = CalendarEvent {
             calendar_id: calendar.id.clone(),
@@ -198,11 +196,9 @@ mod test {
             count: Some(100),
             freq: RRuleFrequenzy::Daily,
             interval: 1,
-            tzid: String::from("UTC"),
             until: None,
-            wkst: 0,
         };
-        e2.set_recurrence(e2rr, true);
+        e2.set_recurrence(e2rr, &calendar.settings, true);
 
         let mut e3 = CalendarEvent {
             calendar_id: calendar.id.clone(),
@@ -224,11 +220,9 @@ mod test {
             count: Some(100),
             freq: RRuleFrequenzy::Daily,
             interval: 2,
-            tzid: String::from("UTC"),
             until: None,
-            wkst: 0,
         };
-        e3.set_recurrence(e3rr, true);
+        e3.set_recurrence(e3rr, &calendar.settings, true);
 
         ctx.repos.event_repo.insert(&e1).await.unwrap();
         ctx.repos.event_repo.insert(&e2).await.unwrap();

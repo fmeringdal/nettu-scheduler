@@ -125,7 +125,8 @@ mod test {
         let mut usecase = UpdateCalendarSettingsUseCase {
             calendar_id: calendar.id.into(),
             user_id: user_id.into(),
-            wkst: 20,
+            wkst: Some(20),
+            timezone: None
         };
         let res = usecase.execute(&ctx).await;
         assert!(res.is_err());
@@ -139,63 +140,13 @@ mod test {
         let calendar = Calendar::new(&user_id);
         ctx.repos.calendar_repo.insert(&calendar).await.unwrap();
 
-        let recurring_event = CalendarEvent {
-            account_id: "0".into(),
-            busy: false,
-            calendar_id: calendar.id.clone(),
-            duration: 60,
-            end_ts: 100,
-            exdates: vec![],
-            id: "1".into(),
-            recurrence: Some(Default::default()),
-            reminder: None,
-            start_ts: 10,
-            user_id: user_id.clone(),
-        };
-        let recurring_event_in_other_calendar = CalendarEvent {
-            account_id: "0".into(),
-            busy: false,
-            calendar_id: calendar.id.clone() + "9",
-            duration: 60,
-            end_ts: 100,
-            exdates: vec![],
-            id: "3".into(),
-            recurrence: Some(Default::default()),
-            reminder: None,
-            start_ts: 10,
-            user_id: user_id.clone(),
-        };
-        let non_recurring_event = CalendarEvent {
-            account_id: "0".into(),
-            busy: false,
-            calendar_id: calendar.id.clone(),
-            duration: 60,
-            end_ts: 100,
-            exdates: vec![],
-            id: "2".into(),
-            recurrence: None,
-            reminder: None,
-            start_ts: 10,
-            user_id: user_id.clone(),
-        };
-        ctx.repos.event_repo.insert(&recurring_event).await.unwrap();
-        ctx.repos
-            .event_repo
-            .insert(&recurring_event_in_other_calendar)
-            .await
-            .unwrap();
-        ctx.repos
-            .event_repo
-            .insert(&non_recurring_event)
-            .await
-            .unwrap();
-
         assert_eq!(calendar.settings.wkst, 0);
         let new_wkst = 3;
         let mut usecase = UpdateCalendarSettingsUseCase {
             calendar_id: calendar.id.clone(),
             user_id: user_id.into(),
-            wkst: new_wkst,
+            wkst: Some(new_wkst),
+            timezone: None
         };
         let res = usecase.execute(&ctx).await;
         assert!(res.is_ok());
@@ -203,32 +154,5 @@ mod test {
         // Check that calendar settings have been updated
         let calendar = ctx.repos.calendar_repo.find(&calendar.id).await.unwrap();
         assert_eq!(calendar.settings.wkst, new_wkst);
-
-        // Check that rrule options have been updated for the calendar event
-        let e = ctx
-            .repos
-            .event_repo
-            .find(&recurring_event.id)
-            .await
-            .unwrap();
-        assert_eq!(e.recurrence.unwrap().wkst, new_wkst);
-
-        // Check that rrule options have not been updated for event in other calendar
-        let e = ctx
-            .repos
-            .event_repo
-            .find(&recurring_event_in_other_calendar.id)
-            .await
-            .unwrap();
-        assert_eq!(e.recurrence.unwrap().wkst, 0);
-
-        // Check that non recurring event has not been updated
-        let e = ctx
-            .repos
-            .event_repo
-            .find(&non_recurring_event.id)
-            .await
-            .unwrap();
-        assert!(e.recurrence.is_none());
     }
 }
