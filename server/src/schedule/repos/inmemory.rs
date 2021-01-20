@@ -31,6 +31,16 @@ impl IScheduleRepo for InMemoryScheduleRepo {
         find(schedule_id, &self.schedules)
     }
 
+    async fn find_by_user(&self, user_id: &str) -> Vec<Schedule> {
+        find_by(&self.schedules, |schedule| schedule.user_id == user_id)
+    }
+
+    async fn find_many(&self, schedule_ids: &[String]) -> Vec<Schedule> {
+        find_by(&self.schedules, |schedule| {
+            schedule_ids.contains(&schedule.id)
+        })
+    }
+
     async fn delete(&self, schedule_id: &str) -> Option<Schedule> {
         delete(schedule_id, &self.schedules)
     }

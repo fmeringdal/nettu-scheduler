@@ -1,4 +1,3 @@
-use crate::api::{Context, NettuError};
 use crate::{
     account::domain::Account,
     service::domain::{Service, ServiceResource},
@@ -8,8 +7,13 @@ use crate::{
     },
     user::domain::User,
 };
+use crate::{
+    api::{Context, NettuError},
+    schedule,
+};
 use actix_web::{web, HttpRequest, HttpResponse};
 
+use mongodb::bson::de;
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -21,7 +25,8 @@ pub struct PathParams {
 #[serde(rename_all = "camelCase")]
 pub struct BodyParams {
     user_id: String,
-    calendar_ids: Vec<String>,
+    calendar_ids: Option<Vec<String>>,
+    schedule_ids: Option<Vec<String>>,
 }
 
 pub async fn add_user_to_service_controller(
@@ -36,6 +41,7 @@ pub async fn add_user_to_service_controller(
     let usecase = AddUserToServiceUseCase {
         account,
         calendar_ids: body.calendar_ids.to_owned(),
+        schedule_ids: body.schedule_ids.to_owned(),
         service_id: path_params.service_id.to_owned(),
         user_id,
     };
@@ -55,7 +61,8 @@ struct AddUserToServiceUseCase {
     pub account: Account,
     pub service_id: String,
     pub user_id: String,
-    pub calendar_ids: Vec<String>,
+    calendar_ids: Option<Vec<String>>,
+    schedule_ids: Option<Vec<String>>,
 }
 
 struct UseCaseRes {
@@ -94,21 +101,51 @@ impl Usecase for AddUserToServiceUseCase {
             return Err(UseCaseErrors::UserAlreadyInService);
         }
 
-        let user_calendars = ctx
-            .repos
-            .calendar_repo
-            .find_by_user(&self.user_id)
-            .await
-            .into_iter()
-            .map(|cal| cal.id)
-            .collect::<Vec<_>>();
-        for calendar_id in &self.calendar_ids {
-            if !user_calendars.contains(calendar_id) {
-                return Err(UseCaseErrors::CalendarNotOwnedByUser(calendar_id.clone()));
+        let calendar_ids = match &self.calendar_ids {
+            Some(calendar_ids) => {
+                let user_calendars = ctx
+                    .repos
+                    .calendar_repo
+                    .find_by_user(&self.user_id)
+                    .await
+                    .into_iter()
+                    .map(|cal| cal.id)
+                    .collect::<Vec<_>>();
+                for calendar_id in calendar_ids {
+                    if !user_calendars.contains(calendar_id) {
+                        return Err(UseCaseErrors::CalendarNotOwnedByUser(calendar_id.clone()));
+                    }
+                }
+                Some(calendar_ids)
             }
-        }
+            None => None,
+        };
 
-        let user_resource = ServiceResource::new(&self.user_id, &self.calendar_ids);
+        let schedule_ids = match &self.schedule_ids {
+            Some(schedule_ids) => {
+                let user_schedules = ctx
+                    .repos
+                    .schedule_repo
+                    .find_by_user(&self.user_id)
+                    .await
+                    .into_iter()
+                    .map(|schedule| schedule.id)
+                    .collect::<Vec<_>>();
+                for schedule_id in schedule_ids {
+                    if !user_schedules.contains(schedule_id) {
+                        return Err(UseCaseErrors::CalendarNotOwnedByUser(schedule_id.clone()));
+                    }
+                }
+                Some(schedule_ids)
+            }
+            None => None,
+        };
+
+        let user_resource = ServiceResource::new(
+            &self.user_id,
+            &calendar_ids.unwrap_or(&vec![]),
+            &schedule_ids.unwrap_or(&vec![]),
+        );
         service.add_user(user_resource);
 
         let res = ctx.repos.service_repo.save(&service).await;

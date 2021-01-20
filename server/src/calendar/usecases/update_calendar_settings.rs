@@ -126,7 +126,7 @@ mod test {
             calendar_id: calendar.id.into(),
             user_id: user_id.into(),
             wkst: Some(20),
-            timezone: None
+            timezone: None,
         };
         let res = usecase.execute(&ctx).await;
         assert!(res.is_err());
@@ -146,7 +146,7 @@ mod test {
             calendar_id: calendar.id.clone(),
             user_id: user_id.into(),
             wkst: Some(new_wkst),
-            timezone: None
+            timezone: None,
         };
         let res = usecase.execute(&ctx).await;
         assert!(res.is_ok());

@@ -8,19 +8,25 @@ pub struct ServiceResource {
     pub id: String,
     pub user_id: String,
     pub calendar_ids: Vec<String>,
+    pub schedule_ids: Vec<String>,
 }
 
 impl ServiceResource {
-    pub fn new(user_id: &str, calendar_ids: &[String]) -> Self {
+    pub fn new(user_id: &str, calendar_ids: &[String], schedule_ids: &[String]) -> Self {
         Self {
             id: ObjectId::new().to_string(),
             user_id: String::from(user_id),
             calendar_ids: calendar_ids.to_owned(),
+            schedule_ids: schedule_ids.to_owned(),
         }
     }
 
     pub fn set_calendar_ids(&mut self, calendar_ids: &[String]) {
         self.calendar_ids = calendar_ids.to_owned();
+    }
+
+    pub fn set_schedule_ids(&mut self, schedule_ids: &[String]) {
+        self.schedule_ids = schedule_ids.to_owned();
     }
 }
 

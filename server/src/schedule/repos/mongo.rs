@@ -45,6 +45,35 @@ impl IScheduleRepo for ScheduleRepo {
         mongo_repo::find::<_, ScheduleMongo>(&self.collection, &id).await
     }
 
+    async fn find_by_user(&self, user_id: &str) -> Vec<Schedule> {
+        let filter = doc! {
+            "user_id": user_id
+        };
+        match mongo_repo::find_many_by::<_, ScheduleMongo>(&self.collection, filter).await {
+            Ok(cals) => cals,
+            Err(_) => vec![],
+        }
+    }
+
+    async fn find_many(&self, schedule_ids: &[String]) -> Vec<Schedule> {
+        let ids = schedule_ids
+            .iter()
+            .map(|id| ObjectId::with_string(id))
+            .filter(|id| id.is_ok())
+            .map(|id| id.unwrap())
+            .collect::<Vec<ObjectId>>();
+
+        let filter = doc! {
+            "_id": {
+                "$in": ids
+            }
+        };
+        match mongo_repo::find_many_by::<_, ScheduleMongo>(&self.collection, filter).await {
+            Ok(cals) => cals,
+            Err(_) => vec![],
+        }
+    }
+
     async fn delete(&self, schedule_id: &str) -> Option<Schedule> {
         let id = match ObjectId::with_string(schedule_id) {
             Ok(oid) => mongo_repo::MongoPersistenceID::ObjectId(oid),

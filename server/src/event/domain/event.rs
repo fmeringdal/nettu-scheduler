@@ -268,7 +268,7 @@ mod test {
     fn daily_calendar_event() {
         let settings = CalendarSettings {
             timezone: UTC,
-            wkst: 0
+            wkst: 0,
         };
         let event = CalendarEvent {
             id: String::from("dsa"),
@@ -300,7 +300,7 @@ mod test {
     fn calendar_event_without_recurrence() {
         let settings = CalendarSettings {
             timezone: UTC,
-            wkst: 0
+            wkst: 0,
         };
         let event = CalendarEvent {
             id: String::from("dsa"),
@@ -324,7 +324,7 @@ mod test {
     fn rejects_event_with_invalid_recurrence() {
         let settings = CalendarSettings {
             timezone: UTC,
-            wkst: 0
+            wkst: 0,
         };
         let mut invalid_rrules = vec![];
         invalid_rrules.push(RRuleOptions {
@@ -383,7 +383,7 @@ mod test {
     fn allows_event_with_valid_recurrence() {
         let settings = CalendarSettings {
             timezone: UTC,
-            wkst: 0
+            wkst: 0,
         };
         let mut valid_rrules = vec![];
         let start_ts = 1521317491239;

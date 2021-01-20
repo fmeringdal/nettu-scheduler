@@ -6,6 +6,7 @@ use crate::{
         BookingQueryError, BookingSlotsOptions, BookingSlotsQuery, ServiceBookingSlot,
         ServiceBookingSlotDTO,
     },
+    service::repos,
     shared::auth::{ensure_nettu_acct_header, protect_account_route},
 };
 use crate::{
@@ -14,6 +15,7 @@ use crate::{
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 
+use futures::future::join_all;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize)]
@@ -152,21 +154,27 @@ impl Usecase for GetServiceBookingSlotsUseCase {
 
         let mut users_freebusy: Vec<UserFreeEvents> = Vec::with_capacity(service.users.len());
 
+        let mut usecase_futures = vec![];
+
         for user in &service.users {
             let usecase = GetUserFreeBusyUseCase {
                 calendar_ids: Some(user.calendar_ids.clone()),
+                schedule_ids: Some(user.schedule_ids.clone()),
                 end_ts: booking_timespan.end_ts,
                 start_ts: booking_timespan.start_ts,
                 user_id: user.user_id.clone(),
             };
 
-            let free_events = execute(usecase, &ctx).await;
+            usecase_futures.push(execute(usecase, &ctx));
+        }
 
-            match free_events {
+        let users_free_events = join_all(usecase_futures).await;
+        for user_free_events in users_free_events {
+            match user_free_events {
                 Ok(free_events) => {
                     users_freebusy.push(UserFreeEvents {
                         free_events: free_events.free,
-                        user_id: user.user_id.clone(),
+                        user_id: free_events.user_id,
                     });
                 }
                 Err(e) => {
@@ -219,11 +227,13 @@ mod test {
     async fn setup_service_users(ctx: &Context, service: &mut Service) {
         let mut resource1 = ServiceResource {
             calendar_ids: vec![],
+            schedule_ids: vec![],
             id: "1".into(),
             user_id: "1".into(),
         };
         let mut resource2 = ServiceResource {
             calendar_ids: vec![],
+            schedule_ids: vec![],
             id: "2".into(),
             user_id: "2".into(),
         };

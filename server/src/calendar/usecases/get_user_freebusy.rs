@@ -25,6 +25,7 @@ pub struct UserFreebusyQuery {
     start_ts: i64,
     end_ts: i64,
     calendar_ids: Option<String>,
+    schedule_ids: Option<String>,
 }
 
 pub async fn get_user_freebusy_controller(
@@ -36,13 +37,18 @@ pub async fn get_user_freebusy_controller(
     let account = ensure_nettu_acct_header(&http_req)?;
 
     let calendar_ids = match &query_params.calendar_ids {
-        Some(calendar_ids) => Some(calendar_ids.split(',').map(String::from).collect()),
+        Some(ids) => Some(ids.split(',').map(String::from).collect()),
+        None => None,
+    };
+    let schedule_ids = match &query_params.schedule_ids {
+        Some(ids) => Some(ids.split(',').map(String::from).collect()),
         None => None,
     };
 
     let usecase = GetUserFreeBusyUseCase {
         user_id: User::create_id(&account, &params.external_user_id),
         calendar_ids,
+        schedule_ids,
         start_ts: query_params.start_ts,
         end_ts: query_params.end_ts,
     };
@@ -60,6 +66,7 @@ pub async fn get_user_freebusy_controller(
 pub struct GetUserFreeBusyUseCase {
     pub user_id: String,
     pub calendar_ids: Option<Vec<String>>,
+    pub schedule_ids: Option<Vec<String>>,
     pub start_ts: i64,
     pub end_ts: i64,
 }
@@ -68,6 +75,7 @@ pub struct GetUserFreeBusyUseCase {
 #[serde(rename_all = "camelCase")]
 pub struct GetUserFreeBusyResponse {
     pub free: Vec<EventInstance>,
+    pub user_id: String
 }
 
 #[derive(Debug)]
@@ -89,16 +97,39 @@ impl Usecase for GetUserFreeBusyUseCase {
             Err(_) => return Err(GetUserFreeBusyErrors::InvalidTimespanError),
         };
 
+        let mut all_event_instances = vec![
+            self.get_event_instances_from_calendars(&view, ctx).await,
+            self.get_event_instances_from_schedules(&view, ctx).await,
+        ]
+        .into_iter()
+        .flatten()
+        .collect::<Vec<_>>();
+
+        let freebusy = get_free_busy(&mut all_event_instances);
+
+        Ok(GetUserFreeBusyResponse { free: freebusy, user_id: self.user_id.to_owned() })
+    }
+}
+
+impl GetUserFreeBusyUseCase {
+    async fn get_event_instances_from_calendars(
+        &self,
+        view: &CalendarView,
+        ctx: &Context,
+    ) -> Vec<EventInstance> {
+        let calendar_ids = match &self.calendar_ids {
+            Some(ids) if !ids.is_empty() => ids,
+            None => return vec![],
+        };
+
         // can probably make query to event repo instead
         let mut calendars = ctx.repos.calendar_repo.find_by_user(&self.user_id).await;
 
-        if let Some(calendar_ids) = &self.calendar_ids {
-            if !calendar_ids.is_empty() {
-                calendars = calendars
-                    .into_iter()
-                    .filter(|cal| calendar_ids.contains(&cal.id))
-                    .collect();
-            }
+        if !calendar_ids.is_empty() {
+            calendars = calendars
+                .into_iter()
+                .filter(|cal| calendar_ids.contains(&cal.id))
+                .collect();
         }
 
         let calendars_lookup: HashMap<_, _> = calendars.iter().map(|cal| (&cal.id, cal)).collect();
@@ -108,7 +139,8 @@ impl Usecase for GetUserFreeBusyUseCase {
                 .event_repo
                 .find_by_calendar(&calendar.id, Some(&view))
         });
-        let mut all_events_instances = join_all(all_events_futures)
+
+        let all_events_instances = join_all(all_events_futures)
             .await
             .into_iter()
             .map(|events_res| events_res.unwrap_or_default())
@@ -126,9 +158,34 @@ impl Usecase for GetUserFreeBusyUseCase {
             .flatten()
             .collect::<Vec<_>>();
 
-        let freebusy = get_free_busy(&mut all_events_instances);
+        all_events_instances
+    }
 
-        Ok(GetUserFreeBusyResponse { free: freebusy })
+    async fn get_event_instances_from_schedules(
+        &self,
+        view: &CalendarView,
+        ctx: &Context,
+    ) -> Vec<EventInstance> {
+        let schedule_ids = match &self.schedule_ids {
+            Some(ids) if !ids.is_empty() => ids,
+            None => return vec![],
+        };
+
+        // can probably make query to event repo instead
+        let mut schedules = ctx.repos.schedule_repo.find_by_user(&self.user_id).await;
+
+        if !schedule_ids.is_empty() {
+            schedules = schedules
+                .into_iter()
+                .filter(|cal| schedule_ids.contains(&cal.id))
+                .collect();
+        }
+
+        schedules
+            .iter()
+            .map(|schedule| schedule.freebusy(view))
+            .flatten()
+            .collect()
     }
 }
 
@@ -174,7 +231,7 @@ mod test {
             interval: 1,
             until: None,
         };
-        e1.set_recurrence(e1rr, &calendar.settings,true);
+        e1.set_recurrence(e1rr, &calendar.settings, true);
 
         let mut e2 = CalendarEvent {
             calendar_id: calendar.id.clone(),
@@ -231,6 +288,7 @@ mod test {
         let mut usecase = GetUserFreeBusyUseCase {
             user_id: user.id(),
             calendar_ids: Some(vec![calendar.id.clone()]),
+            schedule_ids: None,
             start_ts: 86400000,
             end_ts: 172800000,
         };
