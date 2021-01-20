@@ -13,7 +13,8 @@ pub struct UpdateCalendarSettigsPathParams {
 
 #[derive(Deserialize)]
 pub struct UpdateCalendarSettingsBody {
-    wkst: isize,
+    wkst: Option<isize>,
+    timezone: Option<String>,
 }
 
 pub async fn update_calendar_settings_controller(
@@ -27,7 +28,8 @@ pub async fn update_calendar_settings_controller(
     let usecase = UpdateCalendarSettingsUseCase {
         user_id: user.id,
         calendar_id: path_params.calendar_id.clone(),
-        wkst: body.wkst,
+        wkst: body.wkst.clone(),
+        timezone: body.timezone.clone(),
     };
 
     execute(usecase, &ctx)
@@ -48,7 +50,8 @@ pub async fn update_calendar_settings_controller(
 struct UpdateCalendarSettingsUseCase {
     pub user_id: String,
     pub calendar_id: String,
-    pub wkst: isize,
+    pub wkst: Option<isize>,
+    pub timezone: Option<String>,
 }
 
 #[derive(Debug)]
@@ -76,20 +79,22 @@ impl Usecase for UpdateCalendarSettingsUseCase {
             _ => return Err(UseCaseErrors::CalendarNotFoundError),
         };
 
-        if !calendar.settings.set_wkst(self.wkst) {
-            return Err(UseCaseErrors::InvalidSettings(format!(
-                "Invalid wkst property: {}, must be between 0 and 6",
-                self.wkst
-            )));
+        if let Some(wkst) = self.wkst {
+            if !calendar.settings.set_wkst(wkst) {
+                return Err(UseCaseErrors::InvalidSettings(format!(
+                    "Invalid wkst property: {}, must be between 0 and 6",
+                    wkst
+                )));
+            }
         }
 
-        let repo_res = ctx
-            .repos
-            .event_repo
-            .update_calendar_wkst(&calendar.id, self.wkst as i32)
-            .await;
-        if repo_res.is_err() {
-            return Err(UseCaseErrors::StorageError);
+        if let Some(timezone) = &self.timezone {
+            if !calendar.settings.set_timezone(timezone) {
+                return Err(UseCaseErrors::InvalidSettings(format!(
+                    "Invalid timezone property: {}, must be a valid IANA Timezone string",
+                    timezone
+                )));
+            }
         }
 
         let repo_res = ctx.repos.calendar_repo.save(&calendar).await;

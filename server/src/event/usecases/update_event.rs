@@ -99,35 +99,30 @@ impl Usecase for UpdateEventUseCase {
             _ => return Err(UseCaseErrors::NotFoundError),
         };
 
-        let mut should_update_endtime = false;
+        let mut start_or_duration_change = false;
 
         if let Some(start_ts) = start_ts {
             if e.start_ts != *start_ts {
                 e.start_ts = *start_ts;
                 e.exdates = vec![];
-                should_update_endtime = true;
+                start_or_duration_change = true;
             }
         }
         if let Some(duration) = duration {
             if e.duration != *duration {
                 e.duration = *duration;
-                should_update_endtime = true;
+                start_or_duration_change = true;
             }
         }
         if let Some(busy) = busy {
             e.busy = *busy;
         }
 
-        if let Some(mut rrule_opts) = rrule_options.as_mut() {
-            // WKST should be set from calendar settings
-            rrule_opts.wkst = calendar.settings.wkst;
-        }
-
         let valid_recurrence = if let Some(rrule_opts) = self.rrule_options.clone() {
             // ? should exdates be deleted when rrules are updated
-            e.set_recurrence(rrule_opts, true)
-        } else if should_update_endtime && e.recurrence.is_some() {
-            e.set_recurrence(e.recurrence.clone().unwrap(), true)
+            e.set_recurrence(rrule_opts, &calendar.settings, true)
+        } else if start_or_duration_change && e.recurrence.is_some() {
+            e.set_recurrence(e.recurrence.clone().unwrap(), &calendar.settings, true)
         } else {
             true
         };
@@ -143,8 +138,9 @@ impl Usecase for UpdateEventUseCase {
 
         let sync_event_reminders = SyncEventRemindersUseCase {
             event: &e,
-            op: EventOperation::Updated,
+            op: EventOperation::Updated(&calendar),
         };
+
         // TODO: handl err
         execute(sync_event_reminders, ctx).await;
 

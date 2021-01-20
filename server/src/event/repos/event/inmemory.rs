@@ -66,24 +66,4 @@ impl IEventRepo for InMemoryEventRepo {
         let res = delete_by(&self.calendar_events, |e| e.calendar_id == calendar_id);
         Ok(res)
     }
-
-    async fn update_calendar_wkst(
-        &self,
-        calendar_id: &str,
-        wkst: i32,
-    ) -> Result<(), Box<dyn Error>> {
-        update_many(
-            &self.calendar_events,
-            |e| e.calendar_id == calendar_id && e.recurrence.is_some(),
-            |e| {
-                match e.recurrence.as_mut() {
-                    Some(r) => r.wkst = wkst as isize,
-                    None => unreachable!(
-                        "Compare clojure should have just selected events with a recurrence"
-                    ),
-                };
-            },
-        );
-        Ok(())
-    }
 }

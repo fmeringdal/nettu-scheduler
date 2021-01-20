@@ -106,16 +106,13 @@ impl Usecase for CreateEventUseCase {
             recurrence: None,
             end_ts: self.start_ts + self.duration, // default, if recurrence changes, this will be updated
             exdates: vec![],
-            calendar_id: calendar.id,
+            calendar_id: calendar.id.clone(),
             user_id: self.user_id.clone(),
             account_id: self.account_id.clone(),
             reminder: None,
         };
-        if let Some(mut rrule_opts) = self.rrule_options.clone() {
-            // WKST should be set from calendar settings
-            rrule_opts.wkst = calendar.settings.wkst;
-
-            if !e.set_recurrence(rrule_opts, true) {
+        if let Some(rrule_opts) = self.rrule_options.clone() {
+            if !e.set_recurrence(rrule_opts, &calendar.settings, true) {
                 return Err(UseCaseErrors::InvalidRecurrenceRule);
             };
         }
@@ -127,8 +124,9 @@ impl Usecase for CreateEventUseCase {
 
         let sync_event_reminders = SyncEventRemindersUseCase {
             event: &e,
-            op: EventOperation::Created,
+            op: EventOperation::Created(&calendar),
         };
+
         // TODO: handl err
         execute(sync_event_reminders, ctx).await;
 

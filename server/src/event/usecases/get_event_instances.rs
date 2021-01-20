@@ -1,6 +1,7 @@
 use crate::{
     api::Context,
     event::domain::event_instance::EventInstance,
+    service::repos,
     shared::usecase::{execute, Usecase},
 };
 use crate::{api::NettuError, shared::auth::protect_route};
@@ -78,11 +79,16 @@ impl Usecase for GetEventInstancesUseCase {
         let e = ctx.repos.event_repo.find(&self.event_id).await;
         match e {
             Some(event) if self.user_id == event.user_id => {
+                let calendar = match ctx.repos.calendar_repo.find(&event.calendar_id).await {
+                    Some(cal) => cal,
+                    None => return Err(UseCaseErrors::NotFoundError {}),
+                };
+
                 let view = CalendarView::create(self.view.start_ts, self.view.end_ts);
                 if view.is_err() {
                     return Err(UseCaseErrors::InvalidTimespanError);
                 }
-                let instances = event.expand(Some(&view.unwrap()));
+                let instances = event.expand(Some(&view.unwrap()), &calendar.settings);
                 Ok(UseCaseResponse { event, instances })
             }
             _ => Err(UseCaseErrors::NotFoundError {}),

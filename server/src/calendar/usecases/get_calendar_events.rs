@@ -1,5 +1,5 @@
-use crate::shared::auth::protect_route;
 use crate::{api::NettuError, event::domain::event_instance::EventInstance};
+use crate::{calendar::dtos::CalendarDTO, shared::auth::protect_route};
 use crate::{
     event::domain::event::CalendarEvent,
     shared::usecase::{execute, Usecase},
@@ -24,6 +24,13 @@ pub struct TimespanParams {
     pub end_ts: i64,
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct APIResponse {
+    pub calendar: CalendarDTO,
+    pub events: Vec<EventWithInstances>,
+}
+
 pub async fn get_calendar_events_controller(
     http_req: HttpRequest,
     query_params: web::Query<TimespanParams>,
@@ -41,7 +48,13 @@ pub async fn get_calendar_events_controller(
 
     execute(usecase, &ctx)
         .await
-        .map(|calendar_events| HttpResponse::Ok().json(calendar_events))
+        .map(|usecase_res| {
+            let res = APIResponse {
+                calendar: CalendarDTO::new(&usecase_res.calendar),
+                events: usecase_res.events,
+            };
+            HttpResponse::Ok().json(res)
+        })
         .map_err(|e| match e {
             UseCaseErrors::InvalidTimespanError => {
                 NettuError::BadClientData("The start and end timestamps is invalid".into())
@@ -59,15 +72,13 @@ pub struct GetCalendarEventsUseCase {
     pub end_ts: i64,
 }
 
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
 pub struct UseCaseResponse {
     calendar: Calendar,
     events: Vec<EventWithInstances>,
 }
 
 #[derive(Serialize)]
-struct EventWithInstances {
+pub struct EventWithInstances {
     pub event: CalendarEvent,
     pub instances: Vec<EventInstance>,
 }
@@ -105,7 +116,7 @@ impl Usecase for GetCalendarEventsUseCase {
                     .unwrap()
                     .into_iter()
                     .map(|event| {
-                        let instances = event.expand(Some(&view));
+                        let instances = event.expand(Some(&view), &calendar.settings);
                         EventWithInstances { event, instances }
                     })
                     // Also it is possible that there are no instances in the expanded event, should remove them

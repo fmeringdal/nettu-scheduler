@@ -286,7 +286,7 @@ mod test {
         let recurrence = RRuleOptions {
             ..Default::default()
         };
-        availibility_event3.set_recurrence(recurrence, true);
+        availibility_event3.set_recurrence(recurrence, &calendar_user_2.settings, true);
 
         ctx.repos
             .event_repo

@@ -1,20 +1,18 @@
-use mongodb::bson::oid::ObjectId;
-use serde::Serialize;
-
 use crate::shared::entity::Entity;
+use chrono_tz::{Tz, UTC};
+use mongodb::bson::oid::ObjectId;
 
-#[derive(Serialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone)]
 pub struct Calendar {
     pub id: String,
     pub user_id: String,
     pub settings: CalendarSettings,
 }
 
-#[derive(Serialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone)]
 pub struct CalendarSettings {
     pub wkst: isize,
+    pub timezone: Tz,
 }
 
 impl CalendarSettings {
@@ -26,6 +24,16 @@ impl CalendarSettings {
             false
         }
     }
+
+    pub fn set_timezone(&mut self, timezone: &String) -> bool {
+        match timezone.parse::<Tz>() {
+            Ok(tzid) => {
+                self.timezone = tzid;
+                true
+            }
+            Err(_) => false,
+        }
+    }
 }
 
 impl Calendar {
@@ -33,7 +41,10 @@ impl Calendar {
         Self {
             id: ObjectId::new().to_hex(),
             user_id: user_id.to_string(),
-            settings: CalendarSettings { wkst: 0 },
+            settings: CalendarSettings {
+                wkst: 0,
+                timezone: UTC,
+            },
         }
     }
 }

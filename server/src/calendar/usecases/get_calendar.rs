@@ -1,6 +1,6 @@
 use crate::{
     api::Context,
-    calendar::domain::Calendar,
+    calendar::{domain::Calendar, dtos::CalendarDTO},
     shared::usecase::{execute, Usecase},
 };
 use crate::{api::NettuError, shared::auth::protect_route};
@@ -27,7 +27,10 @@ pub async fn get_calendar_controller(
 
     execute(usecase, &ctx)
         .await
-        .map(|calendar| HttpResponse::Ok().json(calendar))
+        .map(|calendar| {
+            let dto = CalendarDTO::new(&calendar);
+            HttpResponse::Ok().json(dto)
+        })
         .map_err(|e| match e {
             UseCaseErrors::NotFound => NettuError::NotFound(format!(
                 "The calendar with id: {}, was not found.",

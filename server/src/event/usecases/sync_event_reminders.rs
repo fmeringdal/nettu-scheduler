@@ -1,20 +1,20 @@
-use crate::event::domain::Reminder;
 use crate::{api::Context, event::domain::event::CalendarEvent};
+use crate::{calendar::domain::Calendar, event::domain::Reminder};
 use crate::{calendar::domain::CalendarView, shared::usecase::Usecase};
 use chrono::prelude::*;
 use mongodb::bson::oid::ObjectId;
 
-#[derive(Debug, PartialEq)]
-pub enum EventOperation {
-    Created,
-    Updated,
+#[derive(Debug)]
+pub enum EventOperation<'a> {
+    Created(&'a Calendar),
+    Updated(&'a Calendar),
     Deleted,
 }
 
 /// Creates EventReminders for a calendar event
 pub struct SyncEventRemindersUseCase<'a> {
     pub event: &'a CalendarEvent,
-    pub op: EventOperation,
+    pub op: EventOperation<'a>,
 }
 
 struct SyncEventRemindersConfig {
@@ -44,20 +44,26 @@ impl<'a> Usecase for SyncEventRemindersUseCase<'a> {
 
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         // delete existing reminders
-        if self.op != EventOperation::Created
-            && ctx
-                .repos
-                .reminder_repo
-                .delete_by_event(&self.event.id)
-                .await
-                .is_err()
-        {
-            return Err(UseCaseErrors::StorageError);
+        match self.op {
+            EventOperation::Created(_) => (),
+            _ => {
+                let delete_result = ctx
+                    .repos
+                    .reminder_repo
+                    .delete_by_event(&self.event.id)
+                    .await;
+                if delete_result.is_err() {
+                    return Err(UseCaseErrors::StorageError);
+                }
+            }
         }
 
-        if self.op == EventOperation::Deleted {
-            return Ok(());
-        }
+        // Create new ones if op != delete
+        let calendar = match self.op {
+            EventOperation::Deleted => return Ok(()),
+            EventOperation::Created(cal) => cal,
+            EventOperation::Updated(cal) => cal,
+        };
 
         let conf = Self::get_config();
         if self.event.reminder.is_none() {
@@ -69,7 +75,7 @@ impl<'a> Usecase for SyncEventRemindersUseCase<'a> {
         let expansion_view = CalendarView::create(now, reminders_end).unwrap();
         let reminders = self
             .event
-            .expand(Some(&expansion_view))
+            .expand(Some(&expansion_view), &calendar.settings)
             .iter()
             .map(|dt| dt.start_ts - millis_before)
             .map(|ts| Reminder {

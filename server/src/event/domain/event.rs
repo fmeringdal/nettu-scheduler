@@ -1,8 +1,10 @@
-use crate::{calendar::domain::CalendarView, shared::entity::Entity};
+use crate::{
+    calendar::domain::{CalendarSettings, CalendarView},
+    shared::entity::Entity,
+};
 
 use super::event_instance::EventInstance;
 use chrono::{prelude::*, Duration};
-use chrono_tz::Tz;
 use rrule::{Frequenzy, ParsedOptions, RRule, RRuleSet};
 use serde::{Deserialize, Serialize};
 
@@ -21,8 +23,6 @@ pub struct RRuleOptions {
     pub interval: isize,
     pub count: Option<i32>,
     pub until: Option<isize>,
-    pub tzid: String,
-    pub wkst: isize,
     pub bysetpos: Option<Vec<isize>>,
     pub byweekday: Option<Vec<isize>>,
     pub bynweekday: Option<Vec<Vec<isize>>>,
@@ -37,9 +37,7 @@ impl Default for RRuleOptions {
             byweekday: None,
             bysetpos: None,
             count: None,
-            tzid: Utc.to_string(),
             until: None,
-            wkst: 0,
         }
     }
 }
@@ -107,13 +105,13 @@ impl CalendarEvent {
         true
     }
 
-    fn update_endtime(&mut self) -> bool {
-        let opts = match self.get_rrule_options() {
+    fn update_endtime(&mut self, calendar_settings: &CalendarSettings) -> bool {
+        let opts = match self.get_rrule_options(calendar_settings) {
             Ok(opts) => opts,
             Err(_) => return false,
         };
         if (opts.count.is_some() && opts.count.unwrap() > 0) || opts.until.is_some() {
-            let expand = self.expand(None);
+            let expand = self.expand(None, calendar_settings);
             self.end_ts = expand.last().unwrap().end_ts;
         } else {
             self.end_ts = Self::get_max_timestamp();
@@ -121,7 +119,12 @@ impl CalendarEvent {
         true
     }
 
-    pub fn set_recurrence(&mut self, reccurence: RRuleOptions, update_endtime: bool) -> bool {
+    pub fn set_recurrence(
+        &mut self,
+        reccurence: RRuleOptions,
+        calendar_settings: &CalendarSettings,
+        update_endtime: bool,
+    ) -> bool {
         let valid_recurrence = Self::validate_recurrence(self.start_ts, &reccurence);
         if !valid_recurrence {
             return false;
@@ -129,7 +132,7 @@ impl CalendarEvent {
 
         self.recurrence = Some(reccurence);
         if update_endtime {
-            return self.update_endtime();
+            return self.update_endtime(calendar_settings);
         }
         true
     }
@@ -138,9 +141,13 @@ impl CalendarEvent {
         5609882500905 // Mon Oct 09 2147 06:41:40 GMT+0200 (Central European Summer Time)
     }
 
-    pub fn expand(&self, view: Option<&CalendarView>) -> Vec<EventInstance> {
+    pub fn expand(
+        &self,
+        view: Option<&CalendarView>,
+        calendar_settings: &CalendarSettings,
+    ) -> Vec<EventInstance> {
         if self.recurrence.is_some() {
-            let rrule_options = match self.get_rrule_options() {
+            let rrule_options = match self.get_rrule_options(calendar_settings) {
                 Ok(opts) => opts,
                 Err(_) => return Default::default(),
             };
@@ -197,19 +204,20 @@ impl CalendarEvent {
         }
     }
 
-    fn get_rrule_options(&self) -> anyhow::Result<ParsedOptions> {
+    fn get_rrule_options(
+        &self,
+        calendar_settings: &CalendarSettings,
+    ) -> anyhow::Result<ParsedOptions> {
         let options = self.recurrence.clone().unwrap();
 
-        let tzid: Tz = match options.tzid.parse() {
-            Ok(tzid) => tzid,
-            Err(_) => return Err(anyhow::Error::msg("Invalid tzid")),
-        };
+        let timezone = calendar_settings.timezone.clone();
+
         let until = match options.until {
-            Some(ts) => Some(tzid.timestamp(ts as i64 / 1000, 0)),
+            Some(ts) => Some(timezone.timestamp(ts as i64 / 1000, 0)),
             None => None,
         };
 
-        let dtstart = tzid.timestamp(self.start_ts / 1000, 0);
+        let dtstart = timezone.timestamp(self.start_ts / 1000, 0);
 
         let count = match options.count {
             Some(c) => Some(std::cmp::max(c, 0) as u32),
@@ -237,8 +245,8 @@ impl CalendarEvent {
             bynweekday: options.bynweekday.clone().unwrap_or_default(),
             bynmonthday: vec![],
             until,
-            wkst: options.wkst as usize,
-            tzid,
+            wkst: calendar_settings.wkst as usize,
+            tzid: timezone,
             interval: options.interval as usize,
             byeaster: None,
         })

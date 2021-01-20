@@ -74,6 +74,7 @@ struct CalendarMongo {
 #[derive(Debug, Serialize, Deserialize)]
 struct CalendarSettingsMongo {
     wkst: isize,
+    timezone: String,
 }
 
 impl MongoDocument<Calendar> for CalendarMongo {
@@ -83,6 +84,7 @@ impl MongoDocument<Calendar> for CalendarMongo {
             user_id: self.user_id.clone(),
             settings: CalendarSettings {
                 wkst: self.settings.wkst,
+                timezone: self.settings.timezone.parse().unwrap(),
             },
         }
     }
@@ -93,6 +95,7 @@ impl MongoDocument<Calendar> for CalendarMongo {
             user_id: calendar.user_id.clone(),
             settings: CalendarSettingsMongo {
                 wkst: calendar.settings.wkst,
+                timezone: calendar.settings.timezone.to_string(),
             },
         }
     }

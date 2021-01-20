@@ -1,4 +1,9 @@
-use crate::{api::Context, calendar::domain::CalendarView};
+use std::collections::HashMap;
+
+use crate::{
+    api::Context,
+    calendar::domain::{Calendar, CalendarView},
+};
 use crate::{api::NettuError, event::domain::event_instance::EventInstance};
 use crate::{
     event::domain::event_instance::get_free_busy,
@@ -96,6 +101,8 @@ impl Usecase for GetUserFreeBusyUseCase {
             }
         }
 
+        let calendars_lookup: HashMap<_, _> = calendars.iter().map(|cal| (&cal.id, cal)).collect();
+
         let all_events_futures = calendars.iter().map(|calendar| {
             ctx.repos
                 .event_repo
@@ -108,7 +115,10 @@ impl Usecase for GetUserFreeBusyUseCase {
             .map(|events| {
                 events
                     .into_iter()
-                    .map(|event| event.expand(Some(&view)))
+                    .map(|event| {
+                        let calendar = calendars_lookup.get(&event.calendar_id).unwrap();
+                        event.expand(Some(&view), &calendar.settings)
+                    })
                     // It is possible that there are no instances in the expanded event, should remove them
                     .filter(|instances| !instances.is_empty())
             })
