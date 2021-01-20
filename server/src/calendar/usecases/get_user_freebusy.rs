@@ -119,7 +119,7 @@ impl GetUserFreeBusyUseCase {
     ) -> Vec<EventInstance> {
         let calendar_ids = match &self.calendar_ids {
             Some(ids) if !ids.is_empty() => ids,
-            None => return vec![],
+            _ => return vec![],
         };
 
         // can probably make query to event repo instead
@@ -168,7 +168,7 @@ impl GetUserFreeBusyUseCase {
     ) -> Vec<EventInstance> {
         let schedule_ids = match &self.schedule_ids {
             Some(ids) if !ids.is_empty() => ids,
-            None => return vec![],
+            _ => return vec![],
         };
 
         // can probably make query to event repo instead

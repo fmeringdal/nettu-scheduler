@@ -28,6 +28,7 @@ pub struct UserBookingQuery {
     interval: i64,
     date: String,
     calendar_ids: Option<String>,
+    schedule_ids: Option<String>,
 }
 
 pub async fn get_user_bookingslots_controller(
@@ -38,7 +39,11 @@ pub async fn get_user_bookingslots_controller(
 ) -> Result<HttpResponse, NettuError> {
     let account = ensure_nettu_acct_header(&http_req)?;
     let calendar_ids = match &query_params.calendar_ids {
-        Some(calendar_ids) => Some(calendar_ids.split(',').map(String::from).collect()),
+        Some(ids) => Some(ids.split(',').map(String::from).collect()),
+        None => None,
+    };
+    let schedule_ids = match &query_params.schedule_ids {
+        Some(ids) => Some(ids.split(',').map(String::from).collect()),
         None => None,
     };
 
@@ -47,6 +52,7 @@ pub async fn get_user_bookingslots_controller(
     let usecase = GetUserBookingSlotsUsecase {
         user_id: User::create_id(&account, &params.external_user_id),
         calendar_ids,
+        schedule_ids,
         iana_tz: query_params.iana_tz.clone(),
         date: query_params.date.clone(),
         duration: query_params.duration,
@@ -80,6 +86,7 @@ pub async fn get_user_bookingslots_controller(
 pub struct GetUserBookingSlotsUsecase {
     pub user_id: String,
     pub calendar_ids: Option<Vec<String>>,
+    pub schedule_ids: Option<Vec<String>>,
     pub date: String,
     pub iana_tz: Option<String>,
     pub duration: i64,
@@ -132,6 +139,7 @@ impl Usecase for GetUserBookingSlotsUsecase {
 
         let freebusy_usecase = GetUserFreeBusyUseCase {
             calendar_ids: self.calendar_ids.clone(),
+            schedule_ids: self.schedule_ids.clone(),
             end_ts: booking_timespan.end_ts,
             start_ts: booking_timespan.start_ts,
             user_id: self.user_id.clone(),

@@ -60,6 +60,7 @@ struct ServiceResourceMongo {
     pub _id: ObjectId,
     pub user_id: String,
     pub calendar_ids: Vec<String>,
+    pub schedule_ids: Vec<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -81,6 +82,7 @@ impl MongoDocument<Service> for ServiceMongo {
                     id: user._id.to_string(),
                     user_id: user.user_id.clone(),
                     calendar_ids: user.calendar_ids.clone(),
+                    schedule_ids: user.schedule_ids.clone(),
                 })
                 .collect(),
         }
@@ -97,6 +99,7 @@ impl MongoDocument<Service> for ServiceMongo {
                     _id: ObjectId::with_string(&user.id).unwrap(),
                     user_id: user.user_id.clone(),
                     calendar_ids: user.calendar_ids.clone(),
+                    schedule_ids: user.schedule_ids.clone(),
                 })
                 .collect(),
         }
