@@ -96,6 +96,6 @@ describe("Service API", () => {
     });
     console.log(service.data!.bookingSlots);
 
-    expect(service.data!.bookingSlots.length).toBe(10);
+    expect(service.data!.bookingSlots.length).toBe(31);
   });
 });
