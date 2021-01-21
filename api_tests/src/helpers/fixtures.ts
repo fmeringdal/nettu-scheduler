@@ -8,8 +8,8 @@ export const setupAccount = async () => {
   const client = NettuClient();
   const account = await client.account.insert({ code: CREATE_ACCOUNT_CODE });
   return {
-    client: NettuClient({ apiKey: account.data.secretApiKey }),
-    accountId: account.data.accountId,
+    client: NettuClient({ apiKey: account.data!.secretApiKey }),
+    accountId: account.data!.accountId,
   };
 };
 

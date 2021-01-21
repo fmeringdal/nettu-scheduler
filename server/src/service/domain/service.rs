@@ -85,6 +85,7 @@ pub struct ServiceResourceDTO {
     pub id: String,
     pub user_id: String,
     pub calendar_ids: Vec<String>,
+    pub schedule_ids: Vec<String>,
 }
 
 impl ServiceResourceDTO {
@@ -92,6 +93,7 @@ impl ServiceResourceDTO {
         Self {
             id: resource.id.clone(),
             calendar_ids: resource.calendar_ids.clone(),
+            schedule_ids: resource.schedule_ids.clone(),
             user_id: User::create_external_id(&resource.user_id),
         }
     }

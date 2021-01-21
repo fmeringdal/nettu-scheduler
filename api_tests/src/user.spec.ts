@@ -23,11 +23,11 @@ describe("User API", () => {
     const userId = "345677";
     let res = await accountClient.user.create(userId);
     expect(res.status).toBe(201);
-    expect(res.data.id).toBe(userId);
+    expect(res.data!.id).toBe(userId);
 
     res = await accountClient.user.find(userId);
     expect(res.status).toBe(200);
-    expect(res.data.id).toBe(userId);
+    expect(res.data!.id).toBe(userId);
 
     // Not allow create user with same userid
     res = await accountClient.user.create(userId);
@@ -49,7 +49,7 @@ describe("User API", () => {
       calendarIds: [calendarId],
     });
     expect(res.status).toBe(200);
-    expect(res.data.free.length).toBe(0);
+    expect(res.data!.free.length).toBe(0);
   });
 
   it("should show correct freebusy with a single event in calendar", async () => {
@@ -60,8 +60,6 @@ describe("User API", () => {
       rruleOptions: {
         freq: Frequenzy.Daily,
         interval: 1,
-        tzid: "UTC",
-        wkst: 0,
         count: 100,
       },
     });
@@ -71,9 +69,9 @@ describe("User API", () => {
       startTs: 10,
       calendarIds: [calendarId],
     });
-    expect(res.data.free.length).toBe(3);
+    expect(res.data!.free.length).toBe(3);
 
-    await client.events.remove(event.data.eventId);
+    await client.events.remove(event.data!.eventId);
   });
 
   it("should show correct freebusy with multiple events in calendar", async () => {
@@ -84,8 +82,6 @@ describe("User API", () => {
       rruleOptions: {
         freq: Frequenzy.Daily,
         interval: 1,
-        tzid: "UTC",
-        wkst: 0,
         count: 100,
       },
     });
@@ -96,8 +92,6 @@ describe("User API", () => {
       rruleOptions: {
         freq: Frequenzy.Daily,
         interval: 1,
-        tzid: "UTC",
-        wkst: 0,
         count: 100,
       },
     });
@@ -109,8 +103,6 @@ describe("User API", () => {
       rruleOptions: {
         freq: Frequenzy.Daily,
         interval: 2,
-        tzid: "UTC",
-        wkst: 0,
         count: 100,
       },
     });
@@ -121,7 +113,7 @@ describe("User API", () => {
       calendarIds: [calendarId],
     });
 
-    expect(res.data.free.length).toBe(6);
+    expect(res.data!.free.length).toBe(6);
 
     let bookingRes = await unauthClient.user.bookingslots(userId, {
       date: "1970-1-1",
@@ -130,7 +122,7 @@ describe("User API", () => {
       interval: 1000 * 60 * 15,
       calendarIds: [calendarId],
     });
-    expect(bookingRes.data.bookingSlots.length).toBe(3);
+    expect(bookingRes.data!.bookingSlots.length).toBe(3);
 
     bookingRes = await unauthClient.user.bookingslots(userId, {
       date: "1970-1-2",
@@ -139,10 +131,10 @@ describe("User API", () => {
       interval: 1000 * 60 * 15,
       calendarIds: [calendarId],
     });
-    expect(bookingRes.data.bookingSlots.length).toBe(6);
+    expect(bookingRes.data!.bookingSlots.length).toBe(6);
 
     for (const e of [event1, event2, event3]) {
-      await client.events.remove(e.data.eventId);
+      await client.events.remove(e.data!.eventId);
     }
   });
 });

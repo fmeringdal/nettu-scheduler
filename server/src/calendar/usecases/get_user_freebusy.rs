@@ -63,6 +63,7 @@ pub async fn get_user_freebusy_controller(
         })
 }
 
+#[derive(Debug)]
 pub struct GetUserFreeBusyUseCase {
     pub user_id: String,
     pub calendar_ids: Option<Vec<String>>,
@@ -173,7 +174,7 @@ impl GetUserFreeBusyUseCase {
 
         // can probably make query to event repo instead
         let mut schedules = ctx.repos.schedule_repo.find_by_user(&self.user_id).await;
-
+        println!("Schedules found: {:?}", schedules);
         if !schedule_ids.is_empty() {
             schedules = schedules
                 .into_iter()

@@ -71,8 +71,6 @@ pub async fn create_schedule_controller(
         .await
         .map(|res| {
             let dto = ScheduleDTO::new(&res.schedule);
-            println!("I did get here");
-            println!("I did get here: {:?}", dto);
             HttpResponse::Created().json(dto)
         })
         .map_err(|e| {
