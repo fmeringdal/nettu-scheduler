@@ -13,7 +13,7 @@
     "typescript": "^4.1.3"
   },
   "dependencies": {
-    "@nettu/sdk-scheduler": "^0.2.1",
+    "@nettu/sdk-scheduler": "^0.2.2",
     "@types/jest": "^26.0.19",
     "@types/jsonwebtoken": "^8.5.0",
     "axios": "^0.21.1",

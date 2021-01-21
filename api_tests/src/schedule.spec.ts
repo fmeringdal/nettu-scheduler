@@ -22,18 +22,18 @@ describe("Schedule API", () => {
       timezone: "Europe/Berlin",
     });
     expect(res.status).toBe(201);
-    expect(res.data.id).toBeDefined();
+    expect(res.data!.id).toBeDefined();
   });
 
   it("should delete schedule for authenticated user and not for unauthenticated user", async () => {
     let { data: schedule } = await client.schedule.insert({
       timezone: "Europe/Berlin",
     });
-    let res = await unauthClient.schedule.remove(schedule.id);
+    let res = await unauthClient.schedule.remove(schedule!.id);
     expect(res.status).toBe(401);
-    res = await client.schedule.remove(schedule.id);
+    res = await client.schedule.remove(schedule!.id);
     expect(res.status).toBe(200);
-    res = await client.schedule.remove(schedule.id);
+    res = await client.schedule.remove(schedule!.id);
     expect(res.status).toBe(404);
   });
 
@@ -42,7 +42,7 @@ describe("Schedule API", () => {
       timezone: "Europe/Berlin",
     });
     const { data: updatedSchedule } = await client.schedule.update(
-      schedule.id,
+      schedule!.id,
       {
         rules: [
           {
@@ -68,8 +68,8 @@ describe("Schedule API", () => {
       }
     );
 
-    expect(updatedSchedule.id).toBe(schedule.id);
-    expect(updatedSchedule.timezone).toBe("UTC");
-    expect(updatedSchedule.rules.length).toBe(1);
+    expect(updatedSchedule!.id).toBe(schedule!.id);
+    expect(updatedSchedule!.timezone).toBe("UTC");
+    expect(updatedSchedule!.rules.length).toBe(1);
   });
 });

@@ -7,6 +7,8 @@ use mongodb::{
 use serde::{de::DeserializeOwned, Serialize};
 use std::error::Error;
 
+use crate::event::repos::DeleteResult;
+
 pub enum MongoPersistenceID {
     ObjectId(ObjectId),
     String(String),
@@ -68,6 +70,19 @@ pub async fn save<E, D: MongoDocument<E>>(collection: &Collection, entity: &E) -
     let doc = doc_to_persistence(&raw);
     let _res = collection.update_one(filter, doc, None).await;
     Ok(())
+}
+
+pub async fn update_many<E, D: MongoDocument<E>>(
+    collection: &Collection,
+    filter: Document,
+    update: Document,
+) -> Result<(), Box<dyn Error>> {
+    let coll = collection;
+    let res = coll.update_many(filter, update, None).await;
+    match res {
+        Ok(_) => Ok(()),
+        Err(err) => Err(Box::new(err)),
+    }
 }
 
 pub async fn find<E, D: MongoDocument<E>>(
@@ -133,4 +148,14 @@ pub async fn delete<E, D: MongoDocument<E>>(
         }
         _ => None,
     }
+}
+
+pub async fn delete_many_by<E, D: MongoDocument<E>>(
+    collection: &Collection,
+    filter: Document,
+) -> anyhow::Result<DeleteResult> {
+    let res = collection.delete_many(filter, None).await?;
+    Ok(DeleteResult {
+        deleted_count: res.deleted_count
+    })
 }

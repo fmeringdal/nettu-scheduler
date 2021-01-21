@@ -2,7 +2,7 @@ use crate::service::domain::{Service, ServiceResource};
 
 use super::IServiceRepo;
 use crate::shared::mongo_repo;
-use mongo_repo::MongoDocument;
+use mongo_repo::{MongoDocument, update_many};
 use mongodb::{
     bson::{doc, oid::ObjectId, Document},
     Collection, Database,
@@ -53,6 +53,42 @@ impl IServiceRepo for ServiceRepo {
         };
         mongo_repo::delete::<_, ServiceMongo>(&self.collection, &id).await
     }
+
+    async fn remove_calendar_from_services(&self, calendar_id: &str) -> Result<(), Box<dyn Error>> {
+        let filter = doc! {
+            "attributes": {
+                "key": "calendars",
+                "value": calendar_id
+            }
+        };
+        let update = doc! {
+            "attributes.value": {
+                "$pull": calendar_id
+            },
+            "users.calendar_ids": {
+                "$pull": calendar_id
+            }
+        };
+        mongo_repo::update_many::<_, ServiceMongo>(&self.collection, filter, update).await
+    }
+
+    async fn remove_schedule_from_services(&self, schedule_id: &str) -> Result<(), Box<dyn Error>> {
+        let filter = doc! {
+            "attributes": {
+                "key": "schedules",
+                "value": schedule_id
+            }
+        };
+        let update = doc! {
+            "attributes.value": {
+                "$pull": schedule_id
+            },
+            "users.schedule_ids": {
+                "$pull": schedule_id
+            }
+        };
+        mongo_repo::update_many::<_, ServiceMongo>(&self.collection, filter, update).await
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -64,10 +100,17 @@ struct ServiceResourceMongo {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+struct DocumentAttribute {
+    pub key: String,
+    pub value: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 struct ServiceMongo {
     pub _id: ObjectId,
     pub account_id: String,
     pub users: Vec<ServiceResourceMongo>,
+    pub attributes: Vec<DocumentAttribute>
 }
 
 impl MongoDocument<Service> for ServiceMongo {
@@ -102,6 +145,16 @@ impl MongoDocument<Service> for ServiceMongo {
                     schedule_ids: user.schedule_ids.clone(),
                 })
                 .collect(),
+            attributes: vec![
+                DocumentAttribute {
+                    key: "calendars".into(),
+                    value: service.users.iter().map(|u| u.calendar_ids.clone()).flatten().collect()
+                },
+                DocumentAttribute {
+                    key: "schedules".into(),
+                    value: service.users.iter().map(|u| u.schedule_ids.clone()).flatten().collect()
+                },
+            ]
         }
     }
 

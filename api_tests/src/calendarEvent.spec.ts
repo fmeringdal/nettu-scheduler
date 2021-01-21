@@ -43,8 +43,6 @@ describe("CalendarEvent API", () => {
       rruleOptions: {
         freq: Frequenzy.Daily,
         interval: 1,
-        tzid: "UTC",
-        wkst: 0,
         count,
       },
     });
@@ -54,7 +52,7 @@ describe("CalendarEvent API", () => {
       startTs: 20,
       endTs: 1000 * 60 * 60 * 24 * (count + 1),
     });
-    let instances = res2.data.instances;
+    let instances = res2.data!.instances;
     expect(instances.length).toBe(count);
 
     // Query after instances are finished
@@ -62,7 +60,7 @@ describe("CalendarEvent API", () => {
       startTs: 1000 * 60 * 60 * 24 * (count + 1),
       endTs: 1000 * 60 * 60 * 24 * (count + 30),
     });
-    instances = res3.data.instances;
+    instances = res3.data!.instances;
     expect(instances.length).toBe(0);
   });
 
@@ -75,8 +73,6 @@ describe("CalendarEvent API", () => {
       rruleOptions: {
         freq: Frequenzy.Daily,
         interval: 1,
-        tzid: "UTC",
-        wkst: 0,
         count,
       },
     });
@@ -87,7 +83,7 @@ describe("CalendarEvent API", () => {
         startTs: 20,
         endTs: 1000 * 60 * 60 * 24 * (count + 1),
       });
-      return res.data.instances;
+      return res.data!.instances;
     };
     const instancesBeforeException = await getInstances();
 
@@ -112,8 +108,6 @@ describe("CalendarEvent API", () => {
       rruleOptions: {
         freq: Frequenzy.Daily,
         interval: 1,
-        tzid: "UTC",
-        wkst: 0,
         count,
       },
     });
@@ -124,7 +118,7 @@ describe("CalendarEvent API", () => {
         startTs: 20,
         endTs: 1000 * 60 * 60 * 24 * (count + 1),
       });
-      return res.data.instances;
+      return res.data!.instances;
     };
     const instancesBeforeException = await getInstances();
     // do create exception
