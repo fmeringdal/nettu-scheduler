@@ -156,6 +156,6 @@ pub async fn delete_many_by<E, D: MongoDocument<E>>(
 ) -> anyhow::Result<DeleteResult> {
     let res = collection.delete_many(filter, None).await?;
     Ok(DeleteResult {
-        deleted_count: res.deleted_count
+        deleted_count: res.deleted_count,
     })
 }

@@ -76,7 +76,7 @@ pub struct GetUserFreeBusyUseCase {
 #[serde(rename_all = "camelCase")]
 pub struct GetUserFreeBusyResponse {
     pub free: Vec<EventInstance>,
-    pub user_id: String
+    pub user_id: String,
 }
 
 #[derive(Debug)]
@@ -108,7 +108,10 @@ impl Usecase for GetUserFreeBusyUseCase {
 
         let freebusy = get_free_busy(&mut all_event_instances);
 
-        Ok(GetUserFreeBusyResponse { free: freebusy, user_id: self.user_id.to_owned() })
+        Ok(GetUserFreeBusyResponse {
+            free: freebusy,
+            user_id: self.user_id.to_owned(),
+        })
     }
 }
 

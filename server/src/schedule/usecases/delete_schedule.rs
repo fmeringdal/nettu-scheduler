@@ -63,7 +63,11 @@ impl Usecase for DeleteScheduleUseCase {
                 if res.is_none() {
                     return Err(UseCaseErrors::UnableToDelete);
                 }
-                let res = ctx.repos.service_repo.remove_schedule_from_services(&schedule.id).await;
+                let res = ctx
+                    .repos
+                    .service_repo
+                    .remove_schedule_from_services(&schedule.id)
+                    .await;
                 if res.is_err() {
                     return Err(UseCaseErrors::UnableToDelete);
                 }

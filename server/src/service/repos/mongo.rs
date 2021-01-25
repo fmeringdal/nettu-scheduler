@@ -2,7 +2,7 @@ use crate::service::domain::{Service, ServiceResource};
 
 use super::IServiceRepo;
 use crate::shared::mongo_repo;
-use mongo_repo::{MongoDocument, update_many};
+use mongo_repo::{update_many, MongoDocument};
 use mongodb::{
     bson::{doc, oid::ObjectId, Document},
     Collection, Database,
@@ -110,7 +110,7 @@ struct ServiceMongo {
     pub _id: ObjectId,
     pub account_id: String,
     pub users: Vec<ServiceResourceMongo>,
-    pub attributes: Vec<DocumentAttribute>
+    pub attributes: Vec<DocumentAttribute>,
 }
 
 impl MongoDocument<Service> for ServiceMongo {
@@ -148,13 +148,23 @@ impl MongoDocument<Service> for ServiceMongo {
             attributes: vec![
                 DocumentAttribute {
                     key: "calendars".into(),
-                    value: service.users.iter().map(|u| u.calendar_ids.clone()).flatten().collect()
+                    value: service
+                        .users
+                        .iter()
+                        .map(|u| u.calendar_ids.clone())
+                        .flatten()
+                        .collect(),
                 },
                 DocumentAttribute {
                     key: "schedules".into(),
-                    value: service.users.iter().map(|u| u.schedule_ids.clone()).flatten().collect()
+                    value: service
+                        .users
+                        .iter()
+                        .map(|u| u.schedule_ids.clone())
+                        .flatten()
+                        .collect(),
                 },
-            ]
+            ],
         }
     }
 
