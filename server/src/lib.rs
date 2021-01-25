@@ -2,7 +2,7 @@ mod account;
 mod api;
 mod calendar;
 mod event;
-mod interval_service;
+mod clock;
 mod schedule;
 mod service;
 mod shared;
@@ -26,4 +26,4 @@ pub fn configure_server_app(cfg: &mut web::ServiceConfig) {
 }
 
 pub use api::{Config, Context, RealSys, Repos};
-pub use interval_service::start_interval_service;
+pub use clock::start_clock;
