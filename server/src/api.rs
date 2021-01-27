@@ -6,6 +6,7 @@ use crate::{
     },
     schedule::{self, repos::IScheduleRepo},
     service::repos::{IServiceRepo, InMemoryServiceRepo, ServiceRepo},
+    shared::utils::create_random_secret,
     user::repos::{IUserRepo, InMemoryUserRepo, UserRepo},
 };
 use actix_web::{
@@ -74,11 +75,27 @@ impl Repos {
 }
 
 #[derive(Debug, Clone)]
-pub struct Config {}
+pub struct Config {
+    pub create_account_secret_code: String,
+}
 
 impl Config {
     pub fn new() -> Self {
-        Self {}
+        let create_account_secret_code = match std::env::var("CREATE_ACCOUNT_SECRET_CODE") {
+            Ok(code) => code,
+            Err(_) => {
+                println!("Did not find CREATE_ACCOUNT_SECRET_CODE environment variable. Going to create one.");
+                let code = create_random_secret(16);
+                println!(
+                    "Secret code for creating accounts was generated and set to: {}",
+                    code
+                );
+                code
+            }
+        };
+        Self {
+            create_account_secret_code,
+        }
     }
 }
 

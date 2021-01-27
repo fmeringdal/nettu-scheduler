@@ -15,7 +15,7 @@ pub async fn create_account_controller(
     ctx: web::Data<Context>,
     body: web::Json<BodyParams>,
 ) -> HttpResponse {
-    if body.code != "FW4KbTC2loN1Ckr8KkIcwE3Av" {
+    if body.code != ctx.config.create_account_secret_code {
         return HttpResponse::Unauthorized().finish();
     }
 

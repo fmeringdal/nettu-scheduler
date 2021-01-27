@@ -23,7 +23,7 @@ services:
       MONGODB_NAME: nettubooking
     volumes:
       - ../:/var/application
-    command: bash -c "cargo watch -x run server"
+    command: bash -c "cargo watch -x run"
     init: true
     entrypoint:
       - "integrations/wait-for.sh"

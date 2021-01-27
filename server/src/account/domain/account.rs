@@ -1,12 +1,7 @@
 use mongodb::bson::oid::ObjectId;
 
-use crate::shared::entity::Entity;
+use crate::shared::{entity::Entity, utils::create_random_secret};
 
-use rand::Rng;
-
-const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ\
-                            abcdefghijklmnopqrstuvwxyz\
-                            0123456789)(*&^%$#@!~";
 const API_KEY_LEN: usize = 30;
 
 #[derive(Debug, Clone)]
@@ -78,16 +73,8 @@ impl Account {
     }
 
     pub fn generate_secret_api_key() -> String {
-        let mut rng = rand::thread_rng();
-
-        let rand_string: String = (0..API_KEY_LEN)
-            .map(|_| {
-                let idx = rng.gen_range(0..CHARSET.len());
-                CHARSET[idx] as char
-            })
-            .collect();
-
-        format!("sk_live_{}", rand_string)
+        let rand_secret = create_random_secret(API_KEY_LEN);
+        format!("sk_live_{}", rand_secret)
     }
 
     pub fn set_public_key_b64(&mut self, public_key_b64: Option<String>) -> anyhow::Result<()> {
