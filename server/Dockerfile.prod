@@ -1,0 +1,9 @@
+FROM rustlang/rust
+
+WORKDIR /var/application
+
+COPY . .
+RUN caro run --release
+
+
+EXPOSE 5000

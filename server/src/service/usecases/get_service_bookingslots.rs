@@ -11,7 +11,7 @@ use crate::{
 };
 use crate::{
     event::domain::booking_slots::UserFreeEvents,
-    shared::usecase::{execute, Usecase},
+    shared::usecase::{execute, UseCase},
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 
@@ -114,7 +114,7 @@ enum UseCaseErrors {
 }
 
 #[async_trait::async_trait(?Send)]
-impl Usecase for GetServiceBookingSlotsUseCase {
+impl UseCase for GetServiceBookingSlotsUseCase {
     type Response = UseCaseRes;
 
     type Errors = UseCaseErrors;

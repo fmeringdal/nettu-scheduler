@@ -4,12 +4,12 @@ use crate::{
 };
 use crate::{
     schedule::domain::Schedule,
-    shared::usecase::{execute, Usecase},
+    shared::usecase::{execute, UseCase},
 };
 use crate::{schedule::dtos::ScheduleDTO, user::domain::User};
 use actix_web::{web, HttpResponse};
 use chrono_tz::Tz;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 #[derive(Deserialize)]
 pub struct AdminControllerPathParams {
@@ -105,7 +105,7 @@ struct UseCaseRes {
 }
 
 #[async_trait::async_trait(?Send)]
-impl Usecase for CreateScheduleUseCase {
+impl UseCase for CreateScheduleUseCase {
     type Response = UseCaseRes;
 
     type Errors = UseCaseErrors;

@@ -1,7 +1,7 @@
 use crate::{account::domain::Account, api::NettuError, shared::auth::protect_account_route};
 use crate::{
     api::Context,
-    shared::usecase::{execute, Usecase},
+    shared::usecase::{execute, UseCase},
     user::domain::User,
 };
 use actix_web::{web, HttpRequest, HttpResponse};
@@ -54,7 +54,7 @@ enum UseCaseErrors {
 }
 
 #[async_trait::async_trait(?Send)]
-impl Usecase for DeleteUserUseCase {
+impl UseCase for DeleteUserUseCase {
     type Response = UseCaseRes;
 
     type Errors = UseCaseErrors;

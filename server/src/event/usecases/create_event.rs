@@ -2,7 +2,7 @@ use crate::{
     api::Context,
     shared::{
         auth::protect_route,
-        usecase::{execute, Usecase},
+        usecase::{execute, UseCase},
     },
 };
 use crate::{
@@ -85,7 +85,7 @@ pub enum UseCaseErrors {
 }
 
 #[async_trait::async_trait(?Send)]
-impl Usecase for CreateEventUseCase {
+impl UseCase for CreateEventUseCase {
     type Response = CalendarEvent;
 
     type Errors = UseCaseErrors;

@@ -2,7 +2,7 @@ use crate::{
     api::Context,
     event::domain::event_instance::EventInstance,
     service::repos,
-    shared::usecase::{execute, Usecase},
+    shared::usecase::{execute, UseCase},
 };
 use crate::{api::NettuError, shared::auth::protect_route};
 use crate::{calendar::domain::CalendarView, event::domain::event::CalendarEvent};
@@ -68,7 +68,7 @@ pub struct UseCaseResponse {
 }
 
 #[async_trait::async_trait(?Send)]
-impl Usecase for GetEventInstancesUseCase {
+impl UseCase for GetEventInstancesUseCase {
     type Response = UseCaseResponse;
 
     type Errors = UseCaseErrors;

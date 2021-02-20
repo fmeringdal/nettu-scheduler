@@ -1,7 +1,7 @@
 use crate::{
     api::Context,
     schedule::{domain::Schedule, dtos::ScheduleDTO},
-    shared::usecase::{execute, Usecase},
+    shared::usecase::{execute, UseCase},
 };
 use crate::{api::NettuError, shared::auth::protect_route};
 use actix_web::{web, HttpRequest, HttpResponse};
@@ -50,7 +50,7 @@ enum UseCaseErrors {
 }
 
 #[async_trait::async_trait(?Send)]
-impl Usecase for GetScheduleUseCase {
+impl UseCase for GetScheduleUseCase {
     type Response = Schedule;
 
     type Errors = UseCaseErrors;

@@ -1,7 +1,7 @@
 use crate::{api::Context, shared::auth::protect_route};
 use crate::{
     api::NettuError,
-    shared::usecase::{execute, Usecase},
+    shared::usecase::{execute, UseCase},
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use serde::Deserialize;
@@ -55,7 +55,7 @@ pub enum UseCaseErrors {
 }
 
 #[async_trait::async_trait(?Send)]
-impl Usecase for CreateEventExceptionUseCase {
+impl UseCase for CreateEventExceptionUseCase {
     type Response = ();
 
     type Errors = UseCaseErrors;

@@ -1,7 +1,7 @@
 use crate::{
     api::Context,
     event::domain::event::RRuleOptions,
-    shared::usecase::{execute, Usecase},
+    shared::usecase::{execute, UseCase},
 };
 use crate::{api::NettuError, shared::auth::protect_route};
 use actix_web::{web, HttpRequest, HttpResponse};
@@ -72,7 +72,7 @@ pub enum UseCaseErrors {
 }
 
 #[async_trait::async_trait(?Send)]
-impl Usecase for UpdateEventUseCase {
+impl UseCase for UpdateEventUseCase {
     type Response = ();
 
     type Errors = UseCaseErrors;

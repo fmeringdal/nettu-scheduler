@@ -4,7 +4,7 @@ use crate::{
     service::domain::Service,
     shared::{
         auth::protect_account_route,
-        usecase::{execute, Usecase},
+        usecase::{execute, UseCase},
     },
 };
 use crate::{api::Context, service::domain::ServiceDTO};
@@ -63,7 +63,7 @@ enum UseCaseErrors {
 }
 
 #[async_trait::async_trait(?Send)]
-impl Usecase for GetServiceUseCase {
+impl UseCase for GetServiceUseCase {
     type Response = UseCaseRes;
 
     type Errors = UseCaseErrors;

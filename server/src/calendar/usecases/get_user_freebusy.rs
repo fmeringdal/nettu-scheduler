@@ -7,7 +7,7 @@ use crate::{
 use crate::{api::NettuError, event::domain::event_instance::EventInstance};
 use crate::{
     event::domain::event_instance::get_free_busy,
-    shared::usecase::{execute, Usecase},
+    shared::usecase::{execute, UseCase},
 };
 use crate::{shared::auth::ensure_nettu_acct_header, user::domain::User};
 use actix_web::{web, HttpRequest, HttpResponse};
@@ -85,7 +85,7 @@ pub enum GetUserFreeBusyErrors {
 }
 
 #[async_trait::async_trait(?Send)]
-impl Usecase for GetUserFreeBusyUseCase {
+impl UseCase for GetUserFreeBusyUseCase {
     type Response = GetUserFreeBusyResponse;
 
     type Errors = GetUserFreeBusyErrors;

@@ -7,7 +7,7 @@ use crate::{
     },
     shared::{
         auth::ensure_nettu_acct_header,
-        usecase::{execute, Usecase},
+        usecase::{execute, UseCase},
     },
     user::domain::User,
 };
@@ -49,7 +49,7 @@ pub async fn get_user_bookingslots_controller(
 
     let _user_id = User::create_id(&account, &params.external_user_id);
 
-    let usecase = GetUserBookingSlotsUsecase {
+    let usecase = GetUserBookingSlotsUseCase {
         user_id: User::create_id(&account, &params.external_user_id),
         calendar_ids,
         schedule_ids,
@@ -83,7 +83,7 @@ pub async fn get_user_bookingslots_controller(
         })
 }
 
-pub struct GetUserBookingSlotsUsecase {
+pub struct GetUserBookingSlotsUseCase {
     pub user_id: String,
     pub calendar_ids: Option<Vec<String>>,
     pub schedule_ids: Option<Vec<String>>,
@@ -108,7 +108,7 @@ pub enum UseCaseErrors {
 }
 
 #[async_trait::async_trait(?Send)]
-impl Usecase for GetUserBookingSlotsUsecase {
+impl UseCase for GetUserBookingSlotsUseCase {
     type Response = UseCaseResponse;
 
     type Errors = UseCaseErrors;

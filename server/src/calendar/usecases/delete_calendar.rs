@@ -1,7 +1,7 @@
 use crate::{api::Context, shared::auth::protect_route};
 use crate::{
     api::NettuError,
-    shared::usecase::{execute, Usecase},
+    shared::usecase::{execute, UseCase},
 };
 use actix_web::{web, HttpResponse};
 
@@ -48,7 +48,7 @@ pub struct DeleteCalendarUseCase {
 }
 
 #[async_trait::async_trait(?Send)]
-impl Usecase for DeleteCalendarUseCase {
+impl UseCase for DeleteCalendarUseCase {
     type Response = ();
 
     type Errors = UseCaseErrors;

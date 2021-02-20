@@ -1,7 +1,7 @@
 use crate::api::Context;
 use crate::{
     account::domain::Account,
-    shared::usecase::{execute, Usecase},
+    shared::usecase::{execute, UseCase},
 };
 use actix_web::{web, HttpResponse};
 use serde::{Deserialize, Serialize};
@@ -45,7 +45,7 @@ enum UseCaseErrors {
 }
 
 #[async_trait::async_trait(?Send)]
-impl Usecase for CreateAccountUseCase {
+impl UseCase for CreateAccountUseCase {
     type Response = UseCaseResponse;
 
     type Errors = UseCaseErrors;

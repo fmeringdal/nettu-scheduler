@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{account::domain::Account, event::domain::Reminder};
-use crate::{account::domain::AccountWebhookSettings, shared::usecase::Usecase};
+use crate::{account::domain::AccountWebhookSettings, shared::usecase::UseCase};
 use crate::{api::Context, event::domain::event::CalendarEvent};
 use chrono::prelude::*;
 use serde::Serialize;
@@ -87,7 +87,7 @@ async fn create_reminders_for_accounts(
 }
 
 #[async_trait::async_trait(?Send)]
-impl Usecase for SendEventRemindersUseCase {
+impl UseCase for SendEventRemindersUseCase {
     type Response = ();
 
     type Errors = UseCaseErrors;

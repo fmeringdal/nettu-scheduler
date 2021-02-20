@@ -7,7 +7,7 @@ use crate::{
         domain::{Schedule, ScheduleRule},
         dtos::ScheduleDTO,
     },
-    shared::usecase::{execute, Usecase},
+    shared::usecase::{execute, UseCase},
 };
 use actix_web::{web, HttpResponse};
 use chrono_tz::Tz;
@@ -76,7 +76,7 @@ struct UseCaseRes {
 }
 
 #[async_trait::async_trait(?Send)]
-impl Usecase for UpdateScheduleUseCase {
+impl UseCase for UpdateScheduleUseCase {
     type Response = UseCaseRes;
 
     type Errors = UseCaseErrors;

@@ -1,4 +1,4 @@
-use crate::shared::usecase::{execute, Usecase};
+use crate::shared::usecase::{execute, UseCase};
 use crate::{
     api::{Context, NettuError},
     shared::auth::protect_route,
@@ -66,7 +66,7 @@ enum UseCaseErrors {
 struct UseCaseRes {}
 
 #[async_trait::async_trait(?Send)]
-impl Usecase for UpdateCalendarSettingsUseCase {
+impl UseCase for UpdateCalendarSettingsUseCase {
     type Response = UseCaseRes;
 
     type Errors = UseCaseErrors;

@@ -2,7 +2,7 @@ use crate::{api::NettuError, event::domain::event_instance::EventInstance};
 use crate::{calendar::dtos::CalendarDTO, shared::auth::protect_route};
 use crate::{
     event::domain::event::CalendarEvent,
-    shared::usecase::{execute, Usecase},
+    shared::usecase::{execute, UseCase},
 };
 
 use crate::{
@@ -90,7 +90,7 @@ pub enum UseCaseErrors {
 }
 
 #[async_trait::async_trait(?Send)]
-impl Usecase for GetCalendarEventsUseCase {
+impl UseCase for GetCalendarEventsUseCase {
     type Response = UseCaseResponse;
 
     type Errors = UseCaseErrors;

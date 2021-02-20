@@ -1,6 +1,6 @@
 use crate::{api::Context, event::domain::event::CalendarEvent};
 use crate::{calendar::domain::Calendar, event::domain::Reminder};
-use crate::{calendar::domain::CalendarView, shared::usecase::Usecase};
+use crate::{calendar::domain::CalendarView, shared::usecase::UseCase};
 use chrono::prelude::*;
 use mongodb::bson::oid::ObjectId;
 
@@ -35,7 +35,7 @@ pub enum UseCaseErrors {
 }
 
 #[async_trait::async_trait(?Send)]
-impl<'a> Usecase for SyncEventRemindersUseCase<'a> {
+impl<'a> UseCase for SyncEventRemindersUseCase<'a> {
     type Response = ();
 
     type Errors = UseCaseErrors;

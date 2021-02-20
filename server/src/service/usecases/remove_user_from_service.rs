@@ -5,7 +5,7 @@ use crate::{
     service::domain::ServiceResource,
     shared::{
         auth::protect_account_route,
-        usecase::{execute, Usecase},
+        usecase::{execute, UseCase},
     },
     user::domain::User,
 };
@@ -27,7 +27,7 @@ pub async fn remove_user_from_service_controller(
     let account = protect_account_route(&http_req, &ctx).await?;
 
     let user_id = User::create_id(&account.id, &path_params.user_id);
-    let usecase = RemoveUserFromServiceUsecase {
+    let usecase = RemoveUserFromServiceUseCase {
         account,
         service_id: path_params.service_id.to_owned(),
         user_id,
@@ -47,7 +47,7 @@ pub async fn remove_user_from_service_controller(
         })
 }
 
-struct RemoveUserFromServiceUsecase {
+struct RemoveUserFromServiceUseCase {
     pub account: Account,
     pub service_id: String,
     pub user_id: String,
@@ -65,7 +65,7 @@ enum UseCaseErrors {
 }
 
 #[async_trait::async_trait(?Send)]
-impl Usecase for RemoveUserFromServiceUsecase {
+impl UseCase for RemoveUserFromServiceUseCase {
     type Response = UseCaseRes;
 
     type Errors = UseCaseErrors;

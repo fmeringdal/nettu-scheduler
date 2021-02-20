@@ -5,7 +5,7 @@ use crate::{
 };
 use crate::{
     calendar::domain::Calendar,
-    shared::usecase::{execute, Usecase},
+    shared::usecase::{execute, UseCase},
 };
 use actix_web::{web, HttpResponse};
 use serde::{Deserialize, Serialize};
@@ -76,7 +76,7 @@ struct UseCaseRes {
 }
 
 #[async_trait::async_trait(?Send)]
-impl Usecase for CreateCalendarUseCase {
+impl UseCase for CreateCalendarUseCase {
     type Response = UseCaseRes;
 
     type Errors = UseCaseErrors;

@@ -3,7 +3,7 @@ use crate::{
     api::NettuError,
     shared::{
         auth::protect_account_route,
-        usecase::{execute, Usecase},
+        usecase::{execute, UseCase},
     },
     user::domain::UserDTO,
 };
@@ -54,7 +54,7 @@ enum UseCaseErrors {
 }
 
 #[async_trait::async_trait(?Send)]
-impl Usecase for GetUserUseCase {
+impl UseCase for GetUserUseCase {
     type Response = UseCaseRes;
 
     type Errors = UseCaseErrors;

@@ -1,7 +1,7 @@
 use crate::{
     api::Context,
     calendar::{domain::Calendar, dtos::CalendarDTO},
-    shared::usecase::{execute, Usecase},
+    shared::usecase::{execute, UseCase},
 };
 use crate::{api::NettuError, shared::auth::protect_route};
 use actix_web::{web, HttpRequest, HttpResponse};
@@ -50,7 +50,7 @@ enum UseCaseErrors {
 }
 
 #[async_trait::async_trait(?Send)]
-impl Usecase for GetCalendarUseCase {
+impl UseCase for GetCalendarUseCase {
     type Response = Calendar;
 
     type Errors = UseCaseErrors;

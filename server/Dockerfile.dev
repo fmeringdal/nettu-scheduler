@@ -1,8 +1,17 @@
 FROM rust:1.49 as builder
 
-# RUN USER=root cargo new --bin nettu_scheduler
+RUN USER=root cargo new --bin nettu_scheduler
 WORKDIR ./nettu_scheduler
-COPY ./ ./
+COPY ./Cargo.toml ./Cargo.toml
+COPY ./src/bin/server.rs ./src/bin/server.rs
+RUN cargo build --release
+RUN rm src/*.rs
+
+ADD . ./
+
+RUN rm ./src/bin/server.rs
+COPY ./src/bin/server.rs ./src/bin/server.rs
+RUN rm ./target/release/deps/nettu_scheduler*
 RUN cargo build --release
 
 
@@ -22,7 +31,7 @@ RUN groupadd $APP_USER \
     && useradd -g $APP_USER $APP_USER \
     && mkdir -p ${APP}
 
-COPY --from=builder /nettu_scheduler/target/release/server ${APP}/nettu_scheduler
+COPY --from=builder /nettu_scheduler/target/release/nettu_scheduler ${APP}/nettu_scheduler
 
 RUN chown -R $APP_USER:$APP_USER ${APP}
 

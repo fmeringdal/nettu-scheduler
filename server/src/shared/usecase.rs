@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 
 #[async_trait::async_trait(?Send)]
-pub trait Usecase {
+pub trait UseCase {
     type Response;
     type Errors;
     type Context;
@@ -11,13 +11,13 @@ pub trait Usecase {
 
 pub async fn execute<U>(mut usecase: U, ctx: &U::Context) -> Result<U::Response, U::Errors>
 where
-    U: Usecase,
+    U: UseCase,
     U::Errors: Debug,
 {
     let res = usecase.execute(ctx).await;
 
     if let Err(e) = &res {
-        println!("Usecase error: {:?}", e);
+        println!("Use case error: {:?}", e);
     }
 
     res

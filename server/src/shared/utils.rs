@@ -2,7 +2,7 @@ use rand::Rng;
 
 const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ\
                             abcdefghijklmnopqrstuvwxyz\
-                            0123456789)(*&^%$#@!~";
+                            0123456789";
 
 pub fn create_random_secret(secret_len: usize) -> String {
     let mut rng = rand::thread_rng();

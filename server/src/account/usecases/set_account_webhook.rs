@@ -2,7 +2,7 @@ use crate::api::{Context, NettuError};
 use crate::shared::auth::protect_account_route;
 use crate::{
     account::domain::Account,
-    shared::usecase::{execute, Usecase},
+    shared::usecase::{execute, UseCase},
 };
 use actix_web::{web, HttpResponse};
 use serde::{Deserialize, Serialize};
@@ -65,7 +65,7 @@ pub enum UseCaseErrors {
 }
 
 #[async_trait::async_trait(?Send)]
-impl Usecase for SetAccountWebhookUseCase {
+impl UseCase for SetAccountWebhookUseCase {
     type Response = SetAccountWebhookUseCaseResponse;
 
     type Errors = UseCaseErrors;

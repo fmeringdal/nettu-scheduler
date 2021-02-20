@@ -3,7 +3,7 @@ use crate::{
     event::domain::event::CalendarEvent,
     shared::{
         auth::protect_route,
-        usecase::{execute, Usecase},
+        usecase::{execute, UseCase},
     },
 };
 use actix_web::{web, HttpRequest, HttpResponse};
@@ -48,7 +48,7 @@ pub enum UseCaseErrors {
 }
 
 #[async_trait::async_trait(?Send)]
-impl Usecase for GetEventUseCase {
+impl UseCase for GetEventUseCase {
     type Response = CalendarEvent;
 
     type Errors = UseCaseErrors;

@@ -1,4 +1,4 @@
-use crate::shared::usecase::{execute, Usecase};
+use crate::shared::usecase::{execute, UseCase};
 use crate::{
     api::Context,
     user::domain::{User, UserDTO},
@@ -55,7 +55,7 @@ pub enum UseCaseErrors {
 }
 
 #[async_trait::async_trait(?Send)]
-impl Usecase for CreateUserUseCase {
+impl UseCase for CreateUserUseCase {
     type Response = UseCaseRes;
     type Errors = UseCaseErrors;
     type Context = Context;
