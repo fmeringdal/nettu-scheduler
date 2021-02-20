@@ -1,7 +1,7 @@
 use crate::{
     api::{Context, NettuError},
     shared::{
-        auth::{protect_account_route, protect_route, Permission, Policy},
+        auth::{protect_account_route, protect_route, Permission},
         usecase::{execute_with_policy, PermissionBoundary},
     },
 };

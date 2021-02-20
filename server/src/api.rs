@@ -33,10 +33,15 @@ pub struct Repos {
 
 impl Repos {
     pub async fn create_mongodb() -> Result<Self, Box<dyn std::error::Error>> {
-        let client_options =
-            ClientOptions::parse(&std::env::var("MONGODB_CONNECTION_STRING").expect("Expected MONGODB_CONNECTION_STRING env to be present")).await?;
+        let client_options = ClientOptions::parse(
+            &std::env::var("MONGODB_CONNECTION_STRING")
+                .expect("Expected MONGODB_CONNECTION_STRING env to be present"),
+        )
+        .await?;
         let client = Client::with_options(client_options)?;
-        let db = client.database(&std::env::var("MONGODB_NAME").expect("Expected MONGODB_NAME env to be present"));
+        let db = client.database(
+            &std::env::var("MONGODB_NAME").expect("Expected MONGODB_NAME env to be present"),
+        );
 
         // This is needed to make sure that db is ready when opening server
         println!("DB CHECKING CONNECTION ...");

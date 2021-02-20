@@ -1,8 +1,8 @@
 mod account;
 mod api;
 mod calendar;
-mod event;
 mod clock;
+mod event;
 mod schedule;
 mod service;
 mod shared;
