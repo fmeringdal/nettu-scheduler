@@ -1,8 +1,10 @@
+use std::print;
+
 use crate::{
     api::{Context, NettuError},
     shared::{
         auth::{protect_account_route, protect_route},
-        usecase::PermissionBoundary,
+        usecase::{execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
     },
 };
 use crate::{
@@ -45,19 +47,26 @@ pub async fn create_calendar_controller(
     ctx: web::Data<Context>,
 ) -> Result<HttpResponse, NettuError> {
     let (user, policy) = protect_route(&http_req, &ctx).await?;
+    println!("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!###########!!!!");
+    println!("{:?}", policy);
 
     let usecase = CreateCalendarUseCase { user_id: user.id };
 
-    execute(usecase, &ctx)
+    execute_with_policy(usecase, &policy, &ctx)
         .await
         .map(|usecase_res| HttpResponse::Created().json(usecase_res))
         .map_err(|e| {
             match e {
-                UseCaseErrors::StorageError => NettuError::InternalError,
-                // This should never happen
-                UseCaseErrors::UserNotFoundError => {
-                    NettuError::NotFound("The user was not found.".into())
+                UseCaseErrorContainer::Unauthorized => {
+                    NettuError::Unauthorized("Client is not permitted to create calendar".into())
                 }
+                UseCaseErrorContainer::UseCase(e) => match e {
+                    UseCaseErrors::StorageError => NettuError::InternalError,
+                    // This should never happen
+                    UseCaseErrors::UserNotFoundError => {
+                        NettuError::NotFound("The user was not found.".into())
+                    }
+                },
             }
         })
 }

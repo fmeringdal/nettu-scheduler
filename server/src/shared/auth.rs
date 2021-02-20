@@ -20,13 +20,13 @@ struct Claims {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Policy {
-    allowed: Option<Vec<Permission>>,
-    rejected: Option<Vec<Permission>>,
+    allow: Option<Vec<Permission>>,
+    reject: Option<Vec<Permission>>,
 }
 
 impl Policy {
     pub fn authorize(&self, permissions: &Vec<Permission>) -> bool {
-        if let Some(rejected) = &self.rejected {
+        if let Some(rejected) = &self.reject {
             for permission in permissions {
                 if *permission == Permission::All {
                     return false;
@@ -37,7 +37,7 @@ impl Policy {
             }
         }
 
-        if let Some(allowed) = &self.allowed {
+        if let Some(allowed) = &self.allow {
             // First loop to check if All exists
             for permission in permissions {
                 if *permission == Permission::All {
@@ -57,15 +57,15 @@ impl Policy {
 
     pub fn all() -> Self {
         Self {
-            allowed: Some(vec![Permission::All]),
-            rejected: None,
+            allow: Some(vec![Permission::All]),
+            reject: None,
         }
     }
 
     pub fn empty() -> Self {
         Self {
-            allowed: None,
-            rejected: None,
+            allow: None,
+            reject: None,
         }
     }
 }
@@ -166,11 +166,12 @@ fn decode_token(account: &Account, token: &str) -> anyhow::Result<Claims> {
         decode::<Claims>(&token, &decoding_key, &Validation::new(Algorithm::RS256))?.claims;
 
     // Remove permissions that are not assignable by account admin
-    if let Some(mut policy) = claims.scheduler_policy.as_mut() {
-        if let Some(mut allowed) = policy.allowed.as_mut() {
-            allowed.retain(|permission| *permission != Permission::All);
-        }
-    }
+    // if let Some(policy) = claims.scheduler_policy.as_mut() {
+    //     if let Some(allowed) = policy.allow.as_mut() {
+    //         allowed.retain(|permission| *permission != Permission::All);
+    //     }
+    // }
+    println!("Permissions: {:?}", claims.scheduler_policy);
 
     Ok(claims)
 }
@@ -181,7 +182,7 @@ pub async fn protect_route(req: &HttpRequest, ctx: &Context) -> Result<(User, Po
         None => {
             return Err(NettuError::Unauthorized(
                 "Unable to find the account the client belongs to".into(),
-            ));
+            ))
         }
     };
     let res = auth_user_req(req, &account, ctx).await;

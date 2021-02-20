@@ -4,6 +4,7 @@ cd "$parent_path"
 
 trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 cd ../server
+export CREATE_ACCOUNT_SECRET_CODE="FW4KbTC2loN1Ckr8KkIcwE3Av"
 cargo run inmemory &
 SERVER_PID=$!
 cd ../api_tests

@@ -7,8 +7,9 @@ use env_logger::Env;
 async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_server=info,actix_web=info");
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+
     let args: Vec<String> = std::env::args().collect();
-    let context = if args.last() == Some(&String::from("inmemory")) {
+    let context = if args.len() > 1 && args[1] == String::from("inmemory") {
         Context::create_inmemory()
     } else {
         Context::create().await

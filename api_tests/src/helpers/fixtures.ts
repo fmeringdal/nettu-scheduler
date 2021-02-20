@@ -39,6 +39,9 @@ export const setupUserClientForAccount = (
   const token = jwt.sign(
     {
       userId,
+      schedulerPolicy: {
+        allow: ["*"]
+      }
     },
     privateKey as string,
     {
