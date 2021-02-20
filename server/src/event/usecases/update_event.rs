@@ -94,7 +94,7 @@ impl UseCase for UpdateEventUseCase {
             start_ts,
             busy,
             duration,
-            rrule_options,
+            rrule_options: _,
         } = self;
 
         let mut e = match ctx.repos.event_repo.find(&event_id).await {

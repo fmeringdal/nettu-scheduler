@@ -19,7 +19,7 @@ pub async fn get_event_controller(
     path_params: web::Path<PathParams>,
     ctx: web::Data<Context>,
 ) -> Result<HttpResponse, NettuError> {
-    let (user, policy) = protect_route(&http_req, &ctx).await?;
+    let (user, _policy) = protect_route(&http_req, &ctx).await?;
 
     let usecase = GetEventUseCase {
         event_id: path_params.event_id.clone(),

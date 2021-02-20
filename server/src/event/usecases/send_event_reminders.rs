@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
 use crate::{account::domain::Account, event::domain::Reminder};
-use crate::{account::domain::AccountWebhookSettings, shared::usecase::UseCase};
+use crate::{shared::usecase::UseCase};
 use crate::{api::Context, event::domain::event::CalendarEvent};
-use chrono::prelude::*;
+
 use serde::Serialize;
 
 /// Creates EventReminders for a calendar event

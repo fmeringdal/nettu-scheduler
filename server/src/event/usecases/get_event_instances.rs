@@ -1,7 +1,6 @@
 use crate::{
     api::Context,
     event::domain::event_instance::EventInstance,
-    service::repos,
     shared::usecase::{execute, UseCase},
 };
 use crate::{api::NettuError, shared::auth::protect_route};
@@ -26,7 +25,7 @@ pub async fn get_event_instances_controller(
     query_params: web::Query<GetEventInstancesReqView>,
     ctx: web::Data<Context>,
 ) -> Result<HttpResponse, NettuError> {
-    let (user, policy) = protect_route(&http_req, &ctx).await?;
+    let (user, _policy) = protect_route(&http_req, &ctx).await?;
 
     let usecase = GetEventInstancesUseCase {
         user_id: user.id.clone(),

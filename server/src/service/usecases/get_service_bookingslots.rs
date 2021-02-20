@@ -6,7 +6,6 @@ use crate::{
         BookingQueryError, BookingSlotsOptions, BookingSlotsQuery, ServiceBookingSlot,
         ServiceBookingSlotDTO,
     },
-    service::repos,
     shared::auth::{ensure_nettu_acct_header, protect_account_route},
 };
 use crate::{

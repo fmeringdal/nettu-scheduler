@@ -37,7 +37,7 @@ pub async fn get_calendar_events_controller(
     params: web::Path<CalendarPathParams>,
     ctx: web::Data<Context>,
 ) -> Result<HttpResponse, NettuError> {
-    let (user, policy) = protect_route(&http_req, &ctx).await?;
+    let (user, _policy) = protect_route(&http_req, &ctx).await?;
 
     let usecase = GetCalendarEventsUseCase {
         user_id: user.id,

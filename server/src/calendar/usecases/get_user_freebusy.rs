@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     api::Context,
-    calendar::domain::{Calendar, CalendarView},
+    calendar::domain::{CalendarView},
 };
 use crate::{api::NettuError, event::domain::event_instance::EventInstance};
 use crate::{

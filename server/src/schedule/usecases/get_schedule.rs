@@ -18,7 +18,7 @@ pub async fn get_schedule_controller(
     req: web::Path<GetScheduleReq>,
     ctx: web::Data<Context>,
 ) -> Result<HttpResponse, NettuError> {
-    let (user, policy) = protect_route(&http_req, &ctx).await?;
+    let (user, _policy) = protect_route(&http_req, &ctx).await?;
 
     let usecase = GetScheduleUseCase {
         user_id: user.id.clone(),

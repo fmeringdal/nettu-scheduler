@@ -1,5 +1,4 @@
 use crate::event::{
-    domain::event::RRuleOptions,
     repos::{DeleteResult, IEventRepo},
 };
 use crate::shared::inmemory_repo::*;

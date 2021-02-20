@@ -18,7 +18,7 @@ pub async fn get_calendar_controller(
     req: web::Path<GetCalendarReq>,
     ctx: web::Data<Context>,
 ) -> Result<HttpResponse, NettuError> {
-    let (user, policy) = protect_route(&http_req, &ctx).await?;
+    let (user, _policy) = protect_route(&http_req, &ctx).await?;
 
     let usecase = GetCalendarUseCase {
         user_id: user.id.clone(),

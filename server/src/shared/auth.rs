@@ -1,4 +1,4 @@
-use actix_web::{test::read_body_json, HttpRequest};
+use actix_web::{HttpRequest};
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use serde::{Deserialize, Serialize};
 
@@ -157,7 +157,7 @@ fn decode_token(account: &Account, token: &str) -> anyhow::Result<Claims> {
     };
     let public_key = base64::decode(&public_key_b64)?;
     let decoding_key = DecodingKey::from_rsa_pem(&public_key)?;
-    let mut claims =
+    let claims =
         decode::<Claims>(&token, &decoding_key, &Validation::new(Algorithm::RS256))?.claims;
 
     // Remove permissions that are not assignable by account admin
@@ -238,7 +238,7 @@ pub async fn protect_account_route(
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{account::domain::AccountSettings, api::Context};
+    use crate::{api::Context};
     use actix_web::test::TestRequest;
     use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
 

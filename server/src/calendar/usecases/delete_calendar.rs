@@ -7,7 +7,7 @@ use crate::{
 };
 use crate::{
     api::NettuError,
-    shared::usecase::{execute, UseCase},
+    shared::usecase::{UseCase},
 };
 use actix_web::{web, HttpResponse};
 

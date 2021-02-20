@@ -1,6 +1,6 @@
 use crate::shared::{
     auth::Permission,
-    usecase::{execute, execute_with_policy, PermissionBoundary, UseCase, UseCaseErrorContainer},
+    usecase::{execute_with_policy, PermissionBoundary, UseCase, UseCaseErrorContainer},
 };
 use crate::{
     api::{Context, NettuError},
@@ -121,7 +121,6 @@ impl PermissionBoundary for UpdateCalendarSettingsUseCase {
 mod test {
     use crate::{
         calendar::domain::Calendar,
-        event::domain::event::{CalendarEvent, RRuleOptions},
     };
 
     use super::*;
