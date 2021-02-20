@@ -2,7 +2,6 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 
 ## Todos
 
-- Custom controller
 - Delete user cleanup actions
 
 ## Backlog

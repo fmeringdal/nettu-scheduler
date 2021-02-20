@@ -160,14 +160,6 @@ fn decode_token(account: &Account, token: &str) -> anyhow::Result<Claims> {
     let claims =
         decode::<Claims>(&token, &decoding_key, &Validation::new(Algorithm::RS256))?.claims;
 
-    // Remove permissions that are not assignable by account admin
-    // if let Some(policy) = claims.scheduler_policy.as_mut() {
-    //     if let Some(allowed) = policy.allow.as_mut() {
-    //         allowed.retain(|permission| *permission != Permission::All);
-    //     }
-    // }
-    println!("Permissions: {:?}", claims.scheduler_policy);
-
     Ok(claims)
 }
 
