@@ -1588,7 +1588,6 @@ dependencies = [
  "base64 0.13.0",
  "chrono",
  "chrono-tz",
- "jsonwebtoken",
  "mongodb",
  "nettu_scheduler_utils",
  "rrule",
@@ -1600,23 +1599,14 @@ dependencies = [
 name = "nettu_scheduler_infra"
 version = "0.1.0"
 dependencies = [
- "actix-web",
  "anyhow",
  "async-trait",
- "base64 0.13.0",
  "chrono",
- "chrono-tz",
- "env_logger",
  "futures",
- "jsonwebtoken",
  "mongodb",
  "nettu_scheduler_core",
  "nettu_scheduler_utils",
- "rrule",
  "serde",
- "thiserror",
- "tokio 1.0.1",
- "url",
 ]
 
 [[package]]

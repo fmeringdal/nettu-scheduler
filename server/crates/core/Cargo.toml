@@ -14,7 +14,6 @@ rrule="0.3.8"
 chrono = { version = "0.4.19", features = ["serde"] }
 chrono-tz = "0.5.3"
 anyhow = "1.0.0"
-jsonwebtoken = "7"
 base64 = "0.13.0"
 url = "2.2.0"
 mongodb = { version = "1.1.1", default-features = false, features = ["async-std-runtime"] }
