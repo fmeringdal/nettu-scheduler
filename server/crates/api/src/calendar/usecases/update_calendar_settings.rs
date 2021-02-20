@@ -2,11 +2,9 @@ use crate::shared::{
     auth::Permission,
     usecase::{execute_with_policy, PermissionBoundary, UseCase, UseCaseErrorContainer},
 };
-use crate::{
-    api::{Context, NettuError},
-    shared::auth::protect_route,
-};
+use crate::{error::NettuError, shared::auth::protect_route};
 use actix_web::{web, HttpResponse};
+use nettu_scheduler_infra::Context;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]
@@ -119,7 +117,7 @@ impl PermissionBoundary for UpdateCalendarSettingsUseCase {
 
 #[cfg(test)]
 mod test {
-    use crate::calendar::domain::Calendar;
+    use nettu_scheduler_core::domain::Calendar;
 
     use super::*;
 

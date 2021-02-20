@@ -1,33 +1,29 @@
 mod account;
 mod calendar;
-mod context;
 mod event;
 mod schedule;
 mod service;
 mod shared;
 mod user;
 
-pub mod ctx {
-    use super::*;
-    pub use account::repos::IAccountRepo;
-    pub use calendar::repos::ICalendarRepo;
-    pub use context::Context;
-    pub use event::repos::{IEventRepo, IReminderRepo};
-    pub use schedule::repos::IScheduleRepo;
-    pub use service::repos::IServiceRepo;
-    pub use user::repos::IUserRepo;
-    pub mod results {
-        pub use super::shared::repo::DeleteResult;
-    }
-}
-
 pub mod domain {
     use super::*;
     pub use account::domain::{Account, AccountSettings, AccountWebhookSettings};
     pub use calendar::domain::{Calendar, CalendarSettings, CalendarView};
-    pub use event::domain::event::{CalendarEvent, CalendarEventReminder};
+    pub mod booking_slots {
+        pub use super::event::domain::booking_slots::*;
+    }
+    pub mod event_instance {
+        pub use super::event::domain::event_instance::*;
+    }
+    pub use event::domain::event::{
+        CalendarEvent, CalendarEventReminder, RRuleFrequenzy, RRuleOptions,
+    };
+    pub use event::domain::event_instance::EventInstance;
     pub use event::domain::Reminder;
     pub use schedule::domain::{Schedule, ScheduleRule};
-    pub use service::domain::Service;
+    pub use service::domain::{Service, ServiceResource};
     pub use user::domain::User;
 }
+
+pub use shared::entity::Entity;

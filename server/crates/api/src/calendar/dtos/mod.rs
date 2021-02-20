@@ -1,6 +1,5 @@
+use nettu_scheduler_core::domain::{Calendar, CalendarSettings};
 use serde::Serialize;
-
-use super::domain::{Calendar, CalendarSettings};
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]

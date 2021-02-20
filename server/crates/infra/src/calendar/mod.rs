@@ -3,8 +3,7 @@ mod mongo;
 
 pub use inmemory::InMemoryCalendarRepo;
 pub use mongo::CalendarRepo;
-
-use crate::calendar::domain::Calendar;
+use nettu_scheduler_core::domain::Calendar;
 
 use std::error::Error;
 

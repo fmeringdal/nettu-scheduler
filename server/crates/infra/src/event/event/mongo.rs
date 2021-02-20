@@ -1,12 +1,15 @@
+use super::super::IEventRepo;
 use crate::shared::mongo_repo;
+use crate::shared::repo::DeleteResult;
 use mongo_repo::MongoDocument;
 use mongodb::{
     bson::doc,
     bson::{oid::ObjectId, Document},
     Collection, Database,
 };
-use nettu_scheduler_core::ctx::{results::DeleteResult, IReminderRepo};
-use nettu_scheduler_core::domain::{CalendarEvent, CalendarView, Reminder};
+use nettu_scheduler_core::domain::{
+    CalendarEvent, CalendarEventReminder, CalendarView, RRuleOptions,
+};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 

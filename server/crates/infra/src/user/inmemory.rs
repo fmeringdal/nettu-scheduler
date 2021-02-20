@@ -1,5 +1,5 @@
+use super::IUserRepo;
 use crate::shared::inmemory_repo::*;
-use nettu_scheduler_core::ctx::IUserRepo;
 use nettu_scheduler_core::domain::User;
 use std::error::Error;
 

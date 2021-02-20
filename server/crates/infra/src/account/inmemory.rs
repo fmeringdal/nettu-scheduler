@@ -1,5 +1,5 @@
+use super::IAccountRepo;
 use crate::shared::inmemory_repo::*;
-use nettu_scheduler_core::ctx::IAccountRepo;
 use nettu_scheduler_core::domain::Account;
 use std::error::Error;
 

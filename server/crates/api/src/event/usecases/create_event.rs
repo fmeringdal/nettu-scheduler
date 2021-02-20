@@ -1,21 +1,14 @@
-use crate::{
-    api::Context,
-    shared::{
-        auth::{protect_route, Permission},
-        usecase::{
-            execute, execute_with_policy, PermissionBoundary, UseCase, UseCaseErrorContainer,
-        },
-    },
-};
-use crate::{
-    api::NettuError,
-    event::domain::event::{CalendarEvent, RRuleOptions},
+use super::sync_event_reminders::{EventOperation, SyncEventRemindersUseCase};
+use crate::error::NettuError;
+use crate::shared::{
+    auth::{protect_route, Permission},
+    usecase::{execute, execute_with_policy, PermissionBoundary, UseCase, UseCaseErrorContainer},
 };
 use actix_web::{web, HttpResponse};
 use mongodb::bson::oid::ObjectId;
+use nettu_scheduler_core::domain::{CalendarEvent, RRuleOptions};
+use nettu_scheduler_infra::Context;
 use serde::{Deserialize, Serialize};
-
-use super::sync_event_reminders::{EventOperation, SyncEventRemindersUseCase};
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -147,11 +140,10 @@ impl PermissionBoundary for CreateEventUseCase {
 
 #[cfg(test)]
 mod test {
+    use super::*;
     use chrono::prelude::*;
     use chrono::Utc;
-
-    use super::*;
-    use crate::{calendar::domain::Calendar, user::domain::User};
+    use nettu_scheduler_core::domain::{Calendar, User};
 
     struct TestContext {
         ctx: Context,

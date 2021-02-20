@@ -1,10 +1,10 @@
+use super::IUserRepo;
 use crate::shared::mongo_repo;
 use crate::shared::mongo_repo::MongoDocument;
 use mongodb::{
     bson::{doc, Document},
     Collection, Database,
 };
-use nettu_scheduler_core::ctx::IUserRepo;
 use nettu_scheduler_core::domain::User;
 use serde::{Deserialize, Serialize};
 use std::error::Error;

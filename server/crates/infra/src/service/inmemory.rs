@@ -1,5 +1,5 @@
+use super::IServiceRepo;
 use crate::shared::inmemory_repo::*;
-use nettu_scheduler_core::ctx::IServiceRepo;
 use nettu_scheduler_core::domain::Service;
 use std::error::Error;
 

@@ -1,4 +1,4 @@
-use nettu_scheduler_core::ctx::IAccountRepo;
+use super::IAccountRepo;
 use nettu_scheduler_core::domain::{Account, AccountSettings, AccountWebhookSettings};
 
 use crate::shared::mongo_repo;

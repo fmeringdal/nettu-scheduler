@@ -1,20 +1,17 @@
+use crate::shared::usecase::{execute, UseCase};
 use crate::{
-    api::{Context, NettuError},
     calendar::usecases::get_user_freebusy::GetUserFreeBusyUseCase,
-    event::domain::booking_slots::{
-        get_service_bookingslots, validate_bookingslots_query, validate_slots_interval,
-        BookingQueryError, BookingSlotsOptions, BookingSlotsQuery, ServiceBookingSlot,
-        ServiceBookingSlotDTO,
-    },
+    error::NettuError,
     shared::auth::{ensure_nettu_acct_header, protect_account_route},
 };
-use crate::{
-    event::domain::booking_slots::UserFreeEvents,
-    shared::usecase::{execute, UseCase},
-};
 use actix_web::{web, HttpRequest, HttpResponse};
-
 use futures::future::join_all;
+use nettu_scheduler_core::domain::booking_slots::{
+    get_service_bookingslots, validate_bookingslots_query, validate_slots_interval,
+    BookingQueryError, BookingSlotsOptions, BookingSlotsQuery, ServiceBookingSlot,
+    ServiceBookingSlotDTO, UserFreeEvents,
+};
+use nettu_scheduler_infra::Context;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize)]
@@ -198,16 +195,12 @@ impl UseCase for GetServiceBookingSlotsUseCase {
 
 #[cfg(test)]
 mod test {
+    use super::*;
     use chrono::prelude::*;
     use chrono::Utc;
-
-    use crate::{
-        calendar::domain::Calendar,
-        event::domain::event::{CalendarEvent, RRuleOptions},
-        service::domain::{Service, ServiceResource},
+    use nettu_scheduler_core::domain::{
+        Calendar, CalendarEvent, RRuleOptions, Service, ServiceResource,
     };
-
-    use super::*;
 
     struct TestContext {
         ctx: Context,

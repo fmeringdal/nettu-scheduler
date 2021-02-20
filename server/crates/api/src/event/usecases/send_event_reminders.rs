@@ -1,10 +1,8 @@
-use std::collections::HashMap;
-
 use crate::shared::usecase::UseCase;
-use crate::{account::domain::Account, event::domain::Reminder};
-use crate::{api::Context, event::domain::event::CalendarEvent};
-
+use nettu_scheduler_core::domain::{Account, CalendarEvent, Reminder};
+use nettu_scheduler_infra::Context;
 use serde::Serialize;
+use std::collections::HashMap;
 
 /// Creates EventReminders for a calendar event
 pub struct SendEventRemindersUseCase {}

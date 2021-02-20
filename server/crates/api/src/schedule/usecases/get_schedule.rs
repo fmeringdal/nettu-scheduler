@@ -1,10 +1,11 @@
+use crate::{error::NettuError, shared::auth::protect_route};
 use crate::{
-    api::Context,
-    schedule::{domain::Schedule, dtos::ScheduleDTO},
+    schedule::dtos::ScheduleDTO,
     shared::usecase::{execute, UseCase},
 };
-use crate::{api::NettuError, shared::auth::protect_route};
 use actix_web::{web, HttpRequest, HttpResponse};
+use nettu_scheduler_core::domain::Schedule;
+use nettu_scheduler_infra::Context;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]

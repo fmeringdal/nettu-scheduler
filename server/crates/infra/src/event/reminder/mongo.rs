@@ -1,11 +1,12 @@
+use super::super::IReminderRepo;
 use crate::shared::mongo_repo;
+use crate::shared::repo::DeleteResult;
 use mongo_repo::MongoDocument;
 use mongodb::{
     bson::doc,
     bson::{oid::ObjectId, Document},
     Collection, Database,
 };
-use nettu_scheduler_core::ctx::{results::DeleteResult, IReminderRepo};
 use nettu_scheduler_core::domain::Reminder;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
@@ -24,10 +25,7 @@ impl ReminderRepo {
 
 #[async_trait::async_trait]
 impl IReminderRepo for ReminderRepo {
-    async fn bulk_insert(
-        &self,
-        reminders: &[crate::event::domain::Reminder],
-    ) -> Result<(), Box<dyn Error>> {
+    async fn bulk_insert(&self, reminders: &[Reminder]) -> Result<(), Box<dyn Error>> {
         match mongo_repo::bulk_insert::<_, ReminderMongo>(&self.collection, reminders).await {
             Ok(_) => Ok(()),
             Err(_) => Ok(()), // fix this

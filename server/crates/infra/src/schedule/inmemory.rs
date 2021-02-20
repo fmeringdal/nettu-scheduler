@@ -1,5 +1,5 @@
+use super::IScheduleRepo;
 use crate::shared::inmemory_repo::*;
-use nettu_scheduler_core::ctx::IScheduleRepo;
 use nettu_scheduler_core::domain::Schedule;
 use std::error::Error;
 

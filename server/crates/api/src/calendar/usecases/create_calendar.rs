@@ -1,16 +1,15 @@
-use crate::{
-    api::{Context, NettuError},
-    shared::{
-        auth::{protect_account_route, protect_route},
-        usecase::{execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
-    },
+use crate::shared::auth::Permission;
+use crate::shared::{
+    auth::{protect_account_route, protect_route},
+    usecase::{execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
 };
 use crate::{
-    calendar::domain::Calendar,
+    error::NettuError,
     shared::usecase::{execute, UseCase},
 };
-use crate::{shared::auth::Permission, user::domain::User};
 use actix_web::{web, HttpResponse};
+use nettu_scheduler_core::domain::{Calendar, User};
+use nettu_scheduler_infra::Context;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]

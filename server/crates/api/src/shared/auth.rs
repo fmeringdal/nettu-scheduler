@@ -1,13 +1,11 @@
 use actix_web::HttpRequest;
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
+use nettu_scheduler_core::domain::{Account, User};
+use nettu_scheduler_infra::Context;
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    account::domain::Account,
-    user::{domain::User, usecases::create_user::CreateUserUseCase},
-    Context,
-};
-use crate::{api::NettuError, shared::usecase::execute};
+use crate::user::usecases::create_user::CreateUserUseCase;
+use crate::{error::NettuError, shared::usecase::execute};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -230,7 +228,6 @@ pub async fn protect_account_route(
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::api::Context;
     use actix_web::test::TestRequest;
     use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
 

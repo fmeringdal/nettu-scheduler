@@ -1,6 +1,7 @@
-use crate::api::{Context, NettuError};
+use crate::error::NettuError;
 use crate::shared::auth::protect_account_route;
 use actix_web::{web, HttpResponse};
+use nettu_scheduler_infra::Context;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize)]

@@ -1,19 +1,15 @@
 use crate::{
-    api::{Context, NettuError},
+    error::NettuError,
     shared::{
         auth::{protect_route, Permission},
         usecase::{execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
     },
 };
-use crate::{
-    schedule::{
-        domain::{Schedule, ScheduleRule},
-        dtos::ScheduleDTO,
-    },
-    shared::usecase::UseCase,
-};
+use crate::{schedule::dtos::ScheduleDTO, shared::usecase::UseCase};
 use actix_web::{web, HttpResponse};
 use chrono_tz::Tz;
+use nettu_scheduler_core::domain::{Schedule, ScheduleRule};
+use nettu_scheduler_infra::Context;
 use serde::Deserialize;
 
 #[derive(Deserialize)]

@@ -1,5 +1,5 @@
-use crate::Context;
 use actix_web::rt::time::{delay_until, interval, Instant};
+use nettu_scheduler_infra::Context;
 use std::sync::Arc;
 use std::time::Duration;
 

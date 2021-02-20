@@ -1,3 +1,4 @@
+use crate::shared::repo::DeleteResult;
 use anyhow::Result;
 use futures::stream::StreamExt;
 use mongodb::{
@@ -6,8 +7,6 @@ use mongodb::{
 };
 use serde::{de::DeserializeOwned, Serialize};
 use std::error::Error;
-
-use crate::event::repos::DeleteResult;
 
 pub enum MongoPersistenceID {
     ObjectId(ObjectId),

@@ -1,6 +1,5 @@
+use nettu_scheduler_core::domain::{Schedule, ScheduleRule};
 use serde::{Deserialize, Serialize};
-
-use super::domain::{Schedule, ScheduleRule};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

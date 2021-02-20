@@ -1,15 +1,11 @@
-use crate::{
-    api::Context,
-    event::domain::event::RRuleOptions,
-    shared::{
-        auth::Permission,
-        usecase::{
-            execute, execute_with_policy, PermissionBoundary, UseCase, UseCaseErrorContainer,
-        },
-    },
+use crate::shared::{
+    auth::Permission,
+    usecase::{execute, execute_with_policy, PermissionBoundary, UseCase, UseCaseErrorContainer},
 };
-use crate::{api::NettuError, shared::auth::protect_route};
+use crate::{error::NettuError, shared::auth::protect_route};
 use actix_web::{web, HttpRequest, HttpResponse};
+use nettu_scheduler_core::domain::RRuleOptions;
+use nettu_scheduler_infra::Context;
 use serde::Deserialize;
 
 use super::sync_event_reminders::{EventOperation, SyncEventRemindersUseCase};

@@ -1,18 +1,21 @@
 use super::get_user_freebusy::GetUserFreeBusyUseCase;
 use crate::{
-    api::{Context, NettuError},
-    event::domain::booking_slots::{
-        get_booking_slots, validate_bookingslots_query, BookingQueryError, BookingSlot,
-        BookingSlotsOptions, BookingSlotsQuery,
-    },
+    error::NettuError,
     shared::{
         auth::ensure_nettu_acct_header,
         usecase::{execute, UseCase},
     },
-    user::domain::User,
 };
 use actix_web::{web, HttpRequest, HttpResponse};
+use nettu_scheduler_core::domain::{
+    booking_slots::{
+        get_booking_slots, validate_bookingslots_query, BookingQueryError, BookingSlot,
+        BookingSlotsOptions, BookingSlotsQuery,
+    },
+    User,
+};
 
+use nettu_scheduler_infra::Context;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize)]

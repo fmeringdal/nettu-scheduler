@@ -3,9 +3,33 @@ mod calendar;
 mod event;
 mod schedule;
 mod service;
+mod shared;
 mod user;
 
-use nettu_scheduler_core::ctx::Context;
+use std::sync::Arc;
+
+use account::{AccountRepo, IAccountRepo, InMemoryAccountRepo};
+use calendar::{CalendarRepo, ICalendarRepo, InMemoryCalendarRepo};
+use chrono::Utc;
+use event::{
+    EventRepo, IEventRepo, IReminderRepo, InMemoryEventRepo, InMemoryReminderRepo, ReminderRepo,
+};
+use mongodb::{options::ClientOptions, Client};
+use nettu_scheduler_utils::create_random_secret;
+use schedule::{IScheduleRepo, InMemoryScheduleRepo, ScheduleRepo};
+use service::{IServiceRepo, InMemoryServiceRepo, ServiceRepo};
+use user::{IUserRepo, InMemoryUserRepo, UserRepo};
+
+#[derive(Clone)]
+pub struct Repos {
+    pub event_repo: Arc<dyn IEventRepo>,
+    pub calendar_repo: Arc<dyn ICalendarRepo>,
+    pub account_repo: Arc<dyn IAccountRepo>,
+    pub user_repo: Arc<dyn IUserRepo>,
+    pub service_repo: Arc<dyn IServiceRepo>,
+    pub schedule_repo: Arc<dyn IScheduleRepo>,
+    pub reminder_repo: Arc<dyn IReminderRepo>,
+}
 
 impl Repos {
     pub async fn create_mongodb() -> Result<Self, Box<dyn std::error::Error>> {
@@ -96,6 +120,13 @@ impl ISys for RealSys {
     fn get_utc_timestamp(&self) -> i64 {
         Utc::now().timestamp_millis()
     }
+}
+
+#[derive(Clone)]
+pub struct Context {
+    pub repos: Repos,
+    pub config: Config,
+    pub sys: Arc<dyn ISys>,
 }
 
 impl Context {

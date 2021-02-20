@@ -1,11 +1,11 @@
+use super::IServiceRepo;
 use crate::shared::mongo_repo;
 use mongo_repo::MongoDocument;
 use mongodb::{
     bson::{doc, oid::ObjectId, Document},
     Collection, Database,
 };
-use nettu_scheduler_core::ctx::IServiceRepo;
-use nettu_scheduler_core::domain::Service;
+use nettu_scheduler_core::domain::{Service, ServiceResource};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 

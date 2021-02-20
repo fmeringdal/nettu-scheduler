@@ -7,6 +7,8 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+nettu_scheduler_core = { path = "../core" }
+nettu_scheduler_infra = { path = "../infra" }
 tokio = { version = "1", features = ["sync", "time"] }
 serde = { version = "1.0", features = ["derive"] }
 futures = "0.3" # todo, only need stream feature for mongodb

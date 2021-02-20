@@ -1,10 +1,10 @@
+use super::IScheduleRepo;
 use crate::shared::mongo_repo;
 use mongo_repo::MongoDocument;
 use mongodb::{
     bson::{doc, oid::ObjectId, Document},
     Collection, Database,
 };
-use nettu_scheduler_core::ctx::IScheduleRepo;
 use nettu_scheduler_core::domain::{Schedule, ScheduleRule};
 use serde::{Deserialize, Serialize};
 use std::error::Error;

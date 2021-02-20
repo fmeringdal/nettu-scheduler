@@ -1,12 +1,10 @@
-use crate::{
-    api::Context,
-    shared::{
-        auth::{protect_route, Permission},
-        usecase::{execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
-    },
+use crate::shared::{
+    auth::{protect_route, Permission},
+    usecase::{execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
 };
-use crate::{api::NettuError, shared::usecase::UseCase};
+use crate::{error::NettuError, shared::usecase::UseCase};
 use actix_web::{web, HttpRequest, HttpResponse};
+use nettu_scheduler_infra::Context;
 use serde::Deserialize;
 
 #[derive(Deserialize)]

@@ -1,5 +1,6 @@
+use super::super::IReminderRepo;
 use crate::shared::inmemory_repo::*;
-use nettu_scheduler_core::ctx::{results::DeleteResult, IReminderRepo};
+use crate::shared::repo::DeleteResult;
 use nettu_scheduler_core::domain::Reminder;
 use std::error::Error;
 
@@ -17,10 +18,7 @@ impl InMemoryReminderRepo {
 
 #[async_trait::async_trait]
 impl IReminderRepo for InMemoryReminderRepo {
-    async fn bulk_insert(
-        &self,
-        reminders: &[crate::event::domain::Reminder],
-    ) -> Result<(), Box<dyn Error>> {
+    async fn bulk_insert(&self, reminders: &[Reminder]) -> Result<(), Box<dyn Error>> {
         for reminder in reminders {
             insert(reminder, &self.reminders);
         }

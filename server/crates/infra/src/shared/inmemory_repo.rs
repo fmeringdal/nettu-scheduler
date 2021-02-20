@@ -1,8 +1,8 @@
-use crate::event::repos::DeleteResult;
-
-use super::entity::Entity;
-/// Useful functions for creating inmemory repositories
+use crate::shared::repo::DeleteResult;
+use nettu_scheduler_core::Entity;
 use std::sync::Mutex;
+
+/// Useful functions for creating inmemory repositories
 
 pub fn insert<T: Clone>(val: &T, collection: &Mutex<Vec<T>>) {
     let mut collection = collection.lock().unwrap();

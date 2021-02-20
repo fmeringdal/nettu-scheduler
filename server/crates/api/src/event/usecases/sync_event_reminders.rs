@@ -1,8 +1,8 @@
-use crate::{api::Context, event::domain::event::CalendarEvent};
-use crate::{calendar::domain::Calendar, event::domain::Reminder};
-use crate::{calendar::domain::CalendarView, shared::usecase::UseCase};
+use crate::shared::usecase::UseCase;
 use chrono::prelude::*;
 use mongodb::bson::oid::ObjectId;
+use nettu_scheduler_core::domain::{Calendar, CalendarEvent, CalendarView, Reminder};
+use nettu_scheduler_infra::Context;
 
 #[derive(Debug)]
 pub enum EventOperation<'a> {

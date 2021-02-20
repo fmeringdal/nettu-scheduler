@@ -1,15 +1,14 @@
-use std::collections::HashMap;
-
-use crate::{api::Context, calendar::domain::CalendarView};
-use crate::{api::NettuError, event::domain::event_instance::EventInstance};
-use crate::{
-    event::domain::event_instance::get_free_busy,
-    shared::usecase::{execute, UseCase},
-};
-use crate::{shared::auth::ensure_nettu_acct_header, user::domain::User};
+use crate::error::NettuError;
+use crate::shared::auth::ensure_nettu_acct_header;
+use crate::shared::usecase::{execute, UseCase};
 use actix_web::{web, HttpRequest, HttpResponse};
 use futures::future::join_all;
+use nettu_scheduler_core::domain::{
+    event_instance::get_free_busy, CalendarView, EventInstance, User,
+};
+use nettu_scheduler_infra::Context;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Debug, Deserialize)]
 pub struct UserPathParams {
@@ -192,13 +191,10 @@ impl GetUserFreeBusyUseCase {
 
 #[cfg(test)]
 mod test {
+    use nettu_scheduler_core::domain::{Calendar, CalendarEvent, RRuleFrequenzy, RRuleOptions};
+
     use super::*;
-    use crate::{
-        calendar::domain::Calendar,
-        event::domain::event::{CalendarEvent, RRuleFrequenzy, RRuleOptions},
-        shared::entity::Entity,
-        user::domain::User,
-    };
+    use crate::shared::entity::Entity;
 
     #[actix_web::main]
     #[test]

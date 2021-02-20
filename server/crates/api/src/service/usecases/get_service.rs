@@ -1,14 +1,14 @@
 use crate::{
-    account::domain::Account,
-    api::NettuError,
-    service::domain::Service,
+    error::NettuError,
+    service::dtos::ServiceDTO,
     shared::{
         auth::protect_account_route,
         usecase::{execute, UseCase},
     },
 };
-use crate::{api::Context, service::domain::ServiceDTO};
 use actix_web::{web, HttpRequest, HttpResponse};
+use nettu_scheduler_core::domain::{Account, Service};
+use nettu_scheduler_infra::Context;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]

@@ -1,12 +1,13 @@
 use crate::{
-    api::{Context, NettuError},
-    event::domain::event::CalendarEvent,
+    error::NettuError,
     shared::{
         auth::protect_route,
         usecase::{execute, UseCase},
     },
 };
 use actix_web::{web, HttpRequest, HttpResponse};
+use nettu_scheduler_core::domain::CalendarEvent;
+use nettu_scheduler_infra::Context;
 use serde::Deserialize;
 
 #[derive(Deserialize)]
