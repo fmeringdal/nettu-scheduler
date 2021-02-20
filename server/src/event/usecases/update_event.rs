@@ -1,7 +1,12 @@
 use crate::{
     api::Context,
     event::domain::event::RRuleOptions,
-    shared::usecase::{execute, UseCase},
+    shared::{
+        auth::Permission,
+        usecase::{
+            execute, execute_with_policy, PermissionBoundary, UseCase, UseCaseErrorContainer,
+        },
+    },
 };
 use crate::{api::NettuError, shared::auth::protect_route};
 use actix_web::{web, HttpRequest, HttpResponse};
@@ -40,18 +45,21 @@ pub async fn update_event_controller(
         busy: body.busy,
     };
 
-    execute(usecase, &ctx)
+    execute_with_policy(usecase, &policy, &ctx)
         .await
         .map(|_| HttpResponse::Ok().finish())
         .map_err(|e| match e {
-            UseCaseErrors::NotFoundError => NettuError::NotFound(format!(
-                "The event with id: {}, was not found.",
-                path_params.event_id
-            )),
-            UseCaseErrors::InvalidRecurrenceRule => {
-                NettuError::BadClientData("Invalid recurrence rule specified for the event".into())
-            }
-            UseCaseErrors::StorageError => NettuError::InternalError,
+            UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
+            UseCaseErrorContainer::UseCase(e) => match e {
+                UseCaseErrors::NotFoundError => NettuError::NotFound(format!(
+                    "The event with id: {}, was not found.",
+                    path_params.event_id
+                )),
+                UseCaseErrors::InvalidRecurrenceRule => NettuError::BadClientData(
+                    "Invalid recurrence rule specified for the event".into(),
+                ),
+                UseCaseErrors::StorageError => NettuError::InternalError,
+            },
         })
 }
 
@@ -145,6 +153,12 @@ impl UseCase for UpdateEventUseCase {
         execute(sync_event_reminders, ctx).await;
 
         Ok(())
+    }
+}
+
+impl PermissionBoundary for UpdateEventUseCase {
+    fn permissions(&self) -> Vec<Permission> {
+        vec![Permission::UpdateCalendarEvent]
     }
 }
 

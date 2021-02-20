@@ -1,8 +1,10 @@
 use crate::{
     api::Context,
     shared::{
-        auth::protect_route,
-        usecase::{execute, UseCase},
+        auth::{protect_route, Permission},
+        usecase::{
+            execute, execute_with_policy, PermissionBoundary, UseCase, UseCaseErrorContainer,
+        },
     },
 };
 use crate::{
@@ -48,7 +50,7 @@ pub async fn create_event_controller(
         account_id: user.account_id,
     };
 
-    execute(usecase, &ctx)
+    execute_with_policy(usecase, &policy, &ctx)
         .await
         .map(|calendar_event| {
             HttpResponse::Created().json(CreateEventRes {
@@ -56,14 +58,17 @@ pub async fn create_event_controller(
             })
         })
         .map_err(|e| match e {
-            UseCaseErrors::NotFoundError => NettuError::NotFound(format!(
-                "The calendar with id: {}, was not found.",
-                req.calendar_id
-            )),
-            UseCaseErrors::InvalidRecurrenceRule => {
-                NettuError::BadClientData("Invalid recurrence rule specified for the event".into())
-            }
-            UseCaseErrors::StorageError => NettuError::InternalError,
+            UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
+            UseCaseErrorContainer::UseCase(e) => match e {
+                UseCaseErrors::NotFoundError => NettuError::NotFound(format!(
+                    "The calendar with id: {}, was not found.",
+                    req.calendar_id
+                )),
+                UseCaseErrors::InvalidRecurrenceRule => NettuError::BadClientData(
+                    "Invalid recurrence rule specified for the event".into(),
+                ),
+                UseCaseErrors::StorageError => NettuError::InternalError,
+            },
         })
 }
 
@@ -131,6 +136,12 @@ impl UseCase for CreateEventUseCase {
         execute(sync_event_reminders, ctx).await;
 
         Ok(e)
+    }
+}
+
+impl PermissionBoundary for CreateEventUseCase {
+    fn permissions(&self) -> Vec<Permission> {
+        vec![Permission::CreateCalendarEvent]
     }
 }
 

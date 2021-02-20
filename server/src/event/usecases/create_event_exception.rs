@@ -1,4 +1,10 @@
-use crate::{api::Context, shared::auth::protect_route};
+use crate::{
+    api::Context,
+    shared::{
+        auth::{protect_route, Permission},
+        usecase::{execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
+    },
+};
 use crate::{
     api::NettuError,
     shared::usecase::{execute, UseCase},
@@ -30,15 +36,18 @@ pub async fn create_event_exception_controller(
         user_id: user.id.clone(),
     };
 
-    execute(usecase, &ctx)
+    execute_with_policy(usecase, &policy, &ctx)
         .await
         .map(|_| HttpResponse::Created().finish())
         .map_err(|e| match e {
-            UseCaseErrors::NotFoundError => NettuError::NotFound(format!(
-                "The event with id: {}, was not found",
-                path_params.event_id
-            )),
-            UseCaseErrors::StorageError => NettuError::InternalError,
+            UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
+            UseCaseErrorContainer::UseCase(e) => match e {
+                UseCaseErrors::NotFoundError => NettuError::NotFound(format!(
+                    "The event with id: {}, was not found",
+                    path_params.event_id
+                )),
+                UseCaseErrors::StorageError => NettuError::InternalError,
+            },
         })
 }
 
@@ -76,5 +85,11 @@ impl UseCase for CreateEventExceptionUseCase {
         }
 
         Ok(())
+    }
+}
+
+impl PermissionBoundary for CreateEventExceptionUseCase {
+    fn permissions(&self) -> Vec<Permission> {
+        vec![Permission::UpdateCalendarEvent]
     }
 }

@@ -1,4 +1,10 @@
-use crate::{api::Context, shared::auth::protect_route};
+use crate::{
+    api::Context,
+    shared::{
+        auth::{protect_route, Permission},
+        usecase::{execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
+    },
+};
 use crate::{
     api::NettuError,
     shared::usecase::{execute, UseCase},
@@ -25,14 +31,17 @@ pub async fn delete_event_controller(
         event_id: path_params.event_id.clone(),
     };
 
-    execute(usecase, &ctx)
+    execute_with_policy(usecase, &policy, &ctx)
         .await
         .map(|_| HttpResponse::Ok().body("Event deleted"))
         .map_err(|e| match e {
-            UseCaseErrors::NotFound => NettuError::NotFound(format!(
-                "The event with id: {}, was not found",
-                path_params.event_id
-            )),
+            UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
+            UseCaseErrorContainer::UseCase(e) => match e {
+                UseCaseErrors::NotFound => NettuError::NotFound(format!(
+                    "The event with id: {}, was not found",
+                    path_params.event_id
+                )),
+            },
         })
 }
 
@@ -72,5 +81,11 @@ impl UseCase for DeleteEventUseCase {
             }
             _ => Err(UseCaseErrors::NotFound),
         }
+    }
+}
+
+impl PermissionBoundary for DeleteEventUseCase {
+    fn permissions(&self) -> Vec<Permission> {
+        vec![Permission::DeleteCalendarEvent]
     }
 }
