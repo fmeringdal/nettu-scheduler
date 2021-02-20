@@ -1,5 +1,5 @@
 [package]
-name = "nettu_scheduler_api"
+name = "nettu_scheduler_infra"
 version = "0.1.0"
 authors = ["Fredrik Meringdal"]
 edition = "2018"
@@ -7,6 +7,8 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+nettu_scheduler_utils = { path = "../utils" }
+nettu_scheduler_core = { path = "../core" }
 tokio = { version = "1", features = ["sync", "time"] }
 serde = { version = "1.0", features = ["derive"] }
 futures = "0.3" # todo, only need stream feature for mongodb

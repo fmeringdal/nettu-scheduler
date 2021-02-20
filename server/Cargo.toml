@@ -8,10 +8,14 @@ edition = "2018"
 
 [workspace]
 members = [
-    "crates/api"
+    "crates/api",
+    "crates/core",
+    "crates/infra",
+    "crates/utils"
 ]
 
 [dependencies]
 nettu_scheduler_api = { path = "./crates/api" }
+nettu_scheduler_core = { path = "./crates/core" }
 actix-web = "3.3.2"
 env_logger = "0.8.2"

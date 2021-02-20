@@ -1552,6 +1552,7 @@ dependencies = [
  "actix-web",
  "env_logger",
  "nettu_scheduler_api",
+ "nettu_scheduler_core",
 ]
 
 [[package]]
@@ -1568,12 +1569,61 @@ dependencies = [
  "futures",
  "jsonwebtoken",
  "mongodb",
- "rand 0.8.0",
  "rrule",
  "serde",
  "thiserror",
  "tokio 1.0.1",
  "url",
+]
+
+[[package]]
+name = "nettu_scheduler_core"
+version = "0.1.0"
+dependencies = [
+ "actix-rt",
+ "anyhow",
+ "async-trait",
+ "base64 0.13.0",
+ "chrono",
+ "chrono-tz",
+ "futures",
+ "jsonwebtoken",
+ "mongodb",
+ "nettu_scheduler_utils",
+ "rrule",
+ "serde",
+ "thiserror",
+ "url",
+]
+
+[[package]]
+name = "nettu_scheduler_infra"
+version = "0.1.0"
+dependencies = [
+ "actix-web",
+ "anyhow",
+ "async-trait",
+ "base64 0.13.0",
+ "chrono",
+ "chrono-tz",
+ "env_logger",
+ "futures",
+ "jsonwebtoken",
+ "mongodb",
+ "nettu_scheduler_core",
+ "nettu_scheduler_utils",
+ "rrule",
+ "serde",
+ "thiserror",
+ "tokio 1.0.1",
+ "url",
+]
+
+[[package]]
+name = "nettu_scheduler_utils"
+version = "0.1.0"
+dependencies = [
+ "rand 0.8.0",
 ]
 
 [[package]]
