@@ -1553,6 +1553,7 @@ dependencies = [
  "env_logger",
  "nettu_scheduler_api",
  "nettu_scheduler_core",
+ "nettu_scheduler_infra",
 ]
 
 [[package]]
@@ -1569,6 +1570,8 @@ dependencies = [
  "futures",
  "jsonwebtoken",
  "mongodb",
+ "nettu_scheduler_core",
+ "nettu_scheduler_infra",
  "rrule",
  "serde",
  "thiserror",

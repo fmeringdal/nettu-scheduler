@@ -1,4 +1,5 @@
-use nettu_scheduler_api::{configure_server_app, Context};
+use nettu_scheduler_api::{configure_server_app};
+use nettu_scheduler_infra::Context;
 
 use actix_web::{middleware, App, HttpServer};
 use env_logger::Env;
