@@ -5,10 +5,7 @@ use crate::{
         usecase::{execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
     },
 };
-use crate::{
-    api::NettuError,
-    shared::usecase::{UseCase},
-};
+use crate::{api::NettuError, shared::usecase::UseCase};
 use actix_web::{web, HttpResponse};
 
 use serde::Deserialize;

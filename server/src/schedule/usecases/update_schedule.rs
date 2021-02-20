@@ -10,7 +10,7 @@ use crate::{
         domain::{Schedule, ScheduleRule},
         dtos::ScheduleDTO,
     },
-    shared::usecase::{UseCase},
+    shared::usecase::UseCase,
 };
 use actix_web::{web, HttpResponse};
 use chrono_tz::Tz;

@@ -1,4 +1,4 @@
-use actix_web::{HttpRequest};
+use actix_web::HttpRequest;
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use serde::{Deserialize, Serialize};
 
@@ -238,7 +238,7 @@ pub async fn protect_account_route(
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{api::Context};
+    use crate::api::Context;
     use actix_web::test::TestRequest;
     use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
 

@@ -119,9 +119,7 @@ impl PermissionBoundary for UpdateCalendarSettingsUseCase {
 
 #[cfg(test)]
 mod test {
-    use crate::{
-        calendar::domain::Calendar,
-    };
+    use crate::calendar::domain::Calendar;
 
     use super::*;
 

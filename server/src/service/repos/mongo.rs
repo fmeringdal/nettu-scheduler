@@ -2,7 +2,7 @@ use crate::service::domain::{Service, ServiceResource};
 
 use super::IServiceRepo;
 use crate::shared::mongo_repo;
-use mongo_repo::{MongoDocument};
+use mongo_repo::MongoDocument;
 use mongodb::{
     bson::{doc, oid::ObjectId, Document},
     Collection, Database,

@@ -1,9 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{
-    api::Context,
-    calendar::domain::{CalendarView},
-};
+use crate::{api::Context, calendar::domain::CalendarView};
 use crate::{api::NettuError, event::domain::event_instance::EventInstance};
 use crate::{
     event::domain::event_instance::get_free_busy,

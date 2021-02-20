@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
+use crate::shared::usecase::UseCase;
 use crate::{account::domain::Account, event::domain::Reminder};
-use crate::{shared::usecase::UseCase};
 use crate::{api::Context, event::domain::event::CalendarEvent};
 
 use serde::Serialize;

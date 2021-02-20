@@ -108,7 +108,6 @@ impl UseCase for SetAccountWebhookUseCase {
 
 #[cfg(test)]
 mod tests {
-    
 
     use super::*;
 
