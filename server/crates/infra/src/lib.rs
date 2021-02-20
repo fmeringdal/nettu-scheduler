@@ -20,6 +20,8 @@ use schedule::{IScheduleRepo, InMemoryScheduleRepo, ScheduleRepo};
 use service::{IServiceRepo, InMemoryServiceRepo, ServiceRepo};
 use user::{IUserRepo, InMemoryUserRepo, UserRepo};
 
+pub use mongodb::bson::oid::ObjectId;
+
 #[derive(Clone)]
 pub struct Repos {
     pub event_repo: Arc<dyn IEventRepo>,

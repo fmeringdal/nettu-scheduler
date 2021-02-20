@@ -9,18 +9,15 @@ edition = "2018"
 [dependencies]
 nettu_scheduler_core = { path = "../core" }
 nettu_scheduler_infra = { path = "../infra" }
-tokio = { version = "1", features = ["sync", "time"] }
 serde = { version = "1.0", features = ["derive"] }
-futures = "0.3" # todo, only need stream feature for mongodb
+futures = "0.3" 
 actix-web = "3.3.2"
 async-trait = "0.1.42"
 env_logger = "0.8.2"
 rrule="0.3.8"
 chrono = { version = "0.4.19", features = ["serde"] }
 chrono-tz = "0.5.3"
-mongodb = { version = "1.1.1", default-features = false, features = ["async-std-runtime"] }
 anyhow = "1.0.0"
 jsonwebtoken = "7"
 base64 = "0.13.0"
 thiserror = "1.0"
-url = "2.2.0"
