@@ -1,5 +1,4 @@
 use crate::shared::entity::Entity;
-use serde::Serialize;
 
 #[derive(Debug, Clone)]
 pub struct User {
