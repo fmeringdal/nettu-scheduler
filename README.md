@@ -2,9 +2,7 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 
 ## Todos
 
-- Account with alloweduseractions ? maybe add it to jwt
-- protect create account with real emails
-- Webhook verification challenge ? or just have email validation on account
+- Custom controller
 - Delete user cleanup actions
 
 ## Backlog
