@@ -78,9 +78,7 @@ pub async fn create_schedule_controller(
         })
         .map_err(|e| {
             match e {
-                UseCaseErrorContainer::Unauthorized => NettuError::Unauthorized(
-                    "Client is not permitted to perform these actions".into(),
-                ),
+                UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
                 UseCaseErrorContainer::UseCase(e) => match e {
                     UseCaseErrors::InvalidTimezone(msg) => NettuError::BadClientData(format!(
                         "Invalid timezone: {}. It should be a valid IANA TimeZone.",

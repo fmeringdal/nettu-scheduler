@@ -1,4 +1,7 @@
-use crate::shared::usecase::{execute, UseCase};
+use crate::shared::{
+    auth::Permission,
+    usecase::{execute, execute_with_policy, PermissionBoundary, UseCase, UseCaseErrorContainer},
+};
 use crate::{
     api::{Context, NettuError},
     shared::auth::protect_route,
@@ -32,18 +35,21 @@ pub async fn update_calendar_settings_controller(
         timezone: body.timezone.clone(),
     };
 
-    execute(usecase, &ctx)
+    execute_with_policy(usecase, &policy, &ctx)
         .await
         .map(|usecase_res| HttpResponse::Ok().json(usecase_res))
         .map_err(|e| match e {
-            UseCaseErrors::StorageError => NettuError::InternalError,
-            UseCaseErrors::CalendarNotFoundError => {
-                NettuError::NotFound("The calendar was not found.".into())
-            }
-            UseCaseErrors::InvalidSettings(err) => NettuError::BadClientData(format!(
-                "Bad calendar settings provided. Error message: {}",
-                err
-            )),
+            UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
+            UseCaseErrorContainer::UseCase(e) => match e {
+                UseCaseErrors::StorageError => NettuError::InternalError,
+                UseCaseErrors::CalendarNotFoundError => {
+                    NettuError::NotFound("The calendar was not found.".into())
+                }
+                UseCaseErrors::InvalidSettings(err) => NettuError::BadClientData(format!(
+                    "Bad calendar settings provided. Error message: {}",
+                    err
+                )),
+            },
         })
 }
 
@@ -102,6 +108,12 @@ impl UseCase for UpdateCalendarSettingsUseCase {
             Ok(_) => Ok(UseCaseRes {}),
             Err(_) => Err(UseCaseErrors::StorageError),
         }
+    }
+}
+
+impl PermissionBoundary for UpdateCalendarSettingsUseCase {
+    fn permissions(&self) -> Vec<Permission> {
+        vec![Permission::UpdateCalendar]
     }
 }
 

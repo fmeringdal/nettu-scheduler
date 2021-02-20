@@ -1,4 +1,10 @@
-use crate::{api::Context, shared::auth::protect_route};
+use crate::{
+    api::Context,
+    shared::{
+        auth::{protect_route, Permission},
+        usecase::{execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
+    },
+};
 use crate::{
     api::NettuError,
     shared::usecase::{execute, UseCase},
@@ -24,15 +30,18 @@ pub async fn delete_schedule_controller(
         schedule_id: req.schedule_id.clone(),
     };
 
-    execute(usecase, &ctx)
+    execute_with_policy(usecase, &policy, &ctx)
         .await
         .map(|_| HttpResponse::Ok().body("Schedule deleted"))
         .map_err(|e| match e {
-            UseCaseErrors::NotFoundError => NettuError::NotFound(format!(
-                "The schedule with id: {}, was not found.",
-                req.schedule_id
-            )),
-            UseCaseErrors::UnableToDelete => NettuError::InternalError,
+            UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
+            UseCaseErrorContainer::UseCase(e) => match e {
+                UseCaseErrors::NotFoundError => NettuError::NotFound(format!(
+                    "The schedule with id: {}, was not found.",
+                    req.schedule_id
+                )),
+                UseCaseErrors::UnableToDelete => NettuError::InternalError,
+            },
         })
 }
 
@@ -76,5 +85,11 @@ impl UseCase for DeleteScheduleUseCase {
             }
             _ => Err(UseCaseErrors::NotFoundError),
         }
+    }
+}
+
+impl PermissionBoundary for DeleteScheduleUseCase {
+    fn permissions(&self) -> Vec<Permission> {
+        vec![Permission::DeleteSchedule]
     }
 }

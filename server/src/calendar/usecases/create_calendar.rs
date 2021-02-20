@@ -47,8 +47,6 @@ pub async fn create_calendar_controller(
     ctx: web::Data<Context>,
 ) -> Result<HttpResponse, NettuError> {
     let (user, policy) = protect_route(&http_req, &ctx).await?;
-    println!("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!###########!!!!");
-    println!("{:?}", policy);
 
     let usecase = CreateCalendarUseCase { user_id: user.id };
 
@@ -57,9 +55,7 @@ pub async fn create_calendar_controller(
         .map(|usecase_res| HttpResponse::Created().json(usecase_res))
         .map_err(|e| {
             match e {
-                UseCaseErrorContainer::Unauthorized => {
-                    NettuError::Unauthorized("Client is not permitted to create calendar".into())
-                }
+                UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
                 UseCaseErrorContainer::UseCase(e) => match e {
                     UseCaseErrors::StorageError => NettuError::InternalError,
                     // This should never happen

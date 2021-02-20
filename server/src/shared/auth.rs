@@ -26,6 +26,10 @@ pub struct Policy {
 
 impl Policy {
     pub fn authorize(&self, permissions: &Vec<Permission>) -> bool {
+        if permissions.is_empty() {
+            return true;
+        }
+
         if let Some(rejected) = &self.reject {
             for permission in permissions {
                 if *permission == Permission::All {
@@ -39,10 +43,8 @@ impl Policy {
 
         if let Some(allowed) = &self.allow {
             // First loop to check if All exists
-            for permission in permissions {
-                if *permission == Permission::All {
-                    return true;
-                }
+            if allowed.contains(&Permission::All) {
+                return true;
             }
 
             for permission in permissions {
@@ -52,14 +54,7 @@ impl Policy {
             }
         }
 
-        true
-    }
-
-    pub fn all() -> Self {
-        Self {
-            allow: Some(vec![Permission::All]),
-            reject: None,
-        }
+        false
     }
 
     pub fn empty() -> Self {

@@ -1,6 +1,9 @@
 use crate::{
     api::{Context, NettuError},
-    shared::auth::protect_route,
+    shared::{
+        auth::{protect_route, Permission},
+        usecase::{execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
+    },
 };
 use crate::{
     schedule::{
@@ -40,21 +43,24 @@ pub async fn update_schedule_controller(
         rules: body_params.rules.to_owned(),
     };
 
-    execute(usecase, &ctx)
+    execute_with_policy(usecase, &policy, &ctx)
         .await
         .map(|res| {
             let dto = ScheduleDTO::new(&res.schedule);
             HttpResponse::Ok().json(dto)
         })
         .map_err(|e| match e {
-            UseCaseErrors::StorageError => NettuError::InternalError,
-            UseCaseErrors::ScheduleNotFoundError => {
-                NettuError::NotFound("The schedule was not found.".into())
-            }
-            UseCaseErrors::InvalidSettings(err) => NettuError::BadClientData(format!(
-                "Bad schedule settings provided. Error message: {}",
-                err
-            )),
+            UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
+            UseCaseErrorContainer::UseCase(e) => match e {
+                UseCaseErrors::StorageError => NettuError::InternalError,
+                UseCaseErrors::ScheduleNotFoundError => {
+                    NettuError::NotFound("The schedule was not found.".into())
+                }
+                UseCaseErrors::InvalidSettings(err) => NettuError::BadClientData(format!(
+                    "Bad schedule settings provided. Error message: {}",
+                    err
+                )),
+            },
         })
 }
 
@@ -109,5 +115,11 @@ impl UseCase for UpdateScheduleUseCase {
             Ok(_) => Ok(UseCaseRes { schedule }),
             Err(_) => Err(UseCaseErrors::StorageError),
         }
+    }
+}
+
+impl PermissionBoundary for UpdateScheduleUseCase {
+    fn permissions(&self) -> Vec<Permission> {
+        vec![Permission::UpdateSchedule]
     }
 }
