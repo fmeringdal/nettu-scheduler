@@ -22,7 +22,7 @@ pub async fn create_event_exception_controller(
     body: web::Json<CreateEventExceptionBody>,
     ctx: web::Data<Context>,
 ) -> Result<HttpResponse, NettuError> {
-    let user = protect_route(&http_req, &ctx).await?;
+    let (user, policy) = protect_route(&http_req, &ctx).await?;
 
     let usecase = CreateEventExceptionUseCase {
         event_id: path_params.event_id.clone(),

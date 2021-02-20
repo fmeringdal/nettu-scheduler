@@ -36,7 +36,7 @@ pub async fn create_event_controller(
     req: web::Json<CreateEventReq>,
     ctx: web::Data<Context>,
 ) -> Result<HttpResponse, NettuError> {
-    let user = protect_route(&http_req, &ctx).await?;
+    let (user, policy) = protect_route(&http_req, &ctx).await?;
 
     let usecase = CreateEventUseCase {
         busy: req.busy,

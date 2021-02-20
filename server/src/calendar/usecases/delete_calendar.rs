@@ -17,7 +17,7 @@ pub async fn delete_calendar_controller(
     req: web::Path<DeleteCalendarReq>,
     ctx: web::Data<Context>,
 ) -> Result<HttpResponse, NettuError> {
-    let user = protect_route(&http_req, &ctx).await?;
+    let (user, policy) = protect_route(&http_req, &ctx).await?;
 
     let usecase = DeleteCalendarUseCase {
         user_id: user.id,

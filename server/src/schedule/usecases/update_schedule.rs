@@ -31,7 +31,7 @@ pub async fn update_schedule_controller(
     path_params: web::Path<UpdateScheduleSettigsPathParams>,
     body_params: web::Json<UpdateScheduleBody>,
 ) -> Result<HttpResponse, NettuError> {
-    let user = protect_route(&http_req, &ctx).await?;
+    let (user, policy) = protect_route(&http_req, &ctx).await?;
 
     let usecase = UpdateScheduleUseCase {
         user_id: user.id,

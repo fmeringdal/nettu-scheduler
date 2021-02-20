@@ -23,7 +23,7 @@ pub async fn update_calendar_settings_controller(
     path_params: web::Path<UpdateCalendarSettigsPathParams>,
     body: web::Json<UpdateCalendarSettingsBody>,
 ) -> Result<HttpResponse, NettuError> {
-    let user = protect_route(&http_req, &ctx).await?;
+    let (user, policy) = protect_route(&http_req, &ctx).await?;
 
     let usecase = UpdateCalendarSettingsUseCase {
         user_id: user.id,

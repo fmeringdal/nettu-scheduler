@@ -1,10 +1,13 @@
 use crate::{
     api::{Context, NettuError},
-    shared::auth::{protect_account_route, protect_route},
+    shared::{
+        auth::{protect_account_route, protect_route, Permission, Policy},
+        usecase::{execute_with_policy, PermissionBoundary},
+    },
 };
 use crate::{
     schedule::domain::Schedule,
-    shared::usecase::{execute, UseCase},
+    shared::usecase::{execute, UseCase, UseCaseErrorContainer},
 };
 use crate::{schedule::dtos::ScheduleDTO, user::domain::User};
 use actix_web::{web, HttpResponse};
@@ -60,14 +63,14 @@ pub async fn create_schedule_controller(
     body_params: web::Json<BodyParams>,
     ctx: web::Data<Context>,
 ) -> Result<HttpResponse, NettuError> {
-    let user = protect_route(&http_req, &ctx).await?;
+    let (user, policy) = protect_route(&http_req, &ctx).await?;
 
     let usecase = CreateScheduleUseCase {
         user_id: user.id,
         tzid: body_params.timezone.to_owned(),
     };
 
-    execute(usecase, &ctx)
+    execute_with_policy(usecase, &policy, &ctx)
         .await
         .map(|res| {
             let dto = ScheduleDTO::new(&res.schedule);
@@ -75,15 +78,20 @@ pub async fn create_schedule_controller(
         })
         .map_err(|e| {
             match e {
-                UseCaseErrors::InvalidTimezone(msg) => NettuError::BadClientData(format!(
-                    "Invalid timezone: {}. It should be a valid IANA TimeZone.",
-                    msg
-                )),
-                UseCaseErrors::Storage => NettuError::InternalError,
-                // This should never happen
-                UseCaseErrors::UserNotFound => {
-                    NettuError::NotFound("The user was not found.".into())
-                }
+                UseCaseErrorContainer::Unauthorized => NettuError::Unauthorized(
+                    "Client is not permitted to perform these actions".into(),
+                ),
+                UseCaseErrorContainer::UseCase(e) => match e {
+                    UseCaseErrors::InvalidTimezone(msg) => NettuError::BadClientData(format!(
+                        "Invalid timezone: {}. It should be a valid IANA TimeZone.",
+                        msg
+                    )),
+                    UseCaseErrors::Storage => NettuError::InternalError,
+                    // This should never happen
+                    UseCaseErrors::UserNotFound => {
+                        NettuError::NotFound("The user was not found.".into())
+                    }
+                },
             }
         })
 }
@@ -130,5 +138,11 @@ impl UseCase for CreateScheduleUseCase {
             Ok(_) => Ok(UseCaseRes { schedule }),
             Err(_) => Err(UseCaseErrors::Storage),
         }
+    }
+}
+
+impl PermissionBoundary for CreateScheduleUseCase {
+    fn permissions(&self) -> Vec<Permission> {
+        vec![Permission::CreateSchedule]
     }
 }

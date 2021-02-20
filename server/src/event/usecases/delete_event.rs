@@ -18,7 +18,7 @@ pub async fn delete_event_controller(
     path_params: web::Path<PathParams>,
     ctx: web::Data<Context>,
 ) -> Result<HttpResponse, NettuError> {
-    let user = protect_route(&http_req, &ctx).await?;
+    let (user, policy) = protect_route(&http_req, &ctx).await?;
 
     let usecase = DeleteEventUseCase {
         user_id: user.id.clone(),

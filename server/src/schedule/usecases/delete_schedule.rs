@@ -17,7 +17,7 @@ pub async fn delete_schedule_controller(
     req: web::Path<DeleteScheduleReq>,
     ctx: web::Data<Context>,
 ) -> Result<HttpResponse, NettuError> {
-    let user = protect_route(&http_req, &ctx).await?;
+    let (user, policy) = protect_route(&http_req, &ctx).await?;
 
     let usecase = DeleteScheduleUseCase {
         user_id: user.id,

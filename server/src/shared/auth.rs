@@ -1,4 +1,4 @@
-use actix_web::HttpRequest;
+use actix_web::{test::read_body_json, HttpRequest};
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use serde::{Deserialize, Serialize};
 
@@ -12,9 +12,83 @@ use crate::{api::NettuError, shared::usecase::execute};
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct Claims {
-    exp: usize, // Required (validate_exp defaults to true in validation). Expiration time (as UTC timestamp)
-    iat: usize, // Optional. Issued at (as UTC timestamp)
-    user_id: String, // Optional. Subject (whom token refers to)
+    exp: usize,      // Expiration time (as UTC timestamp)
+    iat: usize,      // Issued at (as UTC timestamp)
+    user_id: String, // Subject (whom token refers to)
+    scheduler_policy: Option<Policy>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Policy {
+    allowed: Option<Vec<Permission>>,
+    rejected: Option<Vec<Permission>>,
+}
+
+impl Policy {
+    pub fn authorize(&self, permissions: &Vec<Permission>) -> bool {
+        if let Some(rejected) = &self.rejected {
+            for permission in permissions {
+                if *permission == Permission::All {
+                    return false;
+                }
+                if rejected.contains(permission) {
+                    return false;
+                }
+            }
+        }
+
+        if let Some(allowed) = &self.allowed {
+            // First loop to check if All exists
+            for permission in permissions {
+                if *permission == Permission::All {
+                    return true;
+                }
+            }
+
+            for permission in permissions {
+                if !allowed.contains(permission) {
+                    return false;
+                }
+            }
+        }
+
+        true
+    }
+
+    pub fn all() -> Self {
+        Self {
+            allowed: Some(vec![Permission::All]),
+            rejected: None,
+        }
+    }
+
+    pub fn empty() -> Self {
+        Self {
+            allowed: None,
+            rejected: None,
+        }
+    }
+}
+
+impl Default for Policy {
+    fn default() -> Self {
+        Self::empty()
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+pub enum Permission {
+    #[serde(rename = "*")]
+    All,
+    CreateCalendar,
+    DeleteCalendar,
+    UpdateCalendar,
+    CreateService,
+    UpdateService,
+    DeleteService,
+    CreateSchedule,
+    UpdateSchedule,
+    DeleteSchedule,
 }
 
 fn parse_authtoken_header(token_header_value: &str) -> String {
@@ -47,7 +121,11 @@ async fn create_user_if_not_exists(
     }
 }
 
-pub async fn auth_user_req(req: &HttpRequest, account: &Account, ctx: &Context) -> Option<User> {
+pub async fn auth_user_req(
+    req: &HttpRequest,
+    account: &Account,
+    ctx: &Context,
+) -> Option<(User, Policy)> {
     let token = req.headers().get("authorization");
     match token {
         Some(token) => {
@@ -56,7 +134,9 @@ pub async fn auth_user_req(req: &HttpRequest, account: &Account, ctx: &Context) 
                 Err(_) => return None,
             };
             match decode_token(account, &token) {
-                Ok(claims) => create_user_if_not_exists(&claims.user_id, &account.id, ctx).await,
+                Ok(claims) => create_user_if_not_exists(&claims.user_id, &account.id, ctx)
+                    .await
+                    .map(|u| (u, claims.scheduler_policy.unwrap_or_default())),
                 Err(_e) => None,
             }
         }
@@ -82,11 +162,20 @@ fn decode_token(account: &Account, token: &str) -> anyhow::Result<Claims> {
     };
     let public_key = base64::decode(&public_key_b64)?;
     let decoding_key = DecodingKey::from_rsa_pem(&public_key)?;
-    let token_data = decode::<Claims>(&token, &decoding_key, &Validation::new(Algorithm::RS256))?;
-    Ok(token_data.claims)
+    let mut claims =
+        decode::<Claims>(&token, &decoding_key, &Validation::new(Algorithm::RS256))?.claims;
+
+    // Remove permissions that are not assignable by account admin
+    if let Some(mut policy) = claims.scheduler_policy.as_mut() {
+        if let Some(mut allowed) = policy.allowed.as_mut() {
+            allowed.retain(|permission| *permission != Permission::All);
+        }
+    }
+
+    Ok(claims)
 }
 
-pub async fn protect_route(req: &HttpRequest, ctx: &Context) -> Result<User, NettuError> {
+pub async fn protect_route(req: &HttpRequest, ctx: &Context) -> Result<(User, Policy), NettuError> {
     let account = match get_client_account(req, ctx).await {
         Some(account) => account,
         None => {
@@ -98,7 +187,7 @@ pub async fn protect_route(req: &HttpRequest, ctx: &Context) -> Result<User, Net
     let res = auth_user_req(req, &account, ctx).await;
 
     match res {
-        Some(user) => Ok(user),
+        Some(user_and_policy) => Ok(user_and_policy),
         None => Err(NettuError::Unauthorized(
             "Unable to find user from credentials".into(),
         )),
@@ -178,6 +267,7 @@ mod test {
             exp,
             iat: 19,
             user_id: get_external_user_id(),
+            scheduler_policy: None,
         };
         let enc_key = EncodingKey::from_rsa_pem(&priv_key).unwrap();
         encode(&Header::new(Algorithm::RS256), &claims, &enc_key).unwrap()

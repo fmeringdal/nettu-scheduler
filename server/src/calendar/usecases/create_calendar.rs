@@ -1,12 +1,15 @@
-use crate::user::domain::User;
 use crate::{
     api::{Context, NettuError},
-    shared::auth::{protect_account_route, protect_route},
+    shared::{
+        auth::{protect_account_route, protect_route},
+        usecase::PermissionBoundary,
+    },
 };
 use crate::{
     calendar::domain::Calendar,
     shared::usecase::{execute, UseCase},
 };
+use crate::{shared::auth::Permission, user::domain::User};
 use actix_web::{web, HttpResponse};
 use serde::{Deserialize, Serialize};
 
@@ -41,7 +44,7 @@ pub async fn create_calendar_controller(
     http_req: web::HttpRequest,
     ctx: web::Data<Context>,
 ) -> Result<HttpResponse, NettuError> {
-    let user = protect_route(&http_req, &ctx).await?;
+    let (user, policy) = protect_route(&http_req, &ctx).await?;
 
     let usecase = CreateCalendarUseCase { user_id: user.id };
 
@@ -98,5 +101,11 @@ impl UseCase for CreateCalendarUseCase {
             }),
             Err(_) => Err(UseCaseErrors::StorageError),
         }
+    }
+}
+
+impl PermissionBoundary for CreateCalendarUseCase {
+    fn permissions(&self) -> Vec<Permission> {
+        vec![Permission::CreateCalendar]
     }
 }

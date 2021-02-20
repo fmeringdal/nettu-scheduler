@@ -29,7 +29,7 @@ pub async fn update_event_controller(
     path_params: web::Path<EventPathParams>,
     ctx: web::Data<Context>,
 ) -> Result<HttpResponse, NettuError> {
-    let user = protect_route(&http_req, &ctx).await?;
+    let (user, policy) = protect_route(&http_req, &ctx).await?;
 
     let usecase = UpdateEventUseCase {
         user_id: user.id.clone(),
