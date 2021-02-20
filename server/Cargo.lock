@@ -1550,6 +1550,15 @@ name = "nettu_scheduler"
 version = "0.1.0"
 dependencies = [
  "actix-web",
+ "env_logger",
+ "nettu_scheduler_api",
+]
+
+[[package]]
+name = "nettu_scheduler_api"
+version = "0.1.0"
+dependencies = [
+ "actix-web",
  "anyhow",
  "async-trait",
  "base64 0.13.0",
