@@ -1,4 +1,4 @@
-use nettu_scheduler_core::domain::{Schedule, ScheduleRule};
+use nettu_scheduler_core::{Schedule, ScheduleRule};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]

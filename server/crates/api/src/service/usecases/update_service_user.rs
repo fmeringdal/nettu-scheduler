@@ -6,7 +6,7 @@ use crate::{
     },
 };
 use actix_web::{web, HttpRequest, HttpResponse};
-use nettu_scheduler_core::domain::{Account, Service, User};
+use nettu_scheduler_core::{Account, Service, User};
 use nettu_scheduler_infra::Context;
 use serde::Deserialize;
 

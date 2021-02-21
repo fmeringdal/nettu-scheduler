@@ -1,13 +1,9 @@
-use std::collections::HashMap;
-
+use crate::{date, event_instance::EventInstance, user::User};
 use chrono::prelude::*;
 use chrono::Duration;
 use chrono_tz::Tz;
 use serde::Serialize;
-
-use crate::{calendar::domain::date, user::domain::User};
-
-use super::event_instance::EventInstance;
+use std::collections::HashMap;
 
 #[derive(Serialize, PartialEq, Debug)]
 #[serde(rename_all = "camelCase")]

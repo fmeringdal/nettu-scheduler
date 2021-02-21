@@ -7,7 +7,7 @@ use crate::{
     },
 };
 use actix_web::{web, HttpRequest, HttpResponse};
-use nettu_scheduler_core::domain::{
+use nettu_scheduler_core::{
     booking_slots::{
         get_booking_slots, validate_bookingslots_query, BookingQueryError, BookingSlot,
         BookingSlotsOptions, BookingSlotsQuery,

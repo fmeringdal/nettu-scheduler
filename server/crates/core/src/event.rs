@@ -1,9 +1,5 @@
-use crate::{
-    calendar::domain::{CalendarSettings, CalendarView},
-    shared::entity::Entity,
-};
-
-use super::event_instance::EventInstance;
+use crate::event_instance::EventInstance;
+use crate::{calendar::CalendarSettings, calendar_view::CalendarView, shared::entity::Entity};
 use chrono::{prelude::*, Duration};
 use rrule::{Frequenzy, ParsedOptions, RRule, RRuleSet};
 use serde::{Deserialize, Serialize};

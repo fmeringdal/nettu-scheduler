@@ -1,5 +1,5 @@
 use crate::shared::usecase::UseCase;
-use nettu_scheduler_core::domain::{Account, CalendarEvent, Reminder};
+use nettu_scheduler_core::{Account, CalendarEvent, Reminder};
 use nettu_scheduler_infra::Context;
 use serde::Serialize;
 use std::collections::HashMap;

@@ -3,9 +3,7 @@ use crate::shared::auth::ensure_nettu_acct_header;
 use crate::shared::usecase::{execute, UseCase};
 use actix_web::{web, HttpRequest, HttpResponse};
 use futures::future::join_all;
-use nettu_scheduler_core::domain::{
-    event_instance::get_free_busy, CalendarView, EventInstance, User,
-};
+use nettu_scheduler_core::{get_free_busy, CalendarView, EventInstance, User};
 use nettu_scheduler_infra::Context;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -192,10 +190,7 @@ impl GetUserFreeBusyUseCase {
 #[cfg(test)]
 mod test {
     use super::*;
-    use nettu_scheduler_core::{
-        domain::{Calendar, CalendarEvent, RRuleFrequenzy, RRuleOptions},
-        Entity,
-    };
+    use nettu_scheduler_core::{Calendar, CalendarEvent, Entity, RRuleFrequenzy, RRuleOptions};
 
     #[actix_web::main]
     #[test]

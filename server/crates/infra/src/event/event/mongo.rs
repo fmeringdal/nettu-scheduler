@@ -7,9 +7,7 @@ use mongodb::{
     bson::{oid::ObjectId, Document},
     Collection, Database,
 };
-use nettu_scheduler_core::domain::{
-    CalendarEvent, CalendarEventReminder, CalendarView, RRuleOptions,
-};
+use nettu_scheduler_core::{CalendarEvent, CalendarEventReminder, CalendarView, RRuleOptions};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 

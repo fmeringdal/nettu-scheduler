@@ -1,6 +1,6 @@
 use super::IAccountRepo;
 use crate::shared::inmemory_repo::*;
-use nettu_scheduler_core::domain::Account;
+use nettu_scheduler_core::Account;
 use std::error::Error;
 
 pub struct InMemoryAccountRepo {

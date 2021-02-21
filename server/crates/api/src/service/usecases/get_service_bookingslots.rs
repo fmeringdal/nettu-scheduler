@@ -6,7 +6,7 @@ use crate::{
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use futures::future::join_all;
-use nettu_scheduler_core::domain::booking_slots::{
+use nettu_scheduler_core::booking_slots::{
     get_service_bookingslots, validate_bookingslots_query, validate_slots_interval,
     BookingQueryError, BookingSlotsOptions, BookingSlotsQuery, ServiceBookingSlot,
     ServiceBookingSlotDTO, UserFreeEvents,
@@ -198,9 +198,7 @@ mod test {
     use super::*;
     use chrono::prelude::*;
     use chrono::Utc;
-    use nettu_scheduler_core::domain::{
-        Calendar, CalendarEvent, RRuleOptions, Service, ServiceResource,
-    };
+    use nettu_scheduler_core::{Calendar, CalendarEvent, RRuleOptions, Service, ServiceResource};
 
     struct TestContext {
         ctx: Context,

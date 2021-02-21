@@ -1,14 +1,11 @@
-use std::{collections::HashMap, str::FromStr};
-
 use crate::{
-    calendar::domain::{date, CalendarView},
-    event::domain::event_instance::EventInstance,
-    shared::entity::Entity,
+    calendar_view::CalendarView, date, event_instance::EventInstance, shared::entity::Entity,
 };
 use chrono::{prelude::*, Duration};
 use chrono_tz::Tz;
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
+use std::{collections::HashMap, str::FromStr};
 
 #[derive(Debug, Clone)]
 pub struct Schedule {

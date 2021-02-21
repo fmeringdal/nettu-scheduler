@@ -1,6 +1,6 @@
 use super::IScheduleRepo;
 use crate::shared::inmemory_repo::*;
-use nettu_scheduler_core::domain::Schedule;
+use nettu_scheduler_core::Schedule;
 use std::error::Error;
 
 pub struct InMemoryScheduleRepo {

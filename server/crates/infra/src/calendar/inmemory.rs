@@ -1,6 +1,6 @@
 use super::ICalendarRepo;
 use crate::shared::inmemory_repo::*;
-use nettu_scheduler_core::domain::Calendar;
+use nettu_scheduler_core::Calendar;
 use std::error::Error;
 
 pub struct InMemoryCalendarRepo {

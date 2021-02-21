@@ -1,7 +1,7 @@
 use super::super::IEventRepo;
 use crate::shared::inmemory_repo::*;
 use crate::shared::repo::DeleteResult;
-use nettu_scheduler_core::domain::{CalendarEvent, CalendarView};
+use nettu_scheduler_core::{CalendarEvent, CalendarView};
 use std::error::Error;
 
 pub struct InMemoryEventRepo {

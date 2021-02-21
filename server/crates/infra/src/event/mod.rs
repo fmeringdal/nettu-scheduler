@@ -5,7 +5,7 @@ use std::error::Error;
 
 pub use event::EventRepo;
 pub use event::InMemoryEventRepo;
-use nettu_scheduler_core::domain::{CalendarEvent, CalendarView, Reminder};
+use nettu_scheduler_core::{CalendarEvent, CalendarView, Reminder};
 pub use reminder::InMemoryReminderRepo;
 pub use reminder::ReminderRepo;
 

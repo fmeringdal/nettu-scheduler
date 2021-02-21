@@ -1,4 +1,4 @@
-use nettu_scheduler_core::domain::{Service, ServiceResource, User};
+use nettu_scheduler_core::{Service, ServiceResource, User};
 use serde::Serialize;
 
 #[derive(Serialize)]

@@ -5,7 +5,7 @@ use std::error::Error;
 
 pub use inmemory::InMemoryScheduleRepo;
 pub use mongo::ScheduleRepo;
-use nettu_scheduler_core::domain::Schedule;
+use nettu_scheduler_core::Schedule;
 
 #[async_trait::async_trait]
 pub trait IScheduleRepo: Send + Sync {

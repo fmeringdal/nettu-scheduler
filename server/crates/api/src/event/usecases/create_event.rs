@@ -5,7 +5,7 @@ use crate::shared::{
     usecase::{execute, execute_with_policy, PermissionBoundary, UseCase, UseCaseErrorContainer},
 };
 use actix_web::{web, HttpResponse};
-use nettu_scheduler_core::domain::{CalendarEvent, RRuleOptions};
+use nettu_scheduler_core::{CalendarEvent, RRuleOptions};
 use nettu_scheduler_infra::Context;
 use nettu_scheduler_infra::ObjectId;
 use serde::{Deserialize, Serialize};
@@ -143,7 +143,7 @@ mod test {
     use super::*;
     use chrono::prelude::*;
     use chrono::Utc;
-    use nettu_scheduler_core::domain::{Calendar, User};
+    use nettu_scheduler_core::{Calendar, User};
 
     struct TestContext {
         ctx: Context,

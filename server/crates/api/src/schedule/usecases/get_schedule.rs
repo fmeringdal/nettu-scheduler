@@ -4,7 +4,7 @@ use crate::{
     shared::usecase::{execute, UseCase},
 };
 use actix_web::{web, HttpRequest, HttpResponse};
-use nettu_scheduler_core::domain::Schedule;
+use nettu_scheduler_core::Schedule;
 use nettu_scheduler_infra::Context;
 use serde::{Deserialize, Serialize};
 

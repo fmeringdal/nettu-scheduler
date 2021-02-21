@@ -1,7 +1,7 @@
 use crate::shared::usecase::{execute, UseCase};
 use crate::{error::NettuError, shared::auth::protect_account_route};
 use actix_web::{web, HttpResponse};
-use nettu_scheduler_core::domain::Account;
+use nettu_scheduler_core::Account;
 use nettu_scheduler_infra::Context;
 use serde::Deserialize;
 

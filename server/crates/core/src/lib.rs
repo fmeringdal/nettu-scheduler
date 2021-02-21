@@ -1,29 +1,23 @@
 mod account;
+pub mod booking_slots;
 mod calendar;
+mod calendar_view;
+mod date;
 mod event;
+mod event_instance;
+mod reminder;
 mod schedule;
 mod service;
 mod shared;
 mod user;
 
-pub mod domain {
-    use super::*;
-    pub use account::domain::{Account, AccountSettings, AccountWebhookSettings};
-    pub use calendar::domain::{Calendar, CalendarSettings, CalendarView};
-    pub mod booking_slots {
-        pub use super::event::domain::booking_slots::*;
-    }
-    pub mod event_instance {
-        pub use super::event::domain::event_instance::*;
-    }
-    pub use event::domain::event::{
-        CalendarEvent, CalendarEventReminder, RRuleFrequenzy, RRuleOptions,
-    };
-    pub use event::domain::event_instance::EventInstance;
-    pub use event::domain::Reminder;
-    pub use schedule::domain::{Schedule, ScheduleRule};
-    pub use service::domain::{Service, ServiceResource};
-    pub use user::domain::User;
-}
-
+pub use account::{Account, AccountSettings, AccountWebhookSettings};
+pub use calendar::{Calendar, CalendarSettings};
+pub use calendar_view::CalendarView;
+pub use event::{CalendarEvent, CalendarEventReminder, RRuleFrequenzy, RRuleOptions};
+pub use event_instance::{get_free_busy, EventInstance};
+pub use reminder::Reminder;
+pub use schedule::{Schedule, ScheduleRule};
+pub use service::{Service, ServiceResource};
 pub use shared::entity::Entity;
+pub use user::User;

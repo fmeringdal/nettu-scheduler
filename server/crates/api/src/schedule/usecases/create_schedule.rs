@@ -9,7 +9,7 @@ use crate::{
 };
 use actix_web::{web, HttpResponse};
 use chrono_tz::Tz;
-use nettu_scheduler_core::domain::{Schedule, User};
+use nettu_scheduler_core::{Schedule, User};
 use nettu_scheduler_infra::Context;
 use serde::Deserialize;
 

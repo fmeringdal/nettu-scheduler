@@ -117,7 +117,7 @@ impl PermissionBoundary for UpdateCalendarSettingsUseCase {
 
 #[cfg(test)]
 mod test {
-    use nettu_scheduler_core::domain::Calendar;
+    use nettu_scheduler_core::Calendar;
 
     use super::*;
 

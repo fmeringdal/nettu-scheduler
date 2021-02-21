@@ -1,6 +1,5 @@
+use crate::shared::entity::Entity;
 use mongodb::bson::oid::ObjectId;
-
-use crate::{shared::entity::Entity, user::domain::User};
 use serde::Serialize;
 
 #[derive(Clone, Debug, Serialize)]

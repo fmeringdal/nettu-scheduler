@@ -5,7 +5,7 @@ use std::error::Error;
 
 pub use inmemory::InMemoryAccountRepo;
 pub use mongo::AccountRepo;
-use nettu_scheduler_core::domain::Account;
+use nettu_scheduler_core::Account;
 
 #[async_trait::async_trait]
 pub trait IAccountRepo: Send + Sync {

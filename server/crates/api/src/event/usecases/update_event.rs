@@ -4,7 +4,7 @@ use crate::shared::{
 };
 use crate::{error::NettuError, shared::auth::protect_route};
 use actix_web::{web, HttpRequest, HttpResponse};
-use nettu_scheduler_core::domain::RRuleOptions;
+use nettu_scheduler_core::RRuleOptions;
 use nettu_scheduler_infra::Context;
 use serde::Deserialize;
 

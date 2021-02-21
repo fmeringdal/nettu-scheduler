@@ -3,7 +3,7 @@ use crate::shared::usecase::{execute, UseCase};
 use crate::{calendar::dtos::CalendarDTO, shared::auth::protect_route};
 
 use actix_web::{web, HttpRequest, HttpResponse};
-use nettu_scheduler_core::domain::{Calendar, CalendarEvent, CalendarView, EventInstance};
+use nettu_scheduler_core::{Calendar, CalendarEvent, CalendarView, EventInstance};
 use nettu_scheduler_infra::Context;
 use serde::{Deserialize, Serialize};
 
