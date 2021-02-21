@@ -1,17 +1,11 @@
-use crate::error::NettuError;
 use crate::shared::auth::protect_account_route;
+use crate::{account::dtos::AccountDTO, error::NettuError};
 use actix_web::{web, HttpResponse};
 use nettu_scheduler_infra::Context;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub struct GetAccountReq {
-    pub public_key_b64: Option<String>,
-}
-
-#[derive(Debug, Serialize)]
-pub struct GetAccountRes {
-    pub id: String,
     pub public_key_b64: Option<String>,
 }
 
@@ -21,10 +15,5 @@ pub async fn get_account_controller(
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
 
-    let res = GetAccountRes {
-        id: account.id.clone(),
-        public_key_b64: account.public_key_b64,
-    };
-
-    Ok(HttpResponse::Ok().json(res))
+    Ok(HttpResponse::Ok().json(AccountDTO::new(&account)))
 }

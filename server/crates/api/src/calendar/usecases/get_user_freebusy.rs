@@ -191,11 +191,12 @@ impl GetUserFreeBusyUseCase {
 mod test {
     use super::*;
     use nettu_scheduler_core::{Calendar, CalendarEvent, Entity, RRuleFrequenzy, RRuleOptions};
+    use nettu_scheduler_infra::setup_context;
 
     #[actix_web::main]
     #[test]
     async fn freebusy_works() {
-        let ctx = Context::create_inmemory();
+        let ctx = setup_context().await;
         let user = User::new("yoyoyo", "cool");
 
         let calendar = Calendar::new(&user.id());

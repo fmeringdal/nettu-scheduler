@@ -230,15 +230,12 @@ mod test {
     use super::*;
     use actix_web::test::TestRequest;
     use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
+    use nettu_scheduler_infra::setup_context;
 
     async fn setup_account(ctx: &Context) -> Account {
         let account = get_account();
         ctx.repos.account_repo.insert(&account).await.unwrap();
         account
-    }
-
-    fn setup_ctx() -> Context {
-        Context::create_inmemory()
     }
 
     fn get_token(expired: bool) -> String {
@@ -276,7 +273,7 @@ mod test {
     #[actix_web::main]
     #[test]
     async fn decodes_valid_token_and_creates_user_if_not_found() {
-        let ctx = setup_ctx();
+        let ctx = setup_context().await;
         let account = setup_account(&ctx).await;
         let token = get_token(false);
 
@@ -292,7 +289,7 @@ mod test {
     #[actix_web::main]
     #[test]
     async fn decodes_valid_token_for_existing_user() {
-        let ctx = setup_ctx();
+        let ctx = setup_context().await;
         let account = setup_account(&ctx).await;
         let token = get_token(false);
         let user = User::new(&account.id, &get_external_user_id());
@@ -308,7 +305,7 @@ mod test {
     #[actix_web::main]
     #[test]
     async fn rejects_expired_token() {
-        let ctx = setup_ctx();
+        let ctx = setup_context().await;
         let account = setup_account(&ctx).await;
         let token = get_token(true);
 
@@ -322,7 +319,7 @@ mod test {
     #[actix_web::main]
     #[test]
     async fn rejects_valid_token_without_account_header() {
-        let ctx = setup_ctx();
+        let ctx = setup_context().await;
         let _account = setup_account(&ctx).await;
         let token = get_token(false);
 
@@ -335,7 +332,7 @@ mod test {
     #[actix_web::main]
     #[test]
     async fn rejects_valid_token_with_valid_invalid_account_header() {
-        let ctx = setup_ctx();
+        let ctx = setup_context().await;
         let account = setup_account(&ctx).await;
         let token = "sajfosajfposajfopaso12";
 
@@ -349,7 +346,7 @@ mod test {
     #[actix_web::main]
     #[test]
     async fn rejects_garbage_token_with_valid_account_header() {
-        let ctx = setup_ctx();
+        let ctx = setup_context().await;
         let _account = setup_account(&ctx).await;
         let token = "sajfosajfposajfopaso12";
 
@@ -362,7 +359,7 @@ mod test {
     #[actix_web::main]
     #[test]
     async fn rejects_req_without_headers() {
-        let ctx = setup_ctx();
+        let ctx = setup_context().await;
         let _account = setup_account(&ctx).await;
 
         let req = TestRequest::default().to_http_request();

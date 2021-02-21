@@ -144,6 +144,7 @@ mod test {
     use chrono::prelude::*;
     use chrono::Utc;
     use nettu_scheduler_core::{Calendar, User};
+    use nettu_scheduler_infra::setup_context;
 
     struct TestContext {
         ctx: Context,
@@ -152,7 +153,7 @@ mod test {
     }
 
     async fn setup() -> TestContext {
-        let ctx = Context::create_inmemory();
+        let ctx = setup_context().await;
         let user = User::new("cool2", "cool");
 
         let calendar = Calendar::new(&user.id);

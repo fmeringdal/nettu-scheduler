@@ -1,8 +1,11 @@
-use crate::shared::usecase::{execute, UseCase};
+use crate::{
+    account::dtos::AccountDTO,
+    shared::usecase::{execute, UseCase},
+};
 use actix_web::{web, HttpResponse};
 use nettu_scheduler_core::Account;
 use nettu_scheduler_infra::Context;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 #[derive(Deserialize)]
 pub struct BodyParams {
@@ -21,7 +24,7 @@ pub async fn create_account_controller(
     let res = execute(usecase, &ctx).await;
 
     match res {
-        Ok(json) => HttpResponse::Created().json(json),
+        Ok(account) => HttpResponse::Created().json(AccountDTO::new(&account)),
         Err(e) => match e {
             UseCaseErrors::StorageError => HttpResponse::InternalServerError().finish(),
         },
@@ -30,13 +33,6 @@ pub async fn create_account_controller(
 
 struct CreateAccountUseCase {}
 
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-struct UseCaseResponse {
-    pub account_id: String,
-    pub secret_api_key: String,
-}
-
 #[derive(Debug)]
 enum UseCaseErrors {
     StorageError,
@@ -44,7 +40,7 @@ enum UseCaseErrors {
 
 #[async_trait::async_trait(?Send)]
 impl UseCase for CreateAccountUseCase {
-    type Response = UseCaseResponse;
+    type Response = Account;
 
     type Errors = UseCaseErrors;
 
@@ -53,12 +49,8 @@ impl UseCase for CreateAccountUseCase {
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let account = Account::new();
         let res = ctx.repos.account_repo.insert(&account).await;
-        match res {
-            Ok(_) => Ok(UseCaseResponse {
-                account_id: account.id.clone(),
-                secret_api_key: account.secret_api_key.clone(),
-            }),
-            Err(_) => Err(UseCaseErrors::StorageError),
-        }
+
+        res.map(|_| account)
+            .map_err(|_| UseCaseErrors::StorageError)
     }
 }

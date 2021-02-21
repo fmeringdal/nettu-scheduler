@@ -1,5 +1,5 @@
-use nettu_scheduler_api::{configure_server_app};
-use nettu_scheduler_infra::Context;
+use nettu_scheduler_api::configure_server_app;
+use nettu_scheduler_infra::setup_context;
 
 use actix_web::{middleware, App, HttpServer};
 use env_logger::Env;
@@ -9,12 +9,7 @@ async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_server=info,actix_web=info");
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
 
-    let args: Vec<String> = std::env::args().collect();
-    let context = if args.len() > 1 && args[1] == String::from("inmemory") {
-        Context::create_inmemory()
-    } else {
-        Context::create().await
-    };
+    let context = setup_context().await;
 
     HttpServer::new(move || {
         let ctx = context.clone();

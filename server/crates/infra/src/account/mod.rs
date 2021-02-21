@@ -20,16 +20,12 @@ pub trait IAccountRepo: Send + Sync {
 
 #[cfg(test)]
 mod tests {
-    use crate::Context;
+    use crate::setup_context;
     use nettu_scheduler_core::Entity;
-
-    fn get_ctx() -> Context {
-        Context::create_inmemory()
-    }
 
     #[tokio::test]
     async fn create_and_delete() {
-        let ctx = get_ctx();
+        let ctx = setup_context().await;
         let account = Default::default();
 
         // Insert
@@ -64,7 +60,7 @@ mod tests {
 
     #[tokio::test]
     async fn update() {
-        let ctx = get_ctx();
+        let ctx = setup_context().await;
         let mut account = Default::default();
 
         // Insert

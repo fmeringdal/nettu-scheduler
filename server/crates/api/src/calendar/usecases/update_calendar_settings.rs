@@ -118,13 +118,14 @@ impl PermissionBoundary for UpdateCalendarSettingsUseCase {
 #[cfg(test)]
 mod test {
     use nettu_scheduler_core::Calendar;
+    use nettu_scheduler_infra::setup_context;
 
     use super::*;
 
     #[actix_web::main]
     #[test]
     async fn it_rejects_invalid_wkst() {
-        let ctx = Context::create_inmemory();
+        let ctx = setup_context().await;
         let user_id = "1".to_string();
         let calendar = Calendar::new(&user_id);
         ctx.repos.calendar_repo.insert(&calendar).await.unwrap();
@@ -142,7 +143,7 @@ mod test {
     #[actix_web::main]
     #[test]
     async fn it_update_settings_with_valid_wkst() {
-        let ctx = Context::create_inmemory();
+        let ctx = setup_context().await;
         let user_id = "1".to_string();
         let calendar = Calendar::new(&user_id);
         ctx.repos.calendar_repo.insert(&calendar).await.unwrap();

@@ -199,6 +199,7 @@ mod test {
     use chrono::prelude::*;
     use chrono::Utc;
     use nettu_scheduler_core::{Calendar, CalendarEvent, RRuleOptions, Service, ServiceResource};
+    use nettu_scheduler_infra::setup_context;
 
     struct TestContext {
         ctx: Context,
@@ -206,7 +207,7 @@ mod test {
     }
 
     async fn setup() -> TestContext {
-        let ctx = Context::create_inmemory();
+        let ctx = setup_context().await;
 
         let service = Service::new("123".into());
         ctx.repos.service_repo.insert(&service).await.unwrap();

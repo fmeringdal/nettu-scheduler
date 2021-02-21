@@ -160,6 +160,8 @@ impl PermissionBoundary for UpdateEventUseCase {
 
 #[cfg(test)]
 mod test {
+    use nettu_scheduler_infra::setup_context;
+
     use super::*;
 
     #[actix_web::main]
@@ -173,7 +175,7 @@ mod test {
             busy: Some(false),
             user_id: String::from("cool"),
         };
-        let ctx = Context::create_inmemory();
+        let ctx = setup_context().await;
         let res = usecase.execute(&ctx).await;
         assert!(res.is_err());
     }

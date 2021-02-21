@@ -1,4 +1,7 @@
-use crate::shared::usecase::{execute, UseCase};
+use crate::{
+    account::dtos::AccountDTO,
+    shared::usecase::{execute, UseCase},
+};
 use crate::{error::NettuError, shared::auth::protect_account_route};
 use actix_web::{web, HttpResponse};
 use nettu_scheduler_core::Account;
@@ -25,7 +28,7 @@ pub async fn set_account_pub_key_controller(
 
     execute(usecase, &ctx)
         .await
-        .map(|_| HttpResponse::Ok().finish())
+        .map(|account| HttpResponse::Ok().json(AccountDTO::new(&account)))
         .map_err(|e| match e {
             UseCaseErrors::InvalidBase64Key => {
                 NettuError::BadClientData("Invalid base64 encoding of public key".into())
@@ -47,7 +50,7 @@ enum UseCaseErrors {
 
 #[async_trait::async_trait(?Send)]
 impl UseCase for SetAccountPubKeyUseCase {
-    type Response = ();
+    type Response = Account;
 
     type Errors = UseCaseErrors;
 
@@ -63,7 +66,7 @@ impl UseCase for SetAccountPubKeyUseCase {
         }
 
         match ctx.repos.account_repo.save(&self.account).await {
-            Ok(_) => Ok(()),
+            Ok(_) => Ok(self.account.clone()),
             Err(_) => Err(UseCaseErrors::StorageError),
         }
     }

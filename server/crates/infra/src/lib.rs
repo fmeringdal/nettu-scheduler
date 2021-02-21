@@ -6,8 +6,6 @@ mod service;
 mod shared;
 mod user;
 
-use std::sync::Arc;
-
 use account::{AccountRepo, IAccountRepo, InMemoryAccountRepo};
 use calendar::{CalendarRepo, ICalendarRepo, InMemoryCalendarRepo};
 use chrono::Utc;
@@ -18,6 +16,7 @@ use mongodb::{options::ClientOptions, Client};
 use nettu_scheduler_utils::create_random_secret;
 use schedule::{IScheduleRepo, InMemoryScheduleRepo, ScheduleRepo};
 use service::{IServiceRepo, InMemoryServiceRepo, ServiceRepo};
+use std::sync::Arc;
 use user::{IUserRepo, InMemoryUserRepo, UserRepo};
 
 pub use mongodb::bson::oid::ObjectId;
@@ -34,16 +33,13 @@ pub struct Repos {
 }
 
 impl Repos {
-    pub async fn create_mongodb() -> Result<Self, Box<dyn std::error::Error>> {
-        let client_options = ClientOptions::parse(
-            &std::env::var("MONGODB_CONNECTION_STRING")
-                .expect("Expected MONGODB_CONNECTION_STRING env to be present"),
-        )
-        .await?;
+    pub async fn create_mongodb(
+        connection_string: &str,
+        db_name: &str,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
+        let client_options = ClientOptions::parse(connection_string).await?;
         let client = Client::with_options(client_options)?;
-        let db = client.database(
-            &std::env::var("MONGODB_NAME").expect("Expected MONGODB_NAME env to be present"),
-        );
+        let db = client.database(db_name);
 
         // This is needed to make sure that db is ready when opening server
         println!("DB CHECKING CONNECTION ...");
@@ -68,7 +64,6 @@ impl Repos {
     }
 
     pub fn create_inmemory() -> Self {
-        println!("using inmemory database");
         Self {
             event_repo: Arc::new(InMemoryEventRepo::new()),
             calendar_repo: Arc::new(InMemoryCalendarRepo::new()),
@@ -131,8 +126,13 @@ pub struct Context {
     pub sys: Arc<dyn ISys>,
 }
 
+struct ContextParams {
+    // (connection_string, db_name)
+    pub mongodb: (String, String),
+}
+
 impl Context {
-    pub fn create_inmemory() -> Self {
+    fn create_inmemory() -> Self {
         Self {
             repos: Repos::create_inmemory(),
             config: Config::new(),
@@ -140,8 +140,8 @@ impl Context {
         }
     }
 
-    pub async fn create() -> Self {
-        let repos = Repos::create_mongodb()
+    async fn create(params: ContextParams) -> Self {
+        let repos = Repos::create_mongodb(&params.mongodb.0, &params.mongodb.1)
             .await
             .expect("Mongo db creds must be set and valid");
         Self {
@@ -149,5 +149,40 @@ impl Context {
             config: Config::new(),
             sys: Arc::new(RealSys {}),
         }
+    }
+}
+
+/// Will setup the correct Infra Context given the environment
+pub async fn setup_context() -> Context {
+    const MONGODB_CONNECTION_STRING: &str = "MONGODB_CONNECTION_STRNG";
+    const MONGODB_NAME: &str = "MONGODB_NAME";
+
+    let mongodb_conncetion_string = std::env::var(MONGODB_CONNECTION_STRING);
+    let mongodb_db_name = std::env::var(MONGODB_NAME);
+
+    let args: Vec<_> = std::env::args().collect();
+
+    // cargo run inmemory
+    let inmemory_arg_set = args.len() > 1 && args[1].eq("inmemory");
+    if inmemory_arg_set {
+        println!("Inmemory argument provided. Going to use inmemory infra.");
+        return Context::create_inmemory();
+    }
+
+    if mongodb_conncetion_string.is_ok() && mongodb_db_name.is_ok() {
+        println!(
+            "{} and {} env vars was provided. Going to use mongodb.",
+            MONGODB_CONNECTION_STRING, MONGODB_NAME
+        );
+        Context::create(ContextParams {
+            mongodb: (mongodb_conncetion_string.unwrap(), mongodb_db_name.unwrap()),
+        })
+        .await
+    } else {
+        println!(
+            "{} and {} env vars was not provided. Going to use inmemory infra.",
+            MONGODB_CONNECTION_STRING, MONGODB_NAME
+        );
+        Context::create_inmemory()
     }
 }

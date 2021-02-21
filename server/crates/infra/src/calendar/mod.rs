@@ -18,16 +18,12 @@ pub trait ICalendarRepo: Send + Sync {
 
 #[cfg(test)]
 mod tests {
-    use crate::Context;
+    use crate::setup_context;
     use nettu_scheduler_core::{Calendar, Entity};
-
-    fn get_ctx() -> Context {
-        Context::create_inmemory()
-    }
 
     #[tokio::test]
     async fn create_and_delete() {
-        let ctx = get_ctx();
+        let ctx = setup_context().await;
         let user_id = String::from("123");
         let calendar = Calendar::new(&user_id);
 
@@ -51,7 +47,7 @@ mod tests {
 
     #[tokio::test]
     async fn update() {
-        let ctx = get_ctx();
+        let ctx = setup_context().await;
         let user_id = String::from("123");
         let mut calendar = Calendar::new(&user_id);
 
