@@ -15,3 +15,4 @@ async-trait = "0.1.42"
 chrono = { version = "0.4.19", features = ["serde"] }
 mongodb = { version = "1.1.1", default-features = false, features = ["async-std-runtime"] }
 anyhow = "1.0.0"
+tokio = { version = "1", features = ["rt", "macros"] }
