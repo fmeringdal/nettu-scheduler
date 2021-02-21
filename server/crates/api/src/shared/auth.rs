@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use actix_web::HttpRequest;
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use nettu_scheduler_core::{Account, User};
@@ -29,11 +31,11 @@ impl Policy {
         }
 
         if let Some(rejected) = &self.reject {
-            for permission in permissions {
-                if *permission == Permission::All {
+            for rejected_permission in rejected {
+                if *rejected_permission == Permission::All {
                     return false;
                 }
-                if rejected.contains(permission) {
+                if permissions.contains(rejected_permission) {
                     return false;
                 }
             }
@@ -45,11 +47,14 @@ impl Policy {
                 return true;
             }
 
+            // Check that all permissions are in allowed
             for permission in permissions {
                 if !allowed.contains(permission) {
                     return false;
                 }
             }
+
+            return true;
         }
 
         false
@@ -365,5 +370,77 @@ mod test {
         let req = TestRequest::default().to_http_request();
         let res = protect_route(&req, &ctx).await;
         assert!(res.is_err());
+    }
+
+    #[test]
+    fn permissions() {
+        let policy = Policy::empty();
+        assert!(policy.authorize(&vec![]));
+        assert!(!policy.authorize(&vec![Permission::CreateCalendar]));
+
+        let policy = Policy {
+            allow: Some(vec![Permission::All]),
+            reject: None,
+        };
+        assert!(policy.authorize(&vec![Permission::CreateCalendar]));
+
+        let policy = Policy {
+            allow: Some(vec![Permission::All]),
+            reject: Some(vec![Permission::CreateCalendar]),
+        };
+        assert!(!policy.authorize(&vec![Permission::CreateCalendar]));
+
+        let policy = Policy {
+            allow: Some(vec![Permission::CreateCalendar]),
+            reject: Some(vec![]),
+        };
+        assert!(policy.authorize(&vec![Permission::CreateCalendar]));
+
+        let policy = Policy {
+            allow: Some(vec![Permission::CreateCalendar]),
+            reject: Some(vec![Permission::CreateCalendar]),
+        };
+        assert!(!policy.authorize(&vec![Permission::CreateCalendar]));
+
+        let policy = Policy {
+            allow: Some(vec![Permission::CreateCalendar]),
+            reject: Some(vec![Permission::All]),
+        };
+        assert!(!policy.authorize(&vec![Permission::CreateCalendar]));
+
+        let policy = Policy {
+            allow: Some(vec![Permission::CreateCalendar, Permission::UpdateCalendar]),
+            reject: Some(vec![Permission::DeleteCalendar]),
+        };
+        assert!(policy.authorize(&vec![Permission::CreateCalendar]));
+        assert!(policy.authorize(&vec![
+            Permission::CreateCalendar,
+            Permission::UpdateCalendar
+        ]));
+
+        let policy = Policy {
+            allow: Some(vec![Permission::CreateCalendar, Permission::UpdateCalendar]),
+            reject: Some(vec![Permission::UpdateCalendar]),
+        };
+        assert!(policy.authorize(&vec![Permission::CreateCalendar]));
+        assert!(!policy.authorize(&vec![
+            Permission::CreateCalendar,
+            Permission::UpdateCalendar
+        ]));
+
+        let policy = Policy {
+            allow: Some(vec![Permission::All]),
+            reject: Some(vec![Permission::UpdateCalendar]),
+        };
+        assert!(policy.authorize(&vec![Permission::CreateCalendar]));
+        assert!(policy.authorize(&vec![
+            Permission::CreateCalendar,
+            Permission::DeleteCalendar,
+        ]));
+        assert!(!policy.authorize(&vec![
+            Permission::CreateCalendar,
+            Permission::DeleteCalendar,
+            Permission::UpdateCalendar,
+        ]));
     }
 }

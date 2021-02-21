@@ -2,7 +2,7 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 
 ## Todos
 
-- dtos
+- get account reminders test and setup clock services ? 
 - Delete user cleanup actions
 
 ## Backlog
