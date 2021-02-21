@@ -1,8 +1,6 @@
-use actix_web::{
-    dev::{Service, ServiceRequest, ServiceResponse},
-    test, App, Error,
-};
-use nettu_scheduler::{configure_server_app, Config, Context, RealSys, Repos};
+use actix_web::{dev::ServiceResponse, test, App};
+use nettu_scheduler_api::configure_server_app;
+use nettu_scheduler_infra::{Config, Context, RealSys, Repos};
 use std::sync::Arc;
 
 fn setup_ctx() -> Context {

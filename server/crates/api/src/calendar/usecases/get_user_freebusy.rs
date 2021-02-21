@@ -191,10 +191,11 @@ impl GetUserFreeBusyUseCase {
 
 #[cfg(test)]
 mod test {
-    use nettu_scheduler_core::domain::{Calendar, CalendarEvent, RRuleFrequenzy, RRuleOptions};
-
     use super::*;
-    use crate::shared::entity::Entity;
+    use nettu_scheduler_core::{
+        domain::{Calendar, CalendarEvent, RRuleFrequenzy, RRuleOptions},
+        Entity,
+    };
 
     #[actix_web::main]
     #[test]
