@@ -15,3 +15,61 @@ pub trait ICalendarRepo: Send + Sync {
     async fn find_by_user(&self, user_id: &str) -> Vec<Calendar>;
     async fn delete(&self, calendar_id: &str) -> Option<Calendar>;
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::Context;
+    use nettu_scheduler_core::{Calendar, Entity};
+
+    fn get_ctx() -> Context {
+        Context::create_inmemory()
+    }
+
+    #[tokio::test]
+    async fn create_and_delete() {
+        let ctx = get_ctx();
+        let user_id = String::from("123");
+        let calendar = Calendar::new(&user_id);
+
+        // Insert
+        assert!(ctx.repos.calendar_repo.insert(&calendar).await.is_ok());
+
+        // Different find methods
+        let res = ctx.repos.calendar_repo.find(&calendar.id).await.unwrap();
+        assert!(res.eq(&calendar));
+        let res = ctx.repos.calendar_repo.find_by_user(&user_id).await;
+        assert!(res[0].eq(&calendar));
+
+        // Delete
+        let res = ctx.repos.calendar_repo.delete(&calendar.id).await;
+        assert!(res.is_some());
+        assert!(res.unwrap().eq(&calendar));
+
+        // Find
+        assert!(ctx.repos.calendar_repo.find(&calendar.id).await.is_none());
+    }
+
+    #[tokio::test]
+    async fn update() {
+        let ctx = get_ctx();
+        let user_id = String::from("123");
+        let mut calendar = Calendar::new(&user_id);
+
+        // Insert
+        assert!(ctx.repos.calendar_repo.insert(&calendar).await.is_ok());
+
+        calendar.settings.wkst += 1;
+
+        // Save
+        assert!(ctx.repos.calendar_repo.save(&calendar).await.is_ok());
+
+        // Find
+        assert!(ctx
+            .repos
+            .calendar_repo
+            .find(&calendar.id)
+            .await
+            .unwrap()
+            .eq(&calendar));
+    }
+}

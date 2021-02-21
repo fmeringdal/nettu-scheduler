@@ -28,11 +28,61 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn it_works() {
+    async fn create_and_delete() {
         let ctx = get_ctx();
         let account = Default::default();
+
+        // Insert
         assert!(ctx.repos.account_repo.insert(&account).await.is_ok());
+
+        // Different find methods
         let res = ctx.repos.account_repo.find(&account.id).await.unwrap();
         assert!(res.eq(&account));
+        let res = ctx
+            .repos
+            .account_repo
+            .find_many(&[account.id.clone()])
+            .await
+            .unwrap();
+        assert!(res[0].eq(&account));
+        let res = ctx
+            .repos
+            .account_repo
+            .find_by_apikey(&account.secret_api_key)
+            .await
+            .unwrap();
+        assert!(res.eq(&account));
+
+        // Delete
+        let res = ctx.repos.account_repo.delete(&account.id).await;
+        assert!(res.is_some());
+        assert!(res.unwrap().eq(&account));
+
+        // Find
+        assert!(ctx.repos.account_repo.find(&account.id).await.is_none());
+    }
+
+    #[tokio::test]
+    async fn update() {
+        let ctx = get_ctx();
+        let mut account = Default::default();
+
+        // Insert
+        assert!(ctx.repos.account_repo.insert(&account).await.is_ok());
+
+        let pubkey = String::from("12312412");
+        account.set_public_key_b64(Some(pubkey.clone())).unwrap();
+
+        // Save
+        assert!(ctx.repos.account_repo.save(&account).await.is_ok());
+
+        // Find
+        assert!(ctx
+            .repos
+            .account_repo
+            .find(&account.id)
+            .await
+            .unwrap()
+            .eq(&account));
     }
 }
