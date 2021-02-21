@@ -1,5 +1,6 @@
 use crate::{
     error::NettuError,
+    event::dtos::CalendarEventDTO,
     shared::{
         auth::protect_route,
         usecase::{execute, UseCase},
@@ -29,7 +30,7 @@ pub async fn get_event_controller(
 
     execute(usecase, &ctx)
         .await
-        .map(|calendar_event| HttpResponse::Ok().json(calendar_event))
+        .map(|calendar_event| HttpResponse::Ok().json(CalendarEventDTO::new(&calendar_event)))
         .map_err(|e| match e {
             UseCaseErrors::NotFoundError => NettuError::NotFound(format!(
                 "The event with id: {}, was not found",

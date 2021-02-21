@@ -2,6 +2,7 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 
 ## Todos
 
+- dtos
 - Delete user cleanup actions
 
 ## Backlog

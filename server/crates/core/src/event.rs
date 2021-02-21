@@ -38,8 +38,7 @@ impl Default for RRuleOptions {
     }
 }
 
-#[derive(Serialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone)]
 pub struct CalendarEvent {
     pub id: String,
     pub start_ts: i64,

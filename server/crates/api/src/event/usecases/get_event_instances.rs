@@ -1,5 +1,8 @@
-use crate::shared::usecase::{execute, UseCase};
-use crate::{error::NettuError, shared::auth::protect_route};
+use crate::{error::NettuError, event, shared::auth::protect_route};
+use crate::{
+    event::dtos::CalendarEventDTO,
+    shared::usecase::{execute, UseCase},
+};
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_core::{CalendarEvent, CalendarView, EventInstance};
 use nettu_scheduler_infra::Context;
@@ -14,6 +17,13 @@ pub struct EventPathParams {
 pub struct GetEventInstancesReqView {
     start_ts: i64,
     end_ts: i64,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct APIResponse {
+    pub event: CalendarEventDTO,
+    pub instances: Vec<EventInstance>,
 }
 
 pub async fn get_event_instances_controller(
@@ -32,7 +42,12 @@ pub async fn get_event_instances_controller(
 
     execute(usecase, &ctx)
         .await
-        .map(|usecase_res| HttpResponse::Ok().json(usecase_res))
+        .map(|usecase_res| {
+            HttpResponse::Ok().json(APIResponse {
+                event: CalendarEventDTO::new(&usecase_res.event),
+                instances: usecase_res.instances,
+            })
+        })
         .map_err(|e| match e {
             UseCaseErrors::InvalidTimespanError => {
                 NettuError::BadClientData("The provided start_ts and end_ts is invalid".into())
@@ -56,8 +71,6 @@ pub enum UseCaseErrors {
     InvalidTimespanError,
 }
 
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
 pub struct UseCaseResponse {
     pub event: CalendarEvent,
     pub instances: Vec<EventInstance>,

@@ -1,9 +1,9 @@
 use super::sync_event_reminders::{EventOperation, SyncEventRemindersUseCase};
-use crate::error::NettuError;
 use crate::shared::{
     auth::{protect_route, Permission},
     usecase::{execute, execute_with_policy, PermissionBoundary, UseCase, UseCaseErrorContainer},
 };
+use crate::{error::NettuError, event::dtos::CalendarEventDTO};
 use actix_web::{web, HttpResponse};
 use nettu_scheduler_core::{CalendarEvent, RRuleOptions};
 use nettu_scheduler_infra::Context;
@@ -18,12 +18,6 @@ pub struct CreateEventReq {
     duration: i64,
     busy: Option<bool>,
     rrule_options: Option<RRuleOptions>,
-}
-
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CreateEventRes {
-    event_id: String,
 }
 
 pub async fn create_event_controller(
@@ -45,11 +39,7 @@ pub async fn create_event_controller(
 
     execute_with_policy(usecase, &policy, &ctx)
         .await
-        .map(|calendar_event| {
-            HttpResponse::Created().json(CreateEventRes {
-                event_id: calendar_event.id,
-            })
-        })
+        .map(|event| HttpResponse::Created().json(CalendarEventDTO::new(&event)))
         .map_err(|e| match e {
             UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
             UseCaseErrorContainer::UseCase(e) => match e {

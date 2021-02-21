@@ -1,9 +1,13 @@
-use crate::shared::{
-    auth::{protect_route, Permission},
-    usecase::{execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
-};
 use crate::{error::NettuError, shared::usecase::UseCase};
+use crate::{
+    event::dtos::CalendarEventDTO,
+    shared::{
+        auth::{protect_route, Permission},
+        usecase::{execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
+    },
+};
 use actix_web::{web, HttpRequest, HttpResponse};
+use nettu_scheduler_core::CalendarEvent;
 use nettu_scheduler_infra::Context;
 use serde::Deserialize;
 
@@ -33,7 +37,7 @@ pub async fn create_event_exception_controller(
 
     execute_with_policy(usecase, &policy, &ctx)
         .await
-        .map(|_| HttpResponse::Created().finish())
+        .map(|event| HttpResponse::Created().json(CalendarEventDTO::new(&event)))
         .map_err(|e| match e {
             UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
             UseCaseErrorContainer::UseCase(e) => match e {
@@ -60,7 +64,7 @@ pub enum UseCaseErrors {
 
 #[async_trait::async_trait(?Send)]
 impl UseCase for CreateEventExceptionUseCase {
-    type Response = ();
+    type Response = CalendarEvent;
 
     type Errors = UseCaseErrors;
 
@@ -79,7 +83,7 @@ impl UseCase for CreateEventExceptionUseCase {
             return Err(UseCaseErrors::StorageError);
         }
 
-        Ok(())
+        Ok(event)
     }
 }
 

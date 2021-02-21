@@ -1,17 +1,16 @@
 use crate::shared::usecase::UseCase;
 use nettu_scheduler_core::{Account, CalendarEvent, Reminder};
 use nettu_scheduler_infra::Context;
-use serde::Serialize;
 use std::collections::HashMap;
 
 /// Creates EventReminders for a calendar event
-pub struct SendEventRemindersUseCase {}
+pub struct GetUpcomingRemindersUseCase {}
 
 struct SendEventRemindersConfig {
     send_interval: i64,
 }
 
-impl SendEventRemindersUseCase {
+impl GetUpcomingRemindersUseCase {
     fn get_config() -> SendEventRemindersConfig {
         SendEventRemindersConfig {
             send_interval: 60 * 1000, // every minute
@@ -20,12 +19,10 @@ impl SendEventRemindersUseCase {
 }
 
 #[derive(Debug)]
-pub enum UseCaseErrors {
-    StorageError,
-}
+pub enum UseCaseErrors {}
 
-#[derive(Debug, Serialize)]
-struct AccountEventReminders {
+#[derive(Debug)]
+pub struct AccountEventReminders {
     events: Vec<CalendarEvent>,
 }
 
@@ -85,8 +82,8 @@ async fn create_reminders_for_accounts(
 }
 
 #[async_trait::async_trait(?Send)]
-impl UseCase for SendEventRemindersUseCase {
-    type Response = ();
+impl UseCase for GetUpcomingRemindersUseCase {
+    type Response = Vec<(Account, AccountEventReminders)>;
 
     type Errors = UseCaseErrors;
 
@@ -112,25 +109,25 @@ impl UseCase for SendEventRemindersUseCase {
             .map(|e| (e.id.to_owned(), e))
             .collect::<HashMap<_, _>>();
 
-        let account_reminders = create_reminders_for_accounts(reminders, event_lookup, ctx).await;
+        let grouped_reminders = create_reminders_for_accounts(reminders, event_lookup, ctx).await;
 
-        let client = actix_web::client::Client::new();
-        for (acc, reminders) in account_reminders {
-            match acc.settings.webhook {
-                None => continue,
-                Some(webhook) => {
-                    if let Err(e) = client
-                        .post(webhook.url)
-                        .header("nettu-scheduler-webhook-key", webhook.key)
-                        .send_json(&reminders)
-                        .await
-                    {
-                        println!("Error informing client of reminders: {:?}", e);
-                    }
-                }
-            }
-        }
+        // let client = actix_web::client::Client::new();
+        // for (acc, reminders) in account_reminders {
+        //     match acc.settings.webhook {
+        //         None => continue,
+        //         Some(webhook) => {
+        //             if let Err(e) = client
+        //                 .post(webhook.url)
+        //                 .header("nettu-scheduler-webhook-key", webhook.key)
+        //                 .send_json(&reminders)
+        //                 .await
+        //             {
+        //                 println!("Error informing client of reminders: {:?}", e);
+        //             }
+        //         }
+        //     }
+        // }
 
-        Ok(())
+        Ok(grouped_reminders)
     }
 }

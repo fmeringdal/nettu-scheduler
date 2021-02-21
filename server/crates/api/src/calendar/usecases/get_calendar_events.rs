@@ -1,6 +1,6 @@
-use crate::error::NettuError;
 use crate::shared::usecase::{execute, UseCase};
 use crate::{calendar::dtos::CalendarDTO, shared::auth::protect_route};
+use crate::{error::NettuError, event::dtos::CalendarEventDTO};
 
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_core::{Calendar, CalendarEvent, CalendarView, EventInstance};
@@ -23,7 +23,14 @@ pub struct TimespanParams {
 #[serde(rename_all = "camelCase")]
 pub struct APIResponse {
     pub calendar: CalendarDTO,
-    pub events: Vec<EventWithInstances>,
+    pub events: Vec<EventWithInstancesDTO>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EventWithInstancesDTO {
+    pub event: CalendarEventDTO,
+    pub instances: Vec<EventInstance>,
 }
 
 pub async fn get_calendar_events_controller(
@@ -46,7 +53,14 @@ pub async fn get_calendar_events_controller(
         .map(|usecase_res| {
             let res = APIResponse {
                 calendar: CalendarDTO::new(&usecase_res.calendar),
-                events: usecase_res.events,
+                events: usecase_res
+                    .events
+                    .into_iter()
+                    .map(|data| EventWithInstancesDTO {
+                        event: CalendarEventDTO::new(&data.event),
+                        instances: data.instances,
+                    })
+                    .collect(),
             };
             HttpResponse::Ok().json(res)
         })
@@ -72,7 +86,6 @@ pub struct UseCaseResponse {
     events: Vec<EventWithInstances>,
 }
 
-#[derive(Serialize)]
 pub struct EventWithInstances {
     pub event: CalendarEvent,
     pub instances: Vec<EventInstance>,

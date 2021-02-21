@@ -1,12 +1,16 @@
-use crate::shared::{
-    auth::{protect_route, Permission},
-    usecase::{execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
-};
 use crate::{
     error::NettuError,
     shared::usecase::{execute, UseCase},
 };
+use crate::{
+    event::dtos::CalendarEventDTO,
+    shared::{
+        auth::{protect_route, Permission},
+        usecase::{execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
+    },
+};
 use actix_web::{web, HttpRequest, HttpResponse};
+use nettu_scheduler_core::CalendarEvent;
 use nettu_scheduler_infra::Context;
 use serde::Deserialize;
 
@@ -31,7 +35,7 @@ pub async fn delete_event_controller(
 
     execute_with_policy(usecase, &policy, &ctx)
         .await
-        .map(|_| HttpResponse::Ok().body("Event deleted"))
+        .map(|event| HttpResponse::Ok().json(CalendarEventDTO::new(&event)))
         .map_err(|e| match e {
             UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
             UseCaseErrorContainer::UseCase(e) => match e {
@@ -55,7 +59,7 @@ pub enum UseCaseErrors {
 
 #[async_trait::async_trait(?Send)]
 impl UseCase for DeleteEventUseCase {
-    type Response = ();
+    type Response = CalendarEvent;
 
     type Errors = UseCaseErrors;
 
@@ -75,7 +79,7 @@ impl UseCase for DeleteEventUseCase {
                 // TODO: handl err
                 execute(sync_event_reminders, ctx).await;
 
-                Ok(())
+                Ok(event)
             }
             _ => Err(UseCaseErrors::NotFound),
         }

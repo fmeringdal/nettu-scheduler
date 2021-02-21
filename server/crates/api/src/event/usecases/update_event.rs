@@ -1,10 +1,16 @@
-use crate::shared::{
-    auth::Permission,
-    usecase::{execute, execute_with_policy, PermissionBoundary, UseCase, UseCaseErrorContainer},
-};
 use crate::{error::NettuError, shared::auth::protect_route};
+use crate::{
+    event,
+    shared::{
+        auth::Permission,
+        usecase::{
+            execute, execute_with_policy, PermissionBoundary, UseCase, UseCaseErrorContainer,
+        },
+    },
+};
 use actix_web::{web, HttpRequest, HttpResponse};
-use nettu_scheduler_core::RRuleOptions;
+use event::dtos::CalendarEventDTO;
+use nettu_scheduler_core::{CalendarEvent, RRuleOptions};
 use nettu_scheduler_infra::Context;
 use serde::Deserialize;
 
@@ -43,7 +49,7 @@ pub async fn update_event_controller(
 
     execute_with_policy(usecase, &policy, &ctx)
         .await
-        .map(|_| HttpResponse::Ok().finish())
+        .map(|event| HttpResponse::Ok().json(CalendarEventDTO::new(&event)))
         .map_err(|e| match e {
             UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
             UseCaseErrorContainer::UseCase(e) => match e {
@@ -77,7 +83,7 @@ pub enum UseCaseErrors {
 
 #[async_trait::async_trait(?Send)]
 impl UseCase for UpdateEventUseCase {
-    type Response = ();
+    type Response = CalendarEvent;
 
     type Errors = UseCaseErrors;
 
@@ -148,7 +154,7 @@ impl UseCase for UpdateEventUseCase {
         // TODO: handl err
         execute(sync_event_reminders, ctx).await;
 
-        Ok(())
+        Ok(e)
     }
 }
 
