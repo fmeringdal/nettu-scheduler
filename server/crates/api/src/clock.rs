@@ -1,5 +1,5 @@
 use actix_web::rt::time::{delay_until, interval, Instant};
-use nettu_scheduler_infra::Context;
+use nettu_scheduler_infra::NettuContext;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -12,7 +12,7 @@ pub fn get_start_delay(now_ts: usize, secs_before_min: usize) -> usize {
     }
 }
 
-pub async fn start_clock(ctx: Arc<Context>) {
+pub async fn start_clock(ctx: Arc<NettuContext>) {
     actix_web::rt::spawn(async move {
         let now = ctx.sys.get_utc_timestamp();
         let secs_to_next_run = get_start_delay(now as usize, 5);

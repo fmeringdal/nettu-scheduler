@@ -120,7 +120,7 @@ impl ISys for RealSys {
 }
 
 #[derive(Clone)]
-pub struct Context {
+pub struct NettuContext {
     pub repos: Repos,
     pub config: Config,
     pub sys: Arc<dyn ISys>,
@@ -131,7 +131,7 @@ struct ContextParams {
     pub mongodb: (String, String),
 }
 
-impl Context {
+impl NettuContext {
     fn create_inmemory() -> Self {
         Self {
             repos: Repos::create_inmemory(),
@@ -153,7 +153,7 @@ impl Context {
 }
 
 /// Will setup the correct Infra Context given the environment
-pub async fn setup_context() -> Context {
+pub async fn setup_context() -> NettuContext {
     const MONGODB_CONNECTION_STRING: &str = "MONGODB_CONNECTION_STRNG";
     const MONGODB_NAME: &str = "MONGODB_NAME";
 
@@ -166,7 +166,7 @@ pub async fn setup_context() -> Context {
     let inmemory_arg_set = args.len() > 1 && args[1].eq("inmemory");
     if inmemory_arg_set {
         println!("Inmemory argument provided. Going to use inmemory infra.");
-        return Context::create_inmemory();
+        return NettuContext::create_inmemory();
     }
 
     if mongodb_conncetion_string.is_ok() && mongodb_db_name.is_ok() {
@@ -174,7 +174,7 @@ pub async fn setup_context() -> Context {
             "{} and {} env vars was provided. Going to use mongodb.",
             MONGODB_CONNECTION_STRING, MONGODB_NAME
         );
-        Context::create(ContextParams {
+        NettuContext::create(ContextParams {
             mongodb: (mongodb_conncetion_string.unwrap(), mongodb_db_name.unwrap()),
         })
         .await
@@ -183,6 +183,6 @@ pub async fn setup_context() -> Context {
             "{} and {} env vars was not provided. Going to use inmemory infra.",
             MONGODB_CONNECTION_STRING, MONGODB_NAME
         );
-        Context::create_inmemory()
+        NettuContext::create_inmemory()
     }
 }

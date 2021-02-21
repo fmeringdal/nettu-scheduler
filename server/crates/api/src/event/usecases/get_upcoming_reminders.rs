@@ -1,6 +1,6 @@
 use crate::shared::usecase::UseCase;
 use nettu_scheduler_core::{Account, CalendarEvent, Reminder};
-use nettu_scheduler_infra::Context;
+use nettu_scheduler_infra::NettuContext;
 use std::collections::HashMap;
 
 /// Creates EventReminders for a calendar event
@@ -28,7 +28,7 @@ pub struct AccountEventReminders {
 
 async fn get_accounts_from_reminders(
     reminders: &[Reminder],
-    ctx: &Context,
+    ctx: &NettuContext,
 ) -> HashMap<String, Account> {
     let account_ids: Vec<_> = reminders
         .iter()
@@ -47,7 +47,7 @@ async fn get_accounts_from_reminders(
 async fn create_reminders_for_accounts(
     reminders: Vec<Reminder>,
     mut event_lookup: HashMap<String, CalendarEvent>,
-    ctx: &Context,
+    ctx: &NettuContext,
 ) -> Vec<(Account, AccountEventReminders)> {
     let account_lookup = get_accounts_from_reminders(&reminders, ctx).await;
 
@@ -87,7 +87,7 @@ impl UseCase for GetUpcomingRemindersUseCase {
 
     type Errors = UseCaseErrors;
 
-    type Context = Context;
+    type Context = NettuContext;
 
     /// This will run every minute
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {

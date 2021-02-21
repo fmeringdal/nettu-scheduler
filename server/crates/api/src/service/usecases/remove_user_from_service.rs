@@ -8,7 +8,7 @@ use crate::{
 use actix_web::{web, HttpRequest, HttpResponse};
 
 use nettu_scheduler_core::{Account, ServiceResource, User};
-use nettu_scheduler_infra::Context;
+use nettu_scheduler_infra::NettuContext;
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -20,7 +20,7 @@ pub struct PathParams {
 pub async fn remove_user_from_service_controller(
     http_req: HttpRequest,
     path_params: web::Path<PathParams>,
-    ctx: web::Data<Context>,
+    ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
 
@@ -68,7 +68,7 @@ impl UseCase for RemoveUserFromServiceUseCase {
 
     type Errors = UseCaseErrors;
 
-    type Context = Context;
+    type Context = NettuContext;
 
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let mut service = match ctx.repos.service_repo.find(&self.service_id).await {

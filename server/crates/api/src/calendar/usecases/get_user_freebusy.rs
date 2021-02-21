@@ -4,7 +4,7 @@ use crate::shared::usecase::{execute, UseCase};
 use actix_web::{web, HttpRequest, HttpResponse};
 use futures::future::join_all;
 use nettu_scheduler_core::{get_free_busy, CalendarView, EventInstance, User};
-use nettu_scheduler_infra::Context;
+use nettu_scheduler_infra::NettuContext;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -26,7 +26,7 @@ pub async fn get_user_freebusy_controller(
     http_req: HttpRequest,
     query_params: web::Query<UserFreebusyQuery>,
     params: web::Path<UserPathParams>,
-    ctx: web::Data<Context>,
+    ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let account = ensure_nettu_acct_header(&http_req)?;
 
@@ -84,7 +84,7 @@ impl UseCase for GetUserFreeBusyUseCase {
 
     type Errors = GetUserFreeBusyErrors;
 
-    type Context = Context;
+    type Context = NettuContext;
 
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let view = match CalendarView::create(self.start_ts, self.end_ts) {
@@ -113,7 +113,7 @@ impl GetUserFreeBusyUseCase {
     async fn get_event_instances_from_calendars(
         &self,
         view: &CalendarView,
-        ctx: &Context,
+        ctx: &NettuContext,
     ) -> Vec<EventInstance> {
         let calendar_ids = match &self.calendar_ids {
             Some(ids) if !ids.is_empty() => ids,
@@ -162,7 +162,7 @@ impl GetUserFreeBusyUseCase {
     async fn get_event_instances_from_schedules(
         &self,
         view: &CalendarView,
-        ctx: &Context,
+        ctx: &NettuContext,
     ) -> Vec<EventInstance> {
         let schedule_ids = match &self.schedule_ids {
             Some(ids) if !ids.is_empty() => ids,

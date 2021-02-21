@@ -5,7 +5,7 @@ use crate::{
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_core::{CalendarEvent, CalendarView, EventInstance};
-use nettu_scheduler_infra::Context;
+use nettu_scheduler_infra::NettuContext;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]
@@ -30,7 +30,7 @@ pub async fn get_event_instances_controller(
     http_req: HttpRequest,
     path_params: web::Path<EventPathParams>,
     query_params: web::Query<GetEventInstancesReqView>,
-    ctx: web::Data<Context>,
+    ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let (user, _policy) = protect_route(&http_req, &ctx).await?;
 
@@ -82,7 +82,7 @@ impl UseCase for GetEventInstancesUseCase {
 
     type Errors = UseCaseErrors;
 
-    type Context = Context;
+    type Context = NettuContext;
 
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let e = ctx.repos.event_repo.find(&self.event_id).await;

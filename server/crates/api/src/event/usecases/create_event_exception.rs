@@ -8,7 +8,7 @@ use crate::{
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_core::CalendarEvent;
-use nettu_scheduler_infra::Context;
+use nettu_scheduler_infra::NettuContext;
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -25,7 +25,7 @@ pub async fn create_event_exception_controller(
     http_req: HttpRequest,
     path_params: web::Path<CreateEventExceptionPathParams>,
     body: web::Json<CreateEventExceptionBody>,
-    ctx: web::Data<Context>,
+    ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let (user, policy) = protect_route(&http_req, &ctx).await?;
 
@@ -68,7 +68,7 @@ impl UseCase for CreateEventExceptionUseCase {
 
     type Errors = UseCaseErrors;
 
-    type Context = Context;
+    type Context = NettuContext;
 
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let mut event = match ctx.repos.event_repo.find(&self.event_id).await {

@@ -5,7 +5,7 @@ use crate::{
 use crate::{error::NettuError, shared::auth::protect_account_route};
 use actix_web::{web, HttpResponse};
 use nettu_scheduler_core::Account;
-use nettu_scheduler_infra::Context;
+use nettu_scheduler_infra::NettuContext;
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -16,7 +16,7 @@ pub struct SetAccountPubKeyReq {
 
 pub async fn set_account_pub_key_controller(
     http_req: web::HttpRequest,
-    ctx: web::Data<Context>,
+    ctx: web::Data<NettuContext>,
     body: web::Json<SetAccountPubKeyReq>,
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
@@ -54,7 +54,7 @@ impl UseCase for SetAccountPubKeyUseCase {
 
     type Errors = UseCaseErrors;
 
-    type Context = Context;
+    type Context = NettuContext;
 
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         if self

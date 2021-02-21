@@ -1,12 +1,12 @@
 use actix_web::{dev::ServiceResponse, test, App};
 use nettu_scheduler_api::configure_server_app;
-use nettu_scheduler_infra::{Config, Context, RealSys, Repos};
+use nettu_scheduler_infra::{Config, NettuContext, RealSys, Repos};
 use std::sync::Arc;
 
-fn setup_ctx() -> Context {
+fn setup_ctx() -> NettuContext {
     let repos = Repos::create_inmemory();
 
-    Context {
+    NettuContext {
         repos,
         config: Config::new(),
         sys: Arc::new(RealSys {}),

@@ -11,7 +11,7 @@ use crate::{
 use actix_web::{web, HttpRequest, HttpResponse};
 use event::dtos::CalendarEventDTO;
 use nettu_scheduler_core::{CalendarEvent, RRuleOptions};
-use nettu_scheduler_infra::Context;
+use nettu_scheduler_infra::NettuContext;
 use serde::Deserialize;
 
 use super::sync_event_reminders::{EventOperation, SyncEventRemindersUseCase};
@@ -34,7 +34,7 @@ pub async fn update_event_controller(
     http_req: HttpRequest,
     body: web::Json<UpdateEventBody>,
     path_params: web::Path<EventPathParams>,
-    ctx: web::Data<Context>,
+    ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let (user, policy) = protect_route(&http_req, &ctx).await?;
 
@@ -87,7 +87,7 @@ impl UseCase for UpdateEventUseCase {
 
     type Errors = UseCaseErrors;
 
-    type Context = Context;
+    type Context = NettuContext;
 
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let UpdateEventUseCase {

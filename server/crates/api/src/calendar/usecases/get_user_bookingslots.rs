@@ -15,7 +15,7 @@ use nettu_scheduler_core::{
     User,
 };
 
-use nettu_scheduler_infra::Context;
+use nettu_scheduler_infra::NettuContext;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize)]
@@ -38,7 +38,7 @@ pub async fn get_user_bookingslots_controller(
     http_req: HttpRequest,
     query_params: web::Query<UserBookingQuery>,
     params: web::Path<UserPathParams>,
-    ctx: web::Data<Context>,
+    ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let account = ensure_nettu_acct_header(&http_req)?;
     let calendar_ids = match &query_params.calendar_ids {
@@ -116,7 +116,7 @@ impl UseCase for GetUserBookingSlotsUseCase {
 
     type Errors = UseCaseErrors;
 
-    type Context = Context;
+    type Context = NettuContext;
 
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let query = BookingSlotsQuery {

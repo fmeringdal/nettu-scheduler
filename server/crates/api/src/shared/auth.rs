@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use actix_web::HttpRequest;
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use nettu_scheduler_core::{Account, User};
-use nettu_scheduler_infra::Context;
+use nettu_scheduler_infra::NettuContext;
 use serde::{Deserialize, Serialize};
 
 use crate::user::usecases::create_user::CreateUserUseCase;
@@ -100,7 +100,7 @@ fn parse_authtoken_header(token_header_value: &str) -> String {
 async fn create_user_if_not_exists(
     external_user_id: &str,
     account_id: &str,
-    ctx: &Context,
+    ctx: &NettuContext,
 ) -> Option<User> {
     let user_id = User::create_id(account_id, external_user_id);
     let user = ctx.repos.user_repo.find(&user_id).await;
@@ -122,7 +122,7 @@ async fn create_user_if_not_exists(
 pub async fn auth_user_req(
     req: &HttpRequest,
     account: &Account,
-    ctx: &Context,
+    ctx: &NettuContext,
 ) -> Option<(User, Policy)> {
     let token = req.headers().get("authorization");
     match token {
@@ -142,7 +142,7 @@ pub async fn auth_user_req(
     }
 }
 
-pub async fn get_client_account(req: &HttpRequest, ctx: &Context) -> Option<Account> {
+pub async fn get_client_account(req: &HttpRequest, ctx: &NettuContext) -> Option<Account> {
     let account = req.headers().get("nettu-account");
     match account {
         Some(acc) => match acc.to_str() {
@@ -166,7 +166,10 @@ fn decode_token(account: &Account, token: &str) -> anyhow::Result<Claims> {
     Ok(claims)
 }
 
-pub async fn protect_route(req: &HttpRequest, ctx: &Context) -> Result<(User, Policy), NettuError> {
+pub async fn protect_route(
+    req: &HttpRequest,
+    ctx: &NettuContext,
+) -> Result<(User, Policy), NettuError> {
     let account = match get_client_account(req, ctx).await {
         Some(account) => account,
         None => {
@@ -202,7 +205,7 @@ pub fn ensure_nettu_acct_header(req: &HttpRequest) -> Result<String, NettuError>
 
 pub async fn protect_account_route(
     req: &HttpRequest,
-    ctx: &Context,
+    ctx: &NettuContext,
 ) -> Result<Account, NettuError> {
     let api_key = match req.headers().get("x-api-key") {
         Some(api_key) => match api_key.to_str() {
@@ -237,7 +240,7 @@ mod test {
     use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
     use nettu_scheduler_infra::setup_context;
 
-    async fn setup_account(ctx: &Context) -> Account {
+    async fn setup_account(ctx: &NettuContext) -> Account {
         let account = get_account();
         ctx.repos.account_repo.insert(&account).await.unwrap();
         account

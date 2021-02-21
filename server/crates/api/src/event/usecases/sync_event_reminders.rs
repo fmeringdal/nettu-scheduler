@@ -1,7 +1,7 @@
 use crate::shared::usecase::UseCase;
 use chrono::prelude::*;
 use nettu_scheduler_core::{Calendar, CalendarEvent, CalendarView, Reminder};
-use nettu_scheduler_infra::Context;
+use nettu_scheduler_infra::NettuContext;
 use nettu_scheduler_infra::ObjectId;
 
 #[derive(Debug)]
@@ -40,7 +40,7 @@ impl<'a> UseCase for SyncEventRemindersUseCase<'a> {
 
     type Errors = UseCaseErrors;
 
-    type Context = Context;
+    type Context = NettuContext;
 
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         // delete existing reminders

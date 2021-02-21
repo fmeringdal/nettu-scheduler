@@ -4,7 +4,7 @@ use crate::{
 };
 use actix_web::{web, HttpResponse};
 use nettu_scheduler_core::Account;
-use nettu_scheduler_infra::Context;
+use nettu_scheduler_infra::NettuContext;
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -13,7 +13,7 @@ pub struct BodyParams {
 }
 
 pub async fn create_account_controller(
-    ctx: web::Data<Context>,
+    ctx: web::Data<NettuContext>,
     body: web::Json<BodyParams>,
 ) -> HttpResponse {
     if body.code != ctx.config.create_account_secret_code {
@@ -44,7 +44,7 @@ impl UseCase for CreateAccountUseCase {
 
     type Errors = UseCaseErrors;
 
-    type Context = Context;
+    type Context = NettuContext;
 
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let account = Account::new();

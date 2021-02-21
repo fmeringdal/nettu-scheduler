@@ -5,7 +5,7 @@ use crate::{
 use crate::{error::NettuError, shared::auth::protect_route};
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_core::Calendar;
-use nettu_scheduler_infra::Context;
+use nettu_scheduler_infra::NettuContext;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -17,7 +17,7 @@ pub struct GetCalendarReq {
 pub async fn get_calendar_controller(
     http_req: HttpRequest,
     req: web::Path<GetCalendarReq>,
-    ctx: web::Data<Context>,
+    ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let (user, _policy) = protect_route(&http_req, &ctx).await?;
 
@@ -56,7 +56,7 @@ impl UseCase for GetCalendarUseCase {
 
     type Errors = UseCaseErrors;
 
-    type Context = Context;
+    type Context = NettuContext;
 
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let cal = ctx.repos.calendar_repo.find(&self.calendar_id).await;

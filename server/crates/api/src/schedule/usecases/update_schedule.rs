@@ -9,7 +9,7 @@ use crate::{schedule::dtos::ScheduleDTO, shared::usecase::UseCase};
 use actix_web::{web, HttpResponse};
 use chrono_tz::Tz;
 use nettu_scheduler_core::{Schedule, ScheduleRule};
-use nettu_scheduler_infra::Context;
+use nettu_scheduler_infra::NettuContext;
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -26,7 +26,7 @@ pub struct UpdateScheduleBody {
 
 pub async fn update_schedule_controller(
     http_req: web::HttpRequest,
-    ctx: web::Data<Context>,
+    ctx: web::Data<NettuContext>,
     path_params: web::Path<UpdateScheduleSettigsPathParams>,
     body_params: web::Json<UpdateScheduleBody>,
 ) -> Result<HttpResponse, NettuError> {
@@ -83,7 +83,7 @@ impl UseCase for UpdateScheduleUseCase {
 
     type Errors = UseCaseErrors;
 
-    type Context = Context;
+    type Context = NettuContext;
 
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let mut schedule = match ctx.repos.schedule_repo.find(&self.schedule_id).await {

@@ -10,7 +10,7 @@ use crate::{
 use actix_web::{web, HttpResponse};
 use chrono_tz::Tz;
 use nettu_scheduler_core::{Schedule, User};
-use nettu_scheduler_infra::Context;
+use nettu_scheduler_infra::NettuContext;
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -28,7 +28,7 @@ pub async fn create_schedule_admin_controller(
     http_req: web::HttpRequest,
     path_params: web::Path<AdminControllerPathParams>,
     body_params: web::Json<BodyParams>,
-    ctx: web::Data<Context>,
+    ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
 
@@ -60,7 +60,7 @@ pub async fn create_schedule_admin_controller(
 pub async fn create_schedule_controller(
     http_req: web::HttpRequest,
     body_params: web::Json<BodyParams>,
-    ctx: web::Data<Context>,
+    ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let (user, policy) = protect_route(&http_req, &ctx).await?;
 
@@ -115,7 +115,7 @@ impl UseCase for CreateScheduleUseCase {
 
     type Errors = UseCaseErrors;
 
-    type Context = Context;
+    type Context = NettuContext;
 
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let tz: Tz = match self.tzid.parse() {

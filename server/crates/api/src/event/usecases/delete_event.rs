@@ -11,7 +11,7 @@ use crate::{
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_core::CalendarEvent;
-use nettu_scheduler_infra::Context;
+use nettu_scheduler_infra::NettuContext;
 use serde::Deserialize;
 
 use super::sync_event_reminders::{EventOperation, SyncEventRemindersUseCase};
@@ -24,7 +24,7 @@ pub struct PathParams {
 pub async fn delete_event_controller(
     http_req: HttpRequest,
     path_params: web::Path<PathParams>,
-    ctx: web::Data<Context>,
+    ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let (user, policy) = protect_route(&http_req, &ctx).await?;
 
@@ -63,7 +63,7 @@ impl UseCase for DeleteEventUseCase {
 
     type Errors = UseCaseErrors;
 
-    type Context = Context;
+    type Context = NettuContext;
 
     // TODO: use only one db call
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {

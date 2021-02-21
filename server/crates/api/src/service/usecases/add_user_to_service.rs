@@ -5,7 +5,7 @@ use crate::shared::{
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_core::{Account, Service, ServiceResource, User};
-use nettu_scheduler_infra::Context;
+use nettu_scheduler_infra::NettuContext;
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -25,7 +25,7 @@ pub async fn add_user_to_service_controller(
     http_req: HttpRequest,
     body: web::Json<BodyParams>,
     path_params: web::Path<PathParams>,
-    ctx: web::Data<Context>,
+    ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
 
@@ -76,7 +76,7 @@ impl UseCase for AddUserToServiceUseCase {
 
     type Errors = UseCaseErrors;
 
-    type Context = Context;
+    type Context = NettuContext;
 
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let _user = match ctx.repos.user_repo.find(&self.user_id).await {

@@ -4,7 +4,7 @@ use crate::shared::{
 };
 use crate::{error::NettuError, shared::auth::protect_route};
 use actix_web::{web, HttpResponse};
-use nettu_scheduler_infra::Context;
+use nettu_scheduler_infra::NettuContext;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]
@@ -20,7 +20,7 @@ pub struct UpdateCalendarSettingsBody {
 
 pub async fn update_calendar_settings_controller(
     http_req: web::HttpRequest,
-    ctx: web::Data<Context>,
+    ctx: web::Data<NettuContext>,
     path_params: web::Path<UpdateCalendarSettigsPathParams>,
     body: web::Json<UpdateCalendarSettingsBody>,
 ) -> Result<HttpResponse, NettuError> {
@@ -75,7 +75,7 @@ impl UseCase for UpdateCalendarSettingsUseCase {
 
     type Errors = UseCaseErrors;
 
-    type Context = Context;
+    type Context = NettuContext;
 
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let mut calendar = match ctx.repos.calendar_repo.find(&self.calendar_id).await {

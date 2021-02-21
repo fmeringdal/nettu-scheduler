@@ -9,7 +9,7 @@ use crate::{
 };
 use actix_web::{web, HttpResponse};
 use nettu_scheduler_core::{Calendar, User};
-use nettu_scheduler_infra::Context;
+use nettu_scheduler_infra::NettuContext;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]
@@ -20,7 +20,7 @@ pub struct AdminControllerPathParams {
 pub async fn create_calendar_admin_controller(
     http_req: web::HttpRequest,
     path_params: web::Path<AdminControllerPathParams>,
-    ctx: web::Data<Context>,
+    ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
 
@@ -41,7 +41,7 @@ pub async fn create_calendar_admin_controller(
 
 pub async fn create_calendar_controller(
     http_req: web::HttpRequest,
-    ctx: web::Data<Context>,
+    ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let (user, policy) = protect_route(&http_req, &ctx).await?;
 
@@ -86,7 +86,7 @@ impl UseCase for CreateCalendarUseCase {
 
     type Errors = UseCaseErrors;
 
-    type Context = Context;
+    type Context = NettuContext;
 
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let user = ctx.repos.user_repo.find(&self.user_id).await;

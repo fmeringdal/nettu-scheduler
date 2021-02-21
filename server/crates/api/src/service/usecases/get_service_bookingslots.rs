@@ -11,7 +11,7 @@ use nettu_scheduler_core::booking_slots::{
     BookingQueryError, BookingSlotsOptions, BookingSlotsQuery, ServiceBookingSlot,
     ServiceBookingSlotDTO, UserFreeEvents,
 };
-use nettu_scheduler_infra::Context;
+use nettu_scheduler_infra::NettuContext;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize)]
@@ -38,7 +38,7 @@ pub async fn get_service_bookingslots_controller(
     http_req: HttpRequest,
     query_params: web::Query<QueryParams>,
     path_params: web::Path<PathParams>,
-    ctx: web::Data<Context>,
+    ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     match ensure_nettu_acct_header(&http_req) {
         Ok(_) => (),
@@ -115,7 +115,7 @@ impl UseCase for GetServiceBookingSlotsUseCase {
 
     type Errors = UseCaseErrors;
 
-    type Context = Context;
+    type Context = NettuContext;
 
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         if !validate_slots_interval(self.interval) {
@@ -202,7 +202,7 @@ mod test {
     use nettu_scheduler_infra::setup_context;
 
     struct TestContext {
-        ctx: Context,
+        ctx: NettuContext,
         service: Service,
     }
 
@@ -215,7 +215,7 @@ mod test {
         TestContext { ctx, service }
     }
 
-    async fn setup_service_users(ctx: &Context, service: &mut Service) {
+    async fn setup_service_users(ctx: &NettuContext, service: &mut Service) {
         let mut resource1 = ServiceResource {
             calendar_ids: vec![],
             schedule_ids: vec![],

@@ -3,7 +3,7 @@ use crate::user::dtos::UserDTO;
 use crate::{error::NettuError, shared::auth::protect_account_route};
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_core::User;
-use nettu_scheduler_infra::Context;
+use nettu_scheduler_infra::NettuContext;
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -15,7 +15,7 @@ pub struct BodyParams {
 pub async fn create_user_controller(
     http_req: HttpRequest,
     body: web::Json<BodyParams>,
-    ctx: web::Data<Context>,
+    ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
 
@@ -56,7 +56,7 @@ pub enum UseCaseErrors {
 impl UseCase for CreateUserUseCase {
     type Response = UseCaseRes;
     type Errors = UseCaseErrors;
-    type Context = Context;
+    type Context = NettuContext;
 
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let user = User::new(&self.account_id, &self.external_user_id);

@@ -2,7 +2,7 @@ use crate::shared::usecase::{execute, UseCase};
 use crate::{error::NettuError, shared::auth::protect_account_route};
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_core::{Account, Service};
-use nettu_scheduler_infra::Context;
+use nettu_scheduler_infra::NettuContext;
 use serde::Serialize;
 
 #[derive(Serialize)]
@@ -13,7 +13,7 @@ struct CreateServiceRes {
 
 pub async fn create_service_controller(
     http_req: HttpRequest,
-    ctx: web::Data<Context>,
+    ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
 
@@ -50,7 +50,7 @@ impl UseCase for CreateServiceUseCase {
 
     type Errors = UseCaseErrors;
 
-    type Context = Context;
+    type Context = NettuContext;
 
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let service = Service::new(&self.account.id);

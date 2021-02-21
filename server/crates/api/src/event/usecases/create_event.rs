@@ -6,7 +6,7 @@ use crate::shared::{
 use crate::{error::NettuError, event::dtos::CalendarEventDTO};
 use actix_web::{web, HttpResponse};
 use nettu_scheduler_core::{CalendarEvent, RRuleOptions};
-use nettu_scheduler_infra::Context;
+use nettu_scheduler_infra::NettuContext;
 use nettu_scheduler_infra::ObjectId;
 use serde::{Deserialize, Serialize};
 
@@ -23,7 +23,7 @@ pub struct CreateEventReq {
 pub async fn create_event_controller(
     http_req: web::HttpRequest,
     req: web::Json<CreateEventReq>,
-    ctx: web::Data<Context>,
+    ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let (user, policy) = protect_route(&http_req, &ctx).await?;
 
@@ -78,7 +78,7 @@ impl UseCase for CreateEventUseCase {
 
     type Errors = UseCaseErrors;
 
-    type Context = Context;
+    type Context = NettuContext;
 
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let calendar = match ctx.repos.calendar_repo.find(&self.calendar_id).await {
@@ -137,7 +137,7 @@ mod test {
     use nettu_scheduler_infra::setup_context;
 
     struct TestContext {
-        ctx: Context,
+        ctx: NettuContext,
         calendar: Calendar,
         user: User,
     }
