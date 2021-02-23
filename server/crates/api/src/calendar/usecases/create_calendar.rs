@@ -1,8 +1,8 @@
-use crate::shared::auth::Permission;
 use crate::shared::{
     auth::{protect_account_route, protect_route},
     usecase::{execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
 };
+use crate::{calendar::dtos::CalendarDTO, shared::auth::Permission};
 use crate::{
     error::NettuError,
     shared::usecase::{execute, UseCase},
@@ -29,7 +29,7 @@ pub async fn create_calendar_admin_controller(
 
     execute(usecase, &ctx)
         .await
-        .map(|json| HttpResponse::Created().json(json))
+        .map(|calendar| HttpResponse::Created().json(CalendarDTO::new(&calendar)))
         .map_err(|e| match e {
             UseCaseErrors::StorageError => NettuError::InternalError,
             UseCaseErrors::UserNotFoundError => NettuError::NotFound(format!(
@@ -49,7 +49,7 @@ pub async fn create_calendar_controller(
 
     execute_with_policy(usecase, &policy, &ctx)
         .await
-        .map(|usecase_res| HttpResponse::Created().json(usecase_res))
+        .map(|calendar| HttpResponse::Created().json(CalendarDTO::new(&calendar)))
         .map_err(|e| {
             match e {
                 UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
@@ -74,15 +74,9 @@ enum UseCaseErrors {
     StorageError,
 }
 
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-struct UseCaseRes {
-    pub calendar_id: String,
-}
-
 #[async_trait::async_trait(?Send)]
 impl UseCase for CreateCalendarUseCase {
-    type Response = UseCaseRes;
+    type Response = Calendar;
 
     type Errors = UseCaseErrors;
 
@@ -98,9 +92,7 @@ impl UseCase for CreateCalendarUseCase {
 
         let res = ctx.repos.calendar_repo.insert(&calendar).await;
         match res {
-            Ok(_) => Ok(UseCaseRes {
-                calendar_id: calendar.id.clone(),
-            }),
+            Ok(_) => Ok(calendar),
             Err(_) => Err(UseCaseErrors::StorageError),
         }
     }

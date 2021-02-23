@@ -25,9 +25,9 @@ impl IReminderRepo for InMemoryReminderRepo {
         Ok(())
     }
 
-    async fn delete_all_before(&self, before: i64) -> Vec<Reminder> {
+    async fn find_all_before(&self, before: i64) -> Vec<Reminder> {
         // println!("Reminders: {:?}", self.reminders);
-        find_and_delete_by(&self.reminders, |reminder| reminder.remind_at <= before)
+        find_by(&self.reminders, |reminder| reminder.remind_at <= before)
     }
 
     async fn delete_by_events(&self, event_ids: &[String]) -> Result<DeleteResult, Box<dyn Error>> {

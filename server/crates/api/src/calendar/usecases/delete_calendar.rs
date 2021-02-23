@@ -1,10 +1,14 @@
-use crate::shared::{
-    auth::{protect_route, Permission},
-    usecase::{execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
+use crate::{
+    calendar::dtos::CalendarDTO,
+    shared::{
+        auth::{protect_route, Permission},
+        usecase::{execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
+    },
 };
 use crate::{error::NettuError, shared::usecase::UseCase};
 use actix_web::{web, HttpResponse};
 
+use nettu_scheduler_core::Calendar;
 use nettu_scheduler_infra::NettuContext;
 use serde::Deserialize;
 
@@ -27,7 +31,7 @@ pub async fn delete_calendar_controller(
 
     execute_with_policy(usecase, &policy, &ctx)
         .await
-        .map(|_| HttpResponse::Ok().body("Calendar deleted"))
+        .map(|calendar| HttpResponse::Ok().json(CalendarDTO::new(&calendar)))
         .map_err(|e| match e {
             UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
             UseCaseErrorContainer::UseCase(e) => match e {
@@ -53,7 +57,7 @@ pub struct DeleteCalendarUseCase {
 
 #[async_trait::async_trait(?Send)]
 impl UseCase for DeleteCalendarUseCase {
-    type Response = ();
+    type Response = Calendar;
 
     type Errors = UseCaseErrors;
 
@@ -77,7 +81,7 @@ impl UseCase for DeleteCalendarUseCase {
                     return Err(UseCaseErrors::UnableToDelete);
                 }
 
-                Ok(())
+                Ok(calendar)
             }
             _ => Err(UseCaseErrors::NotFoundError),
         }

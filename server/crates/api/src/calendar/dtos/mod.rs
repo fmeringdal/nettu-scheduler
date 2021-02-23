@@ -1,4 +1,4 @@
-use nettu_scheduler_core::{Calendar, CalendarSettings};
+use nettu_scheduler_core::{Calendar, CalendarSettings, User};
 use serde::Serialize;
 
 #[derive(Debug, Serialize)]
@@ -20,7 +20,7 @@ impl CalendarDTO {
     pub fn new(calendar: &Calendar) -> Self {
         Self {
             id: calendar.id.clone(),
-            user_id: calendar.user_id.clone(),
+            user_id: User::create_external_id(&calendar.user_id),
             settings: CalendarSettingsDTO::new(&calendar.settings),
         }
     }

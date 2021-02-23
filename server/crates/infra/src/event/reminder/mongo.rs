@@ -32,31 +32,20 @@ impl IReminderRepo for ReminderRepo {
         }
     }
 
-    async fn delete_all_before(&self, before_inc: i64) -> Vec<Reminder> {
+    async fn find_all_before(&self, before_inc: i64) -> Vec<Reminder> {
         let filter = doc! {
             "remind_at": {
                 "$lte": before_inc
             }
         };
 
-        // Find before deleting
-        let docs =
-            match mongo_repo::find_many_by::<_, ReminderMongo>(&self.collection, filter.clone())
-                .await
-            {
-                Ok(docs) => docs,
-                Err(err) => {
-                    println!("Error: {:?}", err);
-                    return vec![];
-                }
-            };
-
-        // Now delete
-        if let Err(err) = self.collection.delete_many(filter, None).await {
-            println!("Error: {:?}", err);
+        match mongo_repo::find_many_by::<_, ReminderMongo>(&self.collection, filter.clone()).await {
+            Ok(docs) => docs,
+            Err(err) => {
+                println!("Error: {:?}", err);
+                return vec![];
+            }
         }
-
-        docs
     }
 
     async fn delete_by_events(&self, event_ids: &[String]) -> Result<DeleteResult, Box<dyn Error>> {

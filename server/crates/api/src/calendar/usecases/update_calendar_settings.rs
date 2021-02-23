@@ -1,9 +1,13 @@
-use crate::shared::{
-    auth::Permission,
-    usecase::{execute_with_policy, PermissionBoundary, UseCase, UseCaseErrorContainer},
+use crate::{
+    calendar::dtos::CalendarDTO,
+    shared::{
+        auth::Permission,
+        usecase::{execute_with_policy, PermissionBoundary, UseCase, UseCaseErrorContainer},
+    },
 };
 use crate::{error::NettuError, shared::auth::protect_route};
 use actix_web::{web, HttpResponse};
+use nettu_scheduler_core::Calendar;
 use nettu_scheduler_infra::NettuContext;
 use serde::{Deserialize, Serialize};
 
@@ -35,7 +39,7 @@ pub async fn update_calendar_settings_controller(
 
     execute_with_policy(usecase, &policy, &ctx)
         .await
-        .map(|usecase_res| HttpResponse::Ok().json(usecase_res))
+        .map(|calendar| HttpResponse::Ok().json(CalendarDTO::new(&calendar)))
         .map_err(|e| match e {
             UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
             UseCaseErrorContainer::UseCase(e) => match e {
@@ -65,13 +69,9 @@ enum UseCaseErrors {
     InvalidSettings(String),
 }
 
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-struct UseCaseRes {}
-
 #[async_trait::async_trait(?Send)]
 impl UseCase for UpdateCalendarSettingsUseCase {
-    type Response = UseCaseRes;
+    type Response = Calendar;
 
     type Errors = UseCaseErrors;
 
@@ -103,7 +103,7 @@ impl UseCase for UpdateCalendarSettingsUseCase {
 
         let repo_res = ctx.repos.calendar_repo.save(&calendar).await;
         match repo_res {
-            Ok(_) => Ok(UseCaseRes {}),
+            Ok(_) => Ok(calendar),
             Err(_) => Err(UseCaseErrors::StorageError),
         }
     }
