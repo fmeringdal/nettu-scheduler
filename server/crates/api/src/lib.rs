@@ -25,4 +25,4 @@ pub fn configure_server_app(cfg: &mut web::ServiceConfig) {
     cfg.route("/", web::get().to(status));
 }
 
-pub use job_schedulers::start_clock;
+pub use job_schedulers::{start_reminders_expansion_job_scheduler, start_send_reminders_job};

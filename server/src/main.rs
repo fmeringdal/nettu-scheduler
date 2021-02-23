@@ -1,4 +1,6 @@
-use nettu_scheduler_api::configure_server_app;
+use nettu_scheduler_api::{
+    configure_server_app, start_reminders_expansion_job_scheduler, start_send_reminders_job,
+};
 use nettu_scheduler_infra::setup_context;
 
 use actix_web::{middleware, App, HttpServer};
@@ -10,6 +12,9 @@ async fn main() -> std::io::Result<()> {
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
 
     let context = setup_context().await;
+
+    start_send_reminders_job(context.clone()).await;
+    start_reminders_expansion_job_scheduler(context.clone()).await;
 
     HttpServer::new(move || {
         let ctx = context.clone();

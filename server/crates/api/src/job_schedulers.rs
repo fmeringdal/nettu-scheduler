@@ -23,7 +23,7 @@ pub fn get_start_delay(now_ts: usize, secs_before_min: usize) -> usize {
     }
 }
 
-pub async fn start_reminders_expansion_job_scheduler(ctx: Arc<NettuContext>) {
+pub async fn start_reminders_expansion_job_scheduler(ctx: NettuContext) {
     actix_web::rt::spawn(async move {
         let mut interval = interval(Duration::from_secs(30 * 60 * 1000));
         loop {
@@ -42,7 +42,7 @@ struct AccountEventRemindersDTO {
     events: Vec<CalendarEventDTO>,
 }
 
-pub async fn start_send_reminders_job(ctx: Arc<NettuContext>) {
+pub async fn start_send_reminders_job(ctx: NettuContext) {
     actix_web::rt::spawn(async move {
         let client = actix_web::client::Client::new();
 
