@@ -23,7 +23,7 @@ pub enum UseCaseErrors {}
 
 #[derive(Debug)]
 pub struct AccountEventReminders {
-    events: Vec<CalendarEvent>,
+    pub events: Vec<CalendarEvent>,
 }
 
 async fn get_accounts_from_reminders(

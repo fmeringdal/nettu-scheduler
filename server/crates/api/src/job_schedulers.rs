@@ -1,5 +1,16 @@
+use crate::{
+    event::{
+        dtos::CalendarEventDTO,
+        usecases::{
+            get_upcoming_reminders::GetUpcomingRemindersUseCase,
+            sync_event_reminders::{SyncEventRemindersTrigger, SyncEventRemindersUseCase},
+        },
+    },
+    shared::usecase::execute,
+};
 use actix_web::rt::time::{delay_until, interval, Instant};
 use nettu_scheduler_infra::NettuContext;
+use serde::Serialize;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -12,8 +23,29 @@ pub fn get_start_delay(now_ts: usize, secs_before_min: usize) -> usize {
     }
 }
 
-pub async fn start_clock(ctx: Arc<NettuContext>) {
+pub async fn start_reminders_expansion_job_scheduler(ctx: Arc<NettuContext>) {
     actix_web::rt::spawn(async move {
+        let mut interval = interval(Duration::from_secs(30 * 60 * 1000));
+        loop {
+            interval.tick().await;
+
+            let usecase = SyncEventRemindersUseCase {
+                request: SyncEventRemindersTrigger::JobScheduler,
+            };
+            let res = execute(usecase, &ctx).await;
+        }
+    });
+}
+
+#[derive(Serialize)]
+struct AccountEventRemindersDTO {
+    events: Vec<CalendarEventDTO>,
+}
+
+pub async fn start_send_reminders_job(ctx: Arc<NettuContext>) {
+    actix_web::rt::spawn(async move {
+        let client = actix_web::client::Client::new();
+
         let now = ctx.sys.get_utc_timestamp();
         let secs_to_next_run = get_start_delay(now as usize, 3);
         let start = Instant::now() + Duration::from_secs(secs_to_next_run as u64);
@@ -22,24 +54,34 @@ pub async fn start_clock(ctx: Arc<NettuContext>) {
         let mut minutely_interval = interval(Duration::from_secs(60));
         loop {
             minutely_interval.tick().await;
-            // perform the action
 
-            // let client = actix_web::client::Client::new();
-            // for (acc, reminders) in account_reminders {
-            //     match acc.settings.webhook {
-            //         None => continue,
-            //         Some(webhook) => {
-            //             if let Err(e) = client
-            //                 .post(webhook.url)
-            //                 .header("nettu-scheduler-webhook-key", webhook.key)
-            //                 .send_json(&reminders)
-            //                 .await
-            //             {
-            //                 println!("Error informing client of reminders: {:?}", e);
-            //             }
-            //         }
-            //     }
-            // }
+            let usecase = GetUpcomingRemindersUseCase {};
+            let account_reminders = match execute(usecase, &ctx).await {
+                Ok(res) => res,
+                Err(_) => continue,
+            };
+
+            for (acc, reminders) in account_reminders {
+                match acc.settings.webhook {
+                    None => continue,
+                    Some(webhook) => {
+                        if let Err(e) = client
+                            .post(webhook.url)
+                            .header("nettu-scheduler-webhook-key", webhook.key)
+                            .send_json(&AccountEventRemindersDTO {
+                                events: reminders
+                                    .events
+                                    .iter()
+                                    .map(|e| CalendarEventDTO::new(e))
+                                    .collect(),
+                            })
+                            .await
+                        {
+                            println!("Error informing client of reminders: {:?}", e);
+                        }
+                    }
+                }
+            }
         }
     });
 }
