@@ -92,7 +92,7 @@ impl UseCase for GetUpcomingRemindersUseCase {
     /// This will run every minute
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         // Find all occurences for the next interval and delete them
-        let ts = ctx.sys.get_utc_timestamp() + Self::get_config().send_interval;
+        let ts = ctx.sys.get_timestamp_millis() + Self::get_config().send_interval;
         println!("before ts: {}", ts);
         let reminders = ctx.repos.reminder_repo.delete_all_before(ts).await;
 
@@ -127,21 +127,21 @@ mod tests {
 
     pub struct StaticTimeSys1 {}
     impl ISys for StaticTimeSys1 {
-        fn get_utc_timestamp(&self) -> i64 {
+        fn get_timestamp_millis(&self) -> i64 {
             1613862000000 // Sun Feb 21 2021 00:00:00 GMT+0100 (Central European Standard Time) {}
         }
     }
 
     pub struct StaticTimeSys2 {}
     impl ISys for StaticTimeSys2 {
-        fn get_utc_timestamp(&self) -> i64 {
+        fn get_timestamp_millis(&self) -> i64 {
             1613862000000 + 1000 * 60 * 49 // Sun Feb 21 2021 00:49:00 GMT+0100 (Central European Standard Time) {}
         }
     }
 
     pub struct StaticTimeSys3 {}
     impl ISys for StaticTimeSys3 {
-        fn get_utc_timestamp(&self) -> i64 {
+        fn get_timestamp_millis(&self) -> i64 {
             1613862000000 + 1000 * 60 * 60 * 24 // Sun Feb 22 2021 00:00:00 GMT+0100 (Central European Standard Time) {}
         }
     }
@@ -159,7 +159,7 @@ mod tests {
             account_id: account.id.clone(),
             calendar_id: calendar.id.clone(),
             user_id: user_id.into(),
-            start_ts: ctx.sys.get_utc_timestamp(),
+            start_ts: ctx.sys.get_timestamp_millis(),
             duration: 1000 * 60 * 60 * 2,
             busy: false,
             rrule_options: Some(RRuleOptions {
@@ -181,7 +181,7 @@ mod tests {
             account_id: account.id.clone(),
             calendar_id: calendar.id.clone(),
             user_id: user_id.into(),
-            start_ts: sys3.get_utc_timestamp() + 1000 * 60 * 5,
+            start_ts: sys3.get_timestamp_millis() + 1000 * 60 * 5,
             duration: 1000 * 60 * 60 * 2,
             busy: false,
             rrule_options: None,

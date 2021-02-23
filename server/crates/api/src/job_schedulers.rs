@@ -32,7 +32,7 @@ pub async fn start_reminders_expansion_job_scheduler(ctx: NettuContext) {
             let usecase = SyncEventRemindersUseCase {
                 request: SyncEventRemindersTrigger::JobScheduler,
             };
-            let res = execute(usecase, &ctx).await;
+            let _ = execute(usecase, &ctx).await;
         }
     });
 }
@@ -46,7 +46,7 @@ pub async fn start_send_reminders_job(ctx: NettuContext) {
     actix_web::rt::spawn(async move {
         let client = actix_web::client::Client::new();
 
-        let now = ctx.sys.get_utc_timestamp();
+        let now = ctx.sys.get_timestamp_millis();
         let secs_to_next_run = get_start_delay(now as usize, 3);
         let start = Instant::now() + Duration::from_secs(secs_to_next_run as u64);
 
@@ -54,12 +54,14 @@ pub async fn start_send_reminders_job(ctx: NettuContext) {
         let mut minutely_interval = interval(Duration::from_secs(60));
         loop {
             minutely_interval.tick().await;
+            println!("Minute tick");
 
             let usecase = GetUpcomingRemindersUseCase {};
             let account_reminders = match execute(usecase, &ctx).await {
                 Ok(res) => res,
                 Err(_) => continue,
             };
+            println!("Reminders to send: {:?}", account_reminders);
 
             for (acc, reminders) in account_reminders {
                 match acc.settings.webhook {

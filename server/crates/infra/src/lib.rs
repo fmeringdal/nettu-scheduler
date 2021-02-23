@@ -110,20 +110,17 @@ impl Config {
     }
 }
 
+// Mocking out time so that it
+// is possible to run tests depending
+// that check the current timestamp
 pub trait ISys: Send + Sync {
-    fn get_utc_timestamp(&self) -> i64;
-}
-
-pub struct MockSys {}
-impl ISys for MockSys {
-    fn get_utc_timestamp(&self) -> i64 {
-        0 // 1970
-    }
+    /// The current timestamp in millis
+    fn get_timestamp_millis(&self) -> i64;
 }
 
 pub struct RealSys {}
 impl ISys for RealSys {
-    fn get_utc_timestamp(&self) -> i64 {
+    fn get_timestamp_millis(&self) -> i64 {
         Utc::now().timestamp_millis()
     }
 }
@@ -145,7 +142,7 @@ impl NettuContext {
         Self {
             repos: Repos::create_inmemory(),
             config: Config::new(),
-            sys: Arc::new(MockSys {}),
+            sys: Arc::new(RealSys {}),
         }
     }
 

@@ -151,7 +151,7 @@ impl<'a> UseCase for SyncEventRemindersUseCase<'a> {
                 let jobs = ctx
                     .repos
                     .event_reminders_expansion_jobs_repo
-                    .delete_all_before(ctx.sys.get_utc_timestamp())
+                    .delete_all_before(ctx.sys.get_timestamp_millis())
                     .await;
 
                 let event_ids = jobs

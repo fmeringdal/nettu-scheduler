@@ -80,8 +80,9 @@ impl UseCase for DeleteEventUseCase {
                         EventOperation::Deleted,
                     ),
                 };
-                // TODO: handl err
-                execute(sync_event_reminders, ctx).await;
+
+                // Sideeffect, ignore result
+                let _ = execute(sync_event_reminders, ctx).await;
 
                 Ok(event)
             }
