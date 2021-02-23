@@ -79,7 +79,6 @@ impl IEventRemindersExpansionJobsRepo for EventRemindersExpansionsJobRepo {
 struct EventRemindersExpansionJobMongo {
     _id: ObjectId,
     event_id: String,
-    dirty: bool,
     timestamp: i64,
 }
 
@@ -89,7 +88,6 @@ impl MongoDocument<EventRemindersExpansionJob> for EventRemindersExpansionJobMon
             id: self._id.to_string(),
             event_id: self.event_id.clone(),
             timestamp: self.timestamp,
-            dirty: self.dirty,
         }
     }
 
@@ -98,7 +96,6 @@ impl MongoDocument<EventRemindersExpansionJob> for EventRemindersExpansionJobMon
             _id: ObjectId::with_string(&job.id).unwrap(),
             event_id: job.event_id.to_owned(),
             timestamp: job.timestamp.to_owned(),
-            dirty: job.dirty,
         }
     }
 

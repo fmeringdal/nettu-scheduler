@@ -6,7 +6,7 @@ use futures::future::join_all;
 use nettu_scheduler_core::{get_free_busy, CalendarView, EventInstance, User};
 use nettu_scheduler_infra::NettuContext;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::{collections::HashMap, print};
 
 #[derive(Debug, Deserialize)]
 pub struct UserPathParams {
@@ -171,7 +171,6 @@ impl GetUserFreeBusyUseCase {
 
         // can probably make query to event repo instead
         let mut schedules = ctx.repos.schedule_repo.find_by_user(&self.user_id).await;
-        println!("Schedules found: {:?}", schedules);
         if !schedule_ids.is_empty() {
             schedules = schedules
                 .into_iter()

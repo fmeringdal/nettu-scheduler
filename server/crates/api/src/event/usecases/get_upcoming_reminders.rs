@@ -81,6 +81,24 @@ async fn create_reminders_for_accounts(
         .collect()
 }
 
+// Remove possible duplicate reminders created by the two triggers
+// of sync event reminders
+fn dedup_reminders(reminders: &mut Vec<Reminder>) {
+    reminders.sort_by_key(|r1| r1.priority);
+    let mut reminders_count = reminders.len();
+    let mut index = 0;
+    while index < reminders_count {
+        for j in (index + 1..reminders_count).rev() {
+            if reminders[index].event_id == reminders[j].event_id {
+                reminders.remove(j);
+                reminders_count -= 1;
+            }
+        }
+
+        index += 1;
+    }
+}
+
 #[async_trait::async_trait(?Send)]
 impl UseCase for GetUpcomingRemindersUseCase {
     type Response = Vec<(Account, AccountEventReminders)>;
@@ -93,8 +111,8 @@ impl UseCase for GetUpcomingRemindersUseCase {
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         // Find all occurences for the next interval and delete them
         let ts = ctx.sys.get_timestamp_millis() + Self::get_config().send_interval;
-        println!("before ts: {}", ts);
-        let reminders = ctx.repos.reminder_repo.delete_all_before(ts).await;
+        let mut reminders = ctx.repos.reminder_repo.delete_all_before(ts).await;
+        dedup_reminders(&mut reminders);
 
         let event_lookup = ctx
             .repos
@@ -122,8 +140,37 @@ mod tests {
     use super::*;
     use crate::event::usecases::create_event::CreateEventUseCase;
     use nettu_scheduler_core::{Calendar, CalendarEventReminder, RRuleFrequenzy, RRuleOptions};
-    use nettu_scheduler_infra::{setup_context, ISys};
+    use nettu_scheduler_infra::{setup_context, ISys, ObjectId};
     use std::sync::Arc;
+
+    fn reminder_factory(event_id: &str, priority: i64) -> Reminder {
+        Reminder {
+            account_id: "1".into(),
+            event_id: event_id.into(),
+            id: ObjectId::new().to_string(),
+            priority,
+            remind_at: 200,
+        }
+    }
+
+    #[test]
+    fn should_dedup_reminders() {
+        let mut reminders = vec![];
+        dedup_reminders(&mut reminders);
+        assert_eq!(reminders.len(), 0);
+
+        let mut reminders = vec![reminder_factory("1", 0), reminder_factory("2", 0)];
+        dedup_reminders(&mut reminders);
+        assert_eq!(reminders.len(), 2);
+
+        let mut reminders = vec![reminder_factory("1", 1), reminder_factory("1", 0)];
+        dedup_reminders(&mut reminders);
+        assert_eq!(reminders.len(), 1);
+
+        let mut reminders = vec![reminder_factory("1", 0), reminder_factory("1", 1)];
+        dedup_reminders(&mut reminders);
+        assert_eq!(reminders.len(), 1);
+    }
 
     pub struct StaticTimeSys1 {}
     impl ISys for StaticTimeSys1 {

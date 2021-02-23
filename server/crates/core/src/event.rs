@@ -168,7 +168,7 @@ impl CalendarEvent {
                 Err(_) => return Default::default(),
             };
             let tzid = rrule_options.tzid;
-            let mut rrule_set = self.get_rrule_set(calendar_settings).unwrap();
+            let rrule_set = self.get_rrule_set(calendar_settings).unwrap();
 
             let instances = match view {
                 Some(view) => {
@@ -178,7 +178,11 @@ impl CalendarEvent {
                     // does not support duration on events.
                     let end = view.end - Duration::milliseconds(self.duration);
 
-                    rrule_set.between(view.start, end, true)
+                    // RRule v0.5.3 is not inclusive on start, so just by subtracting one millisecond
+                    // will make it inclusive
+                    let start = view.start - Duration::milliseconds(1);
+
+                    rrule_set.between(start, end, true)
                 }
                 None => rrule_set.all(),
             };

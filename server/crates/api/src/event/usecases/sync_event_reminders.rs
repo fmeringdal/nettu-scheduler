@@ -1,4 +1,5 @@
 use crate::shared::usecase::UseCase;
+use anyhow::Context;
 use nettu_scheduler_core::{Calendar, CalendarEvent, EventRemindersExpansionJob, Reminder};
 use nettu_scheduler_infra::NettuContext;
 use nettu_scheduler_infra::ObjectId;
@@ -11,14 +12,16 @@ pub enum EventOperation<'a> {
     Deleted,
 }
 
-/// Creates EventReminders for a calendar event
+/// Synchronizes the upcoming `Reminders` for a `CalendarEvent`
 pub struct SyncEventRemindersUseCase<'a> {
-    pub request: SyncEventRemindersTrigger<'a>, // pub event: &'a CalendarEvent,
-                                                // pub op: EventOperation<'a>
+    pub request: SyncEventRemindersTrigger<'a>,
 }
 
 pub enum SyncEventRemindersTrigger<'a> {
+    /// A `CalendarEvent` has been modified, e.g. deleted, updated og created.
     EventModified(&'a CalendarEvent, EventOperation<'a>),
+    /// Periodic Job Scheduler that triggers this use case to perform
+    /// `EventRemindersExpansionJob`s.
     JobScheduler,
 }
 
@@ -30,6 +33,7 @@ pub enum UseCaseErrors {
 async fn create_event_reminders(
     event: &CalendarEvent,
     calendar: &Calendar,
+    priority: i64,
     ctx: &NettuContext,
 ) -> Result<(), UseCaseErrors> {
     let event_reminder_settings = match &event.reminder {
@@ -48,7 +52,6 @@ async fn create_event_reminders(
                 // There are more reminders to generate, store a job to expand them later
                 let job = EventRemindersExpansionJob {
                     id: ObjectId::new().to_string(),
-                    dirty: false,
                     event_id: event.id.to_owned(),
                     timestamp: dates[90].timestamp_millis(),
                 };
@@ -73,6 +76,7 @@ async fn create_event_reminders(
                     account_id: event.account_id.to_owned(),
                     remind_at: d.timestamp_millis() - millis_before,
                     id: ObjectId::new().to_string(),
+                    priority,
                 })
                 .collect()
         }
@@ -81,6 +85,7 @@ async fn create_event_reminders(
             account_id: event.account_id.to_owned(),
             remind_at: event.start_ts - millis_before,
             id: ObjectId::new().to_string(),
+            priority,
         }],
     };
 
@@ -121,10 +126,12 @@ impl<'a> UseCase for SyncEventRemindersUseCase<'a> {
                         "Unable to delete event reminder expansion job for event: {}",
                         calendar_event.id
                     );
+                    return Err(UseCaseErrors::StorageError);
                 }
 
-                // delete existing reminders
+                // Delete existing reminders
                 match op {
+                    // There are no remidners if `CalendarEvent` was just created
                     EventOperation::Created(_) => (),
                     _ => {
                         let delete_result = ctx
@@ -145,7 +152,7 @@ impl<'a> UseCase for SyncEventRemindersUseCase<'a> {
                     EventOperation::Updated(cal) => cal,
                 };
 
-                create_event_reminders(calendar_event, calendar, ctx).await
+                create_event_reminders(calendar_event, calendar, 1, ctx).await
             }
             SyncEventRemindersTrigger::JobScheduler => {
                 let jobs = ctx
@@ -179,7 +186,7 @@ impl<'a> UseCase for SyncEventRemindersUseCase<'a> {
                         Some(cal) => cal,
                         None => continue,
                     };
-                    if create_event_reminders(&event, &calendar, ctx)
+                    if create_event_reminders(&event, &calendar, 0, ctx)
                         .await
                         .is_err()
                     {

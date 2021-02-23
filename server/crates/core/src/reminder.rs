@@ -1,4 +1,4 @@
-use crate::shared::entity::{self, Entity};
+use crate::shared::entity::Entity;
 
 #[derive(Debug, Clone)]
 pub struct Reminder {
@@ -6,6 +6,7 @@ pub struct Reminder {
     pub event_id: String,
     pub account_id: String,
     pub remind_at: i64,
+    pub priority: i64,
 }
 
 impl Entity for Reminder {
@@ -18,7 +19,6 @@ impl Entity for Reminder {
 pub struct EventRemindersExpansionJob {
     pub id: String,
     pub event_id: String,
-    pub dirty: bool,
     pub timestamp: i64,
 }
 

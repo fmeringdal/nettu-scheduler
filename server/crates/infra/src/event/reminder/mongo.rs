@@ -80,6 +80,7 @@ struct ReminderMongo {
     remind_at: i64,
     event_id: String,
     account_id: String,
+    priority: i64,
 }
 
 impl MongoDocument<Reminder> for ReminderMongo {
@@ -89,6 +90,7 @@ impl MongoDocument<Reminder> for ReminderMongo {
             remind_at: self.remind_at,
             event_id: self.event_id.clone(),
             account_id: self.account_id.clone(),
+            priority: self.priority,
         }
     }
 
@@ -98,6 +100,7 @@ impl MongoDocument<Reminder> for ReminderMongo {
             event_id: event.event_id.to_owned(),
             account_id: event.account_id.to_owned(),
             remind_at: event.remind_at,
+            priority: event.priority,
         }
     }
 
