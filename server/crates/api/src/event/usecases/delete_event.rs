@@ -14,7 +14,9 @@ use nettu_scheduler_core::CalendarEvent;
 use nettu_scheduler_infra::NettuContext;
 use serde::Deserialize;
 
-use super::sync_event_reminders::{EventOperation, SyncEventRemindersUseCase};
+use super::sync_event_reminders::{
+    EventOperation, SyncEventRemindersTrigger, SyncEventRemindersUseCase,
+};
 
 #[derive(Deserialize)]
 pub struct PathParams {
@@ -73,8 +75,10 @@ impl UseCase for DeleteEventUseCase {
                 ctx.repos.event_repo.delete(&event.id).await;
 
                 let sync_event_reminders = SyncEventRemindersUseCase {
-                    event: &event,
-                    op: EventOperation::Deleted,
+                    request: SyncEventRemindersTrigger::EventModified(
+                        &event,
+                        EventOperation::Deleted,
+                    ),
                 };
                 // TODO: handl err
                 execute(sync_event_reminders, ctx).await;

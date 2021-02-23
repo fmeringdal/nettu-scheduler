@@ -1,8 +1,8 @@
 mod account;
 mod calendar;
-mod clock;
 mod error;
 mod event;
+mod job_schedulers;
 mod schedule;
 mod service;
 mod shared;
@@ -25,4 +25,4 @@ pub fn configure_server_app(cfg: &mut web::ServiceConfig) {
     cfg.route("/", web::get().to(status));
 }
 
-pub use clock::start_clock;
+pub use job_schedulers::start_clock;

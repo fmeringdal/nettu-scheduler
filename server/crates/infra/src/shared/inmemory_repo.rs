@@ -69,7 +69,7 @@ pub fn find_and_delete_by<T: Clone + Entity, F: Fn(&T) -> bool>(
     let mut collection = collection.lock().unwrap();
     let mut deleted_items = vec![];
 
-    for i in 0..collection.len() {
+    for i in (0..collection.len()).rev() {
         let index = collection.len() - i - 1;
         if compare(&collection[index]) {
             let deleted_item = collection.remove(index);

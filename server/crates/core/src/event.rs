@@ -136,11 +136,7 @@ impl CalendarEvent {
         5609882500905 // Mon Oct 09 2147 06:41:40 GMT+0200 (Central European Summer Time)
     }
 
-    pub fn expand(
-        &self,
-        view: Option<&CalendarView>,
-        calendar_settings: &CalendarSettings,
-    ) -> Vec<EventInstance> {
+    pub fn get_rrule_set(&self, calendar_settings: &CalendarSettings) -> Option<RRuleSet> {
         if self.recurrence.is_some() {
             let rrule_options = match self.get_rrule_options(calendar_settings) {
                 Ok(opts) => opts,
@@ -155,6 +151,24 @@ impl CalendarEvent {
             }
             let rrule = RRule::new(rrule_options);
             rrule_set.rrule(rrule);
+            Some(rrule_set)
+        } else {
+            None
+        }
+    }
+
+    pub fn expand(
+        &self,
+        view: Option<&CalendarView>,
+        calendar_settings: &CalendarSettings,
+    ) -> Vec<EventInstance> {
+        if self.recurrence.is_some() {
+            let rrule_options = match self.get_rrule_options(calendar_settings) {
+                Ok(opts) => opts,
+                Err(_) => return Default::default(),
+            };
+            let tzid = rrule_options.tzid;
+            let mut rrule_set = self.get_rrule_set(calendar_settings).unwrap();
 
             let instances = match view {
                 Some(view) => {

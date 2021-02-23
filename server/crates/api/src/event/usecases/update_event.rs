@@ -14,7 +14,9 @@ use nettu_scheduler_core::{CalendarEvent, RRuleOptions};
 use nettu_scheduler_infra::NettuContext;
 use serde::Deserialize;
 
-use super::sync_event_reminders::{EventOperation, SyncEventRemindersUseCase};
+use super::sync_event_reminders::{
+    EventOperation, SyncEventRemindersTrigger, SyncEventRemindersUseCase,
+};
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -147,8 +149,10 @@ impl UseCase for UpdateEventUseCase {
         }
 
         let sync_event_reminders = SyncEventRemindersUseCase {
-            event: &e,
-            op: EventOperation::Updated(&calendar),
+            request: SyncEventRemindersTrigger::EventModified(
+                &e,
+                EventOperation::Updated(&calendar),
+            ),
         };
 
         // TODO: handl err

@@ -10,7 +10,9 @@ use account::{AccountRepo, IAccountRepo, InMemoryAccountRepo};
 use calendar::{CalendarRepo, ICalendarRepo, InMemoryCalendarRepo};
 use chrono::Utc;
 use event::{
-    EventRepo, IEventRepo, IReminderRepo, InMemoryEventRepo, InMemoryReminderRepo, ReminderRepo,
+    EventRemindersExpansionsJobRepo, EventRepo, IEventRemindersExpansionJobsRepo, IEventRepo,
+    IReminderRepo, InMemoryEventRemindersExpansionJobsRepo, InMemoryEventRepo,
+    InMemoryReminderRepo, ReminderRepo,
 };
 use mongodb::{options::ClientOptions, Client};
 use nettu_scheduler_utils::create_random_secret;
@@ -30,6 +32,7 @@ pub struct Repos {
     pub service_repo: Arc<dyn IServiceRepo>,
     pub schedule_repo: Arc<dyn IScheduleRepo>,
     pub reminder_repo: Arc<dyn IReminderRepo>,
+    pub event_reminders_expansion_jobs_repo: Arc<dyn IEventRemindersExpansionJobsRepo>,
 }
 
 impl Repos {
@@ -60,6 +63,9 @@ impl Repos {
             service_repo: Arc::new(ServiceRepo::new(&db)),
             schedule_repo: Arc::new(ScheduleRepo::new(&db)),
             reminder_repo: Arc::new(ReminderRepo::new(&db)),
+            event_reminders_expansion_jobs_repo: Arc::new(EventRemindersExpansionsJobRepo::new(
+                &db,
+            )),
         })
     }
 
@@ -72,6 +78,9 @@ impl Repos {
             service_repo: Arc::new(InMemoryServiceRepo::new()),
             schedule_repo: Arc::new(InMemoryScheduleRepo::new()),
             reminder_repo: Arc::new(InMemoryReminderRepo::new()),
+            event_reminders_expansion_jobs_repo: Arc::new(
+                InMemoryEventRemindersExpansionJobsRepo::new(),
+            ),
         }
     }
 }

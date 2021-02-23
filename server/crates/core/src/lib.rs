@@ -16,7 +16,7 @@ pub use calendar::{Calendar, CalendarSettings};
 pub use calendar_view::CalendarView;
 pub use event::{CalendarEvent, CalendarEventReminder, RRuleFrequenzy, RRuleOptions};
 pub use event_instance::{get_free_busy, EventInstance};
-pub use reminder::Reminder;
+pub use reminder::{EventRemindersExpansionJob, Reminder};
 pub use schedule::{Schedule, ScheduleRule};
 pub use service::{Service, ServiceResource};
 pub use shared::entity::Entity;

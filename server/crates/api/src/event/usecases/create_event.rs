@@ -1,11 +1,13 @@
-use super::sync_event_reminders::{EventOperation, SyncEventRemindersUseCase};
+use super::sync_event_reminders::{
+    EventOperation, SyncEventRemindersTrigger, SyncEventRemindersUseCase,
+};
 use crate::shared::{
     auth::{protect_route, Permission},
     usecase::{execute, execute_with_policy, PermissionBoundary, UseCase, UseCaseErrorContainer},
 };
 use crate::{error::NettuError, event::dtos::CalendarEventDTO};
 use actix_web::{web, HttpResponse};
-use nettu_scheduler_core::{CalendarEvent, RRuleOptions};
+use nettu_scheduler_core::{CalendarEvent, CalendarEventReminder, RRuleOptions};
 use nettu_scheduler_infra::NettuContext;
 use nettu_scheduler_infra::ObjectId;
 use serde::{Deserialize, Serialize};
@@ -18,6 +20,7 @@ pub struct CreateEventReq {
     duration: i64,
     busy: Option<bool>,
     rrule_options: Option<RRuleOptions>,
+    reminder: Option<CalendarEventReminder>,
 }
 
 pub async fn create_event_controller(
@@ -28,13 +31,14 @@ pub async fn create_event_controller(
     let (user, policy) = protect_route(&http_req, &ctx).await?;
 
     let usecase = CreateEventUseCase {
-        busy: req.busy,
+        busy: req.busy.unwrap_or(false),
         start_ts: req.start_ts,
         duration: req.duration,
         calendar_id: req.calendar_id.clone(),
         rrule_options: req.rrule_options.clone(),
         user_id: user.id.clone(),
         account_id: user.account_id,
+        reminder: req.reminder.clone(),
     };
 
     execute_with_policy(usecase, &policy, &ctx)
@@ -55,14 +59,15 @@ pub async fn create_event_controller(
         })
 }
 
-struct CreateEventUseCase {
-    account_id: String,
-    calendar_id: String,
-    user_id: String,
-    start_ts: i64,
-    duration: i64,
-    busy: Option<bool>,
-    rrule_options: Option<RRuleOptions>,
+pub struct CreateEventUseCase {
+    pub account_id: String,
+    pub calendar_id: String,
+    pub user_id: String,
+    pub start_ts: i64,
+    pub duration: i64,
+    pub busy: bool,
+    pub rrule_options: Option<RRuleOptions>,
+    pub reminder: Option<CalendarEventReminder>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -88,7 +93,7 @@ impl UseCase for CreateEventUseCase {
 
         let mut e = CalendarEvent {
             id: ObjectId::new().to_string(),
-            busy: self.busy.unwrap_or(false),
+            busy: self.busy,
             start_ts: self.start_ts,
             duration: self.duration,
             recurrence: None,
@@ -97,7 +102,7 @@ impl UseCase for CreateEventUseCase {
             calendar_id: calendar.id.clone(),
             user_id: self.user_id.clone(),
             account_id: self.account_id.clone(),
-            reminder: None,
+            reminder: self.reminder.clone(),
         };
         if let Some(rrule_opts) = self.rrule_options.clone() {
             if !e.set_recurrence(rrule_opts, &calendar.settings, true) {
@@ -111,8 +116,10 @@ impl UseCase for CreateEventUseCase {
         }
 
         let sync_event_reminders = SyncEventRemindersUseCase {
-            event: &e,
-            op: EventOperation::Created(&calendar),
+            request: SyncEventRemindersTrigger::EventModified(
+                &e,
+                EventOperation::Created(&calendar),
+            ),
         };
 
         // TODO: handl err
@@ -169,10 +176,11 @@ mod test {
             start_ts: 500,
             duration: 800,
             rrule_options: None,
-            busy: Some(false),
+            busy: false,
             calendar_id: calendar.id.clone(),
             user_id: user.id.clone(),
             account_id: user.account_id,
+            reminder: None,
         };
 
         let res = usecase.execute(&ctx).await;
@@ -193,10 +201,11 @@ mod test {
             start_ts: 500,
             duration: 800,
             rrule_options: Some(Default::default()),
-            busy: Some(false),
+            busy: false,
             calendar_id: calendar.id.clone(),
             user_id: user.id.clone(),
             account_id: user.account_id,
+            reminder: None,
         };
 
         let res = usecase.execute(&ctx).await;
@@ -217,10 +226,11 @@ mod test {
             start_ts: 500,
             duration: 800,
             rrule_options: Some(Default::default()),
-            busy: Some(false),
+            busy: false,
             calendar_id: format!("1{}", calendar.id),
             user_id: user.id.clone(),
             account_id: user.account_id,
+            reminder: None,
         };
 
         let res = usecase.execute(&ctx).await;
@@ -251,10 +261,11 @@ mod test {
                 start_ts: 500,
                 duration: 800,
                 rrule_options: Some(rrule),
-                busy: Some(false),
+                busy: false,
                 calendar_id: calendar.id.clone(),
                 user_id: user.id.clone(),
                 account_id: user.account_id.to_owned(),
+                reminder: None,
             };
 
             let res = usecase.execute(&ctx).await;

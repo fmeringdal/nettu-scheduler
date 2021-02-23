@@ -9,7 +9,7 @@ edition = "2018"
 [dependencies]
 nettu_scheduler_utils = { path = "../utils" }
 serde = { version = "1.0", features = ["derive"] }
-rrule="0.3.8"
+rrule="0.5.3"
 chrono = { version = "0.4.19", features = ["serde"] }
 chrono-tz = "0.5.3"
 anyhow = "1.0.0"

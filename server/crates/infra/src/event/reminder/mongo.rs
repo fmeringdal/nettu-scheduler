@@ -59,9 +59,11 @@ impl IReminderRepo for ReminderRepo {
         docs
     }
 
-    async fn delete_by_event(&self, event_id: &str) -> Result<DeleteResult, Box<dyn Error>> {
+    async fn delete_by_events(&self, event_ids: &[String]) -> Result<DeleteResult, Box<dyn Error>> {
         let filter = doc! {
-            "event_id": event_id
+            "event_id": {
+                "$in": event_ids
+            }
         };
         match self.collection.delete_many(filter, None).await {
             Ok(res) => Ok(DeleteResult {
