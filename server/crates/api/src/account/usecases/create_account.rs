@@ -5,11 +5,18 @@ use crate::{
 use actix_web::{web, HttpResponse};
 use nettu_scheduler_core::Account;
 use nettu_scheduler_infra::NettuContext;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]
 pub struct BodyParams {
     code: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct APIResponse {
+    account: AccountDTO,
+    secret_api_key: String,
 }
 
 pub async fn create_account_controller(
@@ -24,7 +31,10 @@ pub async fn create_account_controller(
     let res = execute(usecase, &ctx).await;
 
     match res {
-        Ok(account) => HttpResponse::Created().json(AccountDTO::new(&account)),
+        Ok(account) => HttpResponse::Created().json(APIResponse {
+            account: AccountDTO::new(&account),
+            secret_api_key: account.secret_api_key,
+        }),
         Err(e) => match e {
             UseCaseErrors::StorageError => HttpResponse::InternalServerError().finish(),
         },

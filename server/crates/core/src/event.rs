@@ -54,6 +54,7 @@ pub struct CalendarEvent {
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct CalendarEventReminder {
     pub minutes_before: i64,
 }

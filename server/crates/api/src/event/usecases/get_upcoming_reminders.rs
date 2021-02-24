@@ -1,19 +1,23 @@
 use crate::shared::usecase::UseCase;
+use actix_web::rt::time::Instant;
 use nettu_scheduler_core::{Account, CalendarEvent, Reminder};
 use nettu_scheduler_infra::NettuContext;
 use std::collections::HashMap;
+use std::time::Duration;
 
 /// Creates EventReminders for a calendar event
 pub struct GetUpcomingRemindersUseCase {}
 
 struct SendEventRemindersConfig {
     send_interval: i64,
+    computation_time: i64,
 }
 
 impl GetUpcomingRemindersUseCase {
     fn get_config() -> SendEventRemindersConfig {
         SendEventRemindersConfig {
-            send_interval: 60 * 1000, // every minute
+            send_interval: 60 * 1000,        // every minute
+            computation_time: 3 * 60 * 1000, // Expect to be able to get all reminders in 3 minutes
         }
     }
 }
@@ -88,10 +92,13 @@ fn dedup_reminders(reminders: &mut Vec<Reminder>) {
     let mut reminders_count = reminders.len();
     let mut index = 0;
     while index < reminders_count {
-        for j in (index + 1..reminders_count).rev() {
+        for j in index + 1..reminders_count {
             if reminders[index].event_id == reminders[j].event_id {
                 reminders.remove(j);
                 reminders_count -= 1;
+                // There will always just be maximum two reminders duplicated
+                // so it is okay to break once the duplicate is found
+                break;
             }
         }
 
@@ -99,9 +106,36 @@ fn dedup_reminders(reminders: &mut Vec<Reminder>) {
     }
 }
 
+// Detects if there have been generated reminders with higher priority in the reminder repo and deletes
+// the old one if that is the case
+async fn remove_old_reminders(reminders: &mut Vec<Reminder>, ctx: &NettuContext) {
+    // Priority 0 reminders
+    let reminders_p0 = reminders
+        .iter()
+        .filter(|r| r.priority == 0)
+        .collect::<Vec<_>>();
+
+    let mut event_ids_to_remove = HashMap::new();
+
+    for i in (0..reminders_p0.len()).rev() {
+        let reminder = reminders_p0[i];
+        if ctx
+            .repos
+            .reminder_repo
+            .find_by_event_and_priority(&reminder.event_id, 1)
+            .await
+            .is_some()
+        {
+            event_ids_to_remove.insert(reminder.event_id.clone(), ());
+        }
+    }
+
+    reminders.retain(|r| !event_ids_to_remove.contains_key(&r.event_id));
+}
+
 #[async_trait::async_trait(?Send)]
 impl UseCase for GetUpcomingRemindersUseCase {
-    type Response = Vec<(Account, AccountEventReminders)>;
+    type Response = (Vec<(Account, AccountEventReminders)>, Instant);
 
     type Errors = UseCaseErrors;
 
@@ -110,9 +144,13 @@ impl UseCase for GetUpcomingRemindersUseCase {
     /// This will run every minute
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         // Find all occurences for the next interval and delete them
-        let ts = ctx.sys.get_timestamp_millis() + Self::get_config().send_interval;
+        let conf = Self::get_config();
+        let ts = ctx.sys.get_timestamp_millis() + conf.send_interval + conf.computation_time;
+
+        // Get all reminders and filter out invalid / expired reminders
         let mut reminders = ctx.repos.reminder_repo.delete_all_before(ts).await;
         dedup_reminders(&mut reminders);
+        remove_old_reminders(&mut reminders, ctx).await;
 
         let event_lookup = ctx
             .repos
@@ -131,7 +169,14 @@ impl UseCase for GetUpcomingRemindersUseCase {
 
         let grouped_reminders = create_reminders_for_accounts(reminders, event_lookup, ctx).await;
 
-        Ok(grouped_reminders)
+        let millis_to_send = ts - ctx.sys.get_timestamp_millis();
+        let instant = if millis_to_send > 0 {
+            Instant::now() + Duration::from_millis(millis_to_send as u64)
+        } else {
+            println!("Important: Increase computation time for get reminders usecase");
+            Instant::now()
+        };
+        Ok((grouped_reminders, instant))
     }
 }
 
@@ -169,6 +214,40 @@ mod tests {
 
         let mut reminders = vec![reminder_factory("1", 0), reminder_factory("1", 1)];
         dedup_reminders(&mut reminders);
+        assert_eq!(reminders.len(), 1);
+    }
+
+    #[actix_web::main]
+    #[test]
+    async fn removes_old_priorites() {
+        let ctx = setup_context().await;
+
+        let event_id = "1";
+        let reminder_p1 = reminder_factory(event_id, 1);
+        ctx.repos
+            .reminder_repo
+            .bulk_insert(&[reminder_p1])
+            .await
+            .unwrap();
+
+        let reminder_p0 = reminder_factory(event_id, 0);
+        let mut reminders = vec![reminder_p0];
+        remove_old_reminders(&mut reminders, &ctx).await;
+        assert_eq!(reminders.len(), 0);
+
+        let ctx = setup_context().await;
+
+        let event_id = "1";
+        let reminder_p0 = reminder_factory(event_id, 0);
+        ctx.repos
+            .reminder_repo
+            .bulk_insert(&[reminder_p0])
+            .await
+            .unwrap();
+
+        let reminder_p1 = reminder_factory(event_id, 1);
+        let mut reminders = vec![reminder_p1];
+        remove_old_reminders(&mut reminders, &ctx).await;
         assert_eq!(reminders.len(), 1);
     }
 
@@ -250,7 +329,7 @@ mod tests {
         let res = usecase.execute(&ctx).await;
         println!("1. Reminders got: {:?}", res);
         assert!(res.is_ok());
-        let res = res.unwrap();
+        let res = res.unwrap().0;
         assert_eq!(res.len(), 1);
         assert_eq!(res[0].1.events.len(), 1);
 
@@ -259,7 +338,7 @@ mod tests {
         let res = usecase.execute(&ctx).await;
         println!("2. Reminders got: {:?}", res);
         assert!(res.is_ok());
-        let res = res.unwrap();
+        let res = res.unwrap().0;
         assert_eq!(res.len(), 0);
 
         ctx.sys = Arc::new(StaticTimeSys3 {});
@@ -267,14 +346,14 @@ mod tests {
         let res = usecase.execute(&ctx).await;
         println!("3. Reminders got: {:?}", res);
         assert!(res.is_ok());
-        let res = res.unwrap();
+        let res = res.unwrap().0;
         assert_eq!(res.len(), 1);
         assert_eq!(res[0].1.events.len(), 2);
 
         let res = usecase.execute(&ctx).await;
         println!("4. Reminders got: {:?}", res);
         assert!(res.is_ok());
-        let res = res.unwrap();
+        let res = res.unwrap().0;
         assert_eq!(res.len(), 0);
     }
 }

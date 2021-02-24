@@ -1,3 +1,4 @@
 target/
 cobertura.xml
 node_modules/
+playground/

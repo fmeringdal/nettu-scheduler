@@ -1,6 +1,6 @@
 use super::super::IReminderRepo;
-use crate::shared::mongo_repo;
 use crate::shared::repo::DeleteResult;
+use crate::shared::{inmemory_repo::find, mongo_repo};
 use mongo_repo::MongoDocument;
 use mongodb::{
     bson::doc,
@@ -32,20 +32,40 @@ impl IReminderRepo for ReminderRepo {
         }
     }
 
-    async fn find_all_before(&self, before_inc: i64) -> Vec<Reminder> {
+    async fn find_by_event_and_priority(&self, event_id: &str, priority: i64) -> Option<Reminder> {
+        let filter = doc! {
+            "event_id": event_id,
+            "priority": priority,
+        };
+
+        mongo_repo::find_one_by::<_, ReminderMongo>(&self.collection, filter.clone()).await
+    }
+
+    async fn delete_all_before(&self, before_inc: i64) -> Vec<Reminder> {
         let filter = doc! {
             "remind_at": {
                 "$lte": before_inc
             }
         };
 
-        match mongo_repo::find_many_by::<_, ReminderMongo>(&self.collection, filter.clone()).await {
-            Ok(docs) => docs,
-            Err(err) => {
-                println!("Error: {:?}", err);
-                return vec![];
-            }
+        // Find before deleting
+        let docs =
+            match mongo_repo::find_many_by::<_, ReminderMongo>(&self.collection, filter.clone())
+                .await
+            {
+                Ok(docs) => docs,
+                Err(err) => {
+                    println!("Error: {:?}", err);
+                    return vec![];
+                }
+            };
+
+        // Now delete
+        if let Err(err) = self.collection.delete_many(filter, None).await {
+            println!("Error: {:?}", err);
         }
+
+        docs
     }
 
     async fn delete_by_events(&self, event_ids: &[String]) -> Result<DeleteResult, Box<dyn Error>> {
