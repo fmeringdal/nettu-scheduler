@@ -2,6 +2,7 @@ use crate::shared::entity::Entity;
 use mongodb::bson::oid::ObjectId;
 use serde::Serialize;
 
+/// A bookable `User` registered on a `Service`
 #[derive(Clone, Debug, Serialize)]
 pub struct ServiceResource {
     pub id: String,

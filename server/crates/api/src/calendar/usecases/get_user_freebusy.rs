@@ -3,7 +3,7 @@ use crate::shared::auth::ensure_nettu_acct_header;
 use crate::shared::usecase::{execute, UseCase};
 use actix_web::{web, HttpRequest, HttpResponse};
 use futures::future::join_all;
-use nettu_scheduler_core::{get_free_busy, CalendarView, EventInstance, User};
+use nettu_scheduler_core::{get_free_busy, CalendarView, EventInstance, FreeBusy, User};
 use nettu_scheduler_infra::NettuContext;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, print};
@@ -70,6 +70,7 @@ pub struct GetUserFreeBusyUseCase {
 #[serde(rename_all = "camelCase")]
 pub struct GetUserFreeBusyResponse {
     pub free: Vec<EventInstance>,
+    pub busy: Vec<EventInstance>,
     pub user_id: String,
 }
 
@@ -100,10 +101,11 @@ impl UseCase for GetUserFreeBusyUseCase {
         .flatten()
         .collect::<Vec<_>>();
 
-        let freebusy = get_free_busy(&mut all_event_instances);
+        let FreeBusy { free, busy } = get_free_busy(&mut all_event_instances);
 
         Ok(GetUserFreeBusyResponse {
-            free: freebusy,
+            free,
+            busy,
             user_id: self.user_id.to_owned(),
         })
     }
@@ -169,7 +171,6 @@ impl GetUserFreeBusyUseCase {
             _ => return vec![],
         };
 
-        // can probably make query to event repo instead
         let mut schedules = ctx.repos.schedule_repo.find_by_user(&self.user_id).await;
         if !schedule_ids.is_empty() {
             schedules = schedules

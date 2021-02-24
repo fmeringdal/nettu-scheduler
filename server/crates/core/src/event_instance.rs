@@ -72,7 +72,7 @@ impl EventInstance {
     }
 }
 
-fn sort_and_merge_instances(instances: &mut Vec<&mut EventInstance>) -> Vec<EventInstance> {
+pub fn sort_and_merge_instances(instances: &mut Vec<&EventInstance>) -> Vec<EventInstance> {
     // sort with least start_ts first
     instances.sort_by(|i1, i2| i1.start_ts.cmp(&i2.start_ts));
 
@@ -94,7 +94,7 @@ fn sort_and_merge_instances(instances: &mut Vec<&mut EventInstance>) -> Vec<Even
     sorted
 }
 
-fn remove_busy_from_free_instance(
+pub fn remove_busy_from_free_instance(
     free_instance: &EventInstance,
     busy_instances: &[EventInstance],
 ) -> Vec<EventInstance> {
@@ -137,7 +137,7 @@ fn remove_busy_from_free_instance(
     free_instances_without_conflict
 }
 
-fn remove_busy_from_free(
+pub fn remove_busy_from_free(
     free_instances: &Vec<EventInstance>,
     busy_instances: &[EventInstance],
 ) -> Vec<EventInstance> {
@@ -148,12 +148,13 @@ fn remove_busy_from_free(
         .collect()
 }
 
-// TODO: should be able to just pass in free and busy instances as params
-pub fn get_free_busy(instances: &mut Vec<EventInstance>) -> Vec<EventInstance> {
+pub fn seperate_free_busy_events(
+    instances: &Vec<EventInstance>,
+) -> (Vec<&EventInstance>, Vec<&EventInstance>) {
     let mut free_instances = vec![];
     let mut busy_instances = vec![];
 
-    for instance in instances.iter_mut() {
+    for instance in instances {
         if instance.busy {
             busy_instances.push(instance);
         } else {
@@ -161,10 +162,26 @@ pub fn get_free_busy(instances: &mut Vec<EventInstance>) -> Vec<EventInstance> {
         }
     }
 
+    (free_instances, busy_instances)
+}
+
+pub struct FreeBusy {
+    pub free: Vec<EventInstance>,
+    pub busy: Vec<EventInstance>,
+}
+
+pub fn get_free_busy(instances: &mut Vec<EventInstance>) -> FreeBusy {
+    let (mut free_instances, mut busy_instances) = seperate_free_busy_events(instances);
+
     let free_instances = sort_and_merge_instances(&mut free_instances);
     let busy_instances = sort_and_merge_instances(&mut busy_instances);
 
-    remove_busy_from_free(&free_instances, &busy_instances)
+    let free = remove_busy_from_free(&free_instances, &busy_instances);
+
+    FreeBusy {
+        free,
+        busy: busy_instances,
+    }
 }
 
 #[cfg(test)]
@@ -638,8 +655,8 @@ mod test {
 
         let mut instances = vec![e1.clone()];
         let freebusy = get_free_busy(&mut instances);
-        assert_eq!(freebusy.len(), 1);
-        assert_eq!(freebusy, vec![e1]);
+        assert_eq!(freebusy.free.len(), 1);
+        assert_eq!(freebusy.free, vec![e1]);
     }
 
     #[test]
@@ -651,7 +668,7 @@ mod test {
         };
 
         let mut instances = vec![e1];
-        let freebusy = get_free_busy(&mut instances);
+        let freebusy = get_free_busy(&mut instances).free;
         assert_eq!(freebusy.len(), 0);
     }
 
@@ -670,7 +687,7 @@ mod test {
         };
 
         let mut instances = vec![e1, e2];
-        let freebusy = get_free_busy(&mut instances);
+        let freebusy = get_free_busy(&mut instances).free;
         assert_eq!(freebusy.len(), 2);
         assert_eq!(
             freebusy,

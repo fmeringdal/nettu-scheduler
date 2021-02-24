@@ -2,14 +2,15 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 
 ## Todos
 
-- get account reminders test and setup clock services ? 
+- Freebusy queries
+- More admin and user controllers for different usecases
+- Logging
 - Delete user cleanup actions
 
 ## Backlog
 
-- more admin and user controllers for different usecases
-- logging
 - More api tests for [calendarevent, booking]
+- More tests and docs for Reminders
 - smarter mongodb schema
 
 ## Need to have a data model that will support google and outlook calendars in the future
