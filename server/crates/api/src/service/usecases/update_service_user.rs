@@ -6,7 +6,7 @@ use crate::{
     },
 };
 use actix_web::{web, HttpRequest, HttpResponse};
-use nettu_scheduler_core::{Account, Service, User};
+use nettu_scheduler_core::{Account, Plan, Service, User};
 use nettu_scheduler_infra::NettuContext;
 use serde::Deserialize;
 
@@ -19,7 +19,9 @@ pub struct PathParams {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BodyParams {
-    calendar_ids: Vec<String>,
+    availibility: Plan,
+    busy: Vec<String>,
+    buffer: usize,
 }
 
 pub async fn update_service_user_controller(
@@ -33,9 +35,11 @@ pub async fn update_service_user_controller(
     let user_id = User::create_id(&account.id, &path_params.user_id);
     let usecase = UpdateServiceUserUseCase {
         account,
-        calendar_ids: body.calendar_ids.to_owned(),
         service_id: path_params.service_id.to_owned(),
         user_id,
+        availibility: body.availibility.to_owned(),
+        busy: body.busy.to_owned(),
+        buffer: body.buffer,
     };
 
     execute(usecase, &ctx).await
@@ -47,6 +51,15 @@ pub async fn update_service_user_controller(
             }
             UseCaseErrors::UserNotFoundError => {
                 NettuError::NotFound("The specified user was not found".into())
+            }
+            UseCaseErrors::InvalidBuffer => {
+                NettuError::BadClientData("The provided buffer was invalid, it should be netween 0 and 12 hours specified in minutes.".into())
+            }
+            UseCaseErrors::ScheduleNotOwnedByUser(schedule_id) => {
+                NettuError::NotFound(format!(
+                    "The schedule with id: {}, was not found among the schedules for the specified user",
+                    schedule_id
+                ))
             }
             UseCaseErrors::CalendarNotOwnedByUser(calendar_id) => {
                 NettuError::NotFound(format!(
@@ -61,7 +74,9 @@ struct UpdateServiceUserUseCase {
     pub account: Account,
     pub service_id: String,
     pub user_id: String,
-    pub calendar_ids: Vec<String>,
+    pub availibility: Plan,
+    pub busy: Vec<String>,
+    pub buffer: usize,
 }
 
 struct UseCaseRes {
@@ -74,6 +89,8 @@ enum UseCaseErrors {
     ServiceNotFoundError,
     UserNotFoundError,
     CalendarNotOwnedByUser(String),
+    ScheduleNotOwnedByUser(String),
+    InvalidBuffer,
 }
 
 #[async_trait::async_trait(?Send)]
@@ -104,13 +121,33 @@ impl UseCase for UpdateServiceUserUseCase {
             .map(|cal| cal.id)
             .collect::<Vec<_>>();
 
-        for calendar_id in &self.calendar_ids {
+        for calendar_id in &self.busy {
             if !user_calendars.contains(calendar_id) {
                 return Err(UseCaseErrors::CalendarNotOwnedByUser(calendar_id.clone()));
             }
         }
+        match &self.availibility {
+            Plan::Calendar(id) => {
+                if !user_calendars.contains(id) {
+                    return Err(UseCaseErrors::CalendarNotOwnedByUser(id.clone()));
+                }
+            }
+            Plan::Schedule(id) => {
+                let schedule = ctx.repos.schedule_repo.find(id).await;
+                match schedule {
+                    Some(schedule) if schedule.user_id == self.user_id => {}
+                    _ => return Err(UseCaseErrors::ScheduleNotOwnedByUser(id.clone())),
+                }
+            }
+            _ => (),
+        };
 
-        user_resource.set_calendar_ids(&self.calendar_ids);
+        if !user_resource.set_buffer(self.buffer) {
+            return Err(UseCaseErrors::InvalidBuffer);
+        }
+
+        user_resource.set_availibility(self.availibility.clone());
+        user_resource.set_busy(self.busy.clone());
 
         let res = ctx.repos.service_repo.save(&service).await;
         match res {

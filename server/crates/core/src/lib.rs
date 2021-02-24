@@ -18,6 +18,6 @@ pub use event::{CalendarEvent, CalendarEventReminder, RRuleFrequenzy, RRuleOptio
 pub use event_instance::{get_free_busy, EventInstance, FreeBusy};
 pub use reminder::{EventRemindersExpansionJob, Reminder};
 pub use schedule::{Schedule, ScheduleRule};
-pub use service::{Service, ServiceResource};
+pub use service::{Plan, Service, ServiceResource};
 pub use shared::entity::Entity;
 pub use user::User;

@@ -4,7 +4,7 @@ use crate::shared::{
     usecase::{execute, UseCase},
 };
 use actix_web::{web, HttpRequest, HttpResponse};
-use nettu_scheduler_core::{Account, Service, ServiceResource, User};
+use nettu_scheduler_core::{Account, Plan, Service, ServiceResource, User};
 use nettu_scheduler_infra::NettuContext;
 use serde::Deserialize;
 
@@ -17,8 +17,9 @@ pub struct PathParams {
 #[serde(rename_all = "camelCase")]
 pub struct BodyParams {
     user_id: String,
-    calendar_ids: Option<Vec<String>>,
-    schedule_ids: Option<Vec<String>>,
+    availibility: Plan,
+    busy: Vec<String>,
+    buffer: usize,
 }
 
 pub async fn add_user_to_service_controller(
@@ -32,10 +33,11 @@ pub async fn add_user_to_service_controller(
     let user_id = User::create_id(&account.id, &body.user_id);
     let usecase = AddUserToServiceUseCase {
         account,
-        calendar_ids: body.calendar_ids.to_owned(),
-        schedule_ids: body.schedule_ids.to_owned(),
         service_id: path_params.service_id.to_owned(),
         user_id,
+        availibility: body.availibility.to_owned(),
+        busy: body.busy.to_owned(),
+        buffer: body.buffer,
     };
 
     execute(usecase, &ctx).await
@@ -44,7 +46,16 @@ pub async fn add_user_to_service_controller(
             UseCaseErrors::StorageError => NettuError::InternalError,
             UseCaseErrors::ServiceNotFoundError => NettuError::NotFound("The requested service was not found".into()),
             UseCaseErrors::UserNotFoundError => NettuError::NotFound("The specified user was not found".into()),
+            UseCaseErrors::InvalidBuffer => {
+                NettuError::BadClientData("The provided buffer was invalid, it should be netween 0 and 12 hours specified in minutes.".into())
+            }
             UseCaseErrors::CalendarNotOwnedByUser(calendar_id) => NettuError::NotFound(format!("The calendar: {}, was not found among the calendars for the specified user", calendar_id)),
+            UseCaseErrors::ScheduleNotOwnedByUser(schedule_id) => {
+                NettuError::NotFound(format!(
+                    "The schedule with id: {}, was not found among the schedules for the specified user",
+                    schedule_id
+                ))
+            }
             UseCaseErrors::UserAlreadyInService => NettuError::Conflict("The specified user is already registered on the service, can not add the user more than once.".into()),
         })
 }
@@ -53,8 +64,9 @@ struct AddUserToServiceUseCase {
     pub account: Account,
     pub service_id: String,
     pub user_id: String,
-    calendar_ids: Option<Vec<String>>,
-    schedule_ids: Option<Vec<String>>,
+    pub availibility: Plan,
+    pub busy: Vec<String>,
+    pub buffer: usize,
 }
 
 struct UseCaseRes {
@@ -67,7 +79,9 @@ enum UseCaseErrors {
     ServiceNotFoundError,
     UserNotFoundError,
     UserAlreadyInService,
+    InvalidBuffer,
     CalendarNotOwnedByUser(String),
+    ScheduleNotOwnedByUser(String),
 }
 
 #[async_trait::async_trait(?Send)]
@@ -93,51 +107,42 @@ impl UseCase for AddUserToServiceUseCase {
             return Err(UseCaseErrors::UserAlreadyInService);
         }
 
-        let calendar_ids = match &self.calendar_ids {
-            Some(calendar_ids) => {
-                let user_calendars = ctx
-                    .repos
-                    .calendar_repo
-                    .find_by_user(&self.user_id)
-                    .await
-                    .into_iter()
-                    .map(|cal| cal.id)
-                    .collect::<Vec<_>>();
-                for calendar_id in calendar_ids {
-                    if !user_calendars.contains(calendar_id) {
-                        return Err(UseCaseErrors::CalendarNotOwnedByUser(calendar_id.clone()));
-                    }
-                }
-                Some(calendar_ids)
+        let user_calendars = ctx
+            .repos
+            .calendar_repo
+            .find_by_user(&self.user_id)
+            .await
+            .into_iter()
+            .map(|cal| cal.id)
+            .collect::<Vec<_>>();
+
+        for calendar_id in &self.busy {
+            if !user_calendars.contains(calendar_id) {
+                return Err(UseCaseErrors::CalendarNotOwnedByUser(calendar_id.clone()));
             }
-            None => None,
+        }
+        match &self.availibility {
+            Plan::Calendar(id) => {
+                if !user_calendars.contains(id) {
+                    return Err(UseCaseErrors::CalendarNotOwnedByUser(id.clone()));
+                }
+            }
+            Plan::Schedule(id) => {
+                let schedule = ctx.repos.schedule_repo.find(id).await;
+                match schedule {
+                    Some(schedule) if schedule.user_id == self.user_id => {}
+                    _ => return Err(UseCaseErrors::ScheduleNotOwnedByUser(id.clone())),
+                }
+            }
+            _ => (),
         };
 
-        let schedule_ids = match &self.schedule_ids {
-            Some(schedule_ids) => {
-                let user_schedules = ctx
-                    .repos
-                    .schedule_repo
-                    .find_by_user(&self.user_id)
-                    .await
-                    .into_iter()
-                    .map(|schedule| schedule.id)
-                    .collect::<Vec<_>>();
-                for schedule_id in schedule_ids {
-                    if !user_schedules.contains(schedule_id) {
-                        return Err(UseCaseErrors::CalendarNotOwnedByUser(schedule_id.clone()));
-                    }
-                }
-                Some(schedule_ids)
-            }
-            None => None,
-        };
+        let mut user_resource =
+            ServiceResource::new(&self.user_id, self.availibility.clone(), self.busy.clone());
+        if !user_resource.set_buffer(self.buffer) {
+            return Err(UseCaseErrors::InvalidBuffer);
+        }
 
-        let user_resource = ServiceResource::new(
-            &self.user_id,
-            &calendar_ids.unwrap_or(&vec![]),
-            &schedule_ids.unwrap_or(&vec![]),
-        );
         service.add_user(user_resource);
 
         let res = ctx.repos.service_repo.save(&service).await;

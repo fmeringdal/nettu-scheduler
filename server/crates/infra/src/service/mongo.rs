@@ -1,11 +1,11 @@
 use super::IServiceRepo;
-use crate::shared::mongo_repo;
+use crate::{schedule, shared::mongo_repo};
 use mongo_repo::MongoDocument;
 use mongodb::{
     bson::{doc, oid::ObjectId, Document},
     Collection, Database,
 };
-use nettu_scheduler_core::{Service, ServiceResource};
+use nettu_scheduler_core::{Plan, Service, ServiceResource};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 
@@ -94,8 +94,9 @@ impl IServiceRepo for ServiceRepo {
 struct ServiceResourceMongo {
     pub _id: ObjectId,
     pub user_id: String,
-    pub calendar_ids: Vec<String>,
-    pub schedule_ids: Vec<String>,
+    pub availibility: Plan,
+    pub busy: Vec<String>,
+    pub buffer: i64,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -123,8 +124,9 @@ impl MongoDocument<Service> for ServiceMongo {
                 .map(|user| ServiceResource {
                     id: user._id.to_string(),
                     user_id: user.user_id.clone(),
-                    calendar_ids: user.calendar_ids.clone(),
-                    schedule_ids: user.schedule_ids.clone(),
+                    availibility: user.availibility.clone(),
+                    busy: user.busy.clone(),
+                    buffer: user.buffer as usize,
                 })
                 .collect(),
         }
@@ -140,8 +142,9 @@ impl MongoDocument<Service> for ServiceMongo {
                 .map(|user| ServiceResourceMongo {
                     _id: ObjectId::with_string(&user.id).unwrap(),
                     user_id: user.user_id.clone(),
-                    calendar_ids: user.calendar_ids.clone(),
-                    schedule_ids: user.schedule_ids.clone(),
+                    availibility: user.availibility.clone(),
+                    busy: user.busy.clone(),
+                    buffer: user.buffer as i64,
                 })
                 .collect(),
             attributes: vec![
@@ -150,7 +153,7 @@ impl MongoDocument<Service> for ServiceMongo {
                     value: service
                         .users
                         .iter()
-                        .map(|u| u.calendar_ids.clone())
+                        .map(|u| u.get_calendar_ids())
                         .flatten()
                         .collect(),
                 },
@@ -159,8 +162,9 @@ impl MongoDocument<Service> for ServiceMongo {
                     value: service
                         .users
                         .iter()
-                        .map(|u| u.schedule_ids.clone())
-                        .flatten()
+                        .map(|u| u.get_schedule_id())
+                        .filter(|schedule| schedule.is_some())
+                        .map(|schedule| schedule.unwrap())
                         .collect(),
                 },
             ],
