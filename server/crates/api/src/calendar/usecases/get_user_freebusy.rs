@@ -3,7 +3,9 @@ use crate::shared::auth::ensure_nettu_acct_header;
 use crate::shared::usecase::{execute, UseCase};
 use actix_web::{web, HttpRequest, HttpResponse};
 use futures::future::join_all;
-use nettu_scheduler_core::{get_free_busy, CalendarView, EventInstance, FreeBusy, User};
+use nettu_scheduler_core::{
+    get_free_busy, sort_and_merge_instances, CalendarView, EventInstance, FreeBusy, User,
+};
 use nettu_scheduler_infra::NettuContext;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, print};
@@ -69,7 +71,6 @@ pub struct GetUserFreeBusyUseCase {
 #[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct GetUserFreeBusyResponse {
-    pub free: Vec<EventInstance>,
     pub busy: Vec<EventInstance>,
     pub user_id: String,
 }
@@ -93,18 +94,18 @@ impl UseCase for GetUserFreeBusyUseCase {
             Err(_) => return Err(GetUserFreeBusyErrors::InvalidTimespanError),
         };
 
-        let mut all_event_instances = vec![
+        let busy_event_instances = vec![
             self.get_event_instances_from_calendars(&view, ctx).await,
             self.get_event_instances_from_schedules(&view, ctx).await,
         ]
         .into_iter()
         .flatten()
+        .filter(|e| e.busy)
         .collect::<Vec<_>>();
 
-        let FreeBusy { free, busy } = get_free_busy(&mut all_event_instances);
+        let busy = sort_and_merge_instances(&mut busy_event_instances.iter().map(|e| e).collect());
 
         Ok(GetUserFreeBusyResponse {
-            free,
             busy,
             user_id: self.user_id.to_owned(),
         })
@@ -207,7 +208,7 @@ mod test {
             calendar_id: calendar.id.clone(),
             user_id: user.id.clone(),
             account_id: user.account_id.clone(),
-            busy: false,
+            busy: true,
             duration: one_hour,
             end_ts: CalendarEvent::get_max_timestamp(),
             exdates: vec![],
@@ -231,7 +232,7 @@ mod test {
             calendar_id: calendar.id.clone(),
             user_id: user.id.clone(),
             account_id: user.account_id.clone(),
-            busy: false,
+            busy: true,
             duration: one_hour,
             end_ts: CalendarEvent::get_max_timestamp(),
             exdates: vec![],
@@ -255,7 +256,7 @@ mod test {
             calendar_id: calendar.id.clone(),
             user_id: user.id.clone(),
             account_id: user.account_id.clone(),
-            busy: false,
+            busy: true,
             duration: one_hour,
             end_ts: one_hour,
             exdates: vec![],
@@ -289,12 +290,12 @@ mod test {
 
         let res = usecase.execute(&ctx).await;
         assert!(res.is_ok());
-        let instances = res.unwrap().free;
+        let instances = res.unwrap().busy;
         assert_eq!(instances.len(), 2);
         assert_eq!(
             instances[0],
             EventInstance {
-                busy: false,
+                busy: true,
                 start_ts: 86400000,
                 end_ts: 90000000,
             }
@@ -302,7 +303,7 @@ mod test {
         assert_eq!(
             instances[1],
             EventInstance {
-                busy: false,
+                busy: true,
                 start_ts: 100800000,
                 end_ts: 104400000,
             }
