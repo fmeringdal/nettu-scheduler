@@ -5,11 +5,14 @@ use crate::{
     shared::auth::{ensure_nettu_acct_header, protect_account_route},
 };
 use actix_web::{web, HttpRequest, HttpResponse};
-use futures::future::join_all;
-use nettu_scheduler_core::booking_slots::{
-    get_service_bookingslots, validate_bookingslots_query, validate_slots_interval,
-    BookingQueryError, BookingSlotsOptions, BookingSlotsQuery, ServiceBookingSlot,
-    ServiceBookingSlotDTO, UserFreeEvents,
+use futures::{future::join_all, Future};
+use nettu_scheduler_core::{
+    booking_slots::{
+        get_service_bookingslots, validate_bookingslots_query, validate_slots_interval,
+        BookingQueryError, BookingSlotsOptions, BookingSlotsQuery, ServiceBookingSlot,
+        ServiceBookingSlotDTO, UserFreeEvents,
+    },
+    get_free_busy, CalendarEvent, CalendarView, EventInstance, Plan, ServiceResource,
 };
 use nettu_scheduler_infra::NettuContext;
 use serde::{Deserialize, Serialize};
@@ -148,39 +151,20 @@ impl UseCase for GetServiceBookingSlotsUseCase {
             None => return Err(UseCaseErrors::ServiceNotFoundError),
         };
 
-        let mut users_freebusy: Vec<UserFreeEvents> = Vec::with_capacity(service.users.len());
+        let mut usecase_futures: Vec<_> = Vec::with_capacity(service.users.len());
 
-        let mut usecase_futures = vec![];
+        let view =
+            CalendarView::create(booking_timespan.start_ts, booking_timespan.end_ts).unwrap();
 
         for user in &service.users {
-            let usecase = GetUserFreeBusyUseCase {
-                calendar_ids: Some(user.calendar_ids.clone()),
-                schedule_ids: Some(user.schedule_ids.clone()),
-                end_ts: booking_timespan.end_ts,
-                start_ts: booking_timespan.start_ts,
-                user_id: user.user_id.clone(),
-            };
-
-            usecase_futures.push(execute(usecase, &ctx));
+            let view = view.clone();
+            usecase_futures.push(self.get_user_freebusy(user, view, ctx));
         }
 
         let users_free_events = join_all(usecase_futures).await;
-        for user_free_events in users_free_events {
-            match user_free_events {
-                Ok(free_events) => {
-                    users_freebusy.push(UserFreeEvents {
-                        free_events: free_events.free,
-                        user_id: free_events.user_id,
-                    });
-                }
-                Err(e) => {
-                    println!("Error getting user freebusy: {:?}", e);
-                }
-            }
-        }
 
         let booking_slots = get_service_bookingslots(
-            users_freebusy,
+            users_free_events,
             &BookingSlotsOptions {
                 interval: self.interval,
                 duration: self.duration,
@@ -190,6 +174,93 @@ impl UseCase for GetServiceBookingSlotsUseCase {
         );
 
         Ok(UseCaseRes { booking_slots })
+    }
+}
+
+impl GetServiceBookingSlotsUseCase {
+    async fn get_user_freebusy(
+        &self,
+        user: &ServiceResource,
+        view: CalendarView,
+        ctx: &NettuContext,
+    ) -> UserFreeEvents {
+        let user_calendars = ctx.repos.calendar_repo.find_by_user(&user.user_id).await;
+        let mut free_events = match &user.availibility {
+            Plan::Calendar(id) => {
+                let calendar = match user_calendars.iter().find(|cal| cal.id == *id) {
+                    Some(cal) => cal,
+                    None => {
+                        return UserFreeEvents {
+                            free_events: vec![],
+                            user_id: user.id.clone(),
+                        }
+                    }
+                };
+                let all_calendar_events = ctx
+                    .repos
+                    .event_repo
+                    .find_by_calendar(&id, Some(&view))
+                    .await
+                    .unwrap_or(vec![]);
+
+                let mut all_event_instances = all_calendar_events
+                    .iter()
+                    .map(|e| e.expand(Some(&view), &calendar.settings))
+                    .flatten()
+                    .collect::<Vec<_>>();
+                let free_events = get_free_busy(&mut all_event_instances);
+
+                free_events.free
+            }
+            Plan::Schedule(id) => match ctx.repos.schedule_repo.find(&id).await {
+                Some(schedule) if schedule.user_id == user.id => schedule.freebusy(&view),
+                _ => {
+                    return UserFreeEvents {
+                        free_events: vec![],
+                        user_id: user.id.clone(),
+                    }
+                }
+            },
+            Plan::Empty => {
+                return UserFreeEvents {
+                    free_events: vec![],
+                    user_id: user.id.clone(),
+                }
+            }
+        };
+
+        let mut busy_events: Vec<EventInstance> = vec![];
+        for cal in &user_calendars {
+            if !user.busy.contains(&cal.id) {
+                match ctx
+                    .repos
+                    .event_repo
+                    .find_by_calendar(&cal.id, Some(&view))
+                    .await
+                {
+                    Ok(calendar_events) => {
+                        let mut calendar_busy_events = calendar_events
+                            .into_iter()
+                            .filter(|e| e.busy)
+                            .map(|e| e.expand(Some(&view), &cal.settings))
+                            .flatten()
+                            .collect::<Vec<_>>();
+
+                        busy_events.append(&mut calendar_busy_events);
+                    }
+                    Err(_) => {}
+                }
+            }
+        }
+
+        let mut all_events = Vec::with_capacity(free_events.len() + busy_events.len());
+        all_events.append(&mut free_events);
+        free_events.append(&mut busy_events);
+
+        UserFreeEvents {
+            free_events: get_free_busy(&mut all_events).free,
+            user_id: user.id.clone(),
+        }
     }
 }
 
@@ -217,22 +288,24 @@ mod test {
 
     async fn setup_service_users(ctx: &NettuContext, service: &mut Service) {
         let mut resource1 = ServiceResource {
-            calendar_ids: vec![],
-            schedule_ids: vec![],
             id: "1".into(),
             user_id: "1".into(),
+            buffer: 0,
+            availibility: Plan::Empty,
+            busy: vec![],
         };
         let mut resource2 = ServiceResource {
-            calendar_ids: vec![],
-            schedule_ids: vec![],
             id: "2".into(),
             user_id: "2".into(),
+            buffer: 0,
+            availibility: Plan::Empty,
+            busy: vec![],
         };
 
         let calendar_user_1 = Calendar::new(&resource1.user_id);
-        resource1.calendar_ids.push(calendar_user_1.id.clone());
+        resource1.availibility = Plan::Calendar(calendar_user_1.id.clone());
         let calendar_user_2 = Calendar::new(&resource2.user_id);
-        resource2.calendar_ids.push(calendar_user_2.id.clone());
+        resource2.availibility = Plan::Calendar(calendar_user_2.id.clone());
 
         ctx.repos
             .calendar_repo

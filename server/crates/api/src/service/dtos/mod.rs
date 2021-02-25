@@ -1,4 +1,4 @@
-use nettu_scheduler_core::{Service, ServiceResource, User};
+use nettu_scheduler_core::{Plan, Service, ServiceResource, User};
 use serde::Serialize;
 
 #[derive(Serialize)]
@@ -6,17 +6,19 @@ use serde::Serialize;
 pub struct ServiceResourceDTO {
     pub id: String,
     pub user_id: String,
-    pub calendar_ids: Vec<String>,
-    pub schedule_ids: Vec<String>,
+    pub availibility: Plan,
+    pub busy: Vec<String>,
+    pub buffer: usize,
 }
 
 impl ServiceResourceDTO {
     pub fn new(resource: &ServiceResource) -> Self {
         Self {
             id: resource.id.clone(),
-            calendar_ids: resource.calendar_ids.clone(),
-            schedule_ids: resource.schedule_ids.clone(),
             user_id: User::create_external_id(&resource.user_id),
+            availibility: resource.availibility.clone(),
+            busy: resource.busy.clone(),
+            buffer: resource.buffer,
         }
     }
 }
