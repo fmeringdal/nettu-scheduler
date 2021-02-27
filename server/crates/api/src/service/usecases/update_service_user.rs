@@ -5,7 +5,7 @@ use crate::{
         usecase::{execute, UseCase},
     },
 };
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{client, web, HttpRequest, HttpResponse};
 use nettu_scheduler_core::{Account, Service, TimePlan, User};
 use nettu_scheduler_infra::NettuContext;
 use serde::Deserialize;
@@ -19,9 +19,11 @@ pub struct PathParams {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BodyParams {
-    availibility: TimePlan,
-    busy: Vec<String>,
-    buffer: i64,
+    pub availibility: Option<TimePlan>,
+    pub busy: Option<Vec<String>>,
+    pub buffer: Option<i64>,
+    pub closest_booking_time: Option<i64>,
+    pub furthest_booking_time: Option<i64>,
 }
 
 pub async fn update_service_user_controller(
@@ -40,6 +42,8 @@ pub async fn update_service_user_controller(
         availibility: body.availibility.to_owned(),
         busy: body.busy.to_owned(),
         buffer: body.buffer,
+        closest_booking_time: body.closest_booking_time,
+        furthest_booking_time: body.furthest_booking_time,
     };
 
     execute(usecase, &ctx).await
@@ -67,6 +71,9 @@ pub async fn update_service_user_controller(
                     calendar_id
                 ))
             }
+            UseCaseErrors::InvalidBookingTimespan(e) => {
+                NettuError::BadClientData(e)
+            }
         })
 }
 
@@ -74,9 +81,11 @@ struct UpdateServiceUserUseCase {
     pub account: Account,
     pub service_id: String,
     pub user_id: String,
-    pub availibility: TimePlan,
-    pub busy: Vec<String>,
-    pub buffer: i64,
+    pub availibility: Option<TimePlan>,
+    pub busy: Option<Vec<String>>,
+    pub buffer: Option<i64>,
+    pub closest_booking_time: Option<i64>,
+    pub furthest_booking_time: Option<i64>,
 }
 
 struct UseCaseRes {
@@ -91,6 +100,7 @@ enum UseCaseErrors {
     CalendarNotOwnedByUser(String),
     ScheduleNotOwnedByUser(String),
     InvalidBuffer,
+    InvalidBookingTimespan(String),
 }
 
 #[async_trait::async_trait(?Send)]
@@ -121,33 +131,53 @@ impl UseCase for UpdateServiceUserUseCase {
             .map(|cal| cal.id)
             .collect::<Vec<_>>();
 
-        for calendar_id in &self.busy {
-            if !user_calendars.contains(calendar_id) {
-                return Err(UseCaseErrors::CalendarNotOwnedByUser(calendar_id.clone()));
-            }
-        }
-        match &self.availibility {
-            TimePlan::Calendar(id) => {
-                if !user_calendars.contains(id) {
-                    return Err(UseCaseErrors::CalendarNotOwnedByUser(id.clone()));
+        if let Some(busy) = &self.busy {
+            for calendar_id in busy {
+                if !user_calendars.contains(calendar_id) {
+                    return Err(UseCaseErrors::CalendarNotOwnedByUser(calendar_id.clone()));
                 }
             }
-            TimePlan::Schedule(id) => {
-                let schedule = ctx.repos.schedule_repo.find(id).await;
-                match schedule {
-                    Some(schedule) if schedule.user_id == self.user_id => {}
-                    _ => return Err(UseCaseErrors::ScheduleNotOwnedByUser(id.clone())),
+            user_resource.set_busy(busy.clone());
+        }
+        if let Some(availibility) = &self.availibility {
+            match availibility {
+                TimePlan::Calendar(id) => {
+                    if !user_calendars.contains(id) {
+                        return Err(UseCaseErrors::CalendarNotOwnedByUser(id.clone()));
+                    }
                 }
-            }
-            _ => (),
-        };
-
-        if !user_resource.set_buffer(self.buffer) {
-            return Err(UseCaseErrors::InvalidBuffer);
+                TimePlan::Schedule(id) => {
+                    let schedule = ctx.repos.schedule_repo.find(id).await;
+                    match schedule {
+                        Some(schedule) if schedule.user_id == self.user_id => {}
+                        _ => return Err(UseCaseErrors::ScheduleNotOwnedByUser(id.clone())),
+                    }
+                }
+                _ => (),
+            };
+            user_resource.set_availibility(availibility.clone());
         }
 
-        user_resource.set_availibility(self.availibility.clone());
-        user_resource.set_busy(self.busy.clone());
+        if let Some(buffer) = self.buffer {
+            if !user_resource.set_buffer(buffer) {
+                return Err(UseCaseErrors::InvalidBuffer);
+            }
+        }
+
+        if let Some(closest_booking_time) = self.closest_booking_time {
+            if closest_booking_time < 0 {
+                return Err(UseCaseErrors::InvalidBookingTimespan(
+                    "Closest booking time cannot be negative.".into(),
+                ));
+            }
+        }
+        if let Some(furthest_booking_time) = self.furthest_booking_time {
+            if furthest_booking_time < 0 {
+                return Err(UseCaseErrors::InvalidBookingTimespan(
+                    "Furthest booking time cannot be negative.".into(),
+                ));
+            }
+        }
 
         let res = ctx.repos.service_repo.save(&service).await;
         match res {

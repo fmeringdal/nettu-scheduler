@@ -17,9 +17,11 @@ pub struct PathParams {
 #[serde(rename_all = "camelCase")]
 pub struct BodyParams {
     user_id: String,
-    availibility: TimePlan,
-    busy: Vec<String>,
-    buffer: i64,
+    pub availibility: Option<TimePlan>,
+    pub busy: Option<Vec<String>>,
+    pub buffer: Option<i64>,
+    pub closest_booking_time: Option<i64>,
+    pub furthest_booking_time: Option<i64>,
 }
 
 pub async fn add_user_to_service_controller(
@@ -38,6 +40,8 @@ pub async fn add_user_to_service_controller(
         availibility: body.availibility.to_owned(),
         busy: body.busy.to_owned(),
         buffer: body.buffer,
+        closest_booking_time: body.closest_booking_time,
+        furthest_booking_time: body.furthest_booking_time,
     };
 
     execute(usecase, &ctx).await
@@ -57,6 +61,9 @@ pub async fn add_user_to_service_controller(
                 ))
             }
             UseCaseErrors::UserAlreadyInService => NettuError::Conflict("The specified user is already registered on the service, can not add the user more than once.".into()),
+            UseCaseErrors::InvalidBookingTimespan(e) => {
+                NettuError::BadClientData(e)
+            }
         })
 }
 
@@ -64,9 +71,11 @@ struct AddUserToServiceUseCase {
     pub account: Account,
     pub service_id: String,
     pub user_id: String,
-    pub availibility: TimePlan,
-    pub busy: Vec<String>,
-    pub buffer: i64,
+    pub availibility: Option<TimePlan>,
+    pub busy: Option<Vec<String>>,
+    pub buffer: Option<i64>,
+    pub closest_booking_time: Option<i64>,
+    pub furthest_booking_time: Option<i64>,
 }
 
 struct UseCaseRes {
@@ -82,6 +91,7 @@ enum UseCaseErrors {
     InvalidBuffer,
     CalendarNotOwnedByUser(String),
     ScheduleNotOwnedByUser(String),
+    InvalidBookingTimespan(String),
 }
 
 #[async_trait::async_trait(?Send)]
@@ -107,6 +117,8 @@ impl UseCase for AddUserToServiceUseCase {
             return Err(UseCaseErrors::UserAlreadyInService);
         }
 
+        let mut user_resource = ServiceResource::new(&self.user_id, TimePlan::Empty, vec![]);
+
         let user_calendars = ctx
             .repos
             .calendar_repo
@@ -116,31 +128,53 @@ impl UseCase for AddUserToServiceUseCase {
             .map(|cal| cal.id)
             .collect::<Vec<_>>();
 
-        for calendar_id in &self.busy {
-            if !user_calendars.contains(calendar_id) {
-                return Err(UseCaseErrors::CalendarNotOwnedByUser(calendar_id.clone()));
+        if let Some(busy) = &self.busy {
+            for calendar_id in busy {
+                if !user_calendars.contains(calendar_id) {
+                    return Err(UseCaseErrors::CalendarNotOwnedByUser(calendar_id.clone()));
+                }
+            }
+            user_resource.set_busy(busy.clone());
+        }
+
+        if let Some(availibility) = &self.availibility {
+            match availibility {
+                TimePlan::Calendar(id) => {
+                    if !user_calendars.contains(id) {
+                        return Err(UseCaseErrors::CalendarNotOwnedByUser(id.clone()));
+                    }
+                }
+                TimePlan::Schedule(id) => {
+                    let schedule = ctx.repos.schedule_repo.find(id).await;
+                    match schedule {
+                        Some(schedule) if schedule.user_id == self.user_id => {}
+                        _ => return Err(UseCaseErrors::ScheduleNotOwnedByUser(id.clone())),
+                    }
+                }
+                _ => (),
+            };
+            user_resource.set_availibility(availibility.clone());
+        }
+
+        if let Some(buffer) = self.buffer {
+            if !user_resource.set_buffer(buffer) {
+                return Err(UseCaseErrors::InvalidBuffer);
             }
         }
-        match &self.availibility {
-            TimePlan::Calendar(id) => {
-                if !user_calendars.contains(id) {
-                    return Err(UseCaseErrors::CalendarNotOwnedByUser(id.clone()));
-                }
-            }
-            TimePlan::Schedule(id) => {
-                let schedule = ctx.repos.schedule_repo.find(id).await;
-                match schedule {
-                    Some(schedule) if schedule.user_id == self.user_id => {}
-                    _ => return Err(UseCaseErrors::ScheduleNotOwnedByUser(id.clone())),
-                }
-            }
-            _ => (),
-        };
 
-        let mut user_resource =
-            ServiceResource::new(&self.user_id, self.availibility.clone(), self.busy.clone());
-        if !user_resource.set_buffer(self.buffer) {
-            return Err(UseCaseErrors::InvalidBuffer);
+        if let Some(closest_booking_time) = self.closest_booking_time {
+            if closest_booking_time < 0 {
+                return Err(UseCaseErrors::InvalidBookingTimespan(
+                    "Closest booking time cannot be negative.".into(),
+                ));
+            }
+        }
+        if let Some(furthest_booking_time) = self.furthest_booking_time {
+            if furthest_booking_time < 0 {
+                return Err(UseCaseErrors::InvalidBookingTimespan(
+                    "Furthest booking time cannot be negative.".into(),
+                ));
+            }
         }
 
         service.add_user(user_resource);
