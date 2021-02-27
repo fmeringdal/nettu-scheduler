@@ -11,7 +11,7 @@ use nettu_scheduler_core::{
         BookingQueryError, BookingSlotsOptions, BookingSlotsQuery, ServiceBookingSlot,
         ServiceBookingSlotDTO, UserFreeEvents,
     },
-    get_free_busy, Calendar, CalendarView, EventInstance, Plan, ServiceResource,
+    get_free_busy, Calendar, CalendarView, EventInstance, ServiceResource, TimePlan,
 };
 use nettu_scheduler_infra::NettuContext;
 use serde::{Deserialize, Serialize};
@@ -191,7 +191,7 @@ impl GetServiceBookingSlotsUseCase {
         ctx: &NettuContext,
     ) -> Vec<EventInstance> {
         match &user.availibility {
-            Plan::Calendar(id) => {
+            TimePlan::Calendar(id) => {
                 let calendar = match user_calendars.iter().find(|cal| cal.id == *id) {
                     Some(cal) => cal,
                     None => {
@@ -213,73 +213,115 @@ impl GetServiceBookingSlotsUseCase {
 
                 get_free_busy(&mut all_event_instances).free
             }
-            Plan::Schedule(id) => match ctx.repos.schedule_repo.find(&id).await {
+            TimePlan::Schedule(id) => match ctx.repos.schedule_repo.find(&id).await {
                 Some(schedule) if schedule.user_id == user.id => schedule.freebusy(&view),
                 _ => vec![],
             },
-            Plan::Empty => vec![],
+            TimePlan::Empty => vec![],
         }
     }
 
     async fn get_user_busy(
         &self,
         user: &ServiceResource,
-        user_calendars: &Vec<Calendar>,
+        busy_calendars: &Vec<&Calendar>,
         view: &CalendarView,
         ctx: &NettuContext,
     ) -> Vec<EventInstance> {
         let mut busy_events: Vec<EventInstance> = vec![];
-        for cal in user_calendars {
-            if !user.busy.contains(&cal.id) {
-                match ctx
-                    .repos
-                    .event_repo
-                    .find_by_calendar(&cal.id, Some(&view))
-                    .await
-                {
-                    Ok(calendar_events) => {
-                        let mut calendar_busy_events = calendar_events
-                            .into_iter()
-                            .filter(|e| e.busy)
-                            .map(|e| {
-                                let mut instances = e.expand(Some(&view), &cal.settings);
-                                let is_service_event = e.services.contains(&String::from("*"))
-                                    || e.services.contains(&self.service_id);
+        for cal in busy_calendars {
+            match ctx
+                .repos
+                .event_repo
+                .find_by_calendar(&cal.id, Some(&view))
+                .await
+            {
+                Ok(calendar_events) => {
+                    let mut calendar_busy_events = calendar_events
+                        .into_iter()
+                        .filter(|e| e.busy)
+                        .map(|e| {
+                            let mut instances = e.expand(Some(&view), &cal.settings);
+                            let is_service_event = e.services.contains(&String::from("*"))
+                                || e.services.contains(&self.service_id);
 
-                                // Add buffer to instances if event is a service event
-                                if user.buffer > 0 && is_service_event {
-                                    let buffer_in_millis = user.buffer * 60 * 1000;
-                                    for instance in instances.iter_mut() {
-                                        instance.end_ts += buffer_in_millis;
-                                    }
+                            // Add buffer to instances if event is a service event
+                            if user.buffer > 0 && is_service_event {
+                                let buffer_in_millis = user.buffer * 60 * 1000;
+                                for instance in instances.iter_mut() {
+                                    instance.end_ts += buffer_in_millis;
                                 }
-                                instances
-                            })
-                            .flatten()
-                            .collect::<Vec<_>>();
+                            }
 
-                        busy_events.append(&mut calendar_busy_events);
-                    }
-                    Err(_) => {}
+                            instances
+                        })
+                        .flatten()
+                        .collect::<Vec<_>>();
+
+                    busy_events.append(&mut calendar_busy_events);
                 }
+                Err(_) => {}
             }
         }
 
         busy_events
     }
 
+    /// Ensure that calendar view fits within user settings for when
+    /// it should be bookable
+    fn parse_calendar_view(
+        user: &ServiceResource,
+        mut view: CalendarView,
+        ctx: &NettuContext,
+    ) -> Result<CalendarView, ()> {
+        let first_available =
+            ctx.sys.get_timestamp_millis() + user.closest_booking_time * 60 * 1000;
+        if view.get_start() < first_available {
+            view = match CalendarView::create(first_available, view.get_end()) {
+                Ok(view) => view,
+                Err(_) => return Err(()),
+            }
+        }
+        if let Some(furthest_booking_time) = user.furthest_booking_time {
+            let last_available = furthest_booking_time * 60 * 1000 + ctx.sys.get_timestamp_millis();
+            if last_available < view.get_end() {
+                view = match CalendarView::create(view.get_start(), last_available) {
+                    Ok(view) => view,
+                    Err(_) => return Err(()),
+                }
+            }
+        }
+
+        Ok(view)
+    }
+
     async fn get_user_freebusy(
         &self,
         user: &ServiceResource,
-        view: CalendarView,
+        mut view: CalendarView,
         ctx: &NettuContext,
     ) -> UserFreeEvents {
+        let empty = UserFreeEvents {
+            free_events: vec![],
+            user_id: user.id.clone(),
+        };
+
+        match Self::parse_calendar_view(user, view, ctx) {
+            Ok(parsed_view) => view = parsed_view,
+            Err(_) => return empty,
+        }
+
         let user_calendars = ctx.repos.calendar_repo.find_by_user(&user.user_id).await;
+        let busy_calendars = user_calendars
+            .iter()
+            .filter(|cal| user.busy.contains(&cal.id))
+            .collect::<Vec<_>>();
 
         let mut free_events = self
             .get_user_availibility(user, &user_calendars, &view, ctx)
             .await;
-        let mut busy_events = self.get_user_busy(user, &user_calendars, &view, ctx).await;
+
+        let mut busy_events = self.get_user_busy(user, &busy_calendars, &view, ctx).await;
 
         let mut all_events = Vec::with_capacity(free_events.len() + busy_events.len());
         all_events.append(&mut free_events);
@@ -294,19 +336,30 @@ impl GetServiceBookingSlotsUseCase {
 
 #[cfg(test)]
 mod test {
+    use std::sync::Arc;
+
     use super::*;
     use chrono::prelude::*;
     use chrono::Utc;
     use nettu_scheduler_core::{Calendar, CalendarEvent, RRuleOptions, Service, ServiceResource};
-    use nettu_scheduler_infra::setup_context;
+    use nettu_scheduler_infra::{setup_context, ISys};
 
     struct TestContext {
         ctx: NettuContext,
         service: Service,
     }
 
+    struct DummySys {}
+
+    impl ISys for DummySys {
+        fn get_timestamp_millis(&self) -> i64 {
+            0
+        }
+    }
+
     async fn setup() -> TestContext {
-        let ctx = setup_context().await;
+        let mut ctx = setup_context().await;
+        ctx.sys = Arc::new(DummySys {});
 
         let service = Service::new("123".into());
         ctx.repos.service_repo.insert(&service).await.unwrap();
@@ -319,21 +372,25 @@ mod test {
             id: "1".into(),
             user_id: "1".into(),
             buffer: 0,
-            availibility: Plan::Empty,
+            availibility: TimePlan::Empty,
             busy: vec![],
+            closest_booking_time: 0,
+            furthest_booking_time: None,
         };
         let mut resource2 = ServiceResource {
             id: "2".into(),
             user_id: "2".into(),
             buffer: 0,
-            availibility: Plan::Empty,
+            availibility: TimePlan::Empty,
             busy: vec![],
+            closest_booking_time: 0,
+            furthest_booking_time: None,
         };
 
         let calendar_user_1 = Calendar::new(&resource1.user_id);
-        resource1.availibility = Plan::Calendar(calendar_user_1.id.clone());
+        resource1.availibility = TimePlan::Calendar(calendar_user_1.id.clone());
         let calendar_user_2 = Calendar::new(&resource2.user_id);
-        resource2.availibility = Plan::Calendar(calendar_user_2.id.clone());
+        resource2.availibility = TimePlan::Calendar(calendar_user_2.id.clone());
 
         ctx.repos
             .calendar_repo

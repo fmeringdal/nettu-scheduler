@@ -4,7 +4,7 @@ use crate::shared::{
     usecase::{execute, UseCase},
 };
 use actix_web::{web, HttpRequest, HttpResponse};
-use nettu_scheduler_core::{Account, Plan, Service, ServiceResource, User};
+use nettu_scheduler_core::{Account, Service, ServiceResource, TimePlan, User};
 use nettu_scheduler_infra::NettuContext;
 use serde::Deserialize;
 
@@ -17,7 +17,7 @@ pub struct PathParams {
 #[serde(rename_all = "camelCase")]
 pub struct BodyParams {
     user_id: String,
-    availibility: Plan,
+    availibility: TimePlan,
     busy: Vec<String>,
     buffer: i64,
 }
@@ -64,7 +64,7 @@ struct AddUserToServiceUseCase {
     pub account: Account,
     pub service_id: String,
     pub user_id: String,
-    pub availibility: Plan,
+    pub availibility: TimePlan,
     pub busy: Vec<String>,
     pub buffer: i64,
 }
@@ -122,12 +122,12 @@ impl UseCase for AddUserToServiceUseCase {
             }
         }
         match &self.availibility {
-            Plan::Calendar(id) => {
+            TimePlan::Calendar(id) => {
                 if !user_calendars.contains(id) {
                     return Err(UseCaseErrors::CalendarNotOwnedByUser(id.clone()));
                 }
             }
-            Plan::Schedule(id) => {
+            TimePlan::Schedule(id) => {
                 let schedule = ctx.repos.schedule_repo.find(id).await;
                 match schedule {
                     Some(schedule) if schedule.user_id == self.user_id => {}

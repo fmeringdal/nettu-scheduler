@@ -1,4 +1,4 @@
-use nettu_scheduler_core::{Plan, Service, ServiceResource, User};
+use nettu_scheduler_core::{Service, ServiceResource, TimePlan, User};
 use serde::Serialize;
 
 #[derive(Serialize)]
@@ -6,7 +6,7 @@ use serde::Serialize;
 pub struct ServiceResourceDTO {
     pub id: String,
     pub user_id: String,
-    pub availibility: Plan,
+    pub availibility: TimePlan,
     pub busy: Vec<String>,
     pub buffer: i64,
 }

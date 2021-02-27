@@ -5,7 +5,7 @@ use mongodb::{
     bson::{doc, oid::ObjectId, Document},
     Collection, Database,
 };
-use nettu_scheduler_core::{Plan, Service, ServiceResource};
+use nettu_scheduler_core::{Service, ServiceResource, TimePlan};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 
@@ -94,9 +94,11 @@ impl IServiceRepo for ServiceRepo {
 struct ServiceResourceMongo {
     pub _id: ObjectId,
     pub user_id: String,
-    pub availibility: Plan,
+    pub availibility: TimePlan,
     pub busy: Vec<String>,
     pub buffer: i64,
+    pub closest_booking_time: i64,
+    pub furthest_booking_time: Option<i64>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -127,6 +129,8 @@ impl MongoDocument<Service> for ServiceMongo {
                     availibility: user.availibility.clone(),
                     busy: user.busy.clone(),
                     buffer: user.buffer,
+                    closest_booking_time: user.closest_booking_time,
+                    furthest_booking_time: user.furthest_booking_time,
                 })
                 .collect(),
         }
@@ -145,6 +149,8 @@ impl MongoDocument<Service> for ServiceMongo {
                     availibility: user.availibility.clone(),
                     busy: user.busy.clone(),
                     buffer: user.buffer,
+                    closest_booking_time: user.closest_booking_time,
+                    furthest_booking_time: user.furthest_booking_time,
                 })
                 .collect(),
             attributes: vec![

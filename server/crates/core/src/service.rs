@@ -1,4 +1,4 @@
-use crate::{shared::entity::Entity, Calendar, EventInstance, Schedule};
+use crate::shared::entity::Entity;
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 // Maybe rename this TimePlan ?
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(tag = "variant", content = "id")]
-pub enum Plan {
+pub enum TimePlan {
     /// Calendar id
     Calendar(String),
     /// Schedule id
@@ -21,33 +21,51 @@ pub struct ServiceResource {
     pub id: String,
     /// Id of the `User` registered on this `Service`
     pub user_id: String,
-    /// Every available event in a `Calendar` or any `Shedule` in this field
-    /// describes the time when this user will be bookable.
-    /// Note: if there are busy `CalendarEvent`s in the `Calendar` then the user
+    /// Every available event in a `Calendar` or a `Shedule` in this field
+    /// describes the time when this `ServiceResource` will be bookable.
+    /// Note: If there are busy `CalendarEvent`s in the `Calendar` then the user
     /// will not be bookable during that time.
-    pub availibility: Plan,
-    /// List of `Calendar` ids that should be subtracted from the availibility time plan.
+    pub availibility: TimePlan,
+    /// List of `Calendar` ids that should be subtracted from the availibility
+    /// time plan.
     pub busy: Vec<String>,
-    /// The user will not be bookable this amount of *minutes* after a meeting.
-    /// A `CalendarEvent` will be interpreted as a meeting
-    /// if the attribute `metadata.service_resources` on the `CalendarEvent`
-    /// includes this `ServiceResource` id or "*".
+    /// This `ServiceResource` will not be bookable this amount of *minutes*
+    /// after a meeting. A `CalendarEvent` will be interpreted as a meeting
+    /// if the attribute `services` on the `CalendarEvent` includes this
+    /// `Service` id or "*".
     pub buffer: i64,
-    // max_per_day
+    // /// Daily service limit in minutes. A booking slot calculated from the
+    // /// `availibility` and `busy` field will be filtered away if it causes
+    // /// this `ServiceResource` to have more than `daily_service_limit` minutes
+    // /// of service meetings.
+    // pub daily_service_limit: Option<i64>,
+    /// Minimum amount of time in minutes before this user could receive any
+    /// booking requests. That means that if a bookingslots query is made at
+    /// time T then this `ServiceResource` will not have any availaible
+    /// bookingslots before at least T + `closest_booking_time`
+    pub closest_booking_time: i64,
+    /// Amount of time in minutes into the future after which the user can not receive any
+    /// booking requests. This is useful to ensure that booking requests are not made multiple
+    /// years into the future. That means that if a bookingslots query is made at
+    /// time T then this `ServiceResource` will not have any availaible
+    /// bookingslots after T + `furthest_booking_time`
+    pub furthest_booking_time: Option<i64>,
 }
 
 impl ServiceResource {
-    pub fn new(user_id: &str, availibility: Plan, busy: Vec<String>) -> Self {
+    pub fn new(user_id: &str, availibility: TimePlan, busy: Vec<String>) -> Self {
         Self {
             id: ObjectId::new().to_string(),
             user_id: String::from(user_id),
             availibility,
             busy,
             buffer: 0,
+            closest_booking_time: 0,
+            furthest_booking_time: None,
         }
     }
 
-    pub fn set_availibility(&mut self, availibility: Plan) {
+    pub fn set_availibility(&mut self, availibility: TimePlan) {
         self.availibility = availibility;
     }
 
@@ -69,7 +87,7 @@ impl ServiceResource {
         let mut calendar_ids = self.busy.clone();
 
         match &self.availibility {
-            Plan::Calendar(id) => {
+            TimePlan::Calendar(id) => {
                 calendar_ids.push(id.clone());
             }
             _ => (),
@@ -80,14 +98,14 @@ impl ServiceResource {
 
     pub fn get_schedule_id(&self) -> Option<String> {
         match &self.availibility {
-            Plan::Schedule(id) => Some(id.clone()),
+            TimePlan::Schedule(id) => Some(id.clone()),
             _ => None,
         }
     }
 
     pub fn contains_calendar(&self, calendar_id: &str) -> bool {
         match &self.availibility {
-            Plan::Calendar(id) if id == calendar_id => {
+            TimePlan::Calendar(id) if id == calendar_id => {
                 return true;
             }
             _ => (),
@@ -98,8 +116,8 @@ impl ServiceResource {
 
     pub fn remove_calendar(&mut self, calendar_id: &str) {
         match &self.availibility {
-            Plan::Calendar(id) if id == calendar_id => {
-                self.availibility = Plan::Empty;
+            TimePlan::Calendar(id) if id == calendar_id => {
+                self.availibility = TimePlan::Empty;
             }
             _ => (),
         }
@@ -109,15 +127,15 @@ impl ServiceResource {
 
     pub fn contains_schedule(&self, schedule_id: &str) -> bool {
         match &self.availibility {
-            Plan::Schedule(id) if id == schedule_id => true,
+            TimePlan::Schedule(id) if id == schedule_id => true,
             _ => false,
         }
     }
 
     pub fn remove_schedule(&mut self, schedule_id: &str) {
         match &self.availibility {
-            Plan::Schedule(id) if id == schedule_id => {
-                self.availibility = Plan::Empty;
+            TimePlan::Schedule(id) if id == schedule_id => {
+                self.availibility = TimePlan::Empty;
             }
             _ => (),
         }
