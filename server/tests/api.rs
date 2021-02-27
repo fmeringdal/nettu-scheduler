@@ -7,7 +7,7 @@ use helpers::setup::spawn_app;
 #[test]
 async fn test_status_ok() {
     let (_, sdk) = spawn_app().await;
-    assert_eq!(sdk.check_health().await.status(), reqwest::StatusCode::OK);
+    assert!(sdk.check_health().await.is_ok());
 }
 
 #[actix_web::main]

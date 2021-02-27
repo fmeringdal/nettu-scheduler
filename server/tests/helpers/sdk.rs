@@ -1,4 +1,7 @@
-use nettu_scheduler_api::dev::account::{Account, CreateAccountResponse};
+use nettu_scheduler_api::dev::{
+    account::{Account, CreateAccountResponse},
+    status::StatusResponse,
+};
 use reqwest::{Client, Method, StatusCode};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -92,7 +95,7 @@ impl NettuSDK {
     }
 
     pub async fn get_account(&self) -> APIResponse<Account> {
-        self.get::<Account>("account".into(), StatusCode::OK).await
+        self.get("account".into(), StatusCode::OK).await
     }
 
     pub async fn create_account(&self, code: &str) -> APIResponse<CreateAccountResponse> {
@@ -101,12 +104,7 @@ impl NettuSDK {
         self.post(body, "account".into(), StatusCode::CREATED).await
     }
 
-    pub async fn check_health(&self) -> reqwest::Response {
-        reqwest::Client::new()
-            .get(&format!("{}/", &self.address))
-            .header("Content-Type", "application/json")
-            .send()
-            .await
-            .expect("Failed to execute request.")
+    pub async fn check_health(&self) -> APIResponse<StatusResponse> {
+        self.get("".into(), StatusCode::OK).await
     }
 }

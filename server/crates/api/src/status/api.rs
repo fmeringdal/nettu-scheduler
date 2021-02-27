@@ -1,7 +1,15 @@
-use actix_web::web;
+use actix_web::{web, HttpResponse};
+use serde::{Deserialize, Serialize};
 
-async fn status() -> &'static str {
-    "Yo! We are up!\r\n"
+#[derive(Deserialize, Serialize)]
+pub struct StatusResponse {
+    message: String,
+}
+
+async fn status() -> HttpResponse {
+    HttpResponse::Ok().json(StatusResponse {
+        message: "Yo! We are up!\r\n".into(),
+    })
 }
 
 pub fn configure_routes(cfg: &mut web::ServiceConfig) {

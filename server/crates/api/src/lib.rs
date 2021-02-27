@@ -80,4 +80,8 @@ pub mod dev {
         pub use crate::account::dtos::AccountDTO as Account;
         pub use crate::account::usecases::create_account::APIResponse as CreateAccountResponse;
     }
+
+    pub mod status {
+        pub use crate::status::api::StatusResponse;
+    }
 }
