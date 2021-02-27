@@ -1,3 +1,6 @@
+use super::add_user_to_service::{
+    update_resource_values, ServiceResourceUpdate, UpdateServiceResourceError,
+};
 use crate::{
     error::NettuError,
     shared::{
@@ -5,7 +8,7 @@ use crate::{
         usecase::{execute, UseCase},
     },
 };
-use actix_web::{client, web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_core::{Account, Service, TimePlan, User};
 use nettu_scheduler_infra::NettuContext;
 use serde::Deserialize;
@@ -46,7 +49,8 @@ pub async fn update_service_user_controller(
         furthest_booking_time: body.furthest_booking_time,
     };
 
-    execute(usecase, &ctx).await
+    execute(usecase, &ctx)
+        .await
         .map(|_| HttpResponse::Ok().body("Service successfully updated"))
         .map_err(|e| match e {
             UseCaseErrors::StorageError => NettuError::InternalError,
@@ -56,24 +60,7 @@ pub async fn update_service_user_controller(
             UseCaseErrors::UserNotFoundError => {
                 NettuError::NotFound("The specified user was not found".into())
             }
-            UseCaseErrors::InvalidBuffer => {
-                NettuError::BadClientData("The provided buffer was invalid, it should be netween 0 and 12 hours specified in minutes.".into())
-            }
-            UseCaseErrors::ScheduleNotOwnedByUser(schedule_id) => {
-                NettuError::NotFound(format!(
-                    "The schedule with id: {}, was not found among the schedules for the specified user",
-                    schedule_id
-                ))
-            }
-            UseCaseErrors::CalendarNotOwnedByUser(calendar_id) => {
-                NettuError::NotFound(format!(
-                    "The calendar with id: {}, was not found among the calendars for the specified user",
-                    calendar_id
-                ))
-            }
-            UseCaseErrors::InvalidBookingTimespan(e) => {
-                NettuError::BadClientData(e)
-            }
+            UseCaseErrors::InvalidValue(e) => e.to_nettu_error(),
         })
 }
 
@@ -97,10 +84,7 @@ enum UseCaseErrors {
     StorageError,
     ServiceNotFoundError,
     UserNotFoundError,
-    CalendarNotOwnedByUser(String),
-    ScheduleNotOwnedByUser(String),
-    InvalidBuffer,
-    InvalidBookingTimespan(String),
+    InvalidValue(UpdateServiceResourceError),
 }
 
 #[async_trait::async_trait(?Send)]
@@ -117,67 +101,24 @@ impl UseCase for UpdateServiceUserUseCase {
             _ => return Err(UseCaseErrors::ServiceNotFoundError),
         };
 
-        let user_resource = match service.find_user_mut(&self.user_id) {
+        let mut user_resource = match service.find_user_mut(&self.user_id) {
             Some(res) => res,
             _ => return Err(UseCaseErrors::UserNotFoundError),
         };
 
-        let user_calendars = ctx
-            .repos
-            .calendar_repo
-            .find_by_user(&self.user_id)
-            .await
-            .into_iter()
-            .map(|cal| cal.id)
-            .collect::<Vec<_>>();
-
-        if let Some(busy) = &self.busy {
-            for calendar_id in busy {
-                if !user_calendars.contains(calendar_id) {
-                    return Err(UseCaseErrors::CalendarNotOwnedByUser(calendar_id.clone()));
-                }
-            }
-            user_resource.set_busy(busy.clone());
-        }
-        if let Some(availibility) = &self.availibility {
-            match availibility {
-                TimePlan::Calendar(id) => {
-                    if !user_calendars.contains(id) {
-                        return Err(UseCaseErrors::CalendarNotOwnedByUser(id.clone()));
-                    }
-                }
-                TimePlan::Schedule(id) => {
-                    let schedule = ctx.repos.schedule_repo.find(id).await;
-                    match schedule {
-                        Some(schedule) if schedule.user_id == self.user_id => {}
-                        _ => return Err(UseCaseErrors::ScheduleNotOwnedByUser(id.clone())),
-                    }
-                }
-                _ => (),
-            };
-            user_resource.set_availibility(availibility.clone());
-        }
-
-        if let Some(buffer) = self.buffer {
-            if !user_resource.set_buffer(buffer) {
-                return Err(UseCaseErrors::InvalidBuffer);
-            }
-        }
-
-        if let Some(closest_booking_time) = self.closest_booking_time {
-            if closest_booking_time < 0 {
-                return Err(UseCaseErrors::InvalidBookingTimespan(
-                    "Closest booking time cannot be negative.".into(),
-                ));
-            }
-        }
-        if let Some(furthest_booking_time) = self.furthest_booking_time {
-            if furthest_booking_time < 0 {
-                return Err(UseCaseErrors::InvalidBookingTimespan(
-                    "Furthest booking time cannot be negative.".into(),
-                ));
-            }
-        }
+        update_resource_values(
+            &mut user_resource,
+            &ServiceResourceUpdate {
+                availibility: self.availibility.clone(),
+                buffer: self.buffer.clone(),
+                busy: self.busy.clone(),
+                closest_booking_time: self.closest_booking_time,
+                furthest_booking_time: self.furthest_booking_time,
+            },
+            ctx,
+        )
+        .await
+        .map_err(|e| UseCaseErrors::InvalidValue(e))?;
 
         let res = ctx.repos.service_repo.save(&service).await;
         match res {
