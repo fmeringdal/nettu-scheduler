@@ -12,11 +12,11 @@ pub struct BodyParams {
     code: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct APIResponse {
-    account: AccountDTO,
-    secret_api_key: String,
+    pub account: AccountDTO,
+    pub secret_api_key: String,
 }
 
 pub async fn create_account_controller(

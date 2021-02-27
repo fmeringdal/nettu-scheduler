@@ -2,6 +2,7 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 
 ## Todos
 
+- Reqwst for testing ?
 - More admin and user controllers for different usecases
 - Logging
 - Delete user cleanup actions

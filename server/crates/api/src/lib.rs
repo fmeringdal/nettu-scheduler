@@ -9,6 +9,8 @@ mod shared;
 mod status;
 mod user;
 
+use std::net::TcpListener;
+
 use actix_web::{dev::Server, middleware, web, App, HttpServer};
 use job_schedulers::{start_reminders_expansion_job_scheduler, start_send_reminders_job};
 use nettu_scheduler_infra::NettuContext;
@@ -25,14 +27,19 @@ pub fn configure_server_api(cfg: &mut web::ServiceConfig) {
 
 pub struct Application {
     server: Server,
+    port: u16,
 }
 
 impl Application {
     pub async fn new(context: NettuContext) -> Result<Self, std::io::Error> {
-        let server = Application::configure_server(context.clone()).await?;
+        let (server, port) = Application::configure_server(context.clone()).await?;
         Application::start_job_schedulers(context).await;
 
-        Ok(Self { server })
+        Ok(Self { server, port })
+    }
+
+    pub fn port(&self) -> u16 {
+        self.port
     }
 
     async fn start_job_schedulers(context: NettuContext) {
@@ -40,8 +47,11 @@ impl Application {
         start_reminders_expansion_job_scheduler(context.clone()).await;
     }
 
-    async fn configure_server(context: NettuContext) -> Result<Server, std::io::Error> {
+    async fn configure_server(context: NettuContext) -> Result<(Server, u16), std::io::Error> {
         let port = context.config.port;
+        let address = format!("0.0.0.0:{}", port);
+        let listener = TcpListener::bind(&address)?;
+        let port = listener.local_addr().unwrap().port();
 
         let server = HttpServer::new(move || {
             let ctx = context.clone();
@@ -53,14 +63,21 @@ impl Application {
                 .data(ctx)
                 .configure(|cfg| configure_server_api(cfg))
         })
-        .bind(format!("0.0.0.0:{}", port))?
+        .listen(listener)?
         .workers(4)
         .run();
 
-        Ok(server)
+        Ok((server, port))
     }
 
     pub async fn start(self) -> Result<(), std::io::Error> {
         self.server.await
+    }
+}
+
+pub mod dev {
+    pub mod account {
+        pub use crate::account::dtos::AccountDTO as Account;
+        pub use crate::account::usecases::create_account::APIResponse as CreateAccountResponse;
     }
 }
