@@ -2,9 +2,8 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 
 ## Todos
 
-- Reqwst for testing ?
-- More admin and user controllers for different usecases
 - Logging
+- More admin and user controllers for different usecases
 - Delete user cleanup actions
 - Freebusy queries cleanup
 - Use version instead of priority on Reminder ?
