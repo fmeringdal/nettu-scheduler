@@ -50,8 +50,8 @@ pub async fn add_user_to_service_controller(
             UseCaseErrors::StorageError => NettuError::InternalError,
             UseCaseErrors::ServiceNotFoundError => NettuError::NotFound("The requested service was not found".into()),
             UseCaseErrors::UserNotFoundError => NettuError::NotFound("The specified user was not found".into()),
-            UseCaseErrors::InvalidValue(e) => e.to_nettu_error(),
             UseCaseErrors::UserAlreadyInService => NettuError::Conflict("The specified user is already registered on the service, can not add the user more than once.".into()),
+            UseCaseErrors::InvalidValue(e) => e.to_nettu_error(),
         })
 }
 

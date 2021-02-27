@@ -34,11 +34,6 @@ pub struct ServiceResource {
     /// if the attribute `services` on the `CalendarEvent` includes this
     /// `Service` id or "*".
     pub buffer: i64,
-    // /// Daily service limit in minutes. A booking slot calculated from the
-    // /// `availibility` and `busy` field will be filtered away if it causes
-    // /// this `ServiceResource` to have more than `daily_service_limit` minutes
-    // /// of service meetings.
-    // pub daily_service_limit: Option<i64>,
     /// Minimum amount of time in minutes before this user could receive any
     /// booking requests. That means that if a bookingslots query is made at
     /// time T then this `ServiceResource` will not have any availaible

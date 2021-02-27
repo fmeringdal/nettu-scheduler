@@ -11,7 +11,8 @@ use nettu_scheduler_core::{
         BookingQueryError, BookingSlotsOptions, BookingSlotsQuery, ServiceBookingSlot,
         ServiceBookingSlotDTO, UserFreeEvents,
     },
-    get_free_busy, Calendar, CalendarView, EventInstance, ServiceResource, TimePlan,
+    get_free_busy, sort_and_merge_instances, Calendar, CalendarView, EventInstance,
+    ServiceResource, TimePlan,
 };
 use nettu_scheduler_infra::NettuContext;
 use serde::{Deserialize, Serialize};
@@ -229,6 +230,7 @@ impl GetServiceBookingSlotsUseCase {
         ctx: &NettuContext,
     ) -> Vec<EventInstance> {
         let mut busy_events: Vec<EventInstance> = vec![];
+
         for cal in busy_calendars {
             match ctx
                 .repos
