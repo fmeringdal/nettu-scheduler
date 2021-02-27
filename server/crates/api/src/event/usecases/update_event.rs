@@ -1,6 +1,7 @@
-use crate::{error::NettuError, shared::auth::protect_route};
 use crate::{
+    error::NettuError,
     event,
+    shared::auth::protect_route,
     shared::{
         auth::Permission,
         usecase::{
@@ -10,13 +11,12 @@ use crate::{
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use event::dtos::CalendarEventDTO;
+use event::usecases::sync_event_reminders::{
+    EventOperation, SyncEventRemindersTrigger, SyncEventRemindersUseCase,
+};
 use nettu_scheduler_core::{CalendarEvent, RRuleOptions};
 use nettu_scheduler_infra::NettuContext;
 use serde::Deserialize;
-
-use super::sync_event_reminders::{
-    EventOperation, SyncEventRemindersTrigger, SyncEventRemindersUseCase,
-};
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -25,6 +25,7 @@ pub struct UpdateEventBody {
     duration: Option<i64>,
     busy: Option<bool>,
     rrule_options: Option<RRuleOptions>,
+    services: Option<Vec<String>>,
 }
 
 #[derive(Deserialize)]
@@ -47,6 +48,7 @@ pub async fn update_event_controller(
         rrule_options: body.rrule_options.clone(),
         event_id: path_params.event_id.clone(),
         busy: body.busy,
+        services: body.services.clone(),
     };
 
     execute_with_policy(usecase, &policy, &ctx)
@@ -74,6 +76,7 @@ pub struct UpdateEventUseCase {
     pub busy: Option<bool>,
     pub duration: Option<i64>,
     pub rrule_options: Option<RRuleOptions>,
+    pub services: Option<Vec<String>>,
 }
 
 #[derive(Debug)]
@@ -99,12 +102,17 @@ impl UseCase for UpdateEventUseCase {
             busy,
             duration,
             rrule_options: _,
+            services,
         } = self;
 
         let mut e = match ctx.repos.event_repo.find(&event_id).await {
             Some(event) if event.user_id == *user_id => event,
             _ => return Err(UseCaseErrors::NotFoundError),
         };
+
+        if let Some(services) = services {
+            e.services = services.clone();
+        }
 
         let calendar = match ctx.repos.calendar_repo.find(&e.calendar_id).await {
             Some(cal) => cal,
@@ -184,6 +192,7 @@ mod test {
             rrule_options: None,
             busy: Some(false),
             user_id: String::from("cool"),
+            services: None,
         };
         let ctx = setup_context().await;
         let res = usecase.execute(&ctx).await;

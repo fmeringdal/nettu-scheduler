@@ -3,12 +3,10 @@ use crate::shared::auth::ensure_nettu_acct_header;
 use crate::shared::usecase::{execute, UseCase};
 use actix_web::{web, HttpRequest, HttpResponse};
 use futures::future::join_all;
-use nettu_scheduler_core::{
-    get_free_busy, sort_and_merge_instances, CalendarView, EventInstance, FreeBusy, User,
-};
+use nettu_scheduler_core::{sort_and_merge_instances, CalendarView, EventInstance, User};
 use nettu_scheduler_infra::NettuContext;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, print};
+use std::collections::HashMap;
 
 #[derive(Debug, Deserialize)]
 pub struct UserPathParams {
@@ -17,16 +15,16 @@ pub struct UserPathParams {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct UserFreebusyQuery {
+pub struct FreebusyQuery {
     start_ts: i64,
     end_ts: i64,
     calendar_ids: Option<String>,
     schedule_ids: Option<String>,
 }
 
-pub async fn get_user_freebusy_controller(
+pub async fn get_freebusy_controller(
     http_req: HttpRequest,
-    query_params: web::Query<UserFreebusyQuery>,
+    query_params: web::Query<FreebusyQuery>,
     params: web::Path<UserPathParams>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
@@ -41,7 +39,7 @@ pub async fn get_user_freebusy_controller(
         None => None,
     };
 
-    let usecase = GetUserFreeBusyUseCase {
+    let usecase = GetFreeBusyUseCase {
         user_id: User::create_id(&account, &params.external_user_id),
         calendar_ids,
         schedule_ids,
@@ -53,14 +51,14 @@ pub async fn get_user_freebusy_controller(
         .await
         .map(|usecase_res| HttpResponse::Ok().json(usecase_res))
         .map_err(|e| match e {
-            GetUserFreeBusyErrors::InvalidTimespanError => {
+            UseCaseErrors::InvalidTimespan => {
                 NettuError::BadClientData("The provided start_ts and end_ts is invalid".into())
             }
         })
 }
 
 #[derive(Debug)]
-pub struct GetUserFreeBusyUseCase {
+pub struct GetFreeBusyUseCase {
     pub user_id: String,
     pub calendar_ids: Option<Vec<String>>,
     pub schedule_ids: Option<Vec<String>>,
@@ -70,28 +68,28 @@ pub struct GetUserFreeBusyUseCase {
 
 #[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct GetUserFreeBusyResponse {
+pub struct GetFreeBusyResponse {
     pub busy: Vec<EventInstance>,
     pub user_id: String,
 }
 
 #[derive(Debug)]
-pub enum GetUserFreeBusyErrors {
-    InvalidTimespanError,
+pub enum UseCaseErrors {
+    InvalidTimespan,
 }
 
 #[async_trait::async_trait(?Send)]
-impl UseCase for GetUserFreeBusyUseCase {
-    type Response = GetUserFreeBusyResponse;
+impl UseCase for GetFreeBusyUseCase {
+    type Response = GetFreeBusyResponse;
 
-    type Errors = GetUserFreeBusyErrors;
+    type Errors = UseCaseErrors;
 
     type Context = NettuContext;
 
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let view = match CalendarView::create(self.start_ts, self.end_ts) {
             Ok(view) => view,
-            Err(_) => return Err(GetUserFreeBusyErrors::InvalidTimespanError),
+            Err(_) => return Err(UseCaseErrors::InvalidTimespan),
         };
 
         let busy_event_instances = vec![
@@ -105,14 +103,14 @@ impl UseCase for GetUserFreeBusyUseCase {
 
         let busy = sort_and_merge_instances(&mut busy_event_instances.iter().map(|e| e).collect());
 
-        Ok(GetUserFreeBusyResponse {
+        Ok(GetFreeBusyResponse {
             busy,
             user_id: self.user_id.to_owned(),
         })
     }
 }
 
-impl GetUserFreeBusyUseCase {
+impl GetFreeBusyUseCase {
     async fn get_event_instances_from_calendars(
         &self,
         view: &CalendarView,
@@ -216,6 +214,7 @@ mod test {
             start_ts: 0,
             recurrence: None,
             reminder: None,
+            services: vec![],
         };
         let e1rr = RRuleOptions {
             bynweekday: Default::default(),
@@ -240,6 +239,7 @@ mod test {
             start_ts: one_hour * 4,
             recurrence: None,
             reminder: None,
+            services: vec![],
         };
         let e2rr = RRuleOptions {
             bynweekday: Default::default(),
@@ -264,6 +264,7 @@ mod test {
             start_ts: 0,
             recurrence: None,
             reminder: None,
+            services: vec![],
         };
         let e3rr = RRuleOptions {
             bynweekday: Default::default(),
@@ -280,7 +281,7 @@ mod test {
         ctx.repos.event_repo.insert(&e2).await.unwrap();
         ctx.repos.event_repo.insert(&e3).await.unwrap();
 
-        let mut usecase = GetUserFreeBusyUseCase {
+        let mut usecase = GetFreeBusyUseCase {
             user_id: user.id(),
             calendar_ids: Some(vec![calendar.id.clone()]),
             schedule_ids: None,

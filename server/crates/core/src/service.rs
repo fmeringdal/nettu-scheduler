@@ -1,8 +1,9 @@
-use crate::shared::entity::Entity;
+use crate::{shared::entity::Entity, Calendar, EventInstance, Schedule};
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
 /// A type that describes a time plan and is either a `Calendar` og a `Schedule`
+// Maybe rename this TimePlan ?
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(tag = "variant", content = "id")]
 pub enum Plan {
@@ -20,21 +21,18 @@ pub struct ServiceResource {
     pub id: String,
     /// Id of the `User` registered on this `Service`
     pub user_id: String,
-    /// Every available event in a `Calendar` or
-    /// any `Shedule` in this field describes the time when this user
-    /// will be bookable.
+    /// Every available event in a `Calendar` or any `Shedule` in this field
+    /// describes the time when this user will be bookable.
     /// Note: if there are busy `CalendarEvent`s in the `Calendar` then the user
     /// will not be bookable during that time.
     pub availibility: Plan,
-    /// Any `Calendar` that should be subtracted from
-    /// the availibility field.
+    /// List of `Calendar` ids that should be subtracted from the availibility time plan.
     pub busy: Vec<String>,
-    /// The user will not be bookable
-    /// this amount of *minutes* after a meeting.
+    /// The user will not be bookable this amount of *minutes* after a meeting.
     /// A `CalendarEvent` will be interpreted as a meeting
-    /// if the attribute `metadata.service_resources` includes
-    /// this `ServiceResource` id.
-    pub buffer: usize,
+    /// if the attribute `metadata.service_resources` on the `CalendarEvent`
+    /// includes this `ServiceResource` id or "*".
+    pub buffer: i64,
     // max_per_day
 }
 
@@ -57,7 +55,7 @@ impl ServiceResource {
         self.busy = busy;
     }
 
-    pub fn set_buffer(&mut self, buffer: usize) -> bool {
+    pub fn set_buffer(&mut self, buffer: i64) -> bool {
         let min_buffer = 0;
         let max_buffer = 60 * 12; // 12 Hours
         if buffer < min_buffer || buffer > max_buffer {

@@ -298,6 +298,7 @@ mod tests {
                 bynweekday: None,
             }),
             reminder: Some(CalendarEventReminder { minutes_before: 10 }),
+            services: vec![],
         };
 
         usecase.execute(ctx).await.unwrap();
@@ -312,6 +313,7 @@ mod tests {
             busy: false,
             rrule_options: None,
             reminder: Some(CalendarEventReminder { minutes_before: 10 }),
+            services: vec![],
         };
 
         usecase.execute(ctx).await.unwrap();

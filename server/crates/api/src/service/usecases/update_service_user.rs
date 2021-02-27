@@ -21,7 +21,7 @@ pub struct PathParams {
 pub struct BodyParams {
     availibility: Plan,
     busy: Vec<String>,
-    buffer: usize,
+    buffer: i64,
 }
 
 pub async fn update_service_user_controller(
@@ -76,7 +76,7 @@ struct UpdateServiceUserUseCase {
     pub user_id: String,
     pub availibility: Plan,
     pub busy: Vec<String>,
-    pub buffer: usize,
+    pub buffer: i64,
 }
 
 struct UseCaseRes {

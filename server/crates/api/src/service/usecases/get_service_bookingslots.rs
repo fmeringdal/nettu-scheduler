@@ -1,18 +1,17 @@
 use crate::shared::usecase::{execute, UseCase};
 use crate::{
-    calendar::usecases::get_user_freebusy::GetUserFreeBusyUseCase,
     error::NettuError,
     shared::auth::{ensure_nettu_acct_header, protect_account_route},
 };
 use actix_web::{web, HttpRequest, HttpResponse};
-use futures::{future::join_all, Future};
+use futures::future::join_all;
 use nettu_scheduler_core::{
     booking_slots::{
         get_service_bookingslots, validate_bookingslots_query, validate_slots_interval,
         BookingQueryError, BookingSlotsOptions, BookingSlotsQuery, ServiceBookingSlot,
         ServiceBookingSlotDTO, UserFreeEvents,
     },
-    get_free_busy, CalendarEvent, CalendarView, EventInstance, Plan, ServiceResource,
+    get_free_busy, Calendar, CalendarView, EventInstance, Plan, ServiceResource,
 };
 use nettu_scheduler_infra::NettuContext;
 use serde::{Deserialize, Serialize};
@@ -71,24 +70,27 @@ pub async fn get_service_bookingslots_controller(
             HttpResponse::Ok().json(res)
         })
         .map_err(|e| match e {
-            UseCaseErrors::InvalidDateError(msg) => {
+            UseCaseErrors::InvalidDate(msg) => {
                 NettuError::BadClientData(format!(
                     "Invalid datetime: {}. Should be YYYY-MM-DD, e.g. January 1. 2020 => 2020-1-1",
                     msg
                 ))
             }
-            UseCaseErrors::InvalidTimezoneError(msg) => {
+            UseCaseErrors::InvalidTimezone(msg) => {
                 NettuError::BadClientData(format!(
                     "Invalid timezone: {}. It should be a valid IANA TimeZone.",
                     msg
                 ))
             }
-            UseCaseErrors::InvalidIntervalError => {
+            UseCaseErrors::InvalidInterval => {
                 NettuError::BadClientData(
                     "Invalid interval specified. It should be between 10 - 60 minutes inclusively and be specified as milliseconds.".into()
                 )
             }
-            UseCaseErrors::ServiceNotFoundError => NettuError::NotFound(format!("Service with id: {}, was not found.", path_params.service_id)),
+            UseCaseErrors::InvalidTimespan => {
+                NettuError::BadClientData("The provided start_ts and end_ts is invalid".into())
+            }
+            UseCaseErrors::ServiceNotFound => NettuError::NotFound(format!("Service with id: {}, was not found.", path_params.service_id)),
         })
 }
 
@@ -106,10 +108,11 @@ struct UseCaseRes {
 
 #[derive(Debug)]
 enum UseCaseErrors {
-    ServiceNotFoundError,
-    InvalidIntervalError,
-    InvalidDateError(String),
-    InvalidTimezoneError(String),
+    ServiceNotFound,
+    InvalidInterval,
+    InvalidTimespan,
+    InvalidDate(String),
+    InvalidTimezone(String),
 }
 
 #[async_trait::async_trait(?Send)]
@@ -122,7 +125,7 @@ impl UseCase for GetServiceBookingSlotsUseCase {
 
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         if !validate_slots_interval(self.interval) {
-            return Err(UseCaseErrors::InvalidIntervalError);
+            return Err(UseCaseErrors::InvalidInterval);
         }
 
         let query = BookingSlotsQuery {
@@ -135,26 +138,28 @@ impl UseCase for GetServiceBookingSlotsUseCase {
             Ok(t) => t,
             Err(e) => match e {
                 BookingQueryError::InvalidIntervalError => {
-                    return Err(UseCaseErrors::InvalidIntervalError)
+                    return Err(UseCaseErrors::InvalidInterval)
                 }
                 BookingQueryError::InvalidDateError(d) => {
-                    return Err(UseCaseErrors::InvalidDateError(d))
+                    return Err(UseCaseErrors::InvalidDate(d))
                 }
                 BookingQueryError::InvalidTimezoneError(d) => {
-                    return Err(UseCaseErrors::InvalidTimezoneError(d))
+                    return Err(UseCaseErrors::InvalidTimezone(d))
                 }
             },
         };
 
         let service = match ctx.repos.service_repo.find(&self.service_id).await {
             Some(s) => s,
-            None => return Err(UseCaseErrors::ServiceNotFoundError),
+            None => return Err(UseCaseErrors::ServiceNotFound),
         };
 
         let mut usecase_futures: Vec<_> = Vec::with_capacity(service.users.len());
 
-        let view =
-            CalendarView::create(booking_timespan.start_ts, booking_timespan.end_ts).unwrap();
+        let view = match CalendarView::create(booking_timespan.start_ts, booking_timespan.end_ts) {
+            Ok(view) => view,
+            Err(_) => return Err(UseCaseErrors::InvalidTimespan),
+        };
 
         for user in &service.users {
             let view = view.clone();
@@ -178,22 +183,19 @@ impl UseCase for GetServiceBookingSlotsUseCase {
 }
 
 impl GetServiceBookingSlotsUseCase {
-    async fn get_user_freebusy(
+    async fn get_user_availibility(
         &self,
         user: &ServiceResource,
-        view: CalendarView,
+        user_calendars: &Vec<Calendar>,
+        view: &CalendarView,
         ctx: &NettuContext,
-    ) -> UserFreeEvents {
-        let user_calendars = ctx.repos.calendar_repo.find_by_user(&user.user_id).await;
-        let mut free_events = match &user.availibility {
+    ) -> Vec<EventInstance> {
+        match &user.availibility {
             Plan::Calendar(id) => {
                 let calendar = match user_calendars.iter().find(|cal| cal.id == *id) {
                     Some(cal) => cal,
                     None => {
-                        return UserFreeEvents {
-                            free_events: vec![],
-                            user_id: user.id.clone(),
-                        }
+                        return vec![];
                     }
                 };
                 let all_calendar_events = ctx
@@ -208,29 +210,26 @@ impl GetServiceBookingSlotsUseCase {
                     .map(|e| e.expand(Some(&view), &calendar.settings))
                     .flatten()
                     .collect::<Vec<_>>();
-                let free_events = get_free_busy(&mut all_event_instances);
 
-                free_events.free
+                get_free_busy(&mut all_event_instances).free
             }
             Plan::Schedule(id) => match ctx.repos.schedule_repo.find(&id).await {
                 Some(schedule) if schedule.user_id == user.id => schedule.freebusy(&view),
-                _ => {
-                    return UserFreeEvents {
-                        free_events: vec![],
-                        user_id: user.id.clone(),
-                    }
-                }
+                _ => vec![],
             },
-            Plan::Empty => {
-                return UserFreeEvents {
-                    free_events: vec![],
-                    user_id: user.id.clone(),
-                }
-            }
-        };
+            Plan::Empty => vec![],
+        }
+    }
 
+    async fn get_user_busy(
+        &self,
+        user: &ServiceResource,
+        user_calendars: &Vec<Calendar>,
+        view: &CalendarView,
+        ctx: &NettuContext,
+    ) -> Vec<EventInstance> {
         let mut busy_events: Vec<EventInstance> = vec![];
-        for cal in &user_calendars {
+        for cal in user_calendars {
             if !user.busy.contains(&cal.id) {
                 match ctx
                     .repos
@@ -242,7 +241,20 @@ impl GetServiceBookingSlotsUseCase {
                         let mut calendar_busy_events = calendar_events
                             .into_iter()
                             .filter(|e| e.busy)
-                            .map(|e| e.expand(Some(&view), &cal.settings))
+                            .map(|e| {
+                                let mut instances = e.expand(Some(&view), &cal.settings);
+                                let is_service_event = e.services.contains(&String::from("*"))
+                                    || e.services.contains(&self.service_id);
+
+                                // Add buffer to instances if event is a service event
+                                if user.buffer > 0 && is_service_event {
+                                    let buffer_in_millis = user.buffer * 60 * 1000;
+                                    for instance in instances.iter_mut() {
+                                        instance.end_ts += buffer_in_millis;
+                                    }
+                                }
+                                instances
+                            })
                             .flatten()
                             .collect::<Vec<_>>();
 
@@ -252,6 +264,22 @@ impl GetServiceBookingSlotsUseCase {
                 }
             }
         }
+
+        busy_events
+    }
+
+    async fn get_user_freebusy(
+        &self,
+        user: &ServiceResource,
+        view: CalendarView,
+        ctx: &NettuContext,
+    ) -> UserFreeEvents {
+        let user_calendars = ctx.repos.calendar_repo.find_by_user(&user.user_id).await;
+
+        let mut free_events = self
+            .get_user_availibility(user, &user_calendars, &view, ctx)
+            .await;
+        let mut busy_events = self.get_user_busy(user, &user_calendars, &view, ctx).await;
 
         let mut all_events = Vec::with_capacity(free_events.len() + busy_events.len());
         all_events.append(&mut free_events);
@@ -330,6 +358,7 @@ mod test {
             account_id: "1".into(),
             user_id: resource1.user_id.to_owned(),
             reminder: None,
+            services: vec![],
         };
         let availibility_event2 = CalendarEvent {
             busy: false,
@@ -343,6 +372,7 @@ mod test {
             account_id: "1".into(),
             user_id: resource2.user_id.to_owned(),
             reminder: None,
+            services: vec![],
         };
         let mut availibility_event3 = CalendarEvent {
             busy: false,
@@ -356,6 +386,7 @@ mod test {
             user_id: resource1.user_id.to_owned(),
             account_id: "1".into(),
             reminder: None,
+            services: vec![],
         };
         let recurrence = RRuleOptions {
             ..Default::default()

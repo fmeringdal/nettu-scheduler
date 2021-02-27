@@ -1,6 +1,7 @@
 mod account;
 mod calendar;
 mod event;
+mod logger;
 mod schedule;
 mod service;
 mod shared;
@@ -18,7 +19,7 @@ use mongodb::{options::ClientOptions, Client};
 use nettu_scheduler_utils::create_random_secret;
 use schedule::{IScheduleRepo, InMemoryScheduleRepo, ScheduleRepo};
 use service::{IServiceRepo, InMemoryServiceRepo, ServiceRepo};
-use std::sync::Arc;
+use std::{env::var, sync::Arc};
 use user::{IUserRepo, InMemoryUserRepo, UserRepo};
 
 pub use mongodb::bson::oid::ObjectId;
@@ -88,6 +89,7 @@ impl Repos {
 #[derive(Debug, Clone)]
 pub struct Config {
     pub create_account_secret_code: String,
+    pub port: usize,
 }
 
 impl Config {
@@ -104,8 +106,20 @@ impl Config {
                 code
             }
         };
+        let port = std::env::var("PORT").unwrap_or("5000".into());
+        let port = match port.parse::<usize>() {
+            Ok(port) => port,
+            Err(_) => {
+                println!(
+                    "The given PORT: {} is not valid, using the default port instead.",
+                    port
+                );
+                5000
+            }
+        };
         Self {
             create_account_secret_code,
+            port,
         }
     }
 }

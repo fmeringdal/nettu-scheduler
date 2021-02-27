@@ -1,5 +1,5 @@
 use super::IServiceRepo;
-use crate::{schedule, shared::mongo_repo};
+use crate::shared::mongo_repo;
 use mongo_repo::MongoDocument;
 use mongodb::{
     bson::{doc, oid::ObjectId, Document},
@@ -126,7 +126,7 @@ impl MongoDocument<Service> for ServiceMongo {
                     user_id: user.user_id.clone(),
                     availibility: user.availibility.clone(),
                     busy: user.busy.clone(),
-                    buffer: user.buffer as usize,
+                    buffer: user.buffer,
                 })
                 .collect(),
         }
@@ -144,7 +144,7 @@ impl MongoDocument<Service> for ServiceMongo {
                     user_id: user.user_id.clone(),
                     availibility: user.availibility.clone(),
                     busy: user.busy.clone(),
-                    buffer: user.buffer as i64,
+                    buffer: user.buffer,
                 })
                 .collect(),
             attributes: vec![

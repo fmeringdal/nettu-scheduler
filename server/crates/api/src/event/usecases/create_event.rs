@@ -21,6 +21,7 @@ pub struct CreateEventReq {
     busy: Option<bool>,
     rrule_options: Option<RRuleOptions>,
     reminder: Option<CalendarEventReminder>,
+    services: Option<Vec<String>>,
 }
 
 pub async fn create_event_controller(
@@ -39,6 +40,7 @@ pub async fn create_event_controller(
         user_id: user.id.clone(),
         account_id: user.account_id,
         reminder: req.reminder.clone(),
+        services: req.services.clone().unwrap_or(vec![]),
     };
 
     execute_with_policy(usecase, &policy, &ctx)
@@ -68,6 +70,7 @@ pub struct CreateEventUseCase {
     pub busy: bool,
     pub rrule_options: Option<RRuleOptions>,
     pub reminder: Option<CalendarEventReminder>,
+    pub services: Vec<String>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -103,6 +106,7 @@ impl UseCase for CreateEventUseCase {
             user_id: self.user_id.clone(),
             account_id: self.account_id.clone(),
             reminder: self.reminder.clone(),
+            services: self.services.clone(),
         };
         if let Some(rrule_opts) = self.rrule_options.clone() {
             if !e.set_recurrence(rrule_opts, &calendar.settings, true) {
@@ -181,6 +185,7 @@ mod test {
             user_id: user.id.clone(),
             account_id: user.account_id,
             reminder: None,
+            services: vec![],
         };
 
         let res = usecase.execute(&ctx).await;
@@ -206,6 +211,7 @@ mod test {
             user_id: user.id.clone(),
             account_id: user.account_id,
             reminder: None,
+            services: vec![],
         };
 
         let res = usecase.execute(&ctx).await;
@@ -231,6 +237,7 @@ mod test {
             user_id: user.id.clone(),
             account_id: user.account_id,
             reminder: None,
+            services: vec![],
         };
 
         let res = usecase.execute(&ctx).await;
@@ -266,6 +273,7 @@ mod test {
                 user_id: user.id.clone(),
                 account_id: user.account_id.to_owned(),
                 reminder: None,
+                services: vec![],
             };
 
             let res = usecase.execute(&ctx).await;

@@ -51,6 +51,7 @@ pub struct CalendarEvent {
     pub user_id: String,
     pub account_id: String,
     pub reminder: Option<CalendarEventReminder>,
+    pub services: Vec<String>,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -304,6 +305,7 @@ mod test {
             user_id: String::from(""),
             account_id: String::from(""),
             reminder: None,
+            services: vec![],
         };
 
         let oc = event.expand(None, &settings);
@@ -328,6 +330,7 @@ mod test {
             user_id: String::from(""),
             account_id: String::from(""),
             reminder: None,
+            services: vec![],
         };
 
         let oc = event.expand(None, &settings);
@@ -387,6 +390,7 @@ mod test {
                 account_id: String::from(""),
                 recurrence: None,
                 reminder: None,
+                services: vec![],
             };
 
             assert!(!event.set_recurrence(rrule, &settings, true));
@@ -432,6 +436,7 @@ mod test {
                 user_id: String::from(""),
                 recurrence: None,
                 reminder: None,
+                services: vec![],
             };
 
             assert!(event.set_recurrence(rrule, &settings, true));

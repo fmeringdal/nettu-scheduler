@@ -8,7 +8,7 @@ pub struct ServiceResourceDTO {
     pub user_id: String,
     pub availibility: Plan,
     pub busy: Vec<String>,
-    pub buffer: usize,
+    pub buffer: i64,
 }
 
 impl ServiceResourceDTO {

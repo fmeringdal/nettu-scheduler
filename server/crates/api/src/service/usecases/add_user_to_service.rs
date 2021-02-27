@@ -19,7 +19,7 @@ pub struct BodyParams {
     user_id: String,
     availibility: Plan,
     busy: Vec<String>,
-    buffer: usize,
+    buffer: i64,
 }
 
 pub async fn add_user_to_service_controller(
@@ -66,7 +66,7 @@ struct AddUserToServiceUseCase {
     pub user_id: String,
     pub availibility: Plan,
     pub busy: Vec<String>,
-    pub buffer: usize,
+    pub buffer: i64,
 }
 
 struct UseCaseRes {

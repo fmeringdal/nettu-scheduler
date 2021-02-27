@@ -120,6 +120,7 @@ struct CalendarEventMongo {
     account_id: String,
     recurrence: Option<RRuleOptions>,
     reminder: Option<CalendarEventReminder>,
+    services: Vec<String>,
 }
 
 impl MongoDocument<CalendarEvent> for CalendarEventMongo {
@@ -136,6 +137,7 @@ impl MongoDocument<CalendarEvent> for CalendarEventMongo {
             calendar_id: self.calendar_id.clone(),
             recurrence: self.recurrence.clone(),
             reminder: self.reminder.clone(),
+            services: self.services.clone(),
         }
     }
 
@@ -152,6 +154,7 @@ impl MongoDocument<CalendarEvent> for CalendarEventMongo {
             calendar_id: event.calendar_id.clone(),
             recurrence: event.recurrence.clone(),
             reminder: event.reminder.clone(),
+            services: event.services.clone(),
         }
     }
 
