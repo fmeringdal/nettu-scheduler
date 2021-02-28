@@ -1,14 +1,13 @@
-use crate::NettuSDK;
-
 use nettu_scheduler_api::Application;
 use nettu_scheduler_infra::{setup_context, Config};
+use nettu_scheduler_sdk::NettuSDK;
 
 pub struct TestApp {
     pub config: Config,
 }
 
 // Launch the application as a background task
-pub async fn spawn_app() -> (TestApp, NettuSDK) {
+pub async fn spawn_app() -> (TestApp, NettuSDK, String) {
     let mut ctx = setup_context().await;
     ctx.config.port = 0; // Random port
     ctx.config.create_account_secret_code = "123".into(); // Overriding create account secret
@@ -19,7 +18,6 @@ pub async fn spawn_app() -> (TestApp, NettuSDK) {
         .expect("Failed to build application.");
 
     let address = format!("http://localhost:{}", application.port());
-    println!("{}", address);
     let _ = actix_web::rt::spawn(async move {
         application
             .start()
@@ -28,6 +26,6 @@ pub async fn spawn_app() -> (TestApp, NettuSDK) {
     });
 
     let app = TestApp { config };
-    let sdk = NettuSDK::new(address);
-    (app, sdk)
+    let sdk = NettuSDK::new(address.clone());
+    (app, sdk, address)
 }

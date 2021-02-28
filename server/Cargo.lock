@@ -1554,7 +1554,7 @@ dependencies = [
  "nettu_scheduler_api",
  "nettu_scheduler_core",
  "nettu_scheduler_infra",
- "serde",
+ "nettu_scheduler_sdk",
 ]
 
 [[package]]
@@ -1605,6 +1605,15 @@ dependencies = [
  "nettu_scheduler_utils",
  "serde",
  "tokio 1.2.0",
+]
+
+[[package]]
+name = "nettu_scheduler_sdk"
+version = "0.1.0"
+dependencies = [
+ "actix-web",
+ "nettu_scheduler_api",
+ "serde",
 ]
 
 [[package]]

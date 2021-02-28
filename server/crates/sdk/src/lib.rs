@@ -1,13 +1,14 @@
+mod account;
+mod status;
+
+use account::AccountClient;
 use actix_web::client::{Client, ClientRequest};
 use actix_web::http::{Method, StatusCode};
-use nettu_scheduler_api::dev::{
-    account::{Account, CreateAccountResponse},
-    status::StatusResponse,
-};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use status::StatusClient;
+use std::sync::Arc;
 
-pub struct NettuSDK {
+pub(crate) struct BaseClient {
     address: String,
     api_key: Option<String>,
 }
@@ -20,7 +21,7 @@ pub enum APIError {
 }
 pub type APIResponse<T> = Result<T, APIError>;
 
-impl NettuSDK {
+impl BaseClient {
     pub fn new(address: String) -> Self {
         Self {
             address,
@@ -28,7 +29,7 @@ impl NettuSDK {
         }
     }
 
-    pub fn set_admin_key(&mut self, api_key: String) {
+    pub fn set_api_key(&mut self, api_key: String) {
         self.api_key = Some(api_key);
     }
 
@@ -96,18 +97,31 @@ impl NettuSDK {
 
         Ok(data)
     }
+}
 
-    pub async fn get_account(&self) -> APIResponse<Account> {
-        self.get("account".into(), StatusCode::OK).await
+pub struct NettuSDK {
+    pub account: AccountClient,
+    pub status: StatusClient,
+}
+
+impl NettuSDK {
+    fn create(base: BaseClient) -> Self {
+        let base = Arc::new(base);
+        let account = AccountClient::new(base.clone());
+        let status = StatusClient::new(base.clone());
+
+        Self { account, status }
     }
 
-    pub async fn create_account(&self, code: &str) -> APIResponse<CreateAccountResponse> {
-        let mut body = HashMap::new();
-        body.insert("code", code);
-        self.post(body, "account".into(), StatusCode::CREATED).await
+    pub fn new(address: String) -> Self {
+        let base = BaseClient::new(address);
+        Self::create(base)
     }
 
-    pub async fn check_health(&self) -> APIResponse<StatusResponse> {
-        self.get("".into(), StatusCode::OK).await
+    pub fn new_admin(address: String, api_key: String) -> Self {
+        let mut base = BaseClient::new(address);
+        base.set_api_key(api_key);
+
+        Self::create(base)
     }
 }

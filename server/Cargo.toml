@@ -11,6 +11,7 @@ members = [
     "crates/api",
     "crates/core",
     "crates/infra",
+    "crates/sdk",
     "crates/utils"
 ]
 
@@ -22,4 +23,4 @@ actix-web = "3.3.2"
 env_logger = "0.8.2"
 
 [dev-dependencies]
-serde = "1.0.123"
+nettu_scheduler_sdk = { path = "./crates/sdk" }
