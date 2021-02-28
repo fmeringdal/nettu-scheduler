@@ -3,6 +3,7 @@ use actix_web::http::StatusCode;
 use nettu_scheduler_api::dev::status::StatusResponse;
 use std::sync::Arc;
 
+#[derive(Clone)]
 pub struct StatusClient {
     base: Arc<BaseClient>,
 }

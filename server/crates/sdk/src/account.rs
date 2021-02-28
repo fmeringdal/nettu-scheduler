@@ -3,6 +3,7 @@ use actix_web::http::StatusCode;
 use nettu_scheduler_api::dev::account::{Account, CreateAccountResponse};
 use std::{collections::HashMap, sync::Arc};
 
+#[derive(Clone)]
 pub struct AccountClient {
     base: Arc<BaseClient>,
 }
