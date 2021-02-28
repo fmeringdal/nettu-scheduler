@@ -2,11 +2,11 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 
 ## Todos
 
+
 - Logging
 - More admin and user controllers for different usecases
 - Delete user cleanup actions
 - Freebusy queries cleanup
-- Use version instead of priority on Reminder ?
 - Use sorted event instace https://www.lpalmieri.com/posts/2020-12-11-zero-to-production-6-domain-modelling/
     - compatible
 - core or domain ??

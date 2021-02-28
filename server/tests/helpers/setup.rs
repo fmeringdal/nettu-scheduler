@@ -26,6 +26,6 @@ pub async fn spawn_app() -> (TestApp, NettuSDK, String) {
     });
 
     let app = TestApp { config };
-    let sdk = NettuSDK::new(address.clone());
+    let sdk = NettuSDK::new(address.clone(), "");
     (app, sdk, address)
 }

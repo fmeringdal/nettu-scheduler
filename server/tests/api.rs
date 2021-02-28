@@ -30,7 +30,7 @@ async fn test_get_account() {
         .await
         .expect("Expected to create account");
 
-    let admin_client = NettuSDK::new_admin(address, res.secret_api_key);
+    let admin_client = NettuSDK::new(address, res.secret_api_key);
     assert!(admin_client.account.get().await.is_ok());
     assert!(sdk.account.get().await.is_err());
 }
