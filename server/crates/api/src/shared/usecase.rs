@@ -40,7 +40,7 @@ where
 
     execute(usecase, ctx)
         .await
-        .map_err(|e| UseCaseErrorContainer::UseCase(e))
+        .map_err(UseCaseErrorContainer::UseCase)
 }
 
 pub async fn execute<U>(mut usecase: U, ctx: &U::Context) -> Result<U::Response, U::Errors>

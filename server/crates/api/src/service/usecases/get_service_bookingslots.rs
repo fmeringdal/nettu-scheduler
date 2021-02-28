@@ -11,8 +11,7 @@ use nettu_scheduler_core::{
         BookingQueryError, BookingSlotsOptions, BookingSlotsQuery, ServiceBookingSlot,
         ServiceBookingSlotDTO, UserFreeEvents,
     },
-    get_free_busy, sort_and_merge_instances, Calendar, CalendarView, EventInstance,
-    ServiceResource, TimePlan,
+    get_free_busy, Calendar, CalendarView, EventInstance, ServiceResource, TimePlan,
 };
 use nettu_scheduler_infra::NettuContext;
 use serde::{Deserialize, Serialize};

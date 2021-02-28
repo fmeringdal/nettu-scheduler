@@ -1,4 +1,4 @@
-use crate::{error::NettuError, event, shared::auth::protect_route};
+use crate::{error::NettuError, shared::auth::protect_route};
 use crate::{
     event::dtos::CalendarEventDTO,
     shared::usecase::{execute, UseCase},

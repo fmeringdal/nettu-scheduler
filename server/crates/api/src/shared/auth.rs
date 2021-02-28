@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use actix_web::HttpRequest;
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use nettu_scheduler_core::{Account, User};
@@ -25,7 +23,7 @@ pub struct Policy {
 }
 
 impl Policy {
-    pub fn authorize(&self, permissions: &Vec<Permission>) -> bool {
+    pub fn authorize(&self, permissions: &[Permission]) -> bool {
         if permissions.is_empty() {
             return true;
         }
@@ -227,9 +225,9 @@ pub async fn protect_account_route(
 
     match account {
         Some(acc) => Ok(acc),
-        None => Err(NettuError::Unauthorized(format!(
-            "Invalid api-key provided in x-api-key header"
-        ))),
+        None => Err(NettuError::Unauthorized(
+            "Invalid api-key provided in x-api-key header".to_string(),
+        )),
     }
 }
 

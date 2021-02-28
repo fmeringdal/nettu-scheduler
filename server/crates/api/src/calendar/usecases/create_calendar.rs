@@ -10,7 +10,7 @@ use crate::{
 use actix_web::{web, HttpResponse};
 use nettu_scheduler_core::{Calendar, User};
 use nettu_scheduler_infra::NettuContext;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 #[derive(Deserialize)]
 pub struct AdminControllerPathParams {

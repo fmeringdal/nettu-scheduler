@@ -9,7 +9,7 @@ use crate::{error::NettuError, shared::auth::protect_route};
 use actix_web::{web, HttpResponse};
 use nettu_scheduler_core::Calendar;
 use nettu_scheduler_infra::NettuContext;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 #[derive(Deserialize)]
 pub struct UpdateCalendarSettigsPathParams {

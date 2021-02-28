@@ -1,5 +1,5 @@
 use crate::shared::usecase::UseCase;
-use anyhow::Context;
+
 use nettu_scheduler_core::{Calendar, CalendarEvent, EventRemindersExpansionJob, Reminder};
 use nettu_scheduler_infra::NettuContext;
 use nettu_scheduler_infra::ObjectId;
