@@ -3,7 +3,7 @@ use crate::error::NettuError;
 use crate::shared::auth::protect_account_route;
 use crate::shared::usecase::execute;
 use actix_web::{web, HttpResponse};
-use nettu_scheduler_api_structs::api::delete_account_webhook::APIResponse;
+use nettu_scheduler_api_structs::delete_account_webhook::APIResponse;
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn delete_account_webhook_controller(

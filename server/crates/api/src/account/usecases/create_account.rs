@@ -1,9 +1,6 @@
 use crate::shared::usecase::{execute, UseCase};
 use actix_web::{web, HttpResponse};
-use nettu_scheduler_api_structs::{
-    api::create_account::{APIResponse, RequestBody},
-    dtos::AccountDTO,
-};
+use nettu_scheduler_api_structs::create_account::{APIResponse, RequestBody};
 use nettu_scheduler_core::Account;
 use nettu_scheduler_infra::NettuContext;
 
@@ -19,10 +16,7 @@ pub async fn create_account_controller(
     let res = execute(usecase, &ctx).await;
 
     match res {
-        Ok(account) => HttpResponse::Created().json(APIResponse {
-            account: AccountDTO::new(&account),
-            secret_api_key: account.secret_api_key,
-        }),
+        Ok(account) => HttpResponse::Created().json(APIResponse::new(account)),
         Err(e) => match e {
             UseCaseErrors::StorageError => HttpResponse::InternalServerError().finish(),
         },

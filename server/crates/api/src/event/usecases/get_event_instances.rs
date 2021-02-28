@@ -1,7 +1,7 @@
 use crate::shared::usecase::{execute, UseCase};
 use crate::{error::NettuError, shared::auth::protect_route};
 use actix_web::{web, HttpRequest, HttpResponse};
-use nettu_scheduler_api_structs::{api::get_event_instances::*, dtos::CalendarEventDTO};
+use nettu_scheduler_api_structs::get_event_instances::*;
 use nettu_scheduler_core::{CalendarEvent, CalendarView, EventInstance};
 use nettu_scheduler_infra::NettuContext;
 
@@ -22,10 +22,7 @@ pub async fn get_event_instances_controller(
     execute(usecase, &ctx)
         .await
         .map(|usecase_res| {
-            HttpResponse::Ok().json(APIResponse {
-                event: CalendarEventDTO::new(&usecase_res.event),
-                instances: usecase_res.instances,
-            })
+            HttpResponse::Ok().json(APIResponse::new(usecase_res.event, usecase_res.instances))
         })
         .map_err(|e| match e {
             UseCaseErrors::InvalidTimespanError => {

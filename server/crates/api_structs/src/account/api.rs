@@ -32,6 +32,15 @@ pub mod create_account {
         pub account: AccountDTO,
         pub secret_api_key: String,
     }
+
+    impl APIResponse {
+        pub fn new(account: Account) -> Self {
+            Self {
+                account: AccountDTO::new(&account),
+                secret_api_key: account.secret_api_key,
+            }
+        }
+    }
 }
 
 pub mod get_account {

@@ -83,6 +83,15 @@ pub mod get_event_instances {
         pub event: CalendarEventDTO,
         pub instances: Vec<EventInstance>,
     }
+
+    impl APIResponse {
+        pub fn new(event: CalendarEvent, instances: Vec<EventInstance>) -> Self {
+            Self {
+                event: CalendarEventDTO::new(&event),
+                instances,
+            }
+        }
+    }
 }
 
 pub mod get_event {
@@ -115,4 +124,21 @@ pub mod update_event {
     }
 
     pub type APIResponse = CalendarEventResponse;
+}
+
+pub mod send_account_event_reminders {
+    use super::*;
+
+    #[derive(Serialize)]
+    pub struct AccountEventRemindersDTO {
+        events: Vec<CalendarEventDTO>,
+    }
+
+    impl AccountEventRemindersDTO {
+        pub fn new(events: Vec<CalendarEvent>) -> Self {
+            Self {
+                events: events.iter().map(|e| CalendarEventDTO::new(e)).collect(),
+            }
+        }
+    }
 }

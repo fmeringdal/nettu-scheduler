@@ -8,7 +8,7 @@ use crate::{
     shared::usecase::{execute, UseCase},
 };
 use actix_web::{web, HttpResponse};
-use nettu_scheduler_api_structs::api::create_calendar::{APIResponse, PathParams};
+use nettu_scheduler_api_structs::create_calendar::{APIResponse, PathParams};
 use nettu_scheduler_core::{Calendar, User};
 use nettu_scheduler_infra::NettuContext;
 

@@ -1,5 +1,7 @@
 use serde::Serialize;
 
+use crate::CalendarEvent;
+
 #[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EventInstance {
@@ -135,6 +137,11 @@ pub fn remove_busy_from_free_instance(
     }
 
     free_instances_without_conflict
+}
+
+pub struct EventWithInstances {
+    pub event: CalendarEvent,
+    pub instances: Vec<EventInstance>,
 }
 
 pub fn remove_busy_from_free(

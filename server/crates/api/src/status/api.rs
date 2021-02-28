@@ -1,6 +1,6 @@
 use actix_web::{web, HttpResponse};
 
-use nettu_scheduler_api_structs::api::get_service_health::*;
+use nettu_scheduler_api_structs::get_service_health::*;
 
 async fn status() -> HttpResponse {
     HttpResponse::Ok().json(APIResponse {

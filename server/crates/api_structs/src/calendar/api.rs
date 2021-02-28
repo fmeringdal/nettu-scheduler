@@ -40,6 +40,10 @@ pub mod delete_calendar {
 }
 
 pub mod get_calendar_events {
+    use nettu_scheduler_core::EventWithInstances;
+
+    use crate::dtos::CalendarEventDTO;
+
     use super::*;
 
     #[derive(Debug, Deserialize)]
@@ -60,6 +64,21 @@ pub mod get_calendar_events {
     pub struct APIResponse {
         pub calendar: CalendarDTO,
         pub events: Vec<EventWithInstancesDTO>,
+    }
+
+    impl APIResponse {
+        pub fn new(calendar: Calendar, events: Vec<EventWithInstances>) -> Self {
+            Self {
+                calendar: CalendarDTO::new(&calendar),
+                events: events
+                    .into_iter()
+                    .map(|e| EventWithInstancesDTO {
+                        event: CalendarEventDTO::new(&e.event),
+                        instances: e.instances,
+                    })
+                    .collect(),
+            }
+        }
     }
 }
 

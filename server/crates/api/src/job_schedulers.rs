@@ -7,9 +7,8 @@ use crate::{
 };
 use actix_web::client::Client;
 use actix_web::rt::time::{delay_until, interval, Instant};
-use nettu_scheduler_api_structs::dtos::CalendarEventDTO;
+use nettu_scheduler_api_structs::send_account_event_reminders::AccountEventRemindersDTO;
 use nettu_scheduler_infra::NettuContext;
-use serde::Serialize;
 use std::time::Duration;
 
 pub fn get_start_delay(now_ts: usize, secs_before_min: usize) -> usize {
@@ -33,11 +32,6 @@ pub async fn start_reminders_expansion_job_scheduler(ctx: NettuContext) {
             let _ = execute(usecase, &ctx).await;
         }
     });
-}
-
-#[derive(Serialize)]
-struct AccountEventRemindersDTO {
-    events: Vec<CalendarEventDTO>,
 }
 
 pub async fn start_send_reminders_job(ctx: NettuContext) {
@@ -76,13 +70,7 @@ pub async fn start_send_reminders_job(ctx: NettuContext) {
                             if let Err(e) = client
                                 .post(webhook.url)
                                 .header("nettu-scheduler-webhook-key", webhook.key)
-                                .send_json(&AccountEventRemindersDTO {
-                                    events: reminders
-                                        .events
-                                        .iter()
-                                        .map(|e| CalendarEventDTO::new(e))
-                                        .collect(),
-                                })
+                                .send_json(&AccountEventRemindersDTO::new(reminders.events))
                                 .await
                             {
                                 println!("Error informing client of reminders: {:?}", e);

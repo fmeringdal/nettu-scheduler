@@ -4,7 +4,7 @@ use crate::shared::{
     usecase::{execute, UseCase},
 };
 use actix_web::{web, HttpRequest, HttpResponse};
-use nettu_scheduler_api_structs::api::add_user_to_service::*;
+use nettu_scheduler_api_structs::add_user_to_service::*;
 use nettu_scheduler_core::{Account, Service, ServiceResource, TimePlan, User};
 use nettu_scheduler_infra::NettuContext;
 

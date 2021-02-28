@@ -1,7 +1,7 @@
 use crate::error::NettuError;
 use crate::shared::auth::protect_account_route;
 use actix_web::{web, HttpResponse};
-use nettu_scheduler_api_structs::api::get_account::APIResponse;
+use nettu_scheduler_api_structs::get_account::APIResponse;
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn get_account_controller(

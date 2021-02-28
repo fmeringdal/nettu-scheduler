@@ -1,7 +1,7 @@
 use crate::shared::usecase::{execute, UseCase};
 use crate::{error::NettuError, shared::auth::protect_route};
 use actix_web::{web, HttpRequest, HttpResponse};
-use nettu_scheduler_api_structs::api::get_calendar::{APIResponse, PathParams};
+use nettu_scheduler_api_structs::get_calendar::{APIResponse, PathParams};
 use nettu_scheduler_core::Calendar;
 use nettu_scheduler_infra::NettuContext;
 

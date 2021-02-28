@@ -4,9 +4,7 @@ use crate::shared::{
 };
 use crate::{error::NettuError, shared::auth::protect_route};
 use actix_web::{web, HttpResponse};
-use nettu_scheduler_api_structs::api::update_calendar_settings::{
-    APIResponse, PathParams, RequestBody,
-};
+use nettu_scheduler_api_structs::update_calendar_settings::{APIResponse, PathParams, RequestBody};
 use nettu_scheduler_core::Calendar;
 use nettu_scheduler_infra::NettuContext;
 

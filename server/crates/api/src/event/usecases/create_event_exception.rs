@@ -4,7 +4,7 @@ use crate::shared::{
 };
 use crate::{error::NettuError, shared::usecase::UseCase};
 use actix_web::{web, HttpRequest, HttpResponse};
-use nettu_scheduler_api_structs::api::create_event_exception::*;
+use nettu_scheduler_api_structs::create_event_exception::*;
 use nettu_scheduler_core::CalendarEvent;
 use nettu_scheduler_infra::NettuContext;
 

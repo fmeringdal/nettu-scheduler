@@ -7,7 +7,7 @@ use crate::shared::{
     usecase::{execute, execute_with_policy, PermissionBoundary, UseCase, UseCaseErrorContainer},
 };
 use actix_web::{web, HttpResponse};
-use nettu_scheduler_api_structs::api::create_event::*;
+use nettu_scheduler_api_structs::create_event::*;
 use nettu_scheduler_core::{CalendarEvent, CalendarEventReminder, RRuleOptions};
 use nettu_scheduler_infra::NettuContext;
 use nettu_scheduler_infra::ObjectId;

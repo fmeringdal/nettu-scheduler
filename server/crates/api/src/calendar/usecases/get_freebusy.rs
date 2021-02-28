@@ -3,7 +3,7 @@ use crate::shared::auth::ensure_nettu_acct_header;
 use crate::shared::usecase::{execute, UseCase};
 use actix_web::{web, HttpRequest, HttpResponse};
 use futures::future::join_all;
-use nettu_scheduler_api_structs::api::get_user_freebusy::{APIResponse, PathParams, QueryParams};
+use nettu_scheduler_api_structs::get_user_freebusy::{APIResponse, PathParams, QueryParams};
 use nettu_scheduler_core::{sort_and_merge_instances, CalendarView, EventInstance, User};
 use nettu_scheduler_infra::NettuContext;
 use std::collections::HashMap;

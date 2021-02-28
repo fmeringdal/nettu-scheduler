@@ -3,11 +3,8 @@ use crate::shared::auth::protect_route;
 use crate::shared::usecase::{execute, UseCase};
 
 use actix_web::{web, HttpRequest, HttpResponse};
-use nettu_scheduler_api_structs::{
-    api::get_calendar_events::{APIResponse, PathParams, QueryParams},
-    dtos::{CalendarDTO, CalendarEventDTO, EventWithInstancesDTO},
-};
-use nettu_scheduler_core::{Calendar, CalendarEvent, CalendarView, EventInstance};
+use nettu_scheduler_api_structs::get_calendar_events::{APIResponse, PathParams, QueryParams};
+use nettu_scheduler_core::{Calendar, CalendarView, EventWithInstances};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn get_calendar_events_controller(
@@ -28,18 +25,7 @@ pub async fn get_calendar_events_controller(
     execute(usecase, &ctx)
         .await
         .map(|usecase_res| {
-            let res = APIResponse {
-                calendar: CalendarDTO::new(&usecase_res.calendar),
-                events: usecase_res
-                    .events
-                    .into_iter()
-                    .map(|data| EventWithInstancesDTO {
-                        event: CalendarEventDTO::new(&data.event),
-                        instances: data.instances,
-                    })
-                    .collect(),
-            };
-            HttpResponse::Ok().json(res)
+            HttpResponse::Ok().json(APIResponse::new(usecase_res.calendar, usecase_res.events))
         })
         .map_err(|e| match e {
             UseCaseErrors::InvalidTimespanError => {
@@ -62,11 +48,6 @@ pub struct GetCalendarEventsUseCase {
 pub struct UseCaseResponse {
     calendar: Calendar,
     events: Vec<EventWithInstances>,
-}
-
-pub struct EventWithInstances {
-    pub event: CalendarEvent,
-    pub instances: Vec<EventInstance>,
 }
 
 #[derive(Debug)]

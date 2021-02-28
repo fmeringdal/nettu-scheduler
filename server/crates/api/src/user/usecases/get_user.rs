@@ -6,7 +6,7 @@ use crate::{
     },
 };
 use actix_web::{web, HttpRequest, HttpResponse};
-use nettu_scheduler_api_structs::api::get_user::*;
+use nettu_scheduler_api_structs::get_user::*;
 use nettu_scheduler_core::{Account, User};
 use nettu_scheduler_infra::NettuContext;
 

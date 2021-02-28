@@ -7,7 +7,7 @@ use crate::{
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 
-use nettu_scheduler_api_structs::api::remove_user_from_service::*;
+use nettu_scheduler_api_structs::remove_user_from_service::*;
 use nettu_scheduler_core::{Account, Service, User};
 use nettu_scheduler_infra::NettuContext;
 

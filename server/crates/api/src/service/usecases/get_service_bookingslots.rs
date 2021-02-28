@@ -5,7 +5,7 @@ use crate::{
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use futures::future::join_all;
-use nettu_scheduler_api_structs::api::get_service_bookingslots::*;
+use nettu_scheduler_api_structs::get_service_bookingslots::*;
 use nettu_scheduler_core::{
     booking_slots::{
         get_service_bookingslots, validate_bookingslots_query, validate_slots_interval,

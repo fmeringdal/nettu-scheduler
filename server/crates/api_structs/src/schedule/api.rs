@@ -1,7 +1,7 @@
 use nettu_scheduler_core::Schedule;
 use serde::{Deserialize, Serialize};
 
-use super::dtos::ScheduleDTO;
+use crate::dtos::ScheduleDTO;
 
 #[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
