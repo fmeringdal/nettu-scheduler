@@ -1,4 +1,21 @@
+use nettu_scheduler_core::Schedule;
 use serde::{Deserialize, Serialize};
+
+use super::dtos::ScheduleDTO;
+
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ScheduleResponse {
+    schedule: ScheduleDTO,
+}
+
+impl ScheduleResponse {
+    pub fn new(schedule: Schedule) -> Self {
+        Self {
+            schedule: ScheduleDTO::new(&schedule),
+        }
+    }
+}
 
 pub mod create_schedule {
     use super::*;
@@ -13,6 +30,8 @@ pub mod create_schedule {
     pub struct RequstBody {
         pub timezone: String,
     }
+
+    pub type APIResponse = ScheduleResponse;
 }
 
 pub mod delete_schedule {
@@ -22,6 +41,8 @@ pub mod delete_schedule {
     pub struct PathParams {
         pub schedule_id: String,
     }
+
+    pub type APIResponse = ScheduleResponse;
 }
 
 pub mod get_schedule {
@@ -31,6 +52,8 @@ pub mod get_schedule {
     pub struct PathParams {
         pub schedule_id: String,
     }
+
+    pub type APIResponse = ScheduleResponse;
 }
 
 pub mod update_schedule {
@@ -49,4 +72,6 @@ pub mod update_schedule {
         pub timezone: Option<String>,
         pub rules: Option<Vec<ScheduleRule>>,
     }
+
+    pub type APIResponse = ScheduleResponse;
 }

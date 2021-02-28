@@ -1,7 +1,7 @@
 use nettu_scheduler_core::{Service, ServiceResource, TimePlan, User};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ServiceResourceDTO {
     pub id: String,
@@ -23,7 +23,7 @@ impl ServiceResourceDTO {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ServiceDTO {
     pub id: String,

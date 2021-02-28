@@ -1,6 +1,22 @@
-use nettu_scheduler_core::booking_slots::ServiceBookingSlotDTO;
 use nettu_scheduler_core::TimePlan;
+use nettu_scheduler_core::{booking_slots::ServiceBookingSlotDTO, Service};
 use serde::{Deserialize, Serialize};
+
+use crate::dtos::ServiceDTO;
+
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ServiceResponse {
+    service: ServiceDTO,
+}
+
+impl ServiceResponse {
+    pub fn new(service: Service) -> Self {
+        Self {
+            service: ServiceDTO::new(&service),
+        }
+    }
+}
 
 pub mod add_user_to_service {
     use super::*;
@@ -20,16 +36,14 @@ pub mod add_user_to_service {
         pub closest_booking_time: Option<i64>,
         pub furthest_booking_time: Option<i64>,
     }
+
+    pub type APIResponse = ServiceResponse;
 }
 
 pub mod create_service {
     use super::*;
 
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
-    pub struct APIResponse {
-        pub service_id: String,
-    }
+    pub type APIResponse = ServiceResponse;
 }
 
 pub mod get_service_bookingslots {
@@ -63,6 +77,8 @@ pub mod get_service {
     pub struct PathParams {
         pub service_id: String,
     }
+
+    pub type APIResponse = ServiceResponse;
 }
 
 pub mod remove_user_from_service {
@@ -73,6 +89,8 @@ pub mod remove_user_from_service {
         pub service_id: String,
         pub user_id: String,
     }
+
+    pub type APIResponse = ServiceResponse;
 }
 
 pub mod update_service_user {
@@ -93,4 +111,6 @@ pub mod update_service_user {
         pub closest_booking_time: Option<i64>,
         pub furthest_booking_time: Option<i64>,
     }
+
+    pub type APIResponse = ServiceResponse;
 }

@@ -3,8 +3,6 @@ use actix_web::http::StatusCode;
 use nettu_scheduler_api_structs::api::*;
 use std::{collections::HashMap, sync::Arc};
 
-type Account = nettu_scheduler_api_structs::dtos::AccountDTO;
-
 #[derive(Clone)]
 pub struct AccountClient {
     base: Arc<BaseClient>,
@@ -15,7 +13,7 @@ impl AccountClient {
         Self { base }
     }
 
-    pub async fn get(&self) -> APIResponse<Account> {
+    pub async fn get(&self) -> APIResponse<get_account::APIResponse> {
         self.base.get("account".into(), StatusCode::OK).await
     }
 

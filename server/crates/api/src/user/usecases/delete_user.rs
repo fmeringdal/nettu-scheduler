@@ -1,7 +1,7 @@
 use crate::shared::usecase::{execute, UseCase};
 use crate::{error::NettuError, shared::auth::protect_account_route};
 use actix_web::{web, HttpRequest, HttpResponse};
-use nettu_scheduler_api_structs::api::delete_user::PathParams;
+use nettu_scheduler_api_structs::api::delete_user::*;
 use nettu_scheduler_core::{Account, User};
 use nettu_scheduler_infra::NettuContext;
 
@@ -16,12 +16,7 @@ pub async fn delete_user_controller(
     let usecase = DeleteUserUseCase { account, user_id };
     execute(usecase, &ctx)
         .await
-        .map(|usecase_res| {
-            HttpResponse::Ok().body(format!(
-                "Used: {} is deleted.",
-                usecase_res.user.external_id
-            ))
-        })
+        .map(|usecase_res| HttpResponse::Created().json(APIResponse::new(usecase_res.user)))
         .map_err(|e| match e {
             UseCaseErrors::StorageError => NettuError::InternalError,
             UseCaseErrors::UserNotFoundError => NettuError::NotFound(format!(

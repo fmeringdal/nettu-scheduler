@@ -1,13 +1,12 @@
-use crate::{
-    calendar::dtos::CalendarDTO,
-    shared::{
-        auth::Permission,
-        usecase::{execute_with_policy, PermissionBoundary, UseCase, UseCaseErrorContainer},
-    },
+use crate::shared::{
+    auth::Permission,
+    usecase::{execute_with_policy, PermissionBoundary, UseCase, UseCaseErrorContainer},
 };
 use crate::{error::NettuError, shared::auth::protect_route};
 use actix_web::{web, HttpResponse};
-use nettu_scheduler_api_structs::api::update_calendar_settings::{PathParams, RequestBody};
+use nettu_scheduler_api_structs::api::update_calendar_settings::{
+    APIResponse, PathParams, RequestBody,
+};
 use nettu_scheduler_core::Calendar;
 use nettu_scheduler_infra::NettuContext;
 
@@ -28,7 +27,7 @@ pub async fn update_calendar_settings_controller(
 
     execute_with_policy(usecase, &policy, &ctx)
         .await
-        .map(|calendar| HttpResponse::Ok().json(CalendarDTO::new(&calendar)))
+        .map(|calendar| HttpResponse::Ok().json(APIResponse::new(calendar)))
         .map_err(|e| match e {
             UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
             UseCaseErrorContainer::UseCase(e) => match e {

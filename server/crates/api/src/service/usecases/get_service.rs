@@ -6,7 +6,7 @@ use crate::{
     },
 };
 use actix_web::{web, HttpRequest, HttpResponse};
-use nettu_scheduler_api_structs::{api::get_service::*, dtos::ServiceDTO};
+use nettu_scheduler_api_structs::api::get_service::*;
 use nettu_scheduler_core::{Account, Service};
 use nettu_scheduler_infra::NettuContext;
 
@@ -24,10 +24,7 @@ pub async fn get_service_controller(
 
     execute(usecase, &ctx)
         .await
-        .map(|usecase_res| {
-            let dto = ServiceDTO::new(&usecase_res.service);
-            HttpResponse::Ok().json(dto)
-        })
+        .map(|usecase_res| HttpResponse::Ok().json(APIResponse::new(usecase_res.service)))
         .map_err(|e| match e {
             UseCaseErrors::NotFoundError => NettuError::NotFound(format!(
                 "The service with id: {} was not found.",

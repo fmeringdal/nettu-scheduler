@@ -6,7 +6,7 @@ use crate::{
     },
 };
 use actix_web::{web, HttpRequest, HttpResponse};
-use nettu_scheduler_api_structs::{api::get_user::PathParams, dtos::UserDTO};
+use nettu_scheduler_api_structs::api::get_user::*;
 use nettu_scheduler_core::{Account, User};
 use nettu_scheduler_infra::NettuContext;
 
@@ -21,10 +21,7 @@ pub async fn get_user_controller(
     let usecase = GetUserUseCase { account, user_id };
     execute(usecase, &ctx)
         .await
-        .map(|usecase_res| {
-            let dto = UserDTO::new(&usecase_res.user);
-            HttpResponse::Ok().json(dto)
-        })
+        .map(|usecase_res| HttpResponse::Created().json(APIResponse::new(usecase_res.user)))
         .map_err(|e| match e {
             UseCaseErrors::UserNotFoundError => NettuError::NotFound(format!(
                 "A user with id: {}, was not found.",

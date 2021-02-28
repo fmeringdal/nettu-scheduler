@@ -6,7 +6,7 @@ use crate::{
     },
 };
 use actix_web::{web, HttpRequest, HttpResponse};
-use nettu_scheduler_api_structs::{api::get_event::*, dtos::CalendarEventDTO};
+use nettu_scheduler_api_structs::api::get_event::*;
 use nettu_scheduler_core::CalendarEvent;
 use nettu_scheduler_infra::NettuContext;
 
@@ -24,7 +24,7 @@ pub async fn get_event_controller(
 
     execute(usecase, &ctx)
         .await
-        .map(|calendar_event| HttpResponse::Ok().json(CalendarEventDTO::new(&calendar_event)))
+        .map(|calendar_event| HttpResponse::Ok().json(APIResponse::new(calendar_event)))
         .map_err(|e| match e {
             UseCaseErrors::NotFoundError => NettuError::NotFound(format!(
                 "The event with id: {}, was not found",

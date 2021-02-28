@@ -1,7 +1,7 @@
 use crate::shared::usecase::{execute, UseCase};
 use crate::{error::NettuError, shared::auth::protect_account_route};
 use actix_web::{web, HttpRequest, HttpResponse};
-use nettu_scheduler_api_structs::{api::create_user::RequestBody, dtos::UserDTO};
+use nettu_scheduler_api_structs::api::create_user::*;
 use nettu_scheduler_core::User;
 use nettu_scheduler_infra::NettuContext;
 
@@ -19,10 +19,7 @@ pub async fn create_user_controller(
 
     execute(usecase, &ctx)
         .await
-        .map(|usecase_res| {
-            let res = UserDTO::new(&usecase_res.user);
-            HttpResponse::Created().json(res)
-        })
+        .map(|usecase_res| HttpResponse::Created().json(APIResponse::new(usecase_res.user)))
         .map_err(|e| match e {
             UseCaseErrors::StorageError => NettuError::InternalError,
             UseCaseErrors::UserAlreadyExists => NettuError::Conflict(

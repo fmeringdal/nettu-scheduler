@@ -1,7 +1,21 @@
 use serde::{Deserialize, Serialize};
 
 use crate::dtos::{CalendarDTO, EventWithInstancesDTO};
-use nettu_scheduler_core::EventInstance;
+use nettu_scheduler_core::{Calendar, EventInstance};
+
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CalendarResponse {
+    calendar: CalendarDTO,
+}
+
+impl CalendarResponse {
+    pub fn new(calendar: Calendar) -> Self {
+        Self {
+            calendar: CalendarDTO::new(&calendar),
+        }
+    }
+}
 
 pub mod create_calendar {
     use super::*;
@@ -10,6 +24,8 @@ pub mod create_calendar {
     pub struct PathParams {
         pub user_id: String,
     }
+
+    pub type APIResponse = CalendarResponse;
 }
 
 pub mod delete_calendar {
@@ -19,6 +35,8 @@ pub mod delete_calendar {
     pub struct PathParams {
         pub calendar_id: String,
     }
+
+    pub type APIResponse = CalendarResponse;
 }
 
 pub mod get_calendar_events {
@@ -53,6 +71,8 @@ pub mod get_calendar {
     pub struct PathParams {
         pub calendar_id: String,
     }
+
+    pub type APIResponse = CalendarResponse;
 }
 
 pub mod get_user_freebusy {
@@ -93,4 +113,6 @@ pub mod update_calendar_settings {
         pub wkst: Option<isize>,
         pub timezone: Option<String>,
     }
+
+    pub type APIResponse = CalendarResponse;
 }

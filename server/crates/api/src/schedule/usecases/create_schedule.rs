@@ -8,7 +8,7 @@ use crate::{
 };
 use actix_web::{web, HttpResponse};
 use chrono_tz::Tz;
-use nettu_scheduler_api_structs::{api::create_schedule::*, dtos::ScheduleDTO};
+use nettu_scheduler_api_structs::api::create_schedule::*;
 use nettu_scheduler_core::{Schedule, User};
 use nettu_scheduler_infra::NettuContext;
 
@@ -28,10 +28,7 @@ pub async fn create_schedule_admin_controller(
 
     execute(usecase, &ctx)
         .await
-        .map(|res| {
-            let dto = ScheduleDTO::new(&res.schedule);
-            HttpResponse::Created().json(dto)
-        })
+        .map(|res| HttpResponse::Created().json(APIResponse::new(res.schedule)))
         .map_err(|e| match e {
             UseCaseErrors::InvalidTimezone(msg) => NettuError::BadClientData(format!(
                 "Invalid timezone: {}. It should be a valid IANA TimeZone.",
@@ -59,10 +56,7 @@ pub async fn create_schedule_controller(
 
     execute_with_policy(usecase, &policy, &ctx)
         .await
-        .map(|res| {
-            let dto = ScheduleDTO::new(&res.schedule);
-            HttpResponse::Created().json(dto)
-        })
+        .map(|res| HttpResponse::Created().json(APIResponse::new(res.schedule)))
         .map_err(|e| {
             match e {
                 UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),

@@ -10,7 +10,7 @@ pub mod dtos {
     pub use crate::account::dtos::*;
     pub use crate::calendar::dtos::*;
     pub use crate::event::dtos::*;
-    pub use crate::schedule::dtos::*;
+    pub(crate) use crate::schedule::dtos::*;
     pub use crate::service::dtos::*;
     pub use crate::status::dtos::*;
     pub use crate::user::dtos::*;

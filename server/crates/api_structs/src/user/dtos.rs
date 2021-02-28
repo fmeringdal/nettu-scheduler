@@ -1,7 +1,7 @@
 use nettu_scheduler_core::User;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UserDTO {
     id: String,

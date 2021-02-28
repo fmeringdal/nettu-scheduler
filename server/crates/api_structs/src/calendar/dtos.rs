@@ -1,7 +1,7 @@
 use nettu_scheduler_core::{Calendar, CalendarSettings, User};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CalendarDTO {
     pub id: String,
@@ -9,7 +9,7 @@ pub struct CalendarDTO {
     pub settings: CalendarSettingsDTO,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CalendarSettingsDTO {
     pub wkst: isize,

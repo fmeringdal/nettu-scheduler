@@ -3,6 +3,7 @@ use crate::error::NettuError;
 use crate::shared::auth::protect_account_route;
 use crate::shared::usecase::execute;
 use actix_web::{web, HttpResponse};
+use nettu_scheduler_api_structs::api::delete_account_webhook::APIResponse;
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn delete_account_webhook_controller(
@@ -18,7 +19,7 @@ pub async fn delete_account_webhook_controller(
 
     execute(usecase, &ctx)
         .await
-        .map(|_| HttpResponse::Ok().body("Webhook deleted from account".to_string()))
+        .map(|account| HttpResponse::Ok().json(APIResponse::new(account)))
         .map_err(|e| match e {
             UseCaseErrors::InvalidURI(err) => {
                 NettuError::BadClientData(format!("Invalid URI provided. Error message: {}", err))

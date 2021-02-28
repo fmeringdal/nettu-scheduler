@@ -8,7 +8,7 @@ use crate::{
 use actix_web::{web, HttpRequest, HttpResponse};
 
 use nettu_scheduler_api_structs::api::remove_user_from_service::*;
-use nettu_scheduler_core::{Account, ServiceResource, User};
+use nettu_scheduler_core::{Account, Service, User};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn remove_user_from_service_controller(
@@ -27,7 +27,7 @@ pub async fn remove_user_from_service_controller(
 
     execute(usecase, &ctx)
         .await
-        .map(|_| HttpResponse::Ok().body("Service successfully updated"))
+        .map(|usecase_res| HttpResponse::Ok().json(APIResponse::new(usecase_res.service)))
         .map_err(|e| match e {
             UseCaseErrors::StorageError => NettuError::InternalError,
             UseCaseErrors::ServiceNotFoundError => {
@@ -47,7 +47,7 @@ struct RemoveUserFromServiceUseCase {
 }
 
 struct UseCaseRes {
-    pub resource: ServiceResource,
+    pub service: Service,
 }
 
 #[derive(Debug)]
@@ -72,8 +72,8 @@ impl UseCase for RemoveUserFromServiceUseCase {
         };
 
         match service.remove_user(&self.user_id) {
-            Some(resource) => match ctx.repos.service_repo.save(&service).await {
-                Ok(_) => Ok(UseCaseRes { resource }),
+            Some(_) => match ctx.repos.service_repo.save(&service).await {
+                Ok(_) => Ok(UseCaseRes { service }),
                 Err(_) => Err(UseCaseErrors::StorageError),
             },
             None => Err(UseCaseErrors::UserNotFoundError),

@@ -1,14 +1,14 @@
+use crate::shared::auth::Permission;
 use crate::shared::{
     auth::{protect_account_route, protect_route},
     usecase::{execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
 };
-use crate::{calendar::dtos::CalendarDTO, shared::auth::Permission};
 use crate::{
     error::NettuError,
     shared::usecase::{execute, UseCase},
 };
 use actix_web::{web, HttpResponse};
-use nettu_scheduler_api_structs::api::create_calendar::PathParams;
+use nettu_scheduler_api_structs::api::create_calendar::{APIResponse, PathParams};
 use nettu_scheduler_core::{Calendar, User};
 use nettu_scheduler_infra::NettuContext;
 
@@ -24,7 +24,7 @@ pub async fn create_calendar_admin_controller(
 
     execute(usecase, &ctx)
         .await
-        .map(|calendar| HttpResponse::Created().json(CalendarDTO::new(&calendar)))
+        .map(|calendar| HttpResponse::Created().json(APIResponse::new(calendar)))
         .map_err(|e| match e {
             UseCaseErrors::StorageError => NettuError::InternalError,
             UseCaseErrors::UserNotFoundError => NettuError::NotFound(format!(
@@ -44,7 +44,7 @@ pub async fn create_calendar_controller(
 
     execute_with_policy(usecase, &policy, &ctx)
         .await
-        .map(|calendar| HttpResponse::Created().json(CalendarDTO::new(&calendar)))
+        .map(|calendar| HttpResponse::Created().json(APIResponse::new(calendar)))
         .map_err(|e| {
             match e {
                 UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),

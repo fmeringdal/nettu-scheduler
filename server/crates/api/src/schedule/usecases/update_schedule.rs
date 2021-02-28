@@ -8,7 +8,7 @@ use crate::{
 };
 use actix_web::{web, HttpResponse};
 use chrono_tz::Tz;
-use nettu_scheduler_api_structs::{api::update_schedule::*, dtos::ScheduleDTO};
+use nettu_scheduler_api_structs::api::update_schedule::*;
 use nettu_scheduler_core::{Schedule, ScheduleRule};
 use nettu_scheduler_infra::NettuContext;
 
@@ -29,10 +29,7 @@ pub async fn update_schedule_controller(
 
     execute_with_policy(usecase, &policy, &ctx)
         .await
-        .map(|res| {
-            let dto = ScheduleDTO::new(&res.schedule);
-            HttpResponse::Ok().json(dto)
-        })
+        .map(|res| HttpResponse::Ok().json(APIResponse::new(res.schedule)))
         .map_err(|e| match e {
             UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
             UseCaseErrorContainer::UseCase(e) => match e {

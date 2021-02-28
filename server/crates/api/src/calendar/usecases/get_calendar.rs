@@ -1,10 +1,7 @@
-use crate::{
-    calendar::dtos::CalendarDTO,
-    shared::usecase::{execute, UseCase},
-};
+use crate::shared::usecase::{execute, UseCase};
 use crate::{error::NettuError, shared::auth::protect_route};
 use actix_web::{web, HttpRequest, HttpResponse};
-use nettu_scheduler_api_structs::api::get_calendar::PathParams;
+use nettu_scheduler_api_structs::api::get_calendar::{APIResponse, PathParams};
 use nettu_scheduler_core::Calendar;
 use nettu_scheduler_infra::NettuContext;
 
@@ -22,10 +19,7 @@ pub async fn get_calendar_controller(
 
     execute(usecase, &ctx)
         .await
-        .map(|calendar| {
-            let dto = CalendarDTO::new(&calendar);
-            HttpResponse::Ok().json(dto)
-        })
+        .map(|calendar| HttpResponse::Ok().json(APIResponse::new(calendar)))
         .map_err(|e| match e {
             UseCaseErrors::NotFound => NettuError::NotFound(format!(
                 "The calendar with id: {}, was not found.",

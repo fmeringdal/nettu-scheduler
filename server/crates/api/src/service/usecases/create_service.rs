@@ -15,12 +15,7 @@ pub async fn create_service_controller(
 
     execute(usecase, &ctx)
         .await
-        .map(|usecase_res| {
-            let res = APIResponse {
-                service_id: usecase_res.service.id,
-            };
-            HttpResponse::Created().json(res)
-        })
+        .map(|usecase_res| HttpResponse::Created().json(APIResponse::new(usecase_res.service)))
         .map_err(|e| match e {
             UseCaseErrors::StorageError => NettuError::InternalError,
         })

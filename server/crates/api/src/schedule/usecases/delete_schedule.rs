@@ -4,7 +4,8 @@ use crate::shared::{
 };
 use crate::{error::NettuError, shared::usecase::UseCase};
 use actix_web::{web, HttpResponse};
-use nettu_scheduler_api_structs::api::delete_schedule::PathParams;
+use nettu_scheduler_api_structs::api::delete_schedule::*;
+use nettu_scheduler_core::Schedule;
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn delete_schedule_controller(
@@ -21,7 +22,7 @@ pub async fn delete_schedule_controller(
 
     execute_with_policy(usecase, &policy, &ctx)
         .await
-        .map(|_| HttpResponse::Ok().body("Schedule deleted"))
+        .map(|schedule| HttpResponse::Ok().json(APIResponse::new(schedule)))
         .map_err(|e| match e {
             UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
             UseCaseErrorContainer::UseCase(e) => match e {
@@ -48,7 +49,7 @@ pub struct DeleteScheduleUseCase {
 
 #[async_trait::async_trait(?Send)]
 impl UseCase for DeleteScheduleUseCase {
-    type Response = ();
+    type Response = Schedule;
 
     type Errors = UseCaseErrors;
 
@@ -71,7 +72,7 @@ impl UseCase for DeleteScheduleUseCase {
                     return Err(UseCaseErrors::UnableToDelete);
                 }
 
-                Ok(())
+                Ok(schedule)
             }
             _ => Err(UseCaseErrors::NotFoundError),
         }

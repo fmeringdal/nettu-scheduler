@@ -7,7 +7,7 @@ use crate::{
     shared::usecase::{execute, UseCase},
 };
 use actix_web::{web, HttpRequest, HttpResponse};
-use nettu_scheduler_api_structs::{api::delete_event::PathParams, dtos::CalendarEventDTO};
+use nettu_scheduler_api_structs::api::delete_event::*;
 use nettu_scheduler_core::CalendarEvent;
 use nettu_scheduler_infra::NettuContext;
 
@@ -29,7 +29,7 @@ pub async fn delete_event_controller(
 
     execute_with_policy(usecase, &policy, &ctx)
         .await
-        .map(|event| HttpResponse::Ok().json(CalendarEventDTO::new(&event)))
+        .map(|event| HttpResponse::Ok().json(APIResponse::new(event)))
         .map_err(|e| match e {
             UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
             UseCaseErrorContainer::UseCase(e) => match e {

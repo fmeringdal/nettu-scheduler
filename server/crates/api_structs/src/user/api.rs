@@ -1,4 +1,20 @@
+use nettu_scheduler_core::User;
 use serde::{Deserialize, Serialize};
+
+use crate::dtos::UserDTO;
+
+#[derive(Deserialize, Serialize)]
+pub struct UserResponse {
+    user: UserDTO,
+}
+
+impl UserResponse {
+    pub fn new(user: User) -> Self {
+        Self {
+            user: UserDTO::new(&user),
+        }
+    }
+}
 
 pub mod create_user {
     use super::*;
@@ -8,6 +24,8 @@ pub mod create_user {
     pub struct RequestBody {
         pub user_id: String,
     }
+
+    pub type APIResponse = UserResponse;
 }
 
 pub mod delete_user {
@@ -17,6 +35,8 @@ pub mod delete_user {
     pub struct PathParams {
         pub user_id: String,
     }
+
+    pub type APIResponse = UserResponse;
 }
 
 pub mod get_user {
@@ -26,4 +46,6 @@ pub mod get_user {
     pub struct PathParams {
         pub user_id: String,
     }
+
+    pub type APIResponse = UserResponse;
 }

@@ -1,7 +1,7 @@
 use crate::shared::usecase::{execute, UseCase};
 use crate::{error::NettuError, shared::auth::protect_route};
 use actix_web::{web, HttpRequest, HttpResponse};
-use nettu_scheduler_api_structs::{api::get_schedule::PathParams, dtos::ScheduleDTO};
+use nettu_scheduler_api_structs::api::get_schedule::*;
 use nettu_scheduler_core::Schedule;
 use nettu_scheduler_infra::NettuContext;
 
@@ -19,10 +19,7 @@ pub async fn get_schedule_controller(
 
     execute(usecase, &ctx)
         .await
-        .map(|schedule| {
-            let dto = ScheduleDTO::new(&schedule);
-            HttpResponse::Ok().json(dto)
-        })
+        .map(|schedule| HttpResponse::Ok().json(APIResponse::new(schedule)))
         .map_err(|e| match e {
             UseCaseErrors::NotFound => NettuError::NotFound(format!(
                 "The schedule with id: {}, was not found.",

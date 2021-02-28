@@ -7,7 +7,7 @@ use crate::shared::{
     usecase::{execute, execute_with_policy, PermissionBoundary, UseCase, UseCaseErrorContainer},
 };
 use actix_web::{web, HttpResponse};
-use nettu_scheduler_api_structs::{api::create_event::RequestBody, dtos::CalendarEventDTO};
+use nettu_scheduler_api_structs::api::create_event::*;
 use nettu_scheduler_core::{CalendarEvent, CalendarEventReminder, RRuleOptions};
 use nettu_scheduler_infra::NettuContext;
 use nettu_scheduler_infra::ObjectId;
@@ -33,7 +33,7 @@ pub async fn create_event_controller(
 
     execute_with_policy(usecase, &policy, &ctx)
         .await
-        .map(|event| HttpResponse::Created().json(CalendarEventDTO::new(&event)))
+        .map(|event| HttpResponse::Created().json(APIResponse::new(event)))
         .map_err(|e| match e {
             UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
             UseCaseErrorContainer::UseCase(e) => match e {

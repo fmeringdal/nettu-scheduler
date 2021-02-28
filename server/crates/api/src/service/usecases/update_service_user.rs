@@ -35,7 +35,7 @@ pub async fn update_service_user_controller(
 
     execute(usecase, &ctx)
         .await
-        .map(|_| HttpResponse::Ok().body("Service successfully updated"))
+        .map(|usecase_res| HttpResponse::Ok().json(APIResponse::new(usecase_res.service)))
         .map_err(|e| match e {
             UseCaseErrors::StorageError => NettuError::InternalError,
             UseCaseErrors::ServiceNotFoundError => {
