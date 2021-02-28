@@ -1,4 +1,3 @@
-use crate::shared::repo::DeleteResult;
 use anyhow::Result;
 use futures::stream::StreamExt;
 use mongodb::{
@@ -149,12 +148,12 @@ pub async fn delete<E, D: MongoDocument<E>>(
     }
 }
 
-pub async fn delete_many_by<E, D: MongoDocument<E>>(
-    collection: &Collection,
-    filter: Document,
-) -> anyhow::Result<DeleteResult> {
-    let res = collection.delete_many(filter, None).await?;
-    Ok(DeleteResult {
-        deleted_count: res.deleted_count,
-    })
-}
+// pub async fn delete_many_by<E, D: MongoDocument<E>>(
+//     collection: &Collection,
+//     filter: Document,
+// ) -> anyhow::Result<DeleteResult> {
+//     let res = collection.delete_many(filter, None).await?;
+//     Ok(DeleteResult {
+//         deleted_count: res.deleted_count,
+//     })
+// }

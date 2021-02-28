@@ -19,7 +19,7 @@ use mongodb::{options::ClientOptions, Client};
 use nettu_scheduler_utils::create_random_secret;
 use schedule::{IScheduleRepo, InMemoryScheduleRepo, ScheduleRepo};
 use service::{IServiceRepo, InMemoryServiceRepo, ServiceRepo};
-use std::{env::var, sync::Arc};
+use std::sync::Arc;
 use user::{IUserRepo, InMemoryUserRepo, UserRepo};
 
 pub use mongodb::bson::oid::ObjectId;

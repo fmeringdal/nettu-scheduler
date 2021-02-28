@@ -1,7 +1,5 @@
 use serde::Serialize;
 
-use crate::event;
-
 #[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EventInstance {
