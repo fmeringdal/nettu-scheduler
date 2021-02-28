@@ -20,7 +20,7 @@ impl AccountResponse {
 pub mod create_account {
     use super::*;
 
-    #[derive(Deserialize)]
+    #[derive(Deserialize, Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
         pub code: String,

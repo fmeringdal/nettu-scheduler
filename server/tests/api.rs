@@ -34,3 +34,20 @@ async fn test_get_account() {
     assert!(admin_client.account.get().await.is_ok());
     assert!(sdk.account.get().await.is_err());
 }
+
+// #[actix_web::main]
+// #[test]
+// async fn test_create_schedule() {
+//     let (app, sdk, address) = spawn_app().await;
+//     let res = sdk
+//         .account
+//         .create(&app.config.create_account_secret_code)
+//         .await
+//         .expect("Expected to create account");
+
+//     let admin_client = NettuSDK::new(address, res.secret_api_key);
+//     if let Err(e) = admin_client.schedule.create().await {
+//         println!("Err: {:?}", e);
+//     }
+//     // assert!(admin_client.schedule.create().await.is_ok());
+// }

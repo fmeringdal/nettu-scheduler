@@ -1,8 +1,10 @@
 mod account;
 mod base;
+mod schedule;
 mod status;
 
 use account::AccountClient;
+use schedule::ScheduleClient;
 use status::StatusClient;
 use std::sync::Arc;
 
@@ -15,6 +17,7 @@ pub(crate) use base::{APIResponse, BaseClient};
 #[derive(Clone)]
 pub struct NettuSDK {
     pub account: AccountClient,
+    pub schedule: ScheduleClient,
     pub status: StatusClient,
 }
 
@@ -24,8 +27,13 @@ impl NettuSDK {
         base.set_api_key(api_key.into());
         let base = Arc::new(base);
         let account = AccountClient::new(base.clone());
+        let schedule = ScheduleClient::new(base.clone());
         let status = StatusClient::new(base.clone());
 
-        Self { account, status }
+        Self {
+            account,
+            schedule,
+            status,
+        }
     }
 }
