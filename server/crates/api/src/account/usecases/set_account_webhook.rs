@@ -1,23 +1,14 @@
-use crate::{
-    account::dtos::AccountDTO,
-    shared::usecase::{execute, UseCase},
-};
+use crate::shared::usecase::{execute, UseCase};
 use crate::{error::NettuError, shared::auth::protect_account_route};
 use actix_web::{web, HttpResponse};
+use nettu_scheduler_api_structs::{api::set_account_webhook::RequestBody, dtos::AccountDTO};
 use nettu_scheduler_core::Account;
 use nettu_scheduler_infra::NettuContext;
-use serde::Deserialize;
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SetAccountWebhookReq {
-    pub webhook_url: String,
-}
 
 pub async fn set_account_webhook_controller(
     http_req: web::HttpRequest,
     ctx: web::Data<NettuContext>,
-    body: web::Json<SetAccountWebhookReq>,
+    body: web::Json<RequestBody>,
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
 
@@ -40,6 +31,7 @@ pub async fn set_account_webhook_controller(
         })
 }
 
+#[derive(Debug)]
 pub struct SetAccountWebhookUseCase {
     pub account: Account,
     pub webhook_url: Option<String>,

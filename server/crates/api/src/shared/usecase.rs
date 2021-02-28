@@ -1,9 +1,8 @@
+use super::auth::{Permission, Policy};
 use std::fmt::Debug;
 
-use super::auth::{Permission, Policy};
-
 #[async_trait::async_trait(?Send)]
-pub trait UseCase {
+pub trait UseCase: Debug {
     type Response;
     type Errors;
     type Context;
@@ -21,6 +20,8 @@ pub enum UseCaseErrorContainer<T: Debug> {
     UseCase(T),
 }
 
+// TODO: How to able better tracing context ? Usecase: Debug
+#[tracing::instrument(name = "Executing usecase with policy", skip(usecase, ctx))]
 pub async fn execute_with_policy<U>(
     usecase: U,
     policy: &Policy,
@@ -43,6 +44,8 @@ where
         .map_err(UseCaseErrorContainer::UseCase)
 }
 
+// TODO: Better †racing context
+#[tracing::instrument(name = "Executing usecase", skip(usecase, ctx))]
 pub async fn execute<U>(mut usecase: U, ctx: &U::Context) -> Result<U::Response, U::Errors>
 where
     U: UseCase,

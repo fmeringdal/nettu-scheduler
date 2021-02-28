@@ -5,6 +5,7 @@ use crate::{
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use futures::future::join_all;
+use nettu_scheduler_api_structs::api::get_service_bookingslots::*;
 use nettu_scheduler_core::{
     booking_slots::{
         get_service_bookingslots, validate_bookingslots_query, validate_slots_interval,
@@ -14,27 +15,6 @@ use nettu_scheduler_core::{
     get_free_busy, Calendar, CalendarView, EventInstance, ServiceResource, TimePlan,
 };
 use nettu_scheduler_infra::NettuContext;
-use serde::{Deserialize, Serialize};
-
-#[derive(Debug, Deserialize)]
-pub struct PathParams {
-    service_id: String,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct QueryParams {
-    iana_tz: Option<String>,
-    duration: i64,
-    interval: i64,
-    date: String,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct APIRes {
-    booking_slots: Vec<ServiceBookingSlotDTO>,
-}
 
 pub async fn get_service_bookingslots_controller(
     http_req: HttpRequest,
@@ -60,7 +40,7 @@ pub async fn get_service_bookingslots_controller(
 
     execute(usecase, &ctx).await
         .map(|usecase_res| {
-            let res = APIRes {
+            let res = APIResponse {
                 booking_slots: usecase_res
                     .booking_slots
                     .iter()
@@ -94,6 +74,7 @@ pub async fn get_service_bookingslots_controller(
         })
 }
 
+#[derive(Debug)]
 struct GetServiceBookingSlotsUseCase {
     pub service_id: String,
     pub date: String,

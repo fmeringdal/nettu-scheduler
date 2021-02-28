@@ -9,29 +9,13 @@ use crate::{
     },
 };
 use actix_web::{web, HttpRequest, HttpResponse};
+use nettu_scheduler_api_structs::api::update_service_user::*;
 use nettu_scheduler_core::{Account, Service, TimePlan, User};
 use nettu_scheduler_infra::NettuContext;
-use serde::Deserialize;
-
-#[derive(Deserialize)]
-pub struct PathParams {
-    service_id: String,
-    user_id: String,
-}
-
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct BodyParams {
-    pub availibility: Option<TimePlan>,
-    pub busy: Option<Vec<String>>,
-    pub buffer: Option<i64>,
-    pub closest_booking_time: Option<i64>,
-    pub furthest_booking_time: Option<i64>,
-}
 
 pub async fn update_service_user_controller(
     http_req: HttpRequest,
-    body: web::Json<BodyParams>,
+    body: web::Json<RequestBody>,
     path_params: web::Path<PathParams>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
@@ -64,6 +48,7 @@ pub async fn update_service_user_controller(
         })
 }
 
+#[derive(Debug)]
 struct UpdateServiceUserUseCase {
     pub account: Account,
     pub service_id: String,

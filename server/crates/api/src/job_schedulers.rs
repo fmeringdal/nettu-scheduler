@@ -1,15 +1,13 @@
 use crate::{
-    event::{
-        dtos::CalendarEventDTO,
-        usecases::{
-            get_upcoming_reminders::GetUpcomingRemindersUseCase,
-            sync_event_reminders::{SyncEventRemindersTrigger, SyncEventRemindersUseCase},
-        },
+    event::usecases::{
+        get_upcoming_reminders::GetUpcomingRemindersUseCase,
+        sync_event_reminders::{SyncEventRemindersTrigger, SyncEventRemindersUseCase},
     },
     shared::usecase::execute,
 };
 use actix_web::client::Client;
 use actix_web::rt::time::{delay_until, interval, Instant};
+use nettu_scheduler_api_structs::dtos::CalendarEventDTO;
 use nettu_scheduler_infra::NettuContext;
 use serde::Serialize;
 use std::time::Duration;

@@ -1,4 +1,3 @@
-use crate::schedule::dtos::ScheduleDTO;
 use crate::shared::usecase::{execute, UseCase, UseCaseErrorContainer};
 use crate::{
     error::NettuError,
@@ -9,25 +8,14 @@ use crate::{
 };
 use actix_web::{web, HttpResponse};
 use chrono_tz::Tz;
+use nettu_scheduler_api_structs::{api::create_schedule::*, dtos::ScheduleDTO};
 use nettu_scheduler_core::{Schedule, User};
 use nettu_scheduler_infra::NettuContext;
-use serde::Deserialize;
-
-#[derive(Deserialize)]
-pub struct AdminControllerPathParams {
-    user_id: String,
-}
-
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct BodyParams {
-    timezone: String,
-}
 
 pub async fn create_schedule_admin_controller(
     http_req: web::HttpRequest,
-    path_params: web::Path<AdminControllerPathParams>,
-    body_params: web::Json<BodyParams>,
+    path_params: web::Path<AdminPathParams>,
+    body_params: web::Json<RequstBody>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
@@ -59,7 +47,7 @@ pub async fn create_schedule_admin_controller(
 
 pub async fn create_schedule_controller(
     http_req: web::HttpRequest,
-    body_params: web::Json<BodyParams>,
+    body_params: web::Json<RequstBody>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let (user, policy) = protect_route(&http_req, &ctx).await?;
@@ -93,6 +81,7 @@ pub async fn create_schedule_controller(
         })
 }
 
+#[derive(Debug)]
 struct CreateScheduleUseCase {
     pub user_id: String,
     pub tzid: String,

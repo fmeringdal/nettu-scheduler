@@ -1,27 +1,15 @@
-use crate::{
-    account::dtos::AccountDTO,
-    shared::usecase::{execute, UseCase},
-};
+use crate::shared::usecase::{execute, UseCase};
 use actix_web::{web, HttpResponse};
+use nettu_scheduler_api_structs::{
+    api::create_account::{APIResponse, RequestBody},
+    dtos::AccountDTO,
+};
 use nettu_scheduler_core::Account;
 use nettu_scheduler_infra::NettuContext;
-use serde::{Deserialize, Serialize};
-
-#[derive(Deserialize)]
-pub struct BodyParams {
-    code: String,
-}
-
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct APIResponse {
-    pub account: AccountDTO,
-    pub secret_api_key: String,
-}
 
 pub async fn create_account_controller(
     ctx: web::Data<NettuContext>,
-    body: web::Json<BodyParams>,
+    body: web::Json<RequestBody>,
 ) -> HttpResponse {
     if body.code != ctx.config.create_account_secret_code {
         return HttpResponse::Unauthorized().finish();
@@ -41,6 +29,7 @@ pub async fn create_account_controller(
     }
 }
 
+#[derive(Debug)]
 struct CreateAccountUseCase {}
 
 #[derive(Debug)]

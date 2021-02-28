@@ -1,7 +1,9 @@
 use crate::{APIResponse, BaseClient};
 use actix_web::http::StatusCode;
-use nettu_scheduler_api::dev::account::{Account, CreateAccountResponse};
+use nettu_scheduler_api_structs::api::*;
 use std::{collections::HashMap, sync::Arc};
+
+type Account = nettu_scheduler_api_structs::dtos::AccountDTO;
 
 #[derive(Clone)]
 pub struct AccountClient {
@@ -17,7 +19,7 @@ impl AccountClient {
         self.base.get("account".into(), StatusCode::OK).await
     }
 
-    pub async fn create(&self, code: &str) -> APIResponse<CreateAccountResponse> {
+    pub async fn create(&self, code: &str) -> APIResponse<create_account::APIResponse> {
         let mut body = HashMap::new();
         body.insert("code", code);
         self.base

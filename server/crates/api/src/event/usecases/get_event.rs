@@ -1,20 +1,14 @@
 use crate::{
     error::NettuError,
-    event::dtos::CalendarEventDTO,
     shared::{
         auth::protect_route,
         usecase::{execute, UseCase},
     },
 };
 use actix_web::{web, HttpRequest, HttpResponse};
+use nettu_scheduler_api_structs::{api::get_event::*, dtos::CalendarEventDTO};
 use nettu_scheduler_core::CalendarEvent;
 use nettu_scheduler_infra::NettuContext;
-use serde::Deserialize;
-
-#[derive(Deserialize)]
-pub struct PathParams {
-    event_id: String,
-}
 
 pub async fn get_event_controller(
     http_req: HttpRequest,
@@ -39,6 +33,7 @@ pub async fn get_event_controller(
         })
 }
 
+#[derive(Debug)]
 pub struct GetEventUseCase {
     pub event_id: String,
     pub user_id: String,

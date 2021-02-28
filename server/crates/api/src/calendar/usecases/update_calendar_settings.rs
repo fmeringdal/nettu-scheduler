@@ -7,26 +7,15 @@ use crate::{
 };
 use crate::{error::NettuError, shared::auth::protect_route};
 use actix_web::{web, HttpResponse};
+use nettu_scheduler_api_structs::api::update_calendar_settings::{PathParams, RequestBody};
 use nettu_scheduler_core::Calendar;
 use nettu_scheduler_infra::NettuContext;
-use serde::Deserialize;
-
-#[derive(Deserialize)]
-pub struct UpdateCalendarSettigsPathParams {
-    calendar_id: String,
-}
-
-#[derive(Deserialize)]
-pub struct UpdateCalendarSettingsBody {
-    wkst: Option<isize>,
-    timezone: Option<String>,
-}
 
 pub async fn update_calendar_settings_controller(
     http_req: web::HttpRequest,
     ctx: web::Data<NettuContext>,
-    path_params: web::Path<UpdateCalendarSettigsPathParams>,
-    body: web::Json<UpdateCalendarSettingsBody>,
+    path_params: web::Path<PathParams>,
+    body: web::Json<RequestBody>,
 ) -> Result<HttpResponse, NettuError> {
     let (user, policy) = protect_route(&http_req, &ctx).await?;
 
@@ -55,6 +44,7 @@ pub async fn update_calendar_settings_controller(
         })
 }
 
+#[derive(Debug)]
 struct UpdateCalendarSettingsUseCase {
     pub user_id: String,
     pub calendar_id: String,

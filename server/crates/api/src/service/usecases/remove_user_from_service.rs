@@ -7,15 +7,9 @@ use crate::{
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 
+use nettu_scheduler_api_structs::api::remove_user_from_service::*;
 use nettu_scheduler_core::{Account, ServiceResource, User};
 use nettu_scheduler_infra::NettuContext;
-use serde::Deserialize;
-
-#[derive(Deserialize)]
-pub struct PathParams {
-    service_id: String,
-    user_id: String,
-}
 
 pub async fn remove_user_from_service_controller(
     http_req: HttpRequest,
@@ -45,6 +39,7 @@ pub async fn remove_user_from_service_controller(
         })
 }
 
+#[derive(Debug)]
 struct RemoveUserFromServiceUseCase {
     pub account: Account,
     pub service_id: String,

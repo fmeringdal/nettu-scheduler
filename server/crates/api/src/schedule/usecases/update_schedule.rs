@@ -1,3 +1,4 @@
+use crate::shared::usecase::UseCase;
 use crate::{
     error::NettuError,
     shared::{
@@ -5,30 +6,17 @@ use crate::{
         usecase::{execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
     },
 };
-use crate::{schedule::dtos::ScheduleDTO, shared::usecase::UseCase};
 use actix_web::{web, HttpResponse};
 use chrono_tz::Tz;
+use nettu_scheduler_api_structs::{api::update_schedule::*, dtos::ScheduleDTO};
 use nettu_scheduler_core::{Schedule, ScheduleRule};
 use nettu_scheduler_infra::NettuContext;
-use serde::Deserialize;
-
-#[derive(Deserialize)]
-pub struct UpdateScheduleSettigsPathParams {
-    schedule_id: String,
-}
-
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct UpdateScheduleBody {
-    timezone: Option<String>,
-    rules: Option<Vec<ScheduleRule>>,
-}
 
 pub async fn update_schedule_controller(
     http_req: web::HttpRequest,
     ctx: web::Data<NettuContext>,
-    path_params: web::Path<UpdateScheduleSettigsPathParams>,
-    body_params: web::Json<UpdateScheduleBody>,
+    path_params: web::Path<PathParams>,
+    body_params: web::Json<RequestBody>,
 ) -> Result<HttpResponse, NettuError> {
     let (user, policy) = protect_route(&http_req, &ctx).await?;
 
@@ -60,6 +48,7 @@ pub async fn update_schedule_controller(
         })
 }
 
+#[derive(Debug)]
 struct UpdateScheduleUseCase {
     pub user_id: String,
     pub schedule_id: String,

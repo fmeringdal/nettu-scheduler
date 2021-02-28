@@ -1,14 +1,9 @@
 use crate::shared::usecase::{execute, UseCase};
 use crate::{error::NettuError, shared::auth::protect_account_route};
 use actix_web::{web, HttpRequest, HttpResponse};
+use nettu_scheduler_api_structs::api::delete_user::PathParams;
 use nettu_scheduler_core::{Account, User};
 use nettu_scheduler_infra::NettuContext;
-use serde::Deserialize;
-
-#[derive(Deserialize)]
-pub struct PathParams {
-    pub user_id: String,
-}
 
 pub async fn delete_user_controller(
     http_req: HttpRequest,
@@ -36,6 +31,7 @@ pub async fn delete_user_controller(
         })
 }
 
+#[derive(Debug)]
 struct DeleteUserUseCase {
     account: Account,
     user_id: String,

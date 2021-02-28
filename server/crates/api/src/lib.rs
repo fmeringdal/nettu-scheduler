@@ -9,11 +9,11 @@ mod shared;
 mod status;
 mod user;
 
-use std::net::TcpListener;
-
 use actix_web::{dev::Server, middleware, web, App, HttpServer};
 use job_schedulers::{start_reminders_expansion_job_scheduler, start_send_reminders_job};
 use nettu_scheduler_infra::NettuContext;
+use std::net::TcpListener;
+use tracing_actix_web::TracingLogger;
 
 pub fn configure_server_api(cfg: &mut web::ServiceConfig) {
     account::api::configure_routes(cfg);
@@ -57,9 +57,8 @@ impl Application {
             let ctx = context.clone();
 
             App::new()
-                .wrap(middleware::DefaultHeaders::new().header("X-Version", "0.2"))
                 .wrap(middleware::Compress::default())
-                .wrap(middleware::Logger::default())
+                .wrap(TracingLogger)
                 .data(ctx)
                 .configure(|cfg| configure_server_api(cfg))
         })
@@ -72,16 +71,5 @@ impl Application {
 
     pub async fn start(self) -> Result<(), std::io::Error> {
         self.server.await
-    }
-}
-
-pub mod dev {
-    pub mod account {
-        pub use crate::account::dtos::AccountDTO as Account;
-        pub use crate::account::usecases::create_account::APIResponse as CreateAccountResponse;
-    }
-
-    pub mod status {
-        pub use crate::status::api::StatusResponse;
     }
 }

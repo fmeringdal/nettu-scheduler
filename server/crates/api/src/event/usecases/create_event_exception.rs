@@ -1,30 +1,20 @@
-use crate::{error::NettuError, shared::usecase::UseCase};
-use crate::{
-    event::dtos::CalendarEventDTO,
-    shared::{
-        auth::{protect_route, Permission},
-        usecase::{execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
-    },
+use crate::shared::{
+    auth::{protect_route, Permission},
+    usecase::{execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
 };
+use crate::{error::NettuError, shared::usecase::UseCase};
 use actix_web::{web, HttpRequest, HttpResponse};
+use nettu_scheduler_api_structs::{
+    api::create_event_exception::{PathParams, RequestBody},
+    dtos::CalendarEventDTO,
+};
 use nettu_scheduler_core::CalendarEvent;
 use nettu_scheduler_infra::NettuContext;
-use serde::Deserialize;
-
-#[derive(Deserialize)]
-pub struct CreateEventExceptionPathParams {
-    event_id: String,
-}
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CreateEventExceptionBody {
-    exception_ts: i64,
-}
 
 pub async fn create_event_exception_controller(
     http_req: HttpRequest,
-    path_params: web::Path<CreateEventExceptionPathParams>,
-    body: web::Json<CreateEventExceptionBody>,
+    path_params: web::Path<PathParams>,
+    body: web::Json<RequestBody>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let (user, policy) = protect_route(&http_req, &ctx).await?;
@@ -50,6 +40,7 @@ pub async fn create_event_exception_controller(
         })
 }
 
+#[derive(Debug)]
 pub struct CreateEventExceptionUseCase {
     event_id: String,
     exception_ts: i64,

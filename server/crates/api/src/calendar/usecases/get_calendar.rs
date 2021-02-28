@@ -4,19 +4,13 @@ use crate::{
 };
 use crate::{error::NettuError, shared::auth::protect_route};
 use actix_web::{web, HttpRequest, HttpResponse};
+use nettu_scheduler_api_structs::api::get_calendar::PathParams;
 use nettu_scheduler_core::Calendar;
 use nettu_scheduler_infra::NettuContext;
-use serde::{Deserialize, Serialize};
-
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct GetCalendarReq {
-    pub calendar_id: String,
-}
 
 pub async fn get_calendar_controller(
     http_req: HttpRequest,
-    req: web::Path<GetCalendarReq>,
+    req: web::Path<PathParams>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let (user, _policy) = protect_route(&http_req, &ctx).await?;
@@ -40,6 +34,7 @@ pub async fn get_calendar_controller(
         })
 }
 
+#[derive(Debug)]
 struct GetCalendarUseCase {
     pub user_id: String,
     pub calendar_id: String,

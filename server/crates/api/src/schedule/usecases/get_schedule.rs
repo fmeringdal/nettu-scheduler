@@ -1,22 +1,13 @@
+use crate::shared::usecase::{execute, UseCase};
 use crate::{error::NettuError, shared::auth::protect_route};
-use crate::{
-    schedule::dtos::ScheduleDTO,
-    shared::usecase::{execute, UseCase},
-};
 use actix_web::{web, HttpRequest, HttpResponse};
+use nettu_scheduler_api_structs::{api::get_schedule::PathParams, dtos::ScheduleDTO};
 use nettu_scheduler_core::Schedule;
 use nettu_scheduler_infra::NettuContext;
-use serde::{Deserialize, Serialize};
-
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct GetScheduleReq {
-    pub schedule_id: String,
-}
 
 pub async fn get_schedule_controller(
     http_req: HttpRequest,
-    req: web::Path<GetScheduleReq>,
+    req: web::Path<PathParams>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let (user, _policy) = protect_route(&http_req, &ctx).await?;
@@ -40,6 +31,7 @@ pub async fn get_schedule_controller(
         })
 }
 
+#[derive(Debug)]
 struct GetScheduleUseCase {
     pub user_id: String,
     pub schedule_id: String,

@@ -10,33 +10,17 @@ use crate::{
     },
 };
 use actix_web::{web, HttpRequest, HttpResponse};
-use event::dtos::CalendarEventDTO;
 use event::usecases::sync_event_reminders::{
     EventOperation, SyncEventRemindersTrigger, SyncEventRemindersUseCase,
 };
+use nettu_scheduler_api_structs::{api::update_event::*, dtos::CalendarEventDTO};
 use nettu_scheduler_core::{CalendarEvent, RRuleOptions};
 use nettu_scheduler_infra::NettuContext;
-use serde::Deserialize;
-
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct UpdateEventBody {
-    start_ts: Option<i64>,
-    duration: Option<i64>,
-    busy: Option<bool>,
-    rrule_options: Option<RRuleOptions>,
-    services: Option<Vec<String>>,
-}
-
-#[derive(Deserialize)]
-pub struct EventPathParams {
-    event_id: String,
-}
 
 pub async fn update_event_controller(
     http_req: HttpRequest,
-    body: web::Json<UpdateEventBody>,
-    path_params: web::Path<EventPathParams>,
+    body: web::Json<RequestBody>,
+    path_params: web::Path<PathParams>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let (user, policy) = protect_route(&http_req, &ctx).await?;
@@ -69,6 +53,7 @@ pub async fn update_event_controller(
         })
 }
 
+#[derive(Debug)]
 pub struct UpdateEventUseCase {
     pub user_id: String,
     pub event_id: String,

@@ -4,29 +4,13 @@ use crate::shared::{
     usecase::{execute, UseCase},
 };
 use actix_web::{web, HttpRequest, HttpResponse};
+use nettu_scheduler_api_structs::api::add_user_to_service::*;
 use nettu_scheduler_core::{Account, Service, ServiceResource, TimePlan, User};
 use nettu_scheduler_infra::NettuContext;
-use serde::Deserialize;
-
-#[derive(Deserialize)]
-pub struct PathParams {
-    service_id: String,
-}
-
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct BodyParams {
-    user_id: String,
-    pub availibility: Option<TimePlan>,
-    pub busy: Option<Vec<String>>,
-    pub buffer: Option<i64>,
-    pub closest_booking_time: Option<i64>,
-    pub furthest_booking_time: Option<i64>,
-}
 
 pub async fn add_user_to_service_controller(
     http_req: HttpRequest,
-    body: web::Json<BodyParams>,
+    body: web::Json<RequestBody>,
     path_params: web::Path<PathParams>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
@@ -55,6 +39,7 @@ pub async fn add_user_to_service_controller(
         })
 }
 
+#[derive(Debug)]
 struct AddUserToServiceUseCase {
     pub account: Account,
     pub service_id: String,

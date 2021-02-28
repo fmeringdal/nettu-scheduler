@@ -1,26 +1,14 @@
 use crate::{
     error::NettuError,
-    service::dtos::ServiceDTO,
     shared::{
         auth::protect_account_route,
         usecase::{execute, UseCase},
     },
 };
 use actix_web::{web, HttpRequest, HttpResponse};
+use nettu_scheduler_api_structs::{api::get_service::*, dtos::ServiceDTO};
 use nettu_scheduler_core::{Account, Service};
 use nettu_scheduler_infra::NettuContext;
-use serde::{Deserialize, Serialize};
-
-#[derive(Deserialize)]
-pub struct PathParams {
-    pub service_id: String,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct GetServiceRes {
-    pub service_id: String,
-}
 
 pub async fn get_service_controller(
     http_req: HttpRequest,
@@ -48,6 +36,7 @@ pub async fn get_service_controller(
         })
 }
 
+#[derive(Debug)]
 struct GetServiceUseCase {
     account: Account,
     service_id: String,

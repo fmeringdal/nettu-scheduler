@@ -1,20 +1,13 @@
 use crate::shared::usecase::{execute, UseCase};
-use crate::user::dtos::UserDTO;
 use crate::{error::NettuError, shared::auth::protect_account_route};
 use actix_web::{web, HttpRequest, HttpResponse};
+use nettu_scheduler_api_structs::{api::create_user::RequestBody, dtos::UserDTO};
 use nettu_scheduler_core::User;
 use nettu_scheduler_infra::NettuContext;
-use serde::Deserialize;
-
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct BodyParams {
-    pub user_id: String,
-}
 
 pub async fn create_user_controller(
     http_req: HttpRequest,
-    body: web::Json<BodyParams>,
+    body: web::Json<RequestBody>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
@@ -38,10 +31,12 @@ pub async fn create_user_controller(
         })
 }
 
+#[derive(Debug)]
 pub struct CreateUserUseCase {
     pub account_id: String,
     pub external_user_id: String,
 }
+
 pub struct UseCaseRes {
     pub user: User,
 }

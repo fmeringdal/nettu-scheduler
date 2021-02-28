@@ -3,7 +3,7 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 ## Todos
 
 
-- Logging
+- api_structs
 - More admin and user controllers for different usecases
 - Delete user cleanup actions
 - Freebusy queries cleanup
@@ -13,6 +13,7 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 - Shared calendars
 - https://en.wikipedia.org/wiki/Interval_scheduling
 - http://www.cs.toronto.edu/~lalla/373s16/notes/ISP.pdf
+- Better telemtry: implement Display for usecase: https://www.lpalmieri.com/posts/2020-09-27-zero-to-production-4-are-we-observable-yet/#5-1-the-tracing-crate
 
 ## Backlog
 

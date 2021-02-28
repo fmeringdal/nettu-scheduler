@@ -7,19 +7,13 @@ use crate::{
 };
 use crate::{error::NettuError, shared::usecase::UseCase};
 use actix_web::{web, HttpResponse};
-
+use nettu_scheduler_api_structs::api::delete_calendar::PathParams;
 use nettu_scheduler_core::Calendar;
 use nettu_scheduler_infra::NettuContext;
-use serde::Deserialize;
-
-#[derive(Deserialize)]
-pub struct DeleteCalendarReq {
-    calendar_id: String,
-}
 
 pub async fn delete_calendar_controller(
     http_req: web::HttpRequest,
-    req: web::Path<DeleteCalendarReq>,
+    req: web::Path<PathParams>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let (user, policy) = protect_route(&http_req, &ctx).await?;
@@ -50,6 +44,7 @@ pub enum UseCaseErrors {
     UnableToDelete,
 }
 
+#[derive(Debug)]
 pub struct DeleteCalendarUseCase {
     calendar_id: String,
     user_id: String,

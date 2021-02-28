@@ -1,27 +1,19 @@
+use crate::shared::{
+    auth::{protect_route, Permission},
+    usecase::{execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
+};
 use crate::{
     error::NettuError,
     shared::usecase::{execute, UseCase},
 };
-use crate::{
-    event::dtos::CalendarEventDTO,
-    shared::{
-        auth::{protect_route, Permission},
-        usecase::{execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
-    },
-};
 use actix_web::{web, HttpRequest, HttpResponse};
+use nettu_scheduler_api_structs::{api::delete_event::PathParams, dtos::CalendarEventDTO};
 use nettu_scheduler_core::CalendarEvent;
 use nettu_scheduler_infra::NettuContext;
-use serde::Deserialize;
 
 use super::sync_event_reminders::{
     EventOperation, SyncEventRemindersTrigger, SyncEventRemindersUseCase,
 };
-
-#[derive(Deserialize)]
-pub struct PathParams {
-    event_id: String,
-}
 
 pub async fn delete_event_controller(
     http_req: HttpRequest,
@@ -49,6 +41,7 @@ pub async fn delete_event_controller(
         })
 }
 
+#[derive(Debug)]
 pub struct DeleteEventUseCase {
     pub user_id: String,
     pub event_id: String,

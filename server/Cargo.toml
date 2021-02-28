@@ -9,10 +9,11 @@ edition = "2018"
 [workspace]
 members = [
     "crates/api",
+    "crates/api_structs",
     "crates/core",
     "crates/infra",
     "crates/sdk",
-    "crates/utils"
+    "crates/utils",
 ]
 
 [dependencies]
@@ -20,7 +21,10 @@ nettu_scheduler_api = { path = "./crates/api" }
 nettu_scheduler_core = { path = "./crates/core" }
 nettu_scheduler_infra = { path = "./crates/infra" }
 actix-web = "3.3.2"
-env_logger = "0.8.2"
+tracing = "0.1.19"
+tracing-subscriber = { version = "0.2.12", features = ["registry", "env-filter"] }
+tracing-bunyan-formatter = "0.1.6"
+tracing-log = "0.1.1"
 
 [dev-dependencies]
 nettu_scheduler_sdk = { path = "./crates/sdk" }

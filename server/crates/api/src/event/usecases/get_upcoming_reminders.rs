@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use std::time::Duration;
 
 /// Creates EventReminders for a calendar event
+#[derive(Debug)]
 pub struct GetUpcomingRemindersUseCase {}
 
 struct SendEventRemindersConfig {

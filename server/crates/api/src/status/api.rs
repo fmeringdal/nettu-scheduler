@@ -1,13 +1,9 @@
 use actix_web::{web, HttpResponse};
-use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Serialize)]
-pub struct StatusResponse {
-    message: String,
-}
+use nettu_scheduler_api_structs::api::get_service_health::*;
 
 async fn status() -> HttpResponse {
-    HttpResponse::Ok().json(StatusResponse {
+    HttpResponse::Ok().json(APIResponse {
         message: "Yo! We are up!\r\n".into(),
     })
 }

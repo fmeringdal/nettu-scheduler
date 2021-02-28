@@ -4,17 +4,11 @@ use crate::{
         auth::protect_account_route,
         usecase::{execute, UseCase},
     },
-    user::dtos::UserDTO,
 };
 use actix_web::{web, HttpRequest, HttpResponse};
+use nettu_scheduler_api_structs::{api::get_user::PathParams, dtos::UserDTO};
 use nettu_scheduler_core::{Account, User};
 use nettu_scheduler_infra::NettuContext;
-use serde::Deserialize;
-
-#[derive(Deserialize)]
-pub struct PathParams {
-    pub user_id: String,
-}
 
 pub async fn get_user_controller(
     http_req: HttpRequest,
@@ -39,6 +33,7 @@ pub async fn get_user_controller(
         })
 }
 
+#[derive(Debug)]
 struct GetUserUseCase {
     account: Account,
     user_id: String,

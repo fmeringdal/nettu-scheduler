@@ -1,6 +1,6 @@
 use crate::{APIResponse, BaseClient};
 use actix_web::http::StatusCode;
-use nettu_scheduler_api::dev::status::StatusResponse;
+use nettu_scheduler_api_structs::api::*;
 use std::sync::Arc;
 
 #[derive(Clone)]
@@ -13,7 +13,7 @@ impl StatusClient {
         Self { base }
     }
 
-    pub async fn check_health(&self) -> APIResponse<StatusResponse> {
+    pub async fn check_health(&self) -> APIResponse<get_service_health::APIResponse> {
         self.base.get("".into(), StatusCode::OK).await
     }
 }

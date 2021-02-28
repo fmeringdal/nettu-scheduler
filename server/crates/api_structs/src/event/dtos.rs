@@ -1,4 +1,6 @@
-use nettu_scheduler_core::{CalendarEvent, CalendarEventReminder, RRuleOptions, User};
+use nettu_scheduler_core::{
+    CalendarEvent, CalendarEventReminder, EventInstance, RRuleOptions, User,
+};
 use serde::Serialize;
 
 #[derive(Debug, Serialize)]
@@ -31,4 +33,11 @@ impl CalendarEventDTO {
             reminder: event.reminder.clone(),
         }
     }
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EventWithInstancesDTO {
+    pub event: CalendarEventDTO,
+    pub instances: Vec<EventInstance>,
 }

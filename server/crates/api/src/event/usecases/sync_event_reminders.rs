@@ -13,10 +13,12 @@ pub enum EventOperation<'a> {
 }
 
 /// Synchronizes the upcoming `Reminders` for a `CalendarEvent`
+#[derive(Debug)]
 pub struct SyncEventRemindersUseCase<'a> {
     pub request: SyncEventRemindersTrigger<'a>,
 }
 
+#[derive(Debug)]
 pub enum SyncEventRemindersTrigger<'a> {
     /// A `CalendarEvent` has been modified, e.g. deleted, updated og created.
     EventModified(&'a CalendarEvent, EventOperation<'a>),

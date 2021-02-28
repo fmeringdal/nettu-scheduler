@@ -1,42 +1,19 @@
+use crate::error::NettuError;
+use crate::shared::auth::protect_route;
 use crate::shared::usecase::{execute, UseCase};
-use crate::{calendar::dtos::CalendarDTO, shared::auth::protect_route};
-use crate::{error::NettuError, event::dtos::CalendarEventDTO};
 
 use actix_web::{web, HttpRequest, HttpResponse};
+use nettu_scheduler_api_structs::{
+    api::get_calendar_events::{APIResponse, PathParams, QueryParams},
+    dtos::{CalendarDTO, CalendarEventDTO, EventWithInstancesDTO},
+};
 use nettu_scheduler_core::{Calendar, CalendarEvent, CalendarView, EventInstance};
 use nettu_scheduler_infra::NettuContext;
-use serde::{Deserialize, Serialize};
-
-#[derive(Debug, Deserialize)]
-pub struct CalendarPathParams {
-    calendar_id: String,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TimespanParams {
-    pub start_ts: i64,
-    pub end_ts: i64,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct APIResponse {
-    pub calendar: CalendarDTO,
-    pub events: Vec<EventWithInstancesDTO>,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct EventWithInstancesDTO {
-    pub event: CalendarEventDTO,
-    pub instances: Vec<EventInstance>,
-}
 
 pub async fn get_calendar_events_controller(
     http_req: HttpRequest,
-    query_params: web::Query<TimespanParams>,
-    params: web::Path<CalendarPathParams>,
+    query_params: web::Query<QueryParams>,
+    params: web::Path<PathParams>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let (user, _policy) = protect_route(&http_req, &ctx).await?;
@@ -74,6 +51,7 @@ pub async fn get_calendar_events_controller(
             )),
         })
 }
+#[derive(Debug)]
 pub struct GetCalendarEventsUseCase {
     pub calendar_id: String,
     pub user_id: String,

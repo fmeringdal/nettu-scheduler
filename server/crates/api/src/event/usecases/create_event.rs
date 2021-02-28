@@ -1,32 +1,20 @@
 use super::sync_event_reminders::{
     EventOperation, SyncEventRemindersTrigger, SyncEventRemindersUseCase,
 };
+use crate::error::NettuError;
 use crate::shared::{
     auth::{protect_route, Permission},
     usecase::{execute, execute_with_policy, PermissionBoundary, UseCase, UseCaseErrorContainer},
 };
-use crate::{error::NettuError, event::dtos::CalendarEventDTO};
 use actix_web::{web, HttpResponse};
+use nettu_scheduler_api_structs::{api::create_event::RequestBody, dtos::CalendarEventDTO};
 use nettu_scheduler_core::{CalendarEvent, CalendarEventReminder, RRuleOptions};
 use nettu_scheduler_infra::NettuContext;
 use nettu_scheduler_infra::ObjectId;
-use serde::{Deserialize, Serialize};
-
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CreateEventReq {
-    calendar_id: String,
-    start_ts: i64,
-    duration: i64,
-    busy: Option<bool>,
-    rrule_options: Option<RRuleOptions>,
-    reminder: Option<CalendarEventReminder>,
-    services: Option<Vec<String>>,
-}
 
 pub async fn create_event_controller(
     http_req: web::HttpRequest,
-    req: web::Json<CreateEventReq>,
+    req: web::Json<RequestBody>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let (user, policy) = protect_route(&http_req, &ctx).await?;
@@ -61,6 +49,7 @@ pub async fn create_event_controller(
         })
 }
 
+#[derive(Debug)]
 pub struct CreateEventUseCase {
     pub account_id: String,
     pub calendar_id: String,

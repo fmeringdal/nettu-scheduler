@@ -3,29 +3,15 @@ use crate::shared::auth::ensure_nettu_acct_header;
 use crate::shared::usecase::{execute, UseCase};
 use actix_web::{web, HttpRequest, HttpResponse};
 use futures::future::join_all;
+use nettu_scheduler_api_structs::api::get_user_freebusy::{APIResponse, PathParams, QueryParams};
 use nettu_scheduler_core::{sort_and_merge_instances, CalendarView, EventInstance, User};
 use nettu_scheduler_infra::NettuContext;
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-
-#[derive(Debug, Deserialize)]
-pub struct UserPathParams {
-    external_user_id: String,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct FreebusyQuery {
-    start_ts: i64,
-    end_ts: i64,
-    calendar_ids: Option<String>,
-    schedule_ids: Option<String>,
-}
 
 pub async fn get_freebusy_controller(
     http_req: HttpRequest,
-    query_params: web::Query<FreebusyQuery>,
-    params: web::Path<UserPathParams>,
+    query_params: web::Query<QueryParams>,
+    params: web::Path<PathParams>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let account = ensure_nettu_acct_header(&http_req)?;
@@ -49,7 +35,12 @@ pub async fn get_freebusy_controller(
 
     execute(usecase, &ctx)
         .await
-        .map(|usecase_res| HttpResponse::Ok().json(usecase_res))
+        .map(|usecase_res| {
+            HttpResponse::Ok().json(APIResponse {
+                busy: usecase_res.busy,
+                user_id: usecase_res.user_id,
+            })
+        })
         .map_err(|e| match e {
             UseCaseErrors::InvalidTimespan => {
                 NettuError::BadClientData("The provided start_ts and end_ts is invalid".into())
@@ -66,8 +57,7 @@ pub struct GetFreeBusyUseCase {
     pub end_ts: i64,
 }
 
-#[derive(Serialize, Debug)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug)]
 pub struct GetFreeBusyResponse {
     pub busy: Vec<EventInstance>,
     pub user_id: String,

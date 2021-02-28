@@ -1,23 +1,14 @@
-use crate::{
-    account::dtos::AccountDTO,
-    shared::usecase::{execute, UseCase},
-};
+use crate::shared::usecase::{execute, UseCase};
 use crate::{error::NettuError, shared::auth::protect_account_route};
 use actix_web::{web, HttpResponse};
+use nettu_scheduler_api_structs::{api::set_account_pub_key::RequestBody, dtos::AccountDTO};
 use nettu_scheduler_core::Account;
 use nettu_scheduler_infra::NettuContext;
-use serde::Deserialize;
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SetAccountPubKeyReq {
-    pub public_key_b64: Option<String>,
-}
 
 pub async fn set_account_pub_key_controller(
     http_req: web::HttpRequest,
     ctx: web::Data<NettuContext>,
-    body: web::Json<SetAccountPubKeyReq>,
+    body: web::Json<RequestBody>,
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
 
@@ -37,6 +28,7 @@ pub async fn set_account_pub_key_controller(
         })
 }
 
+#[derive(Debug)]
 struct SetAccountPubKeyUseCase {
     pub account: Account,
     pub public_key_b64: Option<String>,
