@@ -15,4 +15,5 @@ pub trait IServiceRepo: Send + Sync {
     async fn delete(&self, service_id: &str) -> Option<Service>;
     async fn remove_calendar_from_services(&self, calendar_id: &str) -> Result<(), Box<dyn Error>>;
     async fn remove_schedule_from_services(&self, schedule_id: &str) -> Result<(), Box<dyn Error>>;
+    async fn remove_user_from_services(&self, user_id: &str) -> Result<(), Box<dyn Error>>;
 }

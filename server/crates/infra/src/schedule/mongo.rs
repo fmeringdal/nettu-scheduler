@@ -1,5 +1,5 @@
 use super::IScheduleRepo;
-use crate::shared::mongo_repo;
+use crate::shared::{mongo_repo, repo::DeleteResult};
 use mongo_repo::MongoDocument;
 use mongodb::{
     bson::{doc, oid::ObjectId, Document},
@@ -80,6 +80,13 @@ impl IScheduleRepo for ScheduleRepo {
             Err(_) => return None,
         };
         mongo_repo::delete::<_, ScheduleMongo>(&self.collection, &id).await
+    }
+
+    async fn delete_by_user(&self, user_id: &str) -> anyhow::Result<DeleteResult> {
+        let filter = doc! {
+            "user_id": user_id
+        };
+        mongo_repo::delete_many_by::<_, ScheduleMongo>(&self.collection, filter).await
     }
 }
 

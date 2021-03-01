@@ -1,11 +1,11 @@
 mod inmemory;
 mod mongo;
 
-use std::error::Error;
-
+use crate::shared::repo::DeleteResult;
 pub use inmemory::InMemoryScheduleRepo;
 pub use mongo::ScheduleRepo;
 use nettu_scheduler_core::Schedule;
+use std::error::Error;
 
 #[async_trait::async_trait]
 pub trait IScheduleRepo: Send + Sync {
@@ -15,4 +15,5 @@ pub trait IScheduleRepo: Send + Sync {
     async fn find_many(&self, schedule_ids: &[String]) -> Vec<Schedule>;
     async fn find_by_user(&self, user_id: &str) -> Vec<Schedule>;
     async fn delete(&self, schedule_id: &str) -> Option<Schedule>;
+    async fn delete_by_user(&self, user_id: &str) -> anyhow::Result<DeleteResult>;
 }

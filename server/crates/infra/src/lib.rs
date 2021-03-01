@@ -1,7 +1,6 @@
 mod account;
 mod calendar;
 mod event;
-mod logger;
 mod schedule;
 mod service;
 mod shared;

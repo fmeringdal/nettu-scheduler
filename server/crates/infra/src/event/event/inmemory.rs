@@ -1,4 +1,4 @@
-use super::super::IEventRepo;
+use super::IEventRepo;
 use crate::shared::inmemory_repo::*;
 use crate::shared::repo::DeleteResult;
 use nettu_scheduler_core::{CalendarEvent, CalendarView};
@@ -62,6 +62,11 @@ impl IEventRepo for InMemoryEventRepo {
 
     async fn delete_by_calendar(&self, calendar_id: &str) -> Result<DeleteResult, Box<dyn Error>> {
         let res = delete_by(&self.calendar_events, |e| e.calendar_id == calendar_id);
+        Ok(res)
+    }
+
+    async fn delete_by_user(&self, user_id: &str) -> anyhow::Result<DeleteResult> {
+        let res = delete_by(&self.calendar_events, |e| e.user_id == user_id);
         Ok(res)
     }
 }

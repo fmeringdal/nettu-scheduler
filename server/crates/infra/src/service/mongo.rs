@@ -88,6 +88,20 @@ impl IServiceRepo for ServiceRepo {
         };
         mongo_repo::update_many::<_, ServiceMongo>(&self.collection, filter, update).await
     }
+
+    async fn remove_user_from_services(&self, user_id: &str) -> Result<(), Box<dyn Error>> {
+        let filter = doc! {
+            "users.user_id": user_id
+        };
+        let update = doc! {
+            "$pull": {
+                "users": {
+                    "user_id": user_id
+                }
+            }
+        };
+        mongo_repo::update_many::<_, ServiceMongo>(&self.collection, filter, update).await
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]

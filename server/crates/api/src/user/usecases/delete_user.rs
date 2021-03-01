@@ -50,10 +50,6 @@ impl UseCase for DeleteUserUseCase {
 
     type Context = NettuContext;
 
-    // TODOS:
-    // - REMOVE ALL CALENDARS
-    // - REMOVE ALL EVENTS
-    // - REMOVE FROM ALL SERVICES
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let user = match ctx.repos.user_repo.find(&self.user_id).await {
             Some(u) if u.account_id == self.account.id => {
@@ -64,6 +60,15 @@ impl UseCase for DeleteUserUseCase {
             }
             _ => return Err(UseCaseErrors::UserNotFoundError),
         };
+
+        let _ = ctx.repos.calendar_repo.delete_by_user(&user.id).await;
+        let _ = ctx.repos.event_repo.delete_by_user(&user.id).await;
+        let _ = ctx.repos.schedule_repo.delete_by_user(&user.id).await;
+        let _ = ctx
+            .repos
+            .service_repo
+            .remove_user_from_services(&user.id)
+            .await;
 
         Ok(UseCaseRes { user })
     }

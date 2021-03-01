@@ -1,4 +1,4 @@
-use super::super::IEventRepo;
+use super::IEventRepo;
 use crate::shared::mongo_repo;
 use crate::shared::repo::DeleteResult;
 use mongo_repo::MongoDocument;
@@ -104,6 +104,13 @@ impl IEventRepo for EventRepo {
             }),
             Err(err) => Err(Box::new(err)),
         }
+    }
+
+    async fn delete_by_user(&self, user_id: &str) -> anyhow::Result<DeleteResult> {
+        let filter = doc! {
+            "user_id": user_id
+        };
+        mongo_repo::delete_many_by::<_, CalendarEventMongo>(&self.collection, filter).await
     }
 }
 

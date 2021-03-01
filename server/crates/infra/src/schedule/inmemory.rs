@@ -1,5 +1,5 @@
 use super::IScheduleRepo;
-use crate::shared::inmemory_repo::*;
+use crate::shared::{inmemory_repo::*, repo::DeleteResult};
 use nettu_scheduler_core::Schedule;
 use std::error::Error;
 
@@ -43,5 +43,10 @@ impl IScheduleRepo for InMemoryScheduleRepo {
 
     async fn delete(&self, schedule_id: &str) -> Option<Schedule> {
         delete(schedule_id, &self.schedules)
+    }
+
+    async fn delete_by_user(&self, user_id: &str) -> anyhow::Result<DeleteResult> {
+        let res = delete_by(&self.schedules, |schedule| schedule.user_id == user_id);
+        Ok(res)
     }
 }

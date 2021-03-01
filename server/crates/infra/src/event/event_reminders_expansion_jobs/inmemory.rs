@@ -1,5 +1,6 @@
+use super::IEventRemindersExpansionJobsRepo;
+use crate::shared::inmemory_repo::*;
 use crate::shared::repo::DeleteResult;
-use crate::{event::IEventRemindersExpansionJobsRepo, shared::inmemory_repo::*};
 use nettu_scheduler_core::EventRemindersExpansionJob;
 use std::error::Error;
 

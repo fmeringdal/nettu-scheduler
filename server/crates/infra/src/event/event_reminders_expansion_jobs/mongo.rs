@@ -1,5 +1,6 @@
+use super::IEventRemindersExpansionJobsRepo;
+use crate::shared::mongo_repo;
 use crate::shared::repo::DeleteResult;
-use crate::{event::IEventRemindersExpansionJobsRepo, shared::mongo_repo};
 use mongo_repo::MongoDocument;
 use mongodb::{
     bson::doc,

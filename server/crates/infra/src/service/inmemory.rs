@@ -74,4 +74,21 @@ impl IServiceRepo for InMemoryServiceRepo {
         );
         Ok(())
     }
+
+    async fn remove_user_from_services(&self, user_id: &str) -> Result<(), Box<dyn Error>> {
+        update_many(
+            &self.services,
+            |service| {
+                service
+                    .users
+                    .iter()
+                    .find(|u| u.user_id == user_id)
+                    .is_some()
+            },
+            |service| {
+                service.users.retain(|u| u.user_id != user_id);
+            },
+        );
+        Ok(())
+    }
 }

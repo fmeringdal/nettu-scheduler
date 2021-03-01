@@ -1,4 +1,4 @@
-use super::super::IReminderRepo;
+use super::IReminderRepo;
 use crate::shared::mongo_repo;
 use crate::shared::repo::DeleteResult;
 use mongo_repo::MongoDocument;

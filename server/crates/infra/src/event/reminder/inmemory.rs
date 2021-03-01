@@ -1,4 +1,4 @@
-use super::super::IReminderRepo;
+use super::IReminderRepo;
 use crate::shared::inmemory_repo::*;
 use crate::shared::repo::DeleteResult;
 use nettu_scheduler_core::Reminder;
