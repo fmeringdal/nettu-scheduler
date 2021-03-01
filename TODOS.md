@@ -16,7 +16,6 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 ## Backlog
 
 - More api tests for [calendarevent, booking]
-- More tests and docs for Reminders
 - smarter mongodb schema
 
 ## Need to have a data model that will support google and outlook calendars in the future

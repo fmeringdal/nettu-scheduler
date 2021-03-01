@@ -20,7 +20,7 @@ pub fn get_start_delay(now_ts: usize, secs_before_min: usize) -> usize {
     }
 }
 
-pub async fn start_reminders_expansion_job_scheduler(ctx: NettuContext) {
+pub fn start_reminders_expansion_job_scheduler(ctx: NettuContext) {
     actix_web::rt::spawn(async move {
         let mut interval = interval(Duration::from_secs(30 * 60 * 1000));
         loop {
@@ -34,7 +34,7 @@ pub async fn start_reminders_expansion_job_scheduler(ctx: NettuContext) {
     });
 }
 
-pub async fn start_send_reminders_job(ctx: NettuContext) {
+pub fn start_send_reminders_job(ctx: NettuContext) {
     actix_web::rt::spawn(async move {
         let now = ctx.sys.get_timestamp_millis();
         let secs_to_next_run = get_start_delay(now as usize, 0);
@@ -45,42 +45,44 @@ pub async fn start_send_reminders_job(ctx: NettuContext) {
         loop {
             minutely_interval.tick().await;
             let context = ctx.clone();
-            actix_web::rt::spawn(async move {
-                let client = Client::new();
-                println!("Minute tick at: {:?}", context.sys.get_timestamp_millis());
-
-                let usecase = GetUpcomingRemindersUseCase {};
-                let account_reminders = match execute(usecase, &context).await {
-                    Ok(res) => res,
-                    Err(_) => return,
-                };
-
-                let send_instant = account_reminders.1;
-                delay_until(send_instant).await;
-                println!(
-                    "Finished the delay at: {:?}",
-                    context.sys.get_timestamp_millis()
-                );
-                println!("Reminders to send: {:?}", account_reminders);
-
-                for (acc, reminders) in account_reminders.0 {
-                    match acc.settings.webhook {
-                        None => continue,
-                        Some(webhook) => {
-                            if let Err(e) = client
-                                .post(webhook.url)
-                                .header("nettu-scheduler-webhook-key", webhook.key)
-                                .send_json(&AccountEventRemindersDTO::new(reminders.events))
-                                .await
-                            {
-                                println!("Error informing client of reminders: {:?}", e);
-                            }
-                        }
-                    }
-                }
-            });
+            actix_web::rt::spawn(send_reminders(context));
         }
     });
+}
+
+async fn send_reminders(context: NettuContext) {
+    let client = Client::new();
+    println!("Minute tick at: {:?}", context.sys.get_timestamp_millis());
+
+    let usecase = GetUpcomingRemindersUseCase {};
+    let account_reminders = match execute(usecase, &context).await {
+        Ok(res) => res,
+        Err(_) => return,
+    };
+
+    let send_instant = account_reminders.1;
+    delay_until(send_instant).await;
+    println!(
+        "Finished the delay at: {:?}",
+        context.sys.get_timestamp_millis()
+    );
+    println!("Reminders to send: {:?}", account_reminders);
+
+    for (acc, reminders) in account_reminders.0 {
+        match acc.settings.webhook {
+            None => continue,
+            Some(webhook) => {
+                if let Err(e) = client
+                    .post(webhook.url)
+                    .header("nettu-scheduler-webhook-key", webhook.key)
+                    .send_json(&AccountEventRemindersDTO::new(reminders.events))
+                    .await
+                {
+                    println!("Error informing client of reminders: {:?}", e);
+                }
+            }
+        }
+    }
 }
 
 #[cfg(test)]
