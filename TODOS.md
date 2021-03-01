@@ -3,13 +3,12 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 ## Todos
 
 
-- api_structs
 - More admin and user controllers for different usecases
 - Delete user cleanup actions
 - Freebusy queries cleanup
 - Use sorted event instace https://www.lpalmieri.com/posts/2020-12-11-zero-to-production-6-domain-modelling/
     - compatible
-- core or domain ??
+- core or domain ?? Maybe domain
 - Shared calendars
 - https://en.wikipedia.org/wiki/Interval_scheduling
 - http://www.cs.toronto.edu/~lalla/373s16/notes/ISP.pdf

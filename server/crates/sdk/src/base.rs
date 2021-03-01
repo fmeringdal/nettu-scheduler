@@ -1,7 +1,4 @@
-use actix_web::{
-    client::{Client, ClientRequest},
-    http::{Method, StatusCode},
-};
+use reqwest::{Client, Method, RequestBuilder, StatusCode};
 use serde::{Deserialize, Serialize};
 
 pub(crate) struct BaseClient {
@@ -29,7 +26,7 @@ impl BaseClient {
         self.api_key = Some(api_key);
     }
 
-    fn get_client(&self, method: Method, path: String) -> ClientRequest {
+    fn get_client(&self, method: Method, path: String) -> RequestBuilder {
         let client = Client::new();
         let url = format!("{}/{}", self.address, path);
         let builder = match method {
@@ -52,7 +49,7 @@ impl BaseClient {
         path: String,
         expected_status_code: StatusCode,
     ) -> APIResponse<T> {
-        let mut res = match self.get_client(Method::GET, path).send().await {
+        let res = match self.get_client(Method::GET, path).send().await {
             Ok(res) => res,
             Err(_) => return Err(APIError::Network),
         };
@@ -76,7 +73,7 @@ impl BaseClient {
         path: String,
         expected_status_code: StatusCode,
     ) -> APIResponse<T> {
-        let mut res = match self.get_client(Method::POST, path).send_json(&body).await {
+        let res = match self.get_client(Method::POST, path).json(&body).send().await {
             Ok(res) => res,
             Err(_) => return Err(APIError::Network),
         };

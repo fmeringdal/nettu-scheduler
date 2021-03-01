@@ -1,6 +1,6 @@
 use crate::{APIResponse, BaseClient};
-use actix_web::http::StatusCode;
 use nettu_scheduler_api_structs::*;
+use reqwest::StatusCode;
 use std::sync::Arc;
 
 #[derive(Clone)]
