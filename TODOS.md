@@ -3,9 +3,9 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 ## Todos
 
 
-- More admin and user controllers for different usecases
 - Delete user cleanup actions
 - Freebusy queries cleanup
+- More admin and user controllers for different usecases
 - Use sorted event instace https://www.lpalmieri.com/posts/2020-12-11-zero-to-production-6-domain-modelling/
     - compatible
 - core or domain ?? Maybe domain

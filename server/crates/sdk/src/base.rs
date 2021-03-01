@@ -11,8 +11,8 @@ pub enum APIError {
     Network,
     MalformedResponse,
     Unauthorized,
-    Unauthenticated,
-    BadClientData,
+    NotFound,
+    BadClientData(String),
     UnexpectedStatusCode(StatusCode),
 }
 pub type APIResponse<T> = Result<T, APIError>;
@@ -54,7 +54,13 @@ impl BaseClient {
     ) -> Result<(), APIError> {
         let status = res.status();
         if status != expected_status_code {
-            return Err(APIError::UnexpectedStatusCode(status));
+            let e = match status {
+                StatusCode::UNAUTHORIZED => APIError::Unauthorized,
+                StatusCode::NOT_FOUND => APIError::NotFound,
+                StatusCode::UNPROCESSABLE_ENTITY => APIError::BadClientData(res.text().await),
+                _ => APIError::UnexpectedStatusCode(status),
+            };
+            return Err(e);
         }
         Ok(())
     }
