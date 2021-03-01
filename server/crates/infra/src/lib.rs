@@ -29,15 +29,16 @@ impl Config {
                 code
             }
         };
-        let port = std::env::var("PORT").unwrap_or("5000".into());
+        let default_port = "5000";
+        let port = std::env::var("PORT").unwrap_or(default_port.into());
         let port = match port.parse::<usize>() {
             Ok(port) => port,
             Err(_) => {
                 println!(
-                    "The given PORT: {} is not valid, using the default port instead.",
-                    port
+                    "The given PORT: {} is not valid, falling back to the default port: {}.",
+                    port, default_port
                 );
-                5000
+                default_port.parse::<usize>().unwrap()
             }
         };
         Self {

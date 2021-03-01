@@ -1,6 +1,5 @@
-use crate::error::NettuError;
-use crate::shared::auth::ensure_nettu_acct_header;
 use crate::shared::usecase::{execute, UseCase};
+use crate::{error::NettuError, shared::auth::protect_public_account_route};
 use actix_web::{web, HttpRequest, HttpResponse};
 use futures::future::join_all;
 use nettu_scheduler_api_structs::get_user_freebusy::{APIResponse, PathParams, QueryParams};
@@ -8,25 +7,25 @@ use nettu_scheduler_core::{sort_and_merge_instances, CalendarView, EventInstance
 use nettu_scheduler_infra::NettuContext;
 use std::collections::HashMap;
 
+/// "1,2,3" -> Vec<1,2,3>
+fn parse_vec_query_value(val: &Option<String>) -> Option<Vec<String>> {
+    val.as_ref()
+        .map(|ids| ids.split(',').map(String::from).collect())
+}
+
 pub async fn get_freebusy_controller(
     http_req: HttpRequest,
     query_params: web::Query<QueryParams>,
     params: web::Path<PathParams>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
-    let account = ensure_nettu_acct_header(&http_req)?;
+    let account = protect_public_account_route(&http_req, &ctx).await?;
 
-    let calendar_ids = match &query_params.calendar_ids {
-        Some(ids) => Some(ids.split(',').map(String::from).collect()),
-        None => None,
-    };
-    let schedule_ids = match &query_params.schedule_ids {
-        Some(ids) => Some(ids.split(',').map(String::from).collect()),
-        None => None,
-    };
+    let calendar_ids = parse_vec_query_value(&query_params.calendar_ids);
+    let schedule_ids = parse_vec_query_value(&query_params.schedule_ids);
 
     let usecase = GetFreeBusyUseCase {
-        user_id: User::create_id(&account, &params.external_user_id),
+        user_id: User::create_id(&account.id, &params.external_user_id),
         calendar_ids,
         schedule_ids,
         start_ts: query_params.start_ts,

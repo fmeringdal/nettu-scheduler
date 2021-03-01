@@ -1,8 +1,5 @@
+use crate::error::NettuError;
 use crate::shared::usecase::{execute, UseCase};
-use crate::{
-    error::NettuError,
-    shared::auth::{ensure_nettu_acct_header, protect_account_route},
-};
 use actix_web::{web, HttpRequest, HttpResponse};
 use futures::future::join_all;
 use nettu_scheduler_api_structs::get_service_bookingslots::*;
@@ -22,14 +19,6 @@ pub async fn get_service_bookingslots_controller(
     path_params: web::Path<PathParams>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
-    match ensure_nettu_acct_header(&http_req) {
-        Ok(_) => (),
-        Err(e) => match protect_account_route(&http_req, &ctx).await {
-            Ok(_) => (),
-            Err(_) => return Err(e),
-        },
-    };
-
     let usecase = GetServiceBookingSlotsUseCase {
         service_id: path_params.service_id.clone(),
         iana_tz: query_params.iana_tz.clone(),
