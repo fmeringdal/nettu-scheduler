@@ -4,7 +4,7 @@ use nettu_scheduler_core::{Account, User};
 use nettu_scheduler_infra::NettuContext;
 use serde::{Deserialize, Serialize};
 
-use crate::user::usecases::create_user::CreateUserUseCase;
+use crate::user::create_user::CreateUserUseCase;
 use crate::{error::NettuError, shared::usecase::execute};
 
 #[derive(Debug, Serialize, Deserialize)]

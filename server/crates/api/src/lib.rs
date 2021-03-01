@@ -16,13 +16,13 @@ use std::net::TcpListener;
 use tracing_actix_web::TracingLogger;
 
 pub fn configure_server_api(cfg: &mut web::ServiceConfig) {
-    account::api::configure_routes(cfg);
-    calendar::api::configure_routes(cfg);
-    event::api::configure_routes(cfg);
-    service::api::configure_routes(cfg);
-    schedule::api::configure_routes(cfg);
-    status::api::configure_routes(cfg);
-    user::api::configure_routes(cfg);
+    account::configure_routes(cfg);
+    calendar::configure_routes(cfg);
+    event::configure_routes(cfg);
+    schedule::configure_routes(cfg);
+    service::configure_routes(cfg);
+    status::configure_routes(cfg);
+    user::configure_routes(cfg);
 }
 
 pub struct Application {

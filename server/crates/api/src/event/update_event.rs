@@ -10,7 +10,7 @@ use crate::{
     },
 };
 use actix_web::{web, HttpRequest, HttpResponse};
-use event::usecases::sync_event_reminders::{
+use event::sync_event_reminders::{
     EventOperation, SyncEventRemindersTrigger, SyncEventRemindersUseCase,
 };
 use nettu_scheduler_api_structs::update_event::*;

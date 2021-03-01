@@ -1,5 +1,5 @@
 use crate::{
-    event::usecases::{
+    event::{
         get_upcoming_reminders::GetUpcomingRemindersUseCase,
         sync_event_reminders::{SyncEventRemindersTrigger, SyncEventRemindersUseCase},
     },

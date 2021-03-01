@@ -183,8 +183,8 @@ impl UseCase for GetUpcomingRemindersUseCase {
 
 #[cfg(test)]
 mod tests {
+    use super::super::create_event::CreateEventUseCase;
     use super::*;
-    use crate::event::usecases::create_event::CreateEventUseCase;
     use nettu_scheduler_core::{Calendar, CalendarEventReminder, RRuleFrequenzy, RRuleOptions};
     use nettu_scheduler_infra::{setup_context, ISys, ObjectId};
     use std::sync::Arc;
