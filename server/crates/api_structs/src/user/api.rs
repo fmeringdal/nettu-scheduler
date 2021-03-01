@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::dtos::UserDTO;
 
 #[derive(Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UserResponse {
     user: UserDTO,
 }
