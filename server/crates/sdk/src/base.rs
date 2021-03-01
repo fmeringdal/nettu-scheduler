@@ -7,13 +7,18 @@ pub(crate) struct BaseClient {
 }
 
 #[derive(Debug)]
-pub enum APIError {
+pub enum APIErrorVariant {
     Network,
     MalformedResponse,
     Unauthorized,
     NotFound,
-    BadClientData(String),
-    UnexpectedStatusCode(StatusCode),
+    BadClientData,
+    UnexpectedStatusCode,
+}
+#[derive(Debug)]
+pub struct APIError {
+    variant: APIErrorVariant,
+    message: String,
 }
 pub type APIResponse<T> = Result<T, APIError>;
 
@@ -47,31 +52,35 @@ impl BaseClient {
         }
     }
 
-    fn check_status_code<T>(
+    async fn check_status_code<T>(
         &self,
-        res: &Response,
+        res: Response,
         expected_status_code: StatusCode,
-    ) -> Result<(), APIError> {
+    ) -> Result<Response, APIError> {
         let status = res.status();
         if status != expected_status_code {
-            let e = match status {
-                StatusCode::UNAUTHORIZED => APIError::Unauthorized,
-                StatusCode::NOT_FOUND => APIError::NotFound,
-                StatusCode::UNPROCESSABLE_ENTITY => APIError::BadClientData(res.text().await),
-                _ => APIError::UnexpectedStatusCode(status),
+            let variant = match status {
+                StatusCode::UNAUTHORIZED => APIErrorVariant::Unauthorized,
+                StatusCode::NOT_FOUND => APIErrorVariant::NotFound,
+                StatusCode::UNPROCESSABLE_ENTITY => APIErrorVariant::BadClientData,
+                _ => APIErrorVariant::UnexpectedStatusCode,
             };
-            return Err(e);
+            return Err(APIError {
+                variant,
+                message: res.text().await.unwrap_or_default(),
+            });
         }
-        Ok(())
+        Ok(res)
     }
 
     async fn get_json_response<T: for<'de> Deserialize<'de>>(
         &self,
         res: Response,
     ) -> APIResponse<T> {
-        res.json::<T>()
-            .await
-            .map_err(|_| APIError::MalformedResponse)
+        res.json::<T>().await.map_err(|e| APIError {
+            variant: APIErrorVariant::MalformedResponse,
+            message: e.to_string(),
+        })
     }
 
     async fn handle_api_response<T: for<'de> Deserialize<'de>>(
@@ -79,8 +88,17 @@ impl BaseClient {
         res: Response,
         expected_status_code: StatusCode,
     ) -> APIResponse<T> {
-        self.check_status_code::<T>(&res, expected_status_code)?;
+        let res = self
+            .check_status_code::<T>(res, expected_status_code)
+            .await?;
         self.get_json_response(res).await
+    }
+
+    fn network_error(&self) -> APIError {
+        APIError {
+            variant: APIErrorVariant::Network,
+            message: "Network error. Please try again".into(),
+        }
     }
 
     pub async fn get<T: for<'de> Deserialize<'de>>(
@@ -90,7 +108,7 @@ impl BaseClient {
     ) -> APIResponse<T> {
         let res = match self.get_client(Method::GET, path).send().await {
             Ok(res) => res,
-            Err(_) => return Err(APIError::Network),
+            Err(_) => return Err(self.network_error()),
         };
         self.handle_api_response(res, expected_status_code).await
     }
@@ -102,7 +120,7 @@ impl BaseClient {
     ) -> APIResponse<T> {
         let res = match self.get_client(Method::DELETE, path).send().await {
             Ok(res) => res,
-            Err(_) => return Err(APIError::Network),
+            Err(_) => return Err(self.network_error()),
         };
         self.handle_api_response(res, expected_status_code).await
     }
@@ -115,7 +133,7 @@ impl BaseClient {
     ) -> APIResponse<T> {
         let res = match self.get_client(Method::PUT, path).json(&body).send().await {
             Ok(res) => res,
-            Err(_) => return Err(APIError::Network),
+            Err(_) => return Err(self.network_error()),
         };
         self.handle_api_response(res, expected_status_code).await
     }
@@ -128,7 +146,7 @@ impl BaseClient {
     ) -> APIResponse<T> {
         let res = match self.get_client(Method::POST, path).json(&body).send().await {
             Ok(res) => res,
-            Err(_) => return Err(APIError::Network),
+            Err(_) => return Err(self.network_error()),
         };
         self.handle_api_response(res, expected_status_code).await
     }

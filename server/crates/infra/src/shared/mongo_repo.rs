@@ -7,6 +7,8 @@ use mongodb::{
 use serde::{de::DeserializeOwned, Serialize};
 use std::error::Error;
 
+use super::repo::DeleteResult;
+
 pub enum MongoPersistenceID {
     ObjectId(ObjectId),
     String(String),
@@ -148,12 +150,12 @@ pub async fn delete<E, D: MongoDocument<E>>(
     }
 }
 
-// pub async fn delete_many_by<E, D: MongoDocument<E>>(
-//     collection: &Collection,
-//     filter: Document,
-// ) -> anyhow::Result<DeleteResult> {
-//     let res = collection.delete_many(filter, None).await?;
-//     Ok(DeleteResult {
-//         deleted_count: res.deleted_count,
-//     })
-// }
+pub async fn delete_many_by<E, D: MongoDocument<E>>(
+    collection: &Collection,
+    filter: Document,
+) -> anyhow::Result<DeleteResult> {
+    let res = collection.delete_many(filter, None).await?;
+    Ok(DeleteResult {
+        deleted_count: res.deleted_count,
+    })
+}

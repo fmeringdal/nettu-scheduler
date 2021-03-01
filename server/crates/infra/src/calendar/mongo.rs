@@ -1,5 +1,5 @@
 use super::ICalendarRepo;
-use crate::shared::mongo_repo;
+use crate::shared::{mongo_repo, repo::DeleteResult};
 use mongo_repo::MongoDocument;
 use mongodb::{
     bson::{doc, oid::ObjectId, Document},
@@ -23,14 +23,14 @@ impl CalendarRepo {
 
 #[async_trait::async_trait]
 impl ICalendarRepo for CalendarRepo {
-    async fn insert(&self, calendar: &Calendar) -> Result<(), Box<dyn Error>> {
+    async fn insert(&self, calendar: &Calendar) -> anyhow::Result<()> {
         match mongo_repo::insert::<_, CalendarMongo>(&self.collection, calendar).await {
             Ok(_) => Ok(()),
             Err(_) => Ok(()), // fix this
         }
     }
 
-    async fn save(&self, calendar: &Calendar) -> Result<(), Box<dyn Error>> {
+    async fn save(&self, calendar: &Calendar) -> anyhow::Result<()> {
         match mongo_repo::save::<_, CalendarMongo>(&self.collection, calendar).await {
             Ok(_) => Ok(()),
             Err(_) => Ok(()), // fix this
@@ -61,6 +61,13 @@ impl ICalendarRepo for CalendarRepo {
             Err(_) => return None,
         };
         mongo_repo::delete::<_, CalendarMongo>(&self.collection, &id).await
+    }
+
+    async fn delete_by_user(&self, user_id: &str) -> anyhow::Result<DeleteResult> {
+        let filter = doc! {
+            "user_id": user_id
+        };
+        mongo_repo::delete_many_by::<_, CalendarMongo>(&self.collection, filter).await
     }
 }
 

@@ -1,5 +1,5 @@
 use super::ICalendarRepo;
-use crate::shared::inmemory_repo::*;
+use crate::shared::{inmemory_repo::*, repo::DeleteResult};
 use nettu_scheduler_core::Calendar;
 use std::error::Error;
 
@@ -17,12 +17,12 @@ impl InMemoryCalendarRepo {
 
 #[async_trait::async_trait]
 impl ICalendarRepo for InMemoryCalendarRepo {
-    async fn insert(&self, calendar: &Calendar) -> Result<(), Box<dyn Error>> {
+    async fn insert(&self, calendar: &Calendar) -> anyhow::Result<()> {
         insert(calendar, &self.calendars);
         Ok(())
     }
 
-    async fn save(&self, calendar: &Calendar) -> Result<(), Box<dyn Error>> {
+    async fn save(&self, calendar: &Calendar) -> anyhow::Result<()> {
         save(calendar, &self.calendars);
         Ok(())
     }
@@ -37,5 +37,10 @@ impl ICalendarRepo for InMemoryCalendarRepo {
 
     async fn delete(&self, calendar_id: &str) -> Option<Calendar> {
         delete(calendar_id, &self.calendars)
+    }
+
+    async fn delete_by_user(&self, user_id: &str) -> anyhow::Result<DeleteResult> {
+        let res = delete_by(&self.calendars, |cal| cal.user_id == user_id);
+        Ok(res)
     }
 }
