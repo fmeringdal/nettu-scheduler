@@ -1,7 +1,7 @@
 use crate::shared::usecase::{execute, UseCase};
 use actix_web::{web, HttpResponse};
 use nettu_scheduler_api_structs::create_account::{APIResponse, RequestBody};
-use nettu_scheduler_core::Account;
+use nettu_scheduler_domain::Account;
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn create_account_controller(

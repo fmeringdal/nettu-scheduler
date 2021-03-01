@@ -8,7 +8,7 @@ use crate::shared::{
 };
 use actix_web::{web, HttpResponse};
 use nettu_scheduler_api_structs::create_event::*;
-use nettu_scheduler_core::{CalendarEvent, CalendarEventReminder, RRuleOptions};
+use nettu_scheduler_domain::{CalendarEvent, CalendarEventReminder, RRuleOptions};
 use nettu_scheduler_infra::NettuContext;
 use nettu_scheduler_infra::ObjectId;
 
@@ -133,7 +133,7 @@ mod test {
     use super::*;
     use chrono::prelude::*;
     use chrono::Utc;
-    use nettu_scheduler_core::{Calendar, User};
+    use nettu_scheduler_domain::{Calendar, User};
     use nettu_scheduler_infra::setup_context;
 
     struct TestContext {

@@ -2,7 +2,7 @@ mod event;
 mod event_reminders_expansion_jobs;
 mod reminder;
 
-use nettu_scheduler_core::{CalendarEvent, CalendarView, EventRemindersExpansionJob, Reminder};
+use nettu_scheduler_domain::{CalendarEvent, CalendarView, EventRemindersExpansionJob, Reminder};
 use std::error::Error;
 
 pub use event::IEventRepo;

@@ -4,7 +4,7 @@ mod mongo;
 use crate::repos::shared::repo::DeleteResult;
 pub use inmemory::InMemoryEventRepo;
 pub use mongo::MongoEventRepo;
-use nettu_scheduler_core::{CalendarEvent, CalendarView};
+use nettu_scheduler_domain::{CalendarEvent, CalendarView};
 use std::error::Error;
 
 #[async_trait::async_trait]

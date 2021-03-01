@@ -1,5 +1,5 @@
 use crate::repos::shared::repo::DeleteResult;
-use nettu_scheduler_core::Entity;
+use nettu_scheduler_domain::Entity;
 use std::sync::Mutex;
 
 /// Useful functions for creating inmemory repositories

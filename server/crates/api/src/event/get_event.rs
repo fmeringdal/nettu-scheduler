@@ -7,7 +7,7 @@ use crate::{
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::get_event::*;
-use nettu_scheduler_core::CalendarEvent;
+use nettu_scheduler_domain::CalendarEvent;
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn get_event_controller(

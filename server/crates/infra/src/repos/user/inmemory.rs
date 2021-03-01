@@ -1,6 +1,6 @@
 use super::IUserRepo;
 use crate::repos::shared::inmemory_repo::*;
-use nettu_scheduler_core::User;
+use nettu_scheduler_domain::User;
 use std::error::Error;
 
 pub struct InMemoryUserRepo {

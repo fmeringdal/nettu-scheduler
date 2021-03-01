@@ -5,7 +5,7 @@ use mongodb::{
     bson::{doc, oid::ObjectId, Document},
     Collection, Database,
 };
-use nettu_scheduler_core::{Service, ServiceResource, TimePlan};
+use nettu_scheduler_domain::{Service, ServiceResource, TimePlan};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 

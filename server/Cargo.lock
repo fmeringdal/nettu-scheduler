@@ -1697,7 +1697,7 @@ version = "0.1.0"
 dependencies = [
  "actix-web",
  "nettu_scheduler_api",
- "nettu_scheduler_core",
+ "nettu_scheduler_domain",
  "nettu_scheduler_infra",
  "nettu_scheduler_sdk",
  "tracing",
@@ -1720,7 +1720,7 @@ dependencies = [
  "futures",
  "jsonwebtoken",
  "nettu_scheduler_api_structs",
- "nettu_scheduler_core",
+ "nettu_scheduler_domain",
  "nettu_scheduler_infra",
  "rrule",
  "serde",
@@ -1734,12 +1734,12 @@ dependencies = [
 name = "nettu_scheduler_api_structs"
 version = "0.1.0"
 dependencies = [
- "nettu_scheduler_core",
+ "nettu_scheduler_domain",
  "serde",
 ]
 
 [[package]]
-name = "nettu_scheduler_core"
+name = "nettu_scheduler_domain"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -1762,7 +1762,7 @@ dependencies = [
  "chrono",
  "futures",
  "mongodb",
- "nettu_scheduler_core",
+ "nettu_scheduler_domain",
  "nettu_scheduler_utils",
  "serde",
  "tokio 1.2.0",

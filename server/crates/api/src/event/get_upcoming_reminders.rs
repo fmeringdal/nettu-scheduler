@@ -1,6 +1,6 @@
 use crate::shared::usecase::UseCase;
 use actix_web::rt::time::Instant;
-use nettu_scheduler_core::{Account, CalendarEvent, Reminder};
+use nettu_scheduler_domain::{Account, CalendarEvent, Reminder};
 use nettu_scheduler_infra::NettuContext;
 use std::collections::HashMap;
 use std::time::Duration;
@@ -185,7 +185,7 @@ impl UseCase for GetUpcomingRemindersUseCase {
 mod tests {
     use super::super::create_event::CreateEventUseCase;
     use super::*;
-    use nettu_scheduler_core::{Calendar, CalendarEventReminder, RRuleFrequenzy, RRuleOptions};
+    use nettu_scheduler_domain::{Calendar, CalendarEventReminder, RRuleFrequenzy, RRuleOptions};
     use nettu_scheduler_infra::{setup_context, ISys, ObjectId};
     use std::sync::Arc;
 

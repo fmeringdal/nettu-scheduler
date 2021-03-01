@@ -9,7 +9,7 @@ use crate::{
 use actix_web::{web, HttpResponse};
 use chrono_tz::Tz;
 use nettu_scheduler_api_structs::create_schedule::*;
-use nettu_scheduler_core::{Schedule, User};
+use nettu_scheduler_domain::{Schedule, User};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn create_schedule_admin_controller(

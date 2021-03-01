@@ -4,7 +4,7 @@ use crate::shared::usecase::{execute, UseCase};
 
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::get_calendar_events::{APIResponse, PathParams, QueryParams};
-use nettu_scheduler_core::{Calendar, CalendarView, EventWithInstances};
+use nettu_scheduler_domain::{Calendar, CalendarView, EventWithInstances};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn get_calendar_events_controller(

@@ -1,6 +1,6 @@
 use super::IServiceRepo;
 use crate::repos::shared::inmemory_repo::*;
-use nettu_scheduler_core::Service;
+use nettu_scheduler_domain::Service;
 use std::error::Error;
 
 pub struct InMemoryServiceRepo {

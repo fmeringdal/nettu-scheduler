@@ -2,7 +2,7 @@ use crate::shared::usecase::{execute, UseCase};
 use crate::{error::NettuError, shared::auth::protect_account_route};
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::create_user::*;
-use nettu_scheduler_core::User;
+use nettu_scheduler_domain::User;
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn create_user_controller(

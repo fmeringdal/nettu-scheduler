@@ -1,4 +1,4 @@
-use nettu_scheduler_core::{
+use nettu_scheduler_domain::{
     CalendarEvent, CalendarEventReminder, EventInstance, RRuleOptions, User,
 };
 use serde::{Deserialize, Serialize};

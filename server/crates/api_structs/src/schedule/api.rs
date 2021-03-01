@@ -1,4 +1,4 @@
-use nettu_scheduler_core::Schedule;
+use nettu_scheduler_domain::Schedule;
 use serde::{Deserialize, Serialize};
 
 use crate::dtos::ScheduleDTO;
@@ -57,7 +57,7 @@ pub mod get_schedule {
 }
 
 pub mod update_schedule {
-    use nettu_scheduler_core::ScheduleRule;
+    use nettu_scheduler_domain::ScheduleRule;
 
     use super::*;
 

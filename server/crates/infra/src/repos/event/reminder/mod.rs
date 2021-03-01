@@ -5,7 +5,7 @@ use std::error::Error;
 
 pub use inmemory::InMemoryReminderRepo;
 pub use mongo::MongoReminderRepo;
-use nettu_scheduler_core::Reminder;
+use nettu_scheduler_domain::Reminder;
 
 use crate::repos::shared::repo::DeleteResult;
 

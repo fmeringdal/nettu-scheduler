@@ -7,7 +7,7 @@ use mongodb::{
     bson::{oid::ObjectId, Document},
     Collection, Database,
 };
-use nettu_scheduler_core::Reminder;
+use nettu_scheduler_domain::Reminder;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 

@@ -8,7 +8,7 @@ edition = "2018"
 
 [dependencies]
 nettu_scheduler_utils = { path = "../utils" }
-nettu_scheduler_core = { path = "../core" }
+nettu_scheduler_domain = { path = "../domain" }
 serde = { version = "1.0", features = ["derive"] }
 futures = "0.3" # todo, only need stream feature for mongodb
 async-trait = "0.1.42"

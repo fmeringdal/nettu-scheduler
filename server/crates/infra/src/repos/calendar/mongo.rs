@@ -5,7 +5,7 @@ use mongodb::{
     bson::{doc, oid::ObjectId, Document},
     Collection, Database,
 };
-use nettu_scheduler_core::{Calendar, CalendarSettings};
+use nettu_scheduler_domain::{Calendar, CalendarSettings};
 use serde::{Deserialize, Serialize};
 
 pub struct MongoCalendarRepo {

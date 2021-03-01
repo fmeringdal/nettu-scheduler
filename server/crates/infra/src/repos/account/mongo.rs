@@ -1,5 +1,5 @@
 use super::IAccountRepo;
-use nettu_scheduler_core::{Account, AccountSettings, AccountWebhookSettings};
+use nettu_scheduler_domain::{Account, AccountSettings, AccountWebhookSettings};
 
 use crate::repos::shared::mongo_repo;
 use mongo_repo::MongoDocument;

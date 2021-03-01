@@ -4,7 +4,7 @@ mod mongo;
 use crate::repos::shared::repo::DeleteResult;
 pub use inmemory::InMemoryScheduleRepo;
 pub use mongo::MongoScheduleRepo;
-use nettu_scheduler_core::Schedule;
+use nettu_scheduler_domain::Schedule;
 use std::error::Error;
 
 #[async_trait::async_trait]

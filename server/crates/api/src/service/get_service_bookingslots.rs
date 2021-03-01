@@ -3,7 +3,7 @@ use crate::shared::usecase::{execute, UseCase};
 use actix_web::{web, HttpRequest, HttpResponse};
 use futures::future::join_all;
 use nettu_scheduler_api_structs::get_service_bookingslots::*;
-use nettu_scheduler_core::{
+use nettu_scheduler_domain::{
     booking_slots::{
         get_service_bookingslots, validate_bookingslots_query, validate_slots_interval,
         BookingQueryError, BookingSlotsOptions, BookingSlotsQuery, ServiceBookingSlot,
@@ -312,7 +312,7 @@ mod test {
     use super::*;
     use chrono::prelude::*;
     use chrono::Utc;
-    use nettu_scheduler_core::{Calendar, CalendarEvent, RRuleOptions, Service, ServiceResource};
+    use nettu_scheduler_domain::{Calendar, CalendarEvent, RRuleOptions, Service, ServiceResource};
     use nettu_scheduler_infra::{setup_context, ISys};
 
     struct TestContext {

@@ -1,5 +1,5 @@
-use nettu_scheduler_core::TimePlan;
-use nettu_scheduler_core::{booking_slots::ServiceBookingSlotDTO, Service};
+use nettu_scheduler_domain::TimePlan;
+use nettu_scheduler_domain::{booking_slots::ServiceBookingSlotDTO, Service};
 use serde::{Deserialize, Serialize};
 
 use crate::dtos::ServiceDTO;

@@ -1,4 +1,4 @@
-use nettu_scheduler_core::{Calendar, CalendarSettings, User};
+use nettu_scheduler_domain::{Calendar, CalendarSettings, User};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]

@@ -1,6 +1,6 @@
 use super::ICalendarRepo;
 use crate::repos::shared::{inmemory_repo::*, repo::DeleteResult};
-use nettu_scheduler_core::Calendar;
+use nettu_scheduler_domain::Calendar;
 
 pub struct InMemoryCalendarRepo {
     calendars: std::sync::Mutex<Vec<Calendar>>,

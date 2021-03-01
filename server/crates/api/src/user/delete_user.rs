@@ -2,7 +2,7 @@ use crate::shared::usecase::{execute, UseCase};
 use crate::{error::NettuError, shared::auth::protect_account_route};
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::delete_user::*;
-use nettu_scheduler_core::{Account, User};
+use nettu_scheduler_domain::{Account, User};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn delete_user_controller(

@@ -2,7 +2,7 @@ use crate::shared::usecase::{execute, UseCase};
 use crate::{error::NettuError, shared::auth::protect_route};
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::get_event_instances::*;
-use nettu_scheduler_core::{CalendarEvent, CalendarView, EventInstance};
+use nettu_scheduler_domain::{CalendarEvent, CalendarView, EventInstance};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn get_event_instances_controller(

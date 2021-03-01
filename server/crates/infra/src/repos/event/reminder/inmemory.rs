@@ -1,7 +1,7 @@
 use super::IReminderRepo;
 use crate::repos::shared::inmemory_repo::*;
 use crate::repos::shared::repo::DeleteResult;
-use nettu_scheduler_core::Reminder;
+use nettu_scheduler_domain::Reminder;
 use std::error::Error;
 
 pub struct InMemoryReminderRepo {

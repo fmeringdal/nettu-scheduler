@@ -3,7 +3,7 @@ use crate::{error::NettuError, shared::auth::protect_public_account_route};
 use actix_web::{web, HttpRequest, HttpResponse};
 use futures::future::join_all;
 use nettu_scheduler_api_structs::get_user_freebusy::{APIResponse, PathParams, QueryParams};
-use nettu_scheduler_core::{sort_and_merge_instances, CalendarView, EventInstance, User};
+use nettu_scheduler_domain::{sort_and_merge_instances, CalendarView, EventInstance, User};
 use nettu_scheduler_infra::NettuContext;
 use std::collections::HashMap;
 
@@ -178,7 +178,7 @@ impl GetFreeBusyUseCase {
 #[cfg(test)]
 mod test {
     use super::*;
-    use nettu_scheduler_core::{Calendar, CalendarEvent, Entity, RRuleFrequenzy, RRuleOptions};
+    use nettu_scheduler_domain::{Calendar, CalendarEvent, Entity, RRuleFrequenzy, RRuleOptions};
     use nettu_scheduler_infra::setup_context;
 
     #[actix_web::main]

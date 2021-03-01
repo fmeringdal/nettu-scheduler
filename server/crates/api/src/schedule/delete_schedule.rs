@@ -5,7 +5,7 @@ use crate::shared::{
 use crate::{error::NettuError, shared::usecase::UseCase};
 use actix_web::{web, HttpResponse};
 use nettu_scheduler_api_structs::delete_schedule::*;
-use nettu_scheduler_core::Schedule;
+use nettu_scheduler_domain::Schedule;
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn delete_schedule_controller(

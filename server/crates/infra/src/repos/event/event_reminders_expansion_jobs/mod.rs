@@ -5,7 +5,7 @@ use std::error::Error;
 
 pub use inmemory::InMemoryEventRemindersExpansionJobsRepo;
 pub use mongo::MongoEventRemindersExpansionsJobRepo;
-use nettu_scheduler_core::EventRemindersExpansionJob;
+use nettu_scheduler_domain::EventRemindersExpansionJob;
 
 use crate::repos::shared::repo::DeleteResult;
 

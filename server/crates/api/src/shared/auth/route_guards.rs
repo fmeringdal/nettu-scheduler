@@ -1,6 +1,6 @@
 use actix_web::HttpRequest;
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
-use nettu_scheduler_core::{Account, User};
+use nettu_scheduler_domain::{Account, User};
 use nettu_scheduler_infra::NettuContext;
 use serde::{Deserialize, Serialize};
 

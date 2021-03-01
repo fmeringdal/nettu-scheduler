@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::dtos::{CalendarDTO, EventWithInstancesDTO};
-use nettu_scheduler_core::{Calendar, EventInstance};
+use nettu_scheduler_domain::{Calendar, EventInstance};
 
 #[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -40,7 +40,7 @@ pub mod delete_calendar {
 }
 
 pub mod get_calendar_events {
-    use nettu_scheduler_core::EventWithInstances;
+    use nettu_scheduler_domain::EventWithInstances;
 
     use crate::dtos::CalendarEventDTO;
 

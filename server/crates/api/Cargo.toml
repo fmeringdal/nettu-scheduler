@@ -8,7 +8,7 @@ edition = "2018"
 
 [dependencies]
 nettu_scheduler_api_structs = { path = "../api_structs" }
-nettu_scheduler_core = { path = "../core" }
+nettu_scheduler_domain = { path = "../domain" }
 nettu_scheduler_infra = { path = "../infra" }
 serde = { version = "1.0", features = ["derive"] }
 futures = "0.3" 

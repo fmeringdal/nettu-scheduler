@@ -1,4 +1,4 @@
-use nettu_scheduler_core::{Account, AccountSettings, AccountWebhookSettings};
+use nettu_scheduler_domain::{Account, AccountSettings, AccountWebhookSettings};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]

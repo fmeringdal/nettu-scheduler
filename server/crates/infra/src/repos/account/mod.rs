@@ -5,7 +5,7 @@ use std::error::Error;
 
 pub use inmemory::InMemoryAccountRepo;
 pub use mongo::MongoAccountRepo;
-use nettu_scheduler_core::Account;
+use nettu_scheduler_domain::Account;
 
 #[async_trait::async_trait]
 pub trait IAccountRepo: Send + Sync {
@@ -21,7 +21,7 @@ pub trait IAccountRepo: Send + Sync {
 #[cfg(test)]
 mod tests {
     use crate::setup_context;
-    use nettu_scheduler_core::Entity;
+    use nettu_scheduler_domain::Entity;
 
     #[tokio::test]
     async fn create_and_delete() {

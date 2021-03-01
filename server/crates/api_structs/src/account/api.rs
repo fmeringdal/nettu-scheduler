@@ -1,4 +1,4 @@
-use nettu_scheduler_core::Account;
+use nettu_scheduler_domain::Account;
 use serde::{Deserialize, Serialize};
 
 use crate::dtos::AccountDTO;

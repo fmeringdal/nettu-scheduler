@@ -2,7 +2,7 @@ use crate::shared::usecase::{execute, UseCase};
 use crate::{error::NettuError, shared::auth::protect_route};
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::get_schedule::*;
-use nettu_scheduler_core::Schedule;
+use nettu_scheduler_domain::Schedule;
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn get_schedule_controller(

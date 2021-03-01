@@ -9,7 +9,7 @@ use crate::{
 use actix_web::{web, HttpResponse};
 use chrono_tz::Tz;
 use nettu_scheduler_api_structs::update_schedule::*;
-use nettu_scheduler_core::{Schedule, ScheduleRule};
+use nettu_scheduler_domain::{Schedule, ScheduleRule};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn update_schedule_controller(

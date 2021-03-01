@@ -1,6 +1,6 @@
 use crate::shared::usecase::UseCase;
 
-use nettu_scheduler_core::{Calendar, CalendarEvent, EventRemindersExpansionJob, Reminder};
+use nettu_scheduler_domain::{Calendar, CalendarEvent, EventRemindersExpansionJob, Reminder};
 use nettu_scheduler_infra::NettuContext;
 use nettu_scheduler_infra::ObjectId;
 use std::iter::Iterator;

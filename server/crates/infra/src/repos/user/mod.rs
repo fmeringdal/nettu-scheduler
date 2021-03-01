@@ -5,7 +5,7 @@ use std::error::Error;
 
 pub use inmemory::InMemoryUserRepo;
 pub use mongo::MongoUserRepo;
-use nettu_scheduler_core::User;
+use nettu_scheduler_domain::User;
 
 #[async_trait::async_trait]
 pub trait IUserRepo: Send + Sync {

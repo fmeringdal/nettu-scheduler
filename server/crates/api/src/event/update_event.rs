@@ -14,7 +14,7 @@ use event::sync_event_reminders::{
     EventOperation, SyncEventRemindersTrigger, SyncEventRemindersUseCase,
 };
 use nettu_scheduler_api_structs::update_event::*;
-use nettu_scheduler_core::{CalendarEvent, RRuleOptions};
+use nettu_scheduler_domain::{CalendarEvent, RRuleOptions};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn update_event_controller(

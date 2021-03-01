@@ -4,7 +4,7 @@ mod mongo;
 use crate::repos::shared::repo::DeleteResult;
 pub use inmemory::InMemoryCalendarRepo;
 pub use mongo::MongoCalendarRepo;
-use nettu_scheduler_core::Calendar;
+use nettu_scheduler_domain::Calendar;
 
 #[async_trait::async_trait]
 pub trait ICalendarRepo: Send + Sync {
@@ -19,7 +19,7 @@ pub trait ICalendarRepo: Send + Sync {
 #[cfg(test)]
 mod tests {
     use crate::setup_context;
-    use nettu_scheduler_core::{Calendar, Entity};
+    use nettu_scheduler_domain::{Calendar, Entity};
 
     #[tokio::test]
     async fn create_and_delete() {

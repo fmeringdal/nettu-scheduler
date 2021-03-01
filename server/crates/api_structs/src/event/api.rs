@@ -1,6 +1,6 @@
 use crate::dtos::CalendarEventDTO;
-use nettu_scheduler_core::{CalendarEvent, EventInstance};
-use nettu_scheduler_core::{CalendarEventReminder, RRuleOptions};
+use nettu_scheduler_domain::{CalendarEvent, EventInstance};
+use nettu_scheduler_domain::{CalendarEventReminder, RRuleOptions};
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize)]
