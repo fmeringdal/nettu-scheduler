@@ -73,10 +73,10 @@ impl UseCase for GetFreeBusyUseCase {
     type Context = NettuContext;
 
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
-        let timespan = match TimeSpan::create(self.start_ts, self.end_ts) {
-            Ok(timespan) => timespan,
-            Err(_) => return Err(UseCaseErrors::InvalidTimespan),
-        };
+        let timespan = TimeSpan::new(self.start_ts, self.end_ts);
+        if timespan.greater_than(ctx.config.event_instances_query_duration_limit) {
+            return Err(UseCaseErrors::InvalidTimespan);
+        }
 
         let busy_event_instances = self
             .get_event_instances_from_calendars(&timespan, ctx)

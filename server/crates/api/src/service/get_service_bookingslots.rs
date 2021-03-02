@@ -119,10 +119,10 @@ impl UseCase for GetServiceBookingSlotsUseCase {
 
         let mut usecase_futures: Vec<_> = Vec::with_capacity(service.users.len());
 
-        let timespan = match TimeSpan::create(booking_timespan.start_ts, booking_timespan.end_ts) {
-            Ok(timespan) => timespan,
-            Err(_) => return Err(UseCaseErrors::InvalidTimespan),
-        };
+        let timespan = TimeSpan::new(booking_timespan.start_ts, booking_timespan.end_ts);
+        if timespan.greater_than(ctx.config.booking_slots_query_duration_limit) {
+            return Err(UseCaseErrors::InvalidTimespan);
+        }
 
         for user in &service.users {
             let timespan = timespan.clone();
@@ -240,23 +240,21 @@ impl GetServiceBookingSlotsUseCase {
     ) -> Result<TimeSpan, ()> {
         let first_available =
             ctx.sys.get_timestamp_millis() + user.closest_booking_time * 60 * 1000;
-        if timespan.get_start() < first_available {
-            timespan = match TimeSpan::create(first_available, timespan.get_end()) {
-                Ok(timespan) => timespan,
-                Err(_) => return Err(()),
-            }
+        if timespan.start() < first_available {
+            timespan = TimeSpan::new(first_available, timespan.end());
         }
         if let Some(furthest_booking_time) = user.furthest_booking_time {
             let last_available = furthest_booking_time * 60 * 1000 + ctx.sys.get_timestamp_millis();
-            if last_available < timespan.get_end() {
-                timespan = match TimeSpan::create(timespan.get_start(), last_available) {
-                    Ok(timespan) => timespan,
-                    Err(_) => return Err(()),
-                }
+            if last_available < timespan.end() {
+                timespan = TimeSpan::new(timespan.start(), last_available);
             }
         }
 
-        Ok(timespan)
+        if timespan.greater_than(ctx.config.booking_slots_query_duration_limit) {
+            Err(())
+        } else {
+            Ok(timespan)
+        }
     }
 
     /// Finds the bookable times for a `User`.

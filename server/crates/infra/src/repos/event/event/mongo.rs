@@ -51,12 +51,12 @@ impl IEventRepo for MongoEventRepo {
                 "$and": [
                     {
                         "start_ts": {
-                            "$lte": timespan.get_end()
+                            "$lte": timespan.end()
                         }
                     },
                     {
                         "end_ts": {
-                            "$gte": timespan.get_start()
+                            "$gte": timespan.start()
                         }
                     }
                 ]

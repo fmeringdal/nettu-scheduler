@@ -11,8 +11,14 @@ pub use mongodb::bson::oid::ObjectId;
 
 #[derive(Debug, Clone)]
 pub struct Config {
+    /// Secret code used to create new `Account`s
     pub create_account_secret_code: String,
+    /// Port for the application to run on
     pub port: usize,
+    /// Maximum allowed duration in millis for querying event instances
+    pub event_instances_query_duration_limit: i64,
+    /// Maximum allowed duration in millis for querying booking slots
+    pub booking_slots_query_duration_limit: i64,
 }
 
 impl Config {
@@ -44,6 +50,8 @@ impl Config {
         Self {
             create_account_secret_code,
             port,
+            event_instances_query_duration_limit: 1000 * 60 * 60 * 24 * 62, // 62 days
+            booking_slots_query_duration_limit: 1000 * 60 * 60 * 24 * 7,    // 7 days
         }
     }
 }

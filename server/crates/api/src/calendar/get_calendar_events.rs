@@ -29,7 +29,7 @@ pub async fn get_calendar_events_controller(
         })
         .map_err(|e| match e {
             UseCaseErrors::InvalidTimespanError => {
-                NettuError::BadClientData("The start and end timestamps is invalid".into())
+                NettuError::BadClientData("The start and end timespan is invalid".into())
             }
             UseCaseErrors::NotFoundError => NettuError::NotFound(format!(
                 "The calendar with id: {}, was not found.",
@@ -67,11 +67,10 @@ impl UseCase for GetCalendarEventsUseCase {
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let calendar = ctx.repos.calendar_repo.find(&self.calendar_id).await;
 
-        let timespan = TimeSpan::create(self.start_ts, self.end_ts);
-        if timespan.is_err() {
+        let timespan = TimeSpan::new(self.start_ts, self.end_ts);
+        if timespan.greater_than(ctx.config.event_instances_query_duration_limit) {
             return Err(UseCaseErrors::InvalidTimespanError);
         }
-        let timespan = timespan.unwrap();
 
         match calendar {
             Some(calendar) if calendar.user_id == self.user_id => {

@@ -40,7 +40,7 @@ impl IEventRepo for InMemoryEventRepo {
             if event.calendar_id == calendar_id {
                 if let Some(span) = timespan {
                     // TODO: Consider if this should be strict equals or not
-                    return span.get_start() <= event.end_ts && span.get_end() >= event.start_ts;
+                    return span.start() <= event.end_ts && span.end() >= event.start_ts;
                 } else {
                     return true;
                 }

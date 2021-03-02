@@ -70,11 +70,11 @@ impl UseCase for GetEventInstancesUseCase {
                     None => return Err(UseCaseErrors::NotFoundError {}),
                 };
 
-                let timespan = TimeSpan::create(self.timespan.start_ts, self.timespan.end_ts);
-                if timespan.is_err() {
+                let timespan = TimeSpan::new(self.timespan.start_ts, self.timespan.end_ts);
+                if timespan.greater_than(ctx.config.event_instances_query_duration_limit) {
                     return Err(UseCaseErrors::InvalidTimespanError);
                 }
-                let instances = event.expand(Some(&timespan.unwrap()), &calendar.settings);
+                let instances = event.expand(Some(&timespan), &calendar.settings);
                 Ok(UseCaseResponse { event, instances })
             }
             _ => Err(UseCaseErrors::NotFoundError {}),

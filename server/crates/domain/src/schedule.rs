@@ -245,8 +245,8 @@ impl std::cmp::PartialOrd for Day {
 
 impl Schedule {
     pub fn freebusy(&self, timespan: &TimeSpan) -> Vec<EventInstance> {
-        let start = self.timezone.timestamp_millis(timespan.get_start());
-        let end = self.timezone.timestamp_millis(timespan.get_end());
+        let start = self.timezone.timestamp_millis(timespan.start());
+        let end = self.timezone.timestamp_millis(timespan.end());
 
         let mut date_lookup = HashMap::new();
         let mut weekday_lookup = HashMap::new();
@@ -396,7 +396,7 @@ mod test {
             ],
         };
 
-        let timespan = TimeSpan::create(0, 1000 * 60 * 60 * 24 * 30).unwrap();
+        let timespan = TimeSpan::new(0, 1000 * 60 * 60 * 24 * 30);
         let freebusy = schedule.freebusy(&timespan);
 
         assert_eq!(freebusy.len(), 4);

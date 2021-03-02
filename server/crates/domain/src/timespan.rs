@@ -4,24 +4,27 @@ use chrono_tz::Tz;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 
+/// A `TimeSpan` type represents a time interval (duration of time)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TimeSpan {
     start_ts: i64,
     end_ts: i64,
+    duration: i64,
 }
 
 impl TimeSpan {
-    pub fn create(start_ts: i64, end_ts: i64) -> Result<Self, InvalidTimeSpanError> {
-        let max_timespan = 1000 * 60 * 60 * 24 * 40;
-        let min_timespan = 1000 * 60 * 60;
-        let delta = end_ts - start_ts;
-
-        if delta > max_timespan || delta < min_timespan {
-            Err(InvalidTimeSpanError(start_ts, end_ts))
-        } else {
-            Ok(Self { start_ts, end_ts })
+    pub fn new(start_ts: i64, end_ts: i64) -> Self {
+        Self {
+            start_ts,
+            end_ts,
+            duration: end_ts - start_ts,
         }
+    }
+
+    /// Duration of this `TimeSpan` is greater than a given duration
+    pub fn greater_than(&self, duration: i64) -> bool {
+        self.duration > duration
     }
 
     fn create_datetime_from_millis(timestamp_millis: i64, tz: &Tz) -> DateTime<Tz> {
@@ -35,11 +38,11 @@ impl TimeSpan {
         }
     }
 
-    pub fn get_start(&self) -> i64 {
+    pub fn start(&self) -> i64 {
         self.start_ts
     }
 
-    pub fn get_end(&self) -> i64 {
+    pub fn end(&self) -> i64 {
         self.end_ts
     }
 }
