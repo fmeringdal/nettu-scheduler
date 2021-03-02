@@ -1,4 +1,4 @@
-use crate::{date, event_instance::EventInstance, user::User};
+use crate::{date, event_instance::EventInstance};
 use chrono::prelude::*;
 use chrono::Duration;
 use chrono_tz::Tz;
