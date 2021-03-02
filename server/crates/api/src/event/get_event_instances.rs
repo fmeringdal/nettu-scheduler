@@ -16,7 +16,7 @@ pub async fn get_event_instances_controller(
     let usecase = GetEventInstancesUseCase {
         user_id: user.id.clone(),
         event_id: path_params.event_id.clone(),
-        view: query_params.0,
+        timespan: query_params.0,
     };
 
     execute(usecase, &ctx)
@@ -39,7 +39,7 @@ pub async fn get_event_instances_controller(
 pub struct GetEventInstancesUseCase {
     pub user_id: String,
     pub event_id: String,
-    pub view: QueryParams,
+    pub timespan: QueryParams,
 }
 
 #[derive(Debug)]
@@ -70,11 +70,11 @@ impl UseCase for GetEventInstancesUseCase {
                     None => return Err(UseCaseErrors::NotFoundError {}),
                 };
 
-                let view = TimeSpan::create(self.view.start_ts, self.view.end_ts);
-                if view.is_err() {
+                let timespan = TimeSpan::create(self.timespan.start_ts, self.timespan.end_ts);
+                if timespan.is_err() {
                     return Err(UseCaseErrors::InvalidTimespanError);
                 }
-                let instances = event.expand(Some(&view.unwrap()), &calendar.settings);
+                let instances = event.expand(Some(&timespan.unwrap()), &calendar.settings);
                 Ok(UseCaseResponse { event, instances })
             }
             _ => Err(UseCaseErrors::NotFoundError {}),

@@ -119,14 +119,14 @@ impl UseCase for GetServiceBookingSlotsUseCase {
 
         let mut usecase_futures: Vec<_> = Vec::with_capacity(service.users.len());
 
-        let view = match TimeSpan::create(booking_timespan.start_ts, booking_timespan.end_ts) {
-            Ok(view) => view,
+        let timespan = match TimeSpan::create(booking_timespan.start_ts, booking_timespan.end_ts) {
+            Ok(timespan) => timespan,
             Err(_) => return Err(UseCaseErrors::InvalidTimespan),
         };
 
         for user in &service.users {
-            let view = view.clone();
-            usecase_futures.push(self.get_bookable_times(user, view, ctx));
+            let timespan = timespan.clone();
+            usecase_futures.push(self.get_bookable_times(user, timespan, ctx));
         }
 
         let users_free_events = join_all(usecase_futures).await;
@@ -150,7 +150,7 @@ impl GetServiceBookingSlotsUseCase {
         &self,
         user: &ServiceResource,
         user_calendars: &Vec<Calendar>,
-        view: &TimeSpan,
+        timespan: &TimeSpan,
         ctx: &NettuContext,
     ) -> Vec<EventInstance> {
         match &user.availibility {
@@ -164,20 +164,20 @@ impl GetServiceBookingSlotsUseCase {
                 let all_calendar_events = ctx
                     .repos
                     .event_repo
-                    .find_by_calendar(&id, Some(&view))
+                    .find_by_calendar(&id, Some(&timespan))
                     .await
                     .unwrap_or(vec![]);
 
                 let mut all_event_instances = all_calendar_events
                     .iter()
-                    .map(|e| e.expand(Some(&view), &calendar.settings))
+                    .map(|e| e.expand(Some(&timespan), &calendar.settings))
                     .flatten()
                     .collect::<Vec<_>>();
 
                 get_free_busy(&mut all_event_instances).free
             }
             TimePlan::Schedule(id) => match ctx.repos.schedule_repo.find(&id).await {
-                Some(schedule) if schedule.user_id == user.id => schedule.freebusy(&view),
+                Some(schedule) if schedule.user_id == user.id => schedule.freebusy(&timespan),
                 _ => vec![],
             },
             TimePlan::Empty => vec![],
@@ -188,7 +188,7 @@ impl GetServiceBookingSlotsUseCase {
         &self,
         user: &ServiceResource,
         busy_calendars: &Vec<&Calendar>,
-        view: &TimeSpan,
+        timespan: &TimeSpan,
         ctx: &NettuContext,
     ) -> Vec<EventInstance> {
         let mut busy_events: Vec<EventInstance> = vec![];
@@ -197,7 +197,7 @@ impl GetServiceBookingSlotsUseCase {
             match ctx
                 .repos
                 .event_repo
-                .find_by_calendar(&cal.id, Some(&view))
+                .find_by_calendar(&cal.id, Some(&timespan))
                 .await
             {
                 Ok(calendar_events) => {
@@ -205,7 +205,7 @@ impl GetServiceBookingSlotsUseCase {
                         .into_iter()
                         .filter(|e| e.busy)
                         .map(|e| {
-                            let mut instances = e.expand(Some(&view), &cal.settings);
+                            let mut instances = e.expand(Some(&timespan), &cal.settings);
                             let is_service_event = e.services.contains(&String::from("*"))
                                 || e.services.contains(&self.service_id);
 
@@ -231,39 +231,39 @@ impl GetServiceBookingSlotsUseCase {
         busy_events
     }
 
-    /// Ensure that calendar view fits within user settings for when
+    /// Ensure that calendar timespan fits within user settings for when
     /// it should be bookable
-    fn parse_calendar_view(
+    fn parse_calendar_timespan(
         user: &ServiceResource,
-        mut view: TimeSpan,
+        mut timespan: TimeSpan,
         ctx: &NettuContext,
     ) -> Result<TimeSpan, ()> {
         let first_available =
             ctx.sys.get_timestamp_millis() + user.closest_booking_time * 60 * 1000;
-        if view.get_start() < first_available {
-            view = match TimeSpan::create(first_available, view.get_end()) {
-                Ok(view) => view,
+        if timespan.get_start() < first_available {
+            timespan = match TimeSpan::create(first_available, timespan.get_end()) {
+                Ok(timespan) => timespan,
                 Err(_) => return Err(()),
             }
         }
         if let Some(furthest_booking_time) = user.furthest_booking_time {
             let last_available = furthest_booking_time * 60 * 1000 + ctx.sys.get_timestamp_millis();
-            if last_available < view.get_end() {
-                view = match TimeSpan::create(view.get_start(), last_available) {
-                    Ok(view) => view,
+            if last_available < timespan.get_end() {
+                timespan = match TimeSpan::create(timespan.get_start(), last_available) {
+                    Ok(timespan) => timespan,
                     Err(_) => return Err(()),
                 }
             }
         }
 
-        Ok(view)
+        Ok(timespan)
     }
 
     /// Finds the bookable times for a `User`.
     async fn get_bookable_times(
         &self,
         user: &ServiceResource,
-        mut view: TimeSpan,
+        mut timespan: TimeSpan,
         ctx: &NettuContext,
     ) -> UserFreeEvents {
         let empty = UserFreeEvents {
@@ -271,8 +271,8 @@ impl GetServiceBookingSlotsUseCase {
             user_id: user.id.clone(),
         };
 
-        match Self::parse_calendar_view(user, view, ctx) {
-            Ok(parsed_view) => view = parsed_view,
+        match Self::parse_calendar_timespan(user, timespan, ctx) {
+            Ok(parsed_timespan) => timespan = parsed_timespan,
             Err(_) => return empty,
         }
 
@@ -283,10 +283,12 @@ impl GetServiceBookingSlotsUseCase {
             .collect::<Vec<_>>();
 
         let mut free_events = self
-            .get_user_availibility(user, &user_calendars, &view, ctx)
+            .get_user_availibility(user, &user_calendars, &timespan, ctx)
             .await;
 
-        let mut busy_events = self.get_user_busy(user, &busy_calendars, &view, ctx).await;
+        let mut busy_events = self
+            .get_user_busy(user, &busy_calendars, &timespan, ctx)
+            .await;
 
         let mut all_events = Vec::with_capacity(free_events.len() + busy_events.len());
         all_events.append(&mut free_events);

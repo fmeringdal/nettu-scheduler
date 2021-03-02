@@ -67,23 +67,23 @@ impl UseCase for GetCalendarEventsUseCase {
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let calendar = ctx.repos.calendar_repo.find(&self.calendar_id).await;
 
-        let view = TimeSpan::create(self.start_ts, self.end_ts);
-        if view.is_err() {
+        let timespan = TimeSpan::create(self.start_ts, self.end_ts);
+        if timespan.is_err() {
             return Err(UseCaseErrors::InvalidTimespanError);
         }
-        let view = view.unwrap();
+        let timespan = timespan.unwrap();
 
         match calendar {
             Some(calendar) if calendar.user_id == self.user_id => {
                 let events = ctx
                     .repos
                     .event_repo
-                    .find_by_calendar(&calendar.id, Some(&view))
+                    .find_by_calendar(&calendar.id, Some(&timespan))
                     .await
                     .unwrap()
                     .into_iter()
                     .map(|event| {
-                        let instances = event.expand(Some(&view), &calendar.settings);
+                        let instances = event.expand(Some(&timespan), &calendar.settings);
                         EventWithInstances { event, instances }
                     })
                     // Also it is possible that there are no instances in the expanded event, should remove them

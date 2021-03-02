@@ -73,13 +73,13 @@ impl UseCase for GetFreeBusyUseCase {
     type Context = NettuContext;
 
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
-        let view = match TimeSpan::create(self.start_ts, self.end_ts) {
-            Ok(view) => view,
+        let timespan = match TimeSpan::create(self.start_ts, self.end_ts) {
+            Ok(timespan) => timespan,
             Err(_) => return Err(UseCaseErrors::InvalidTimespan),
         };
 
         let busy_event_instances = self
-            .get_event_instances_from_calendars(&view, ctx)
+            .get_event_instances_from_calendars(&timespan, ctx)
             .await
             .into_iter()
             .filter(|e| e.busy)
@@ -97,7 +97,7 @@ impl UseCase for GetFreeBusyUseCase {
 impl GetFreeBusyUseCase {
     async fn get_event_instances_from_calendars(
         &self,
-        view: &TimeSpan,
+        timespan: &TimeSpan,
         ctx: &NettuContext,
     ) -> Vec<EventInstance> {
         let calendar_ids = match &self.calendar_ids {
@@ -120,7 +120,7 @@ impl GetFreeBusyUseCase {
         let all_events_futures = calendars.iter().map(|calendar| {
             ctx.repos
                 .event_repo
-                .find_by_calendar(&calendar.id, Some(&view))
+                .find_by_calendar(&calendar.id, Some(&timespan))
         });
 
         let all_events_instances = join_all(all_events_futures)
@@ -132,7 +132,7 @@ impl GetFreeBusyUseCase {
                     .into_iter()
                     .map(|event| {
                         let calendar = calendars_lookup.get(&event.calendar_id).unwrap();
-                        event.expand(Some(&view), &calendar.settings)
+                        event.expand(Some(&timespan), &calendar.settings)
                     })
                     // It is possible that there are no instances in the expanded event, should remove them
                     .filter(|instances| !instances.is_empty())
