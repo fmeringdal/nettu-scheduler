@@ -1,7 +1,7 @@
 use super::IEventRepo;
 use crate::repos::shared::inmemory_repo::*;
 use crate::repos::shared::repo::DeleteResult;
-use nettu_scheduler_domain::{CalendarEvent, CalendarView};
+use nettu_scheduler_domain::{CalendarEvent, TimeSpan};
 
 pub struct InMemoryEventRepo {
     calendar_events: std::sync::Mutex<Vec<CalendarEvent>>,
@@ -34,13 +34,13 @@ impl IEventRepo for InMemoryEventRepo {
     async fn find_by_calendar(
         &self,
         calendar_id: &str,
-        view: Option<&CalendarView>,
+        timespan: Option<&TimeSpan>,
     ) -> anyhow::Result<Vec<CalendarEvent>> {
         let res = find_by(&self.calendar_events, |event| {
             if event.calendar_id == calendar_id {
-                if let Some(v) = view {
+                if let Some(span) = timespan {
                     // TODO: Consider if this should be strict equals or not
-                    return v.get_start() <= event.end_ts && v.get_end() >= event.start_ts;
+                    return span.get_start() <= event.end_ts && span.get_end() >= event.start_ts;
                 } else {
                     return true;
                 }

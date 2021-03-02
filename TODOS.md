@@ -3,12 +3,9 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 ## Todos
 
 
-- remove the user id shit ? 
-  - bad to let 
 - Freebusy queries cleanup
   - CalendarView
   - Type Invariants for availibility, timeplan ??
-  - Type Invariants for userid
 - More admin and user controllers for different usecases
 - Use sorted event instace https://www.lpalmieri.com/posts/2020-12-11-zero-to-production-6-domain-modelling/
     - compatible

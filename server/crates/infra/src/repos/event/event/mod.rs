@@ -4,7 +4,7 @@ mod mongo;
 use crate::repos::shared::repo::DeleteResult;
 pub use inmemory::InMemoryEventRepo;
 pub use mongo::MongoEventRepo;
-use nettu_scheduler_domain::{CalendarEvent, CalendarView};
+use nettu_scheduler_domain::{CalendarEvent, TimeSpan};
 
 #[async_trait::async_trait]
 pub trait IEventRepo: Send + Sync {
@@ -15,7 +15,7 @@ pub trait IEventRepo: Send + Sync {
     async fn find_by_calendar(
         &self,
         calendar_id: &str,
-        view: Option<&CalendarView>,
+        timespan: Option<&TimeSpan>,
     ) -> anyhow::Result<Vec<CalendarEvent>>;
     async fn delete(&self, event_id: &str) -> Option<CalendarEvent>;
     async fn delete_by_calendar(&self, calendar_id: &str) -> anyhow::Result<DeleteResult>;

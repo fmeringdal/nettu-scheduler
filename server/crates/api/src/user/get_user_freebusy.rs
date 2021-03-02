@@ -3,7 +3,7 @@ use crate::{error::NettuError, shared::auth::protect_public_account_route};
 use actix_web::{web, HttpRequest, HttpResponse};
 use futures::future::join_all;
 use nettu_scheduler_api_structs::get_user_freebusy::{APIResponse, PathParams, QueryParams};
-use nettu_scheduler_domain::{sort_and_merge_instances, CalendarView, EventInstance};
+use nettu_scheduler_domain::{sort_and_merge_instances, EventInstance, TimeSpan};
 use nettu_scheduler_infra::NettuContext;
 use std::collections::HashMap;
 
@@ -73,7 +73,7 @@ impl UseCase for GetFreeBusyUseCase {
     type Context = NettuContext;
 
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
-        let view = match CalendarView::create(self.start_ts, self.end_ts) {
+        let view = match TimeSpan::create(self.start_ts, self.end_ts) {
             Ok(view) => view,
             Err(_) => return Err(UseCaseErrors::InvalidTimespan),
         };
@@ -97,7 +97,7 @@ impl UseCase for GetFreeBusyUseCase {
 impl GetFreeBusyUseCase {
     async fn get_event_instances_from_calendars(
         &self,
-        view: &CalendarView,
+        view: &TimeSpan,
         ctx: &NettuContext,
     ) -> Vec<EventInstance> {
         let calendar_ids = match &self.calendar_ids {

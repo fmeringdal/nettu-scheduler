@@ -4,7 +4,7 @@ use crate::shared::usecase::{execute, UseCase};
 
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::get_calendar_events::{APIResponse, PathParams, QueryParams};
-use nettu_scheduler_domain::{Calendar, CalendarView, EventWithInstances};
+use nettu_scheduler_domain::{Calendar, EventWithInstances, TimeSpan};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn get_calendar_events_controller(
@@ -67,7 +67,7 @@ impl UseCase for GetCalendarEventsUseCase {
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let calendar = ctx.repos.calendar_repo.find(&self.calendar_id).await;
 
-        let view = CalendarView::create(self.start_ts, self.end_ts);
+        let view = TimeSpan::create(self.start_ts, self.end_ts);
         if view.is_err() {
             return Err(UseCaseErrors::InvalidTimespanError);
         }

@@ -9,7 +9,7 @@ use nettu_scheduler_domain::{
         BookingQueryError, BookingSlotsOptions, BookingSlotsQuery, ServiceBookingSlot,
         UserFreeEvents,
     },
-    get_free_busy, Calendar, CalendarView, EventInstance, ServiceResource, TimePlan,
+    get_free_busy, Calendar, EventInstance, ServiceResource, TimePlan, TimeSpan,
 };
 use nettu_scheduler_infra::NettuContext;
 
@@ -119,7 +119,7 @@ impl UseCase for GetServiceBookingSlotsUseCase {
 
         let mut usecase_futures: Vec<_> = Vec::with_capacity(service.users.len());
 
-        let view = match CalendarView::create(booking_timespan.start_ts, booking_timespan.end_ts) {
+        let view = match TimeSpan::create(booking_timespan.start_ts, booking_timespan.end_ts) {
             Ok(view) => view,
             Err(_) => return Err(UseCaseErrors::InvalidTimespan),
         };
@@ -150,7 +150,7 @@ impl GetServiceBookingSlotsUseCase {
         &self,
         user: &ServiceResource,
         user_calendars: &Vec<Calendar>,
-        view: &CalendarView,
+        view: &TimeSpan,
         ctx: &NettuContext,
     ) -> Vec<EventInstance> {
         match &user.availibility {
@@ -188,7 +188,7 @@ impl GetServiceBookingSlotsUseCase {
         &self,
         user: &ServiceResource,
         busy_calendars: &Vec<&Calendar>,
-        view: &CalendarView,
+        view: &TimeSpan,
         ctx: &NettuContext,
     ) -> Vec<EventInstance> {
         let mut busy_events: Vec<EventInstance> = vec![];
@@ -235,13 +235,13 @@ impl GetServiceBookingSlotsUseCase {
     /// it should be bookable
     fn parse_calendar_view(
         user: &ServiceResource,
-        mut view: CalendarView,
+        mut view: TimeSpan,
         ctx: &NettuContext,
-    ) -> Result<CalendarView, ()> {
+    ) -> Result<TimeSpan, ()> {
         let first_available =
             ctx.sys.get_timestamp_millis() + user.closest_booking_time * 60 * 1000;
         if view.get_start() < first_available {
-            view = match CalendarView::create(first_available, view.get_end()) {
+            view = match TimeSpan::create(first_available, view.get_end()) {
                 Ok(view) => view,
                 Err(_) => return Err(()),
             }
@@ -249,7 +249,7 @@ impl GetServiceBookingSlotsUseCase {
         if let Some(furthest_booking_time) = user.furthest_booking_time {
             let last_available = furthest_booking_time * 60 * 1000 + ctx.sys.get_timestamp_millis();
             if last_available < view.get_end() {
-                view = match CalendarView::create(view.get_start(), last_available) {
+                view = match TimeSpan::create(view.get_start(), last_available) {
                     Ok(view) => view,
                     Err(_) => return Err(()),
                 }
@@ -263,7 +263,7 @@ impl GetServiceBookingSlotsUseCase {
     async fn get_bookable_times(
         &self,
         user: &ServiceResource,
-        mut view: CalendarView,
+        mut view: TimeSpan,
         ctx: &NettuContext,
     ) -> UserFreeEvents {
         let empty = UserFreeEvents {

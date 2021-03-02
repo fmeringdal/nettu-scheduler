@@ -7,7 +7,7 @@ use mongodb::{
     bson::{oid::ObjectId, Document},
     Collection, Database,
 };
-use nettu_scheduler_domain::{CalendarEvent, CalendarEventReminder, CalendarView, RRuleOptions};
+use nettu_scheduler_domain::{CalendarEvent, CalendarEventReminder, RRuleOptions, TimeSpan};
 use serde::{Deserialize, Serialize};
 
 pub struct MongoEventRepo {
@@ -40,23 +40,23 @@ impl IEventRepo for MongoEventRepo {
     async fn find_by_calendar(
         &self,
         calendar_id: &str,
-        view: Option<&CalendarView>,
+        timespan: Option<&TimeSpan>,
     ) -> anyhow::Result<Vec<CalendarEvent>> {
         let mut filter = doc! {
             "calendar_id": calendar_id
         };
-        if let Some(view) = view {
+        if let Some(timespan) = timespan {
             filter = doc! {
                 "calendar_id": calendar_id,
                 "$and": [
                     {
                         "start_ts": {
-                            "$lte": view.get_end()
+                            "$lte": timespan.get_end()
                         }
                     },
                     {
                         "end_ts": {
-                            "$gte": view.get_start()
+                            "$gte": timespan.get_start()
                         }
                     }
                 ]

@@ -1,6 +1,4 @@
-use crate::{
-    calendar_view::CalendarView, date, event_instance::EventInstance, shared::entity::Entity,
-};
+use crate::{date, event_instance::EventInstance, shared::entity::Entity, timespan::TimeSpan};
 use chrono::{prelude::*, Duration};
 use chrono_tz::Tz;
 use mongodb::bson::oid::ObjectId;
@@ -246,9 +244,9 @@ impl std::cmp::PartialOrd for Day {
 }
 
 impl Schedule {
-    pub fn freebusy(&self, view: &CalendarView) -> Vec<EventInstance> {
-        let start = self.timezone.timestamp_millis(view.get_start());
-        let end = self.timezone.timestamp_millis(view.get_end());
+    pub fn freebusy(&self, timespan: &TimeSpan) -> Vec<EventInstance> {
+        let start = self.timezone.timestamp_millis(timespan.get_start());
+        let end = self.timezone.timestamp_millis(timespan.get_end());
 
         let mut date_lookup = HashMap::new();
         let mut weekday_lookup = HashMap::new();
@@ -398,8 +396,8 @@ mod test {
             ],
         };
 
-        let view = CalendarView::create(0, 1000 * 60 * 60 * 24 * 30).unwrap();
-        let freebusy = schedule.freebusy(&view);
+        let timespan = TimeSpan::create(0, 1000 * 60 * 60 * 24 * 30).unwrap();
+        let freebusy = schedule.freebusy(&timespan);
 
         assert_eq!(freebusy.len(), 4);
         assert_eq!(

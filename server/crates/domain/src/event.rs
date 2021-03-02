@@ -1,5 +1,5 @@
 use crate::event_instance::EventInstance;
-use crate::{calendar::CalendarSettings, calendar_view::CalendarView, shared::entity::Entity};
+use crate::{calendar::CalendarSettings, shared::entity::Entity, timespan::TimeSpan};
 use chrono::{prelude::*, Duration};
 use rrule::{Frequenzy, ParsedOptions, RRule, RRuleSet};
 use serde::{Deserialize, Serialize};
@@ -161,7 +161,7 @@ impl CalendarEvent {
 
     pub fn expand(
         &self,
-        view: Option<&CalendarView>,
+        timespan: Option<&TimeSpan>,
         calendar_settings: &CalendarSettings,
     ) -> Vec<EventInstance> {
         if self.recurrence.is_some() {
@@ -172,17 +172,17 @@ impl CalendarEvent {
             let tzid = rrule_options.tzid;
             let rrule_set = self.get_rrule_set(calendar_settings).unwrap();
 
-            let instances = match view {
-                Some(view) => {
-                    let view = view.as_datetime(&tzid);
+            let instances = match timespan {
+                Some(timespan) => {
+                    let timespan = timespan.as_datetime(&tzid);
 
                     // Also take the duration of events into consideration as the rrule library
                     // does not support duration on events.
-                    let end = view.end - Duration::milliseconds(self.duration);
+                    let end = timespan.end - Duration::milliseconds(self.duration);
 
-                    // RRule v0.5.3 is not inclusive on start, so just by subtracting one millisecond
+                    // RRule v0.5.5 is not inclusive on start, so just by subtracting one millisecond
                     // will make it inclusive
-                    let start = view.start - Duration::milliseconds(1);
+                    let start = timespan.start - Duration::milliseconds(1);
 
                     rrule_set.between(start, end, true)
                 }

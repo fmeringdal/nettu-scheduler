@@ -2,7 +2,7 @@ use crate::shared::usecase::{execute, UseCase};
 use crate::{error::NettuError, shared::auth::protect_route};
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::get_event_instances::*;
-use nettu_scheduler_domain::{CalendarEvent, CalendarView, EventInstance};
+use nettu_scheduler_domain::{CalendarEvent, EventInstance, TimeSpan};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn get_event_instances_controller(
@@ -70,7 +70,7 @@ impl UseCase for GetEventInstancesUseCase {
                     None => return Err(UseCaseErrors::NotFoundError {}),
                 };
 
-                let view = CalendarView::create(self.view.start_ts, self.view.end_ts);
+                let view = TimeSpan::create(self.view.start_ts, self.view.end_ts);
                 if view.is_err() {
                     return Err(UseCaseErrors::InvalidTimespanError);
                 }
