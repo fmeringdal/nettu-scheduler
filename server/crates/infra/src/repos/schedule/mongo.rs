@@ -10,7 +10,6 @@ use mongodb::{
 };
 use nettu_scheduler_domain::{Schedule, ScheduleRule};
 use serde::{Deserialize, Serialize};
-use std::error::Error;
 
 pub struct MongoScheduleRepo {
     collection: Collection,

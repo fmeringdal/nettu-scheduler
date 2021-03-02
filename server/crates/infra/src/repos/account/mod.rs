@@ -1,8 +1,6 @@
 mod inmemory;
 mod mongo;
 
-use std::error::Error;
-
 pub use inmemory::InMemoryAccountRepo;
 pub use mongo::MongoAccountRepo;
 use nettu_scheduler_domain::Account;

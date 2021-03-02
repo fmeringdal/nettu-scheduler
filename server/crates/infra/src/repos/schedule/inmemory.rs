@@ -1,7 +1,6 @@
 use super::IScheduleRepo;
 use crate::repos::shared::{inmemory_repo::*, repo::DeleteResult};
 use nettu_scheduler_domain::Schedule;
-use std::error::Error;
 
 pub struct InMemoryScheduleRepo {
     schedules: std::sync::Mutex<Vec<Schedule>>,

@@ -2,7 +2,6 @@ use super::IEventRepo;
 use crate::repos::shared::inmemory_repo::*;
 use crate::repos::shared::repo::DeleteResult;
 use nettu_scheduler_domain::{CalendarEvent, CalendarView};
-use std::error::Error;
 
 pub struct InMemoryEventRepo {
     calendar_events: std::sync::Mutex<Vec<CalendarEvent>>,

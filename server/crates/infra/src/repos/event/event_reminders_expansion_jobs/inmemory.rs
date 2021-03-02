@@ -2,7 +2,6 @@ use super::IEventRemindersExpansionJobsRepo;
 use crate::repos::shared::inmemory_repo::*;
 use crate::repos::shared::repo::DeleteResult;
 use nettu_scheduler_domain::EventRemindersExpansionJob;
-use std::error::Error;
 
 pub struct InMemoryEventRemindersExpansionJobsRepo {
     jobs: std::sync::Mutex<Vec<EventRemindersExpansionJob>>,

@@ -9,7 +9,6 @@ use mongodb::{
 };
 use nettu_scheduler_domain::EventRemindersExpansionJob;
 use serde::{Deserialize, Serialize};
-use std::error::Error;
 
 pub struct MongoEventRemindersExpansionsJobRepo {
     collection: Collection,

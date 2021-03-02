@@ -9,7 +9,6 @@ use mongodb::{
 };
 use nettu_scheduler_domain::Reminder;
 use serde::{Deserialize, Serialize};
-use std::error::Error;
 
 pub struct MongoReminderRepo {
     collection: Collection,

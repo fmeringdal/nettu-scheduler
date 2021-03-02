@@ -9,7 +9,6 @@ use mongodb::{
 };
 use nettu_scheduler_domain::{CalendarEvent, CalendarEventReminder, CalendarView, RRuleOptions};
 use serde::{Deserialize, Serialize};
-use std::error::Error;
 
 pub struct MongoEventRepo {
     collection: Collection,

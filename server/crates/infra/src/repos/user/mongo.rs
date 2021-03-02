@@ -8,7 +8,6 @@ use mongodb::{
 };
 use nettu_scheduler_domain::User;
 use serde::{Deserialize, Serialize};
-use std::error::Error;
 
 pub struct MongoUserRepo {
     collection: Collection,

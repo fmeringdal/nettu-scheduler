@@ -8,7 +8,6 @@ use mongodb::{
     Collection, Database,
 };
 use serde::{Deserialize, Serialize};
-use std::error::Error;
 
 pub struct MongoAccountRepo {
     collection: Collection,

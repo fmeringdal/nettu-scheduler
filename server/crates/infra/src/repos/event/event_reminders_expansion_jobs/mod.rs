@@ -1,8 +1,6 @@
 mod inmemory;
 mod mongo;
 
-use std::error::Error;
-
 pub use inmemory::InMemoryEventRemindersExpansionJobsRepo;
 pub use mongo::MongoEventRemindersExpansionsJobRepo;
 use nettu_scheduler_domain::EventRemindersExpansionJob;

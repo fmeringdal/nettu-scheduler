@@ -7,7 +7,6 @@ use mongodb::{
 };
 use nettu_scheduler_domain::{Service, ServiceResource, TimePlan};
 use serde::{Deserialize, Serialize};
-use std::error::Error;
 
 pub struct MongoServiceRepo {
     collection: Collection,
