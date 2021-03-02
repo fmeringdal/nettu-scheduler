@@ -1,4 +1,4 @@
-use nettu_scheduler_domain::{Service, ServiceResource, TimePlan, User};
+use nettu_scheduler_domain::{Service, ServiceResource, TimePlan};
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize)]
@@ -12,12 +12,12 @@ pub struct ServiceResourceDTO {
 }
 
 impl ServiceResourceDTO {
-    pub fn new(resource: &ServiceResource) -> Self {
+    pub fn new(resource: ServiceResource) -> Self {
         Self {
-            id: resource.id.clone(),
-            user_id: User::create_external_id(&resource.user_id),
-            availibility: resource.availibility.clone(),
-            busy: resource.busy.clone(),
+            id: resource.id,
+            user_id: resource.user_id,
+            availibility: resource.availibility,
+            busy: resource.busy,
             buffer: resource.buffer,
         }
     }
@@ -32,13 +32,13 @@ pub struct ServiceDTO {
 }
 
 impl ServiceDTO {
-    pub fn new(service: &Service) -> Self {
+    pub fn new(service: Service) -> Self {
         Self {
             id: service.id.clone(),
             account_id: service.account_id.clone(),
             users: service
                 .users
-                .iter()
+                .into_iter()
                 .map(|u| ServiceResourceDTO::new(u))
                 .collect(),
         }

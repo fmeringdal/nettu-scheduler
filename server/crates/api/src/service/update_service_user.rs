@@ -10,7 +10,7 @@ use crate::{
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::update_service_user::*;
-use nettu_scheduler_domain::{Account, Service, TimePlan, User};
+use nettu_scheduler_domain::{Account, Service, TimePlan};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn update_service_user_controller(
@@ -21,11 +21,10 @@ pub async fn update_service_user_controller(
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
 
-    let user_id = User::create_id(&account.id, &path_params.user_id);
     let usecase = UpdateServiceUserUseCase {
         account,
         service_id: path_params.service_id.to_owned(),
-        user_id,
+        user_id: path_params.user_id.to_owned(),
         availibility: body.availibility.to_owned(),
         busy: body.busy.to_owned(),
         buffer: body.buffer,

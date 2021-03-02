@@ -144,7 +144,7 @@ mod test {
 
     async fn setup() -> TestContext {
         let ctx = setup_context().await;
-        let user = User::new("cool2", "cool");
+        let user = User::new("cool2");
 
         let calendar = Calendar::new(&user.id);
 

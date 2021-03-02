@@ -12,7 +12,7 @@ pub struct UserResponse {
 impl UserResponse {
     pub fn new(user: User) -> Self {
         Self {
-            user: UserDTO::new(&user),
+            user: UserDTO::new(user),
         }
     }
 }
@@ -20,11 +20,11 @@ impl UserResponse {
 pub mod create_user {
     use super::*;
 
-    #[derive(Serialize, Deserialize)]
-    #[serde(rename_all = "camelCase")]
-    pub struct RequestBody {
-        pub user_id: String,
-    }
+    // #[derive(Serialize, Deserialize)]
+    // #[serde(rename_all = "camelCase")]
+    // pub struct RequestBody {
+    //     pub user_id: String,
+    // }
 
     pub type APIResponse = UserResponse;
 }

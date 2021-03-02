@@ -13,7 +13,7 @@ pub struct ServiceResponse {
 impl ServiceResponse {
     pub fn new(service: Service) -> Self {
         Self {
-            service: ServiceDTO::new(&service),
+            service: ServiceDTO::new(service),
         }
     }
 }
@@ -47,7 +47,7 @@ pub mod create_service {
 }
 
 pub mod get_service_bookingslots {
-    use nettu_scheduler_domain::{booking_slots::ServiceBookingSlot, User};
+    use nettu_scheduler_domain::booking_slots::ServiceBookingSlot;
 
     use super::*;
 
@@ -74,15 +74,11 @@ pub mod get_service_bookingslots {
     }
 
     impl ServiceBookingSlotDTO {
-        pub fn new(slot: &ServiceBookingSlot) -> Self {
+        pub fn new(slot: ServiceBookingSlot) -> Self {
             Self {
                 duration: slot.duration,
                 start: slot.start,
-                user_ids: slot
-                    .user_ids
-                    .iter()
-                    .map(|u_id| User::create_external_id(u_id))
-                    .collect(),
+                user_ids: slot.user_ids,
             }
         }
     }
@@ -97,7 +93,7 @@ pub mod get_service_bookingslots {
         pub fn new(booking_slots: Vec<ServiceBookingSlot>) -> Self {
             Self {
                 booking_slots: booking_slots
-                    .iter()
+                    .into_iter()
                     .map(|slot| ServiceBookingSlotDTO::new(slot))
                     .collect(),
             }

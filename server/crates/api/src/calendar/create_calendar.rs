@@ -1,15 +1,15 @@
-use crate::shared::auth::Permission;
 use crate::shared::{
     auth::{protect_account_route, protect_route},
     usecase::{execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
 };
+use crate::{account, shared::auth::Permission};
 use crate::{
     error::NettuError,
     shared::usecase::{execute, UseCase},
 };
 use actix_web::{web, HttpResponse};
 use nettu_scheduler_api_structs::create_calendar::{APIResponse, PathParams};
-use nettu_scheduler_domain::{Calendar, User};
+use nettu_scheduler_domain::Calendar;
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn create_calendar_admin_controller(
@@ -19,8 +19,10 @@ pub async fn create_calendar_admin_controller(
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
 
-    let user_id = User::create_id(&account.id, &path_params.user_id);
-    let usecase = CreateCalendarUseCase { user_id };
+    let usecase = CreateCalendarUseCase {
+        user_id: path_params.user_id.clone(),
+        account_id: account.id,
+    };
 
     execute(usecase, &ctx)
         .await
@@ -40,7 +42,10 @@ pub async fn create_calendar_controller(
 ) -> Result<HttpResponse, NettuError> {
     let (user, policy) = protect_route(&http_req, &ctx).await?;
 
-    let usecase = CreateCalendarUseCase { user_id: user.id };
+    let usecase = CreateCalendarUseCase {
+        user_id: user.id,
+        account_id: user.account_id,
+    };
 
     execute_with_policy(usecase, &policy, &ctx)
         .await
@@ -62,6 +67,7 @@ pub async fn create_calendar_controller(
 #[derive(Debug)]
 struct CreateCalendarUseCase {
     pub user_id: String,
+    pub account_id: String,
 }
 
 #[derive(Debug)]
@@ -79,10 +85,10 @@ impl UseCase for CreateCalendarUseCase {
     type Context = NettuContext;
 
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
-        let user = ctx.repos.user_repo.find(&self.user_id).await;
-        if user.is_none() {
-            return Err(UseCaseErrors::UserNotFoundError);
-        }
+        let user = match ctx.repos.user_repo.find(&self.user_id).await {
+            Some(user) if user.account_id == self.account_id => user,
+            _ => return Err(UseCaseErrors::UserNotFoundError),
+        };
 
         let calendar = Calendar::new(&self.user_id);
 

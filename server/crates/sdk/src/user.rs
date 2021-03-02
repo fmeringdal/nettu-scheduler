@@ -1,7 +1,7 @@
 use crate::{APIResponse, BaseClient};
 use nettu_scheduler_api_structs::*;
 use reqwest::StatusCode;
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 #[derive(Clone)]
 pub struct UserClient {
@@ -13,11 +13,10 @@ impl UserClient {
         Self { base }
     }
 
-    pub async fn create(&self, user_id: String) -> APIResponse<create_user::APIResponse> {
-        let body = create_user::RequestBody { user_id };
-
+    pub async fn create(&self) -> APIResponse<create_user::APIResponse> {
+        let empty = HashMap::<String, String>::new();
         self.base
-            .post(body, "user".into(), StatusCode::CREATED)
+            .post(empty, "user".into(), StatusCode::CREATED)
             .await
     }
 }

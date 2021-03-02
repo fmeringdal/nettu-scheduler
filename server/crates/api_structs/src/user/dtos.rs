@@ -9,10 +9,10 @@ pub struct UserDTO {
 }
 
 impl UserDTO {
-    pub fn new(user: &User) -> Self {
+    pub fn new(user: User) -> Self {
         Self {
-            id: user.external_id.clone(),
-            account_id: user.account_id.clone(),
+            id: user.id,
+            account_id: user.account_id,
         }
     }
 }

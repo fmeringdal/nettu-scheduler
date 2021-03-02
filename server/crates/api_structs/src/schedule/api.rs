@@ -12,7 +12,7 @@ pub struct ScheduleResponse {
 impl ScheduleResponse {
     pub fn new(schedule: Schedule) -> Self {
         Self {
-            schedule: ScheduleDTO::new(&schedule),
+            schedule: ScheduleDTO::new(schedule),
         }
     }
 }

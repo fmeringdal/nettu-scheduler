@@ -12,7 +12,7 @@ pub struct CalendarEventResponse {
 impl CalendarEventResponse {
     pub fn new(event: CalendarEvent) -> Self {
         Self {
-            event: CalendarEventDTO::new(&event),
+            event: CalendarEventDTO::new(event),
         }
     }
 }
@@ -87,7 +87,7 @@ pub mod get_event_instances {
     impl APIResponse {
         pub fn new(event: CalendarEvent, instances: Vec<EventInstance>) -> Self {
             Self {
-                event: CalendarEventDTO::new(&event),
+                event: CalendarEventDTO::new(event),
                 instances,
             }
         }
@@ -137,7 +137,10 @@ pub mod send_account_event_reminders {
     impl AccountEventRemindersDTO {
         pub fn new(events: Vec<CalendarEvent>) -> Self {
             Self {
-                events: events.iter().map(|e| CalendarEventDTO::new(e)).collect(),
+                events: events
+                    .into_iter()
+                    .map(|e| CalendarEventDTO::new(e))
+                    .collect(),
             }
         }
     }

@@ -5,7 +5,7 @@ use crate::shared::{
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::add_user_to_service::*;
-use nettu_scheduler_domain::{Account, Service, ServiceResource, TimePlan, User};
+use nettu_scheduler_domain::{Account, Service, ServiceResource, TimePlan};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn add_user_to_service_controller(
@@ -16,11 +16,10 @@ pub async fn add_user_to_service_controller(
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
 
-    let user_id = User::create_id(&account.id, &body.user_id);
     let usecase = AddUserToServiceUseCase {
         account,
         service_id: path_params.service_id.to_owned(),
-        user_id,
+        user_id: body.user_id.to_owned(),
         availibility: body.availibility.to_owned(),
         busy: body.busy.to_owned(),
         buffer: body.buffer,
@@ -73,10 +72,15 @@ impl UseCase for AddUserToServiceUseCase {
     type Context = NettuContext;
 
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
-        let _user = match ctx.repos.user_repo.find(&self.user_id).await {
-            Some(user) if user.account_id == self.account.id => user,
-            _ => return Err(UseCaseErrors::UserNotFoundError),
-        };
+        if ctx
+            .repos
+            .user_repo
+            .find_by_account_id(&self.user_id, &self.account.id)
+            .await
+            .is_none()
+        {
+            return Err(UseCaseErrors::UserNotFoundError);
+        }
 
         let mut service = match ctx.repos.service_repo.find(&self.service_id).await {
             Some(service) if service.account_id == self.account.id => service,

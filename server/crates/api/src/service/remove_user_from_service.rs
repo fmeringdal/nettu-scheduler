@@ -18,11 +18,10 @@ pub async fn remove_user_from_service_controller(
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
 
-    let user_id = User::create_id(&account.id, &path_params.user_id);
     let usecase = RemoveUserFromServiceUseCase {
         account,
         service_id: path_params.service_id.to_owned(),
-        user_id,
+        user_id: path_params.user_id.to_owned(),
     };
 
     execute(usecase, &ctx)

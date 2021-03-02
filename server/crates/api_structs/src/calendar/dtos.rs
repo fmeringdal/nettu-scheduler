@@ -17,10 +17,10 @@ pub struct CalendarSettingsDTO {
 }
 
 impl CalendarDTO {
-    pub fn new(calendar: &Calendar) -> Self {
+    pub fn new(calendar: Calendar) -> Self {
         Self {
-            id: calendar.id.clone(),
-            user_id: User::create_external_id(&calendar.user_id),
+            id: calendar.id,
+            user_id: calendar.user_id,
             settings: CalendarSettingsDTO::new(&calendar.settings),
         }
     }

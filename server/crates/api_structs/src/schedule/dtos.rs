@@ -1,4 +1,4 @@
-use nettu_scheduler_domain::{Schedule, ScheduleRule, User};
+use nettu_scheduler_domain::{Schedule, ScheduleRule};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -11,11 +11,11 @@ pub struct ScheduleDTO {
 }
 
 impl ScheduleDTO {
-    pub fn new(schedule: &Schedule) -> Self {
+    pub fn new(schedule: Schedule) -> Self {
         Self {
-            id: schedule.id.clone(),
-            user_id: User::create_external_id(&schedule.user_id),
-            rules: schedule.rules.clone(),
+            id: schedule.id,
+            user_id: schedule.user_id,
+            rules: schedule.rules,
             timezone: schedule.timezone.to_string(),
         }
     }

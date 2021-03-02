@@ -7,14 +7,13 @@ use nettu_scheduler_infra::NettuContext;
 
 pub async fn create_user_controller(
     http_req: HttpRequest,
-    body: web::Json<RequestBody>,
+    // body: web::Json<RequestBody>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
 
     let usecase = CreateUserUseCase {
         account_id: account.id.clone(),
-        external_user_id: body.user_id.clone(),
     };
 
     execute(usecase, &ctx)
@@ -31,7 +30,6 @@ pub async fn create_user_controller(
 #[derive(Debug)]
 pub struct CreateUserUseCase {
     pub account_id: String,
-    pub external_user_id: String,
 }
 
 pub struct UseCaseRes {
@@ -51,7 +49,7 @@ impl UseCase for CreateUserUseCase {
     type Context = NettuContext;
 
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
-        let user = User::new(&self.account_id, &self.external_user_id);
+        let user = User::new(&self.account_id);
 
         if let Some(_existing_user) = ctx.repos.user_repo.find(&user.id).await {
             return Err(UseCaseErrors::UserAlreadyExists);

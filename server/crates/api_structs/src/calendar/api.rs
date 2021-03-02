@@ -12,7 +12,7 @@ pub struct CalendarResponse {
 impl CalendarResponse {
     pub fn new(calendar: Calendar) -> Self {
         Self {
-            calendar: CalendarDTO::new(&calendar),
+            calendar: CalendarDTO::new(calendar),
         }
     }
 }
@@ -69,11 +69,11 @@ pub mod get_calendar_events {
     impl APIResponse {
         pub fn new(calendar: Calendar, events: Vec<EventWithInstances>) -> Self {
             Self {
-                calendar: CalendarDTO::new(&calendar),
+                calendar: CalendarDTO::new(calendar),
                 events: events
                     .into_iter()
                     .map(|e| EventWithInstancesDTO {
-                        event: CalendarEventDTO::new(&e.event),
+                        event: CalendarEventDTO::new(e.event),
                         instances: e.instances,
                     })
                     .collect(),

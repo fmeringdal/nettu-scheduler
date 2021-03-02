@@ -13,8 +13,10 @@ pub async fn delete_user_controller(
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
 
-    let user_id = User::create_id(&account.id, &path_params.user_id);
-    let usecase = DeleteUserUseCase { account, user_id };
+    let usecase = DeleteUserUseCase {
+        account,
+        user_id: path_params.user_id.clone(),
+    };
     execute(usecase, &ctx)
         .await
         .map(|usecase_res| HttpResponse::Created().json(APIResponse::new(usecase_res.user)))

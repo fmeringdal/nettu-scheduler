@@ -3,7 +3,7 @@ use crate::{error::NettuError, shared::auth::protect_public_account_route};
 use actix_web::{web, HttpRequest, HttpResponse};
 use futures::future::join_all;
 use nettu_scheduler_api_structs::get_user_freebusy::{APIResponse, PathParams, QueryParams};
-use nettu_scheduler_domain::{sort_and_merge_instances, CalendarView, EventInstance, User};
+use nettu_scheduler_domain::{sort_and_merge_instances, CalendarView, EventInstance};
 use nettu_scheduler_infra::NettuContext;
 use std::collections::HashMap;
 
@@ -24,7 +24,7 @@ pub async fn get_freebusy_controller(
     let calendar_ids = parse_vec_query_value(&query_params.calendar_ids);
 
     let usecase = GetFreeBusyUseCase {
-        user_id: User::create_id(&account.id, &params.external_user_id),
+        user_id: params.0.external_user_id,
         calendar_ids,
         start_ts: query_params.start_ts,
         end_ts: query_params.end_ts,
@@ -148,7 +148,9 @@ impl GetFreeBusyUseCase {
 #[cfg(test)]
 mod test {
     use super::*;
-    use nettu_scheduler_domain::{Calendar, CalendarEvent, Entity, RRuleFrequenzy, RRuleOptions};
+    use nettu_scheduler_domain::{
+        Calendar, CalendarEvent, Entity, RRuleFrequenzy, RRuleOptions, User,
+    };
     use nettu_scheduler_infra::setup_context;
 
     #[test]
@@ -177,7 +179,7 @@ mod test {
     #[test]
     async fn freebusy_works() {
         let ctx = setup_context().await;
-        let user = User::new("yoyoyo", "cool");
+        let user = User::new("yoyoyo");
 
         let calendar = Calendar::new(&user.id());
 

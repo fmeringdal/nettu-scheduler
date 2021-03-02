@@ -9,7 +9,7 @@ use crate::{
 use actix_web::{web, HttpResponse};
 use chrono_tz::Tz;
 use nettu_scheduler_api_structs::create_schedule::*;
-use nettu_scheduler_domain::{Schedule, User};
+use nettu_scheduler_domain::Schedule;
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn create_schedule_admin_controller(
@@ -20,9 +20,9 @@ pub async fn create_schedule_admin_controller(
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
 
-    let user_id = User::create_id(&account.id, &path_params.user_id);
     let usecase = CreateScheduleUseCase {
-        user_id,
+        user_id: path_params.user_id.clone(),
+        account_id: account.id,
         tzid: body_params.timezone.to_owned(),
     };
 
@@ -51,6 +51,7 @@ pub async fn create_schedule_controller(
 
     let usecase = CreateScheduleUseCase {
         user_id: user.id,
+        account_id: user.account_id,
         tzid: body_params.timezone.to_owned(),
     };
 
@@ -78,6 +79,7 @@ pub async fn create_schedule_controller(
 #[derive(Debug)]
 struct CreateScheduleUseCase {
     pub user_id: String,
+    pub account_id: String,
     pub tzid: String,
 }
 
@@ -106,7 +108,11 @@ impl UseCase for CreateScheduleUseCase {
             Err(_) => return Err(UseCaseErrors::InvalidTimezone(self.tzid.to_string())),
         };
 
-        let user = ctx.repos.user_repo.find(&self.user_id).await;
+        let user = ctx
+            .repos
+            .user_repo
+            .find_by_account_id(&self.user_id, &self.account_id)
+            .await;
         if user.is_none() {
             return Err(UseCaseErrors::UserNotFound);
         }

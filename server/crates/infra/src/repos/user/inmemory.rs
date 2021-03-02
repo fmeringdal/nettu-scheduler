@@ -34,4 +34,14 @@ impl IUserRepo for InMemoryUserRepo {
     async fn find(&self, user_id: &str) -> Option<User> {
         find(user_id, &self.users)
     }
+
+    async fn find_by_account_id(&self, user_id: &str, account_id: &str) -> Option<User> {
+        let mut user = find_by(&self.users, |u| {
+            u.id == user_id && u.account_id == account_id
+        });
+        if user.is_empty() {
+            return None;
+        }
+        Some(user.remove(0))
+    }
 }

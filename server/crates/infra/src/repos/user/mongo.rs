@@ -2,7 +2,7 @@ use super::IUserRepo;
 use crate::repos::shared::mongo_repo;
 use crate::repos::shared::mongo_repo::MongoDocument;
 use mongodb::{
-    bson::{doc, Document},
+    bson::{doc, oid::ObjectId, Document},
     Collection, Database,
 };
 use nettu_scheduler_domain::User;
@@ -46,13 +46,20 @@ impl IUserRepo for MongoUserRepo {
         let id = mongo_repo::MongoPersistenceID::String(String::from(user_id));
         mongo_repo::delete::<_, UserMongo>(&self.collection, &id).await
     }
+
+    async fn find_by_account_id(&self, user_id: &str, account_id: &str) -> Option<User> {
+        let filter = doc! {
+            "_id": ObjectId::with_string(user_id).unwrap(),
+            "account_id": account_id
+        };
+        mongo_repo::find_one_by::<_, UserMongo>(&self.collection, filter).await
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 struct UserMongo {
     _id: String,
     account_id: String,
-    external_id: String,
 }
 
 impl MongoDocument<User> for UserMongo {
@@ -60,7 +67,6 @@ impl MongoDocument<User> for UserMongo {
         User {
             id: self._id.clone(),
             account_id: self.account_id.clone(),
-            external_id: self.external_id.clone(),
         }
     }
 
@@ -68,7 +74,6 @@ impl MongoDocument<User> for UserMongo {
         Self {
             _id: user.id.clone(),
             account_id: user.account_id.clone(),
-            external_id: user.external_id.clone(),
         }
     }
 

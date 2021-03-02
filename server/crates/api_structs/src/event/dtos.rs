@@ -19,18 +19,18 @@ pub struct CalendarEventDTO {
 }
 
 impl CalendarEventDTO {
-    pub fn new(event: &CalendarEvent) -> Self {
+    pub fn new(event: CalendarEvent) -> Self {
         Self {
-            id: event.id.clone(),
+            id: event.id,
             start_ts: event.start_ts,
             duration: event.duration,
             end_ts: event.end_ts,
             busy: event.busy,
-            recurrence: event.recurrence.clone(),
-            exdates: event.exdates.clone(),
-            calendar_id: event.calendar_id.clone(),
-            user_id: User::create_external_id(&event.user_id),
-            reminder: event.reminder.clone(),
+            recurrence: event.recurrence,
+            exdates: event.exdates,
+            calendar_id: event.calendar_id,
+            user_id: event.user_id,
+            reminder: event.reminder,
         }
     }
 }
