@@ -24,17 +24,11 @@ impl MongoAccountRepo {
 #[async_trait::async_trait]
 impl IAccountRepo for MongoAccountRepo {
     async fn insert(&self, account: &Account) -> anyhow::Result<()> {
-        match mongo_repo::insert::<_, AccountMongo>(&self.collection, account).await {
-            Ok(_) => Ok(()),
-            Err(_) => Ok(()), // fix this
-        }
+        mongo_repo::insert::<_, AccountMongo>(&self.collection, account).await
     }
 
     async fn save(&self, account: &Account) -> anyhow::Result<()> {
-        match mongo_repo::save::<_, AccountMongo>(&self.collection, account).await {
-            Ok(_) => Ok(()),
-            Err(_) => Ok(()), // fix this
-        }
+        mongo_repo::save::<_, AccountMongo>(&self.collection, account).await
     }
 
     async fn find(&self, account_id: &str) -> Option<Account> {

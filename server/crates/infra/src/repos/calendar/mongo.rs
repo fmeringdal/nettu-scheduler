@@ -26,17 +26,11 @@ impl MongoCalendarRepo {
 #[async_trait::async_trait]
 impl ICalendarRepo for MongoCalendarRepo {
     async fn insert(&self, calendar: &Calendar) -> anyhow::Result<()> {
-        match mongo_repo::insert::<_, CalendarMongo>(&self.collection, calendar).await {
-            Ok(_) => Ok(()),
-            Err(_) => Ok(()), // fix this
-        }
+        mongo_repo::insert::<_, CalendarMongo>(&self.collection, calendar).await
     }
 
     async fn save(&self, calendar: &Calendar) -> anyhow::Result<()> {
-        match mongo_repo::save::<_, CalendarMongo>(&self.collection, calendar).await {
-            Ok(_) => Ok(()),
-            Err(_) => Ok(()), // fix this
-        }
+        mongo_repo::save::<_, CalendarMongo>(&self.collection, calendar).await
     }
 
     async fn find(&self, calendar_id: &str) -> Option<Calendar> {

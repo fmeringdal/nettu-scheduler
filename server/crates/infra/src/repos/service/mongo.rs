@@ -23,17 +23,11 @@ impl MongoServiceRepo {
 #[async_trait::async_trait]
 impl IServiceRepo for MongoServiceRepo {
     async fn insert(&self, service: &Service) -> anyhow::Result<()> {
-        match mongo_repo::insert::<_, ServiceMongo>(&self.collection, service).await {
-            Ok(_) => Ok(()),
-            Err(_) => Ok(()), // fix this
-        }
+        mongo_repo::insert::<_, ServiceMongo>(&self.collection, service).await
     }
 
     async fn save(&self, service: &Service) -> anyhow::Result<()> {
-        match mongo_repo::save::<_, ServiceMongo>(&self.collection, service).await {
-            Ok(_) => Ok(()),
-            Err(_) => Ok(()), // fix this
-        }
+        mongo_repo::save::<_, ServiceMongo>(&self.collection, service).await
     }
 
     async fn find(&self, service_id: &str) -> Option<Service> {

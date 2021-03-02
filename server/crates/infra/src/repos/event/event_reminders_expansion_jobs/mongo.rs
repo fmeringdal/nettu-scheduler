@@ -25,12 +25,7 @@ impl MongoEventRemindersExpansionsJobRepo {
 #[async_trait::async_trait]
 impl IEventRemindersExpansionJobsRepo for MongoEventRemindersExpansionsJobRepo {
     async fn bulk_insert(&self, jobs: &[EventRemindersExpansionJob]) -> anyhow::Result<()> {
-        match mongo_repo::bulk_insert::<_, EventRemindersExpansionJobMongo>(&self.collection, jobs)
-            .await
-        {
-            Ok(_) => Ok(()),
-            Err(_) => Ok(()), // fix this
-        }
+        mongo_repo::bulk_insert::<_, EventRemindersExpansionJobMongo>(&self.collection, jobs).await
     }
 
     async fn delete_all_before(&self, before_inc: i64) -> Vec<EventRemindersExpansionJob> {

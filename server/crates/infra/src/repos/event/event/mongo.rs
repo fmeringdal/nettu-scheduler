@@ -25,17 +25,11 @@ impl MongoEventRepo {
 #[async_trait::async_trait]
 impl IEventRepo for MongoEventRepo {
     async fn insert(&self, e: &CalendarEvent) -> anyhow::Result<()> {
-        match mongo_repo::insert::<_, CalendarEventMongo>(&self.collection, e).await {
-            Ok(_) => Ok(()),
-            Err(_) => Ok(()), // fix this
-        }
+        mongo_repo::insert::<_, CalendarEventMongo>(&self.collection, e).await
     }
 
     async fn save(&self, e: &CalendarEvent) -> anyhow::Result<()> {
-        match mongo_repo::save::<_, CalendarEventMongo>(&self.collection, e).await {
-            Ok(_) => Ok(()),
-            Err(_) => Ok(()), // fix this
-        }
+        mongo_repo::save::<_, CalendarEventMongo>(&self.collection, e).await
     }
 
     async fn find(&self, event_id: &str) -> Option<CalendarEvent> {

@@ -25,10 +25,7 @@ impl MongoReminderRepo {
 #[async_trait::async_trait]
 impl IReminderRepo for MongoReminderRepo {
     async fn bulk_insert(&self, reminders: &[Reminder]) -> anyhow::Result<()> {
-        match mongo_repo::bulk_insert::<_, ReminderMongo>(&self.collection, reminders).await {
-            Ok(_) => Ok(()),
-            Err(_) => Ok(()), // fix this
-        }
+        mongo_repo::bulk_insert::<_, ReminderMongo>(&self.collection, reminders).await
     }
 
     async fn find_by_event_and_priority(&self, event_id: &str, priority: i64) -> Option<Reminder> {
