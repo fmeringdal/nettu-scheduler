@@ -22,12 +22,10 @@ pub async fn get_freebusy_controller(
     let account = protect_public_account_route(&http_req, &ctx).await?;
 
     let calendar_ids = parse_vec_query_value(&query_params.calendar_ids);
-    let schedule_ids = parse_vec_query_value(&query_params.schedule_ids);
 
     let usecase = GetFreeBusyUseCase {
         user_id: User::create_id(&account.id, &params.external_user_id),
         calendar_ids,
-        schedule_ids,
         start_ts: query_params.start_ts,
         end_ts: query_params.end_ts,
     };
@@ -51,7 +49,6 @@ pub async fn get_freebusy_controller(
 pub struct GetFreeBusyUseCase {
     pub user_id: String,
     pub calendar_ids: Option<Vec<String>>,
-    pub schedule_ids: Option<Vec<String>>,
     pub start_ts: i64,
     pub end_ts: i64,
 }
@@ -81,14 +78,12 @@ impl UseCase for GetFreeBusyUseCase {
             Err(_) => return Err(UseCaseErrors::InvalidTimespan),
         };
 
-        let busy_event_instances = vec![
-            self.get_event_instances_from_calendars(&view, ctx).await,
-            self.get_event_instances_from_schedules(&view, ctx).await,
-        ]
-        .into_iter()
-        .flatten()
-        .filter(|e| e.busy)
-        .collect::<Vec<_>>();
+        let busy_event_instances = self
+            .get_event_instances_from_calendars(&view, ctx)
+            .await
+            .into_iter()
+            .filter(|e| e.busy)
+            .collect::<Vec<_>>();
 
         let busy = sort_and_merge_instances(&mut busy_event_instances.iter().map(|e| e).collect());
 
@@ -148,31 +143,6 @@ impl GetFreeBusyUseCase {
 
         all_events_instances
     }
-
-    async fn get_event_instances_from_schedules(
-        &self,
-        view: &CalendarView,
-        ctx: &NettuContext,
-    ) -> Vec<EventInstance> {
-        let schedule_ids = match &self.schedule_ids {
-            Some(ids) if !ids.is_empty() => ids,
-            _ => return vec![],
-        };
-
-        let mut schedules = ctx.repos.schedule_repo.find_by_user(&self.user_id).await;
-        if !schedule_ids.is_empty() {
-            schedules = schedules
-                .into_iter()
-                .filter(|cal| schedule_ids.contains(&cal.id))
-                .collect();
-        }
-
-        schedules
-            .iter()
-            .map(|schedule| schedule.freebusy(view))
-            .flatten()
-            .collect()
-    }
 }
 
 #[cfg(test)]
@@ -180,6 +150,28 @@ mod test {
     use super::*;
     use nettu_scheduler_domain::{Calendar, CalendarEvent, Entity, RRuleFrequenzy, RRuleOptions};
     use nettu_scheduler_infra::setup_context;
+
+    #[test]
+    fn it_parses_vec_query_params_correctly() {
+        assert_eq!(parse_vec_query_value(&None), None);
+        assert_eq!(
+            parse_vec_query_value(&Some("".to_string())),
+            Some(vec!["".to_string()])
+        );
+        assert_eq!(
+            parse_vec_query_value(&Some("2".to_string())),
+            Some(vec!["2".to_string()])
+        );
+        assert_eq!(
+            parse_vec_query_value(&Some("12,2,3,56".to_string())),
+            Some(
+                vec!["12", "2", "3", "56"]
+                    .into_iter()
+                    .map(String::from)
+                    .collect::<Vec<_>>()
+            )
+        );
+    }
 
     #[actix_web::main]
     #[test]
@@ -273,7 +265,6 @@ mod test {
         let mut usecase = GetFreeBusyUseCase {
             user_id: user.id(),
             calendar_ids: Some(vec![calendar.id.clone()]),
-            schedule_ids: None,
             start_ts: 86400000,
             end_ts: 172800000,
         };

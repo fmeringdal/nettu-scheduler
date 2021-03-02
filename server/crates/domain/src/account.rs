@@ -4,6 +4,9 @@ use nettu_scheduler_utils::create_random_secret;
 
 const API_KEY_LEN: usize = 30;
 
+/// An `Account` acts as a kind of namespace and lets multiple different
+/// applications use the same instance of this server without interfering
+/// with each other.
 #[derive(Debug, Clone)]
 pub struct Account {
     pub id: String,

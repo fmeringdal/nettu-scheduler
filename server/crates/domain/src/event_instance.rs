@@ -2,6 +2,7 @@ use serde::Serialize;
 
 use crate::CalendarEvent;
 
+/// Occurence of a `CalendarEvent`
 #[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EventInstance {

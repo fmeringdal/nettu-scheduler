@@ -14,7 +14,7 @@ use nettu_scheduler_domain::{
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn get_service_bookingslots_controller(
-    http_req: HttpRequest,
+    _http_req: HttpRequest,
     query_params: web::Query<QueryParams>,
     path_params: web::Path<PathParams>,
     ctx: web::Data<NettuContext>,

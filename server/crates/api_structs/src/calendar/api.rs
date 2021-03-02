@@ -108,7 +108,6 @@ pub mod get_user_freebusy {
         pub start_ts: i64,
         pub end_ts: i64,
         pub calendar_ids: Option<String>,
-        pub schedule_ids: Option<String>,
     }
 
     #[derive(Debug, Serialize)]
