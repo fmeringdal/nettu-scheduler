@@ -5,12 +5,12 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: rootpassword
-      MONGO_INITDB_DATABASE: nettubooking
+      MONGO_INITDB_DATABASE: nettuscheduler
 
     ports:
       - 27017:27017
     volumes:
-      - mongodb_data_nettubooking_container:/data/nettubooking/db
+      - mongodb_data_nettuscheduler_container:/data/nettuscheduler/db
     logging:
       driver: none
 
@@ -20,7 +20,7 @@ services:
       - "5000:5000"
     environment:
       MONGODB_CONNECTION_STRING: mongodb://root:rootpassword@mongodb:27017
-      MONGODB_NAME: nettubooking
+      MONGODB_NAME: nettuscheduler
     volumes:
       - ../:/var/application
     command: bash -c "cargo watch -x run"
@@ -31,4 +31,4 @@ services:
       - "--"
 
 volumes:
-  mongodb_data_nettubooking_container:
+  mongodb_data_nettuscheduler_container:
