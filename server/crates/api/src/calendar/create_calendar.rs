@@ -2,7 +2,7 @@ use crate::shared::{
     auth::{protect_account_route, protect_route},
     usecase::{execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
 };
-use crate::{account, shared::auth::Permission};
+use crate::{shared::auth::Permission};
 use crate::{
     error::NettuError,
     shared::usecase::{execute, UseCase},
@@ -85,7 +85,7 @@ impl UseCase for CreateCalendarUseCase {
     type Context = NettuContext;
 
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
-        let user = match ctx.repos.user_repo.find(&self.user_id).await {
+        let _user = match ctx.repos.user_repo.find(&self.user_id).await {
             Some(user) if user.account_id == self.account_id => user,
             _ => return Err(UseCaseErrors::UserNotFoundError),
         };

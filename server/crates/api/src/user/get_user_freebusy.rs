@@ -19,7 +19,7 @@ pub async fn get_freebusy_controller(
     params: web::Path<PathParams>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
-    let account = protect_public_account_route(&http_req, &ctx).await?;
+    let _account = protect_public_account_route(&http_req, &ctx).await?;
 
     let calendar_ids = parse_vec_query_value(&query_params.calendar_ids);
 
