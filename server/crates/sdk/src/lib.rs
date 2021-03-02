@@ -2,13 +2,17 @@ mod account;
 mod base;
 mod schedule;
 mod status;
+mod user;
 
 use account::AccountClient;
 use schedule::ScheduleClient;
 use status::StatusClient;
 use std::sync::Arc;
+use user::UserClient;
 
 pub(crate) use base::{APIResponse, BaseClient};
+
+pub use schedule::CreateScheduleInput;
 
 /// Nettu Scheduler Server SDK
 ///
@@ -19,6 +23,7 @@ pub struct NettuSDK {
     pub account: AccountClient,
     pub schedule: ScheduleClient,
     pub status: StatusClient,
+    pub user: UserClient,
 }
 
 impl NettuSDK {
@@ -29,11 +34,13 @@ impl NettuSDK {
         let account = AccountClient::new(base.clone());
         let schedule = ScheduleClient::new(base.clone());
         let status = StatusClient::new(base.clone());
+        let user = UserClient::new(base.clone());
 
         Self {
             account,
             schedule,
             status,
+            user,
         }
     }
 }

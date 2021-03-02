@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UserDTO {
-    id: String,
-    account_id: String,
+    pub id: String,
+    pub account_id: String,
 }
 
 impl UserDTO {

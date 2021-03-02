@@ -6,7 +6,7 @@ use crate::dtos::UserDTO;
 #[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UserResponse {
-    user: UserDTO,
+    pub user: UserDTO,
 }
 
 impl UserResponse {
@@ -20,7 +20,7 @@ impl UserResponse {
 pub mod create_user {
     use super::*;
 
-    #[derive(Deserialize)]
+    #[derive(Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
         pub user_id: String,

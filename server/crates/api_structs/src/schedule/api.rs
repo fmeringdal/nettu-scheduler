@@ -6,7 +6,7 @@ use crate::dtos::ScheduleDTO;
 #[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ScheduleResponse {
-    schedule: ScheduleDTO,
+    pub schedule: ScheduleDTO,
 }
 
 impl ScheduleResponse {

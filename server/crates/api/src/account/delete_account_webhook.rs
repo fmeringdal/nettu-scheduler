@@ -24,9 +24,9 @@ pub async fn delete_account_webhook_controller(
             UseCaseErrors::InvalidURI(err) => {
                 NettuError::BadClientData(format!("Invalid URI provided. Error message: {}", err))
             }
-            UseCaseErrors::WebhookUrlTaken => {
-                NettuError::BadClientData("URI is already in use by someone else".into())
-            }
+            UseCaseErrors::WebhookUrlTaken => NettuError::Conflict(
+                "Webhook URL is already in use by another Account. Please pick another one.".into(),
+            ),
             UseCaseErrors::StorageError => NettuError::InternalError,
         })
 }

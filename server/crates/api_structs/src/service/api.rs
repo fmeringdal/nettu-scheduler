@@ -1,5 +1,5 @@
+use nettu_scheduler_domain::Service;
 use nettu_scheduler_domain::TimePlan;
-use nettu_scheduler_domain::{booking_slots::ServiceBookingSlotDTO, Service};
 use serde::{Deserialize, Serialize};
 
 use crate::dtos::ServiceDTO;
@@ -47,6 +47,8 @@ pub mod create_service {
 }
 
 pub mod get_service_bookingslots {
+    use nettu_scheduler_domain::{booking_slots::ServiceBookingSlot, User};
+
     use super::*;
 
     #[derive(Debug, Deserialize)]
@@ -65,8 +67,41 @@ pub mod get_service_bookingslots {
 
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
+    pub struct ServiceBookingSlotDTO {
+        pub start: i64,
+        pub duration: i64,
+        pub user_ids: Vec<String>,
+    }
+
+    impl ServiceBookingSlotDTO {
+        pub fn new(slot: &ServiceBookingSlot) -> Self {
+            Self {
+                duration: slot.duration,
+                start: slot.start,
+                user_ids: slot
+                    .user_ids
+                    .iter()
+                    .map(|u_id| User::create_external_id(u_id))
+                    .collect(),
+            }
+        }
+    }
+
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct APIResponse {
         pub booking_slots: Vec<ServiceBookingSlotDTO>,
+    }
+
+    impl APIResponse {
+        pub fn new(booking_slots: Vec<ServiceBookingSlot>) -> Self {
+            Self {
+                booking_slots: booking_slots
+                    .iter()
+                    .map(|slot| ServiceBookingSlotDTO::new(slot))
+                    .collect(),
+            }
+        }
     }
 }
 

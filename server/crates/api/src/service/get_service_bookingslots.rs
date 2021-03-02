@@ -7,7 +7,7 @@ use nettu_scheduler_domain::{
     booking_slots::{
         get_service_bookingslots, validate_bookingslots_query, validate_slots_interval,
         BookingQueryError, BookingSlotsOptions, BookingSlotsQuery, ServiceBookingSlot,
-        ServiceBookingSlotDTO, UserFreeEvents,
+        UserFreeEvents,
     },
     get_free_busy, Calendar, CalendarView, EventInstance, ServiceResource, TimePlan,
 };
@@ -29,14 +29,7 @@ pub async fn get_service_bookingslots_controller(
 
     execute(usecase, &ctx).await
         .map(|usecase_res| {
-            let res = APIResponse {
-                booking_slots: usecase_res
-                    .booking_slots
-                    .iter()
-                    .map(|slot| ServiceBookingSlotDTO::new(slot))
-                    .collect(),
-            };
-            HttpResponse::Ok().json(res)
+            HttpResponse::Ok().json(APIResponse::new(usecase_res.booking_slots))
         })
         .map_err(|e| match e {
             UseCaseErrors::InvalidDate(msg) => {
@@ -133,7 +126,7 @@ impl UseCase for GetServiceBookingSlotsUseCase {
 
         for user in &service.users {
             let view = view.clone();
-            usecase_futures.push(self.get_user_freebusy(user, view, ctx));
+            usecase_futures.push(self.get_bookable_times(user, view, ctx));
         }
 
         let users_free_events = join_all(usecase_futures).await;
@@ -266,7 +259,8 @@ impl GetServiceBookingSlotsUseCase {
         Ok(view)
     }
 
-    async fn get_user_freebusy(
+    /// Finds the bookable times for a `User`.
+    async fn get_bookable_times(
         &self,
         user: &ServiceResource,
         mut view: CalendarView,

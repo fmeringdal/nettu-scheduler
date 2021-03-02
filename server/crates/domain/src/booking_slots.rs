@@ -46,28 +46,6 @@ pub struct ServiceBookingSlot {
     pub user_ids: Vec<String>,
 }
 
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ServiceBookingSlotDTO {
-    pub start: i64,
-    pub duration: i64,
-    pub user_ids: Vec<String>,
-}
-
-impl ServiceBookingSlotDTO {
-    pub fn new(slot: &ServiceBookingSlot) -> Self {
-        Self {
-            duration: slot.duration,
-            start: slot.start,
-            user_ids: slot
-                .user_ids
-                .iter()
-                .map(|u_id| User::create_external_id(u_id))
-                .collect(),
-        }
-    }
-}
-
 pub fn get_service_bookingslots(
     users_free: Vec<UserFreeEvents>,
     options: &BookingSlotsOptions,

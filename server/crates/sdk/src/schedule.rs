@@ -13,20 +13,28 @@ impl ScheduleClient {
         Self { base }
     }
 
-    pub async fn create(&self) -> APIResponse<create_schedule::APIResponse> {
+    pub async fn create(
+        &self,
+        input: CreateScheduleInput,
+    ) -> APIResponse<create_schedule::APIResponse> {
         let body = create_schedule::RequstBody {
-            timezone: "UTC".into(),
+            timezone: input.timezone,
         };
         let path = create_schedule::AdminPathParams {
-            user_id: "1234213".into(),
+            user_id: input.user_id,
         };
 
         self.base
             .post(
                 body,
-                format!("schedule/{}", path.user_id),
+                format!("user/{}/schedule", path.user_id),
                 StatusCode::CREATED,
             )
             .await
     }
+}
+
+pub struct CreateScheduleInput {
+    pub timezone: String,
+    pub user_id: String,
 }
