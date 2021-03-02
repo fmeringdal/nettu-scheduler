@@ -25,7 +25,7 @@ impl MongoEventRemindersExpansionsJobRepo {
 
 #[async_trait::async_trait]
 impl IEventRemindersExpansionJobsRepo for MongoEventRemindersExpansionsJobRepo {
-    async fn bulk_insert(&self, jobs: &[EventRemindersExpansionJob]) -> Result<(), Box<dyn Error>> {
+    async fn bulk_insert(&self, jobs: &[EventRemindersExpansionJob]) -> anyhow::Result<()> {
         match mongo_repo::bulk_insert::<_, EventRemindersExpansionJobMongo>(&self.collection, jobs)
             .await
         {
@@ -63,16 +63,17 @@ impl IEventRemindersExpansionJobsRepo for MongoEventRemindersExpansionsJobRepo {
         docs
     }
 
-    async fn delete_by_event(&self, event_id: &str) -> Result<DeleteResult, Box<dyn Error>> {
+    async fn delete_by_event(&self, event_id: &str) -> anyhow::Result<DeleteResult> {
         let filter = doc! {
             "event_id": event_id
         };
-        match self.collection.delete_many(filter, None).await {
-            Ok(res) => Ok(DeleteResult {
+        self.collection
+            .delete_many(filter, None)
+            .await
+            .map(|res| DeleteResult {
                 deleted_count: res.deleted_count,
-            }),
-            Err(err) => Err(Box::new(err)),
-        }
+            })
+            .map_err(anyhow::Error::new)
     }
 }
 

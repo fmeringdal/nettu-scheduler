@@ -25,7 +25,7 @@ impl MongoReminderRepo {
 
 #[async_trait::async_trait]
 impl IReminderRepo for MongoReminderRepo {
-    async fn bulk_insert(&self, reminders: &[Reminder]) -> Result<(), Box<dyn Error>> {
+    async fn bulk_insert(&self, reminders: &[Reminder]) -> anyhow::Result<()> {
         match mongo_repo::bulk_insert::<_, ReminderMongo>(&self.collection, reminders).await {
             Ok(_) => Ok(()),
             Err(_) => Ok(()), // fix this
@@ -68,18 +68,19 @@ impl IReminderRepo for MongoReminderRepo {
         docs
     }
 
-    async fn delete_by_events(&self, event_ids: &[String]) -> Result<DeleteResult, Box<dyn Error>> {
+    async fn delete_by_events(&self, event_ids: &[String]) -> anyhow::Result<DeleteResult> {
         let filter = doc! {
             "event_id": {
                 "$in": event_ids
             }
         };
-        match self.collection.delete_many(filter, None).await {
-            Ok(res) => Ok(DeleteResult {
+        self.collection
+            .delete_many(filter, None)
+            .await
+            .map(|res| DeleteResult {
                 deleted_count: res.deleted_count,
-            }),
-            Err(err) => Err(Box::new(err)),
-        }
+            })
+            .map_err(anyhow::Error::new)
     }
 }
 

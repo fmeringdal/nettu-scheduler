@@ -24,14 +24,14 @@ impl MongoUserRepo {
 
 #[async_trait::async_trait]
 impl IUserRepo for MongoUserRepo {
-    async fn insert(&self, user: &User) -> Result<(), Box<dyn Error>> {
+    async fn insert(&self, user: &User) -> anyhow::Result<()> {
         match mongo_repo::insert::<_, UserMongo>(&self.collection, user).await {
             Ok(_) => Ok(()),
             Err(_) => Ok(()), // fix this
         }
     }
 
-    async fn save(&self, user: &User) -> Result<(), Box<dyn Error>> {
+    async fn save(&self, user: &User) -> anyhow::Result<()> {
         match mongo_repo::save::<_, UserMongo>(&self.collection, user).await {
             Ok(_) => Ok(()),
             Err(_) => Ok(()), // fix this

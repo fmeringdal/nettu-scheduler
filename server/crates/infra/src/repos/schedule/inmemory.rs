@@ -17,12 +17,12 @@ impl InMemoryScheduleRepo {
 
 #[async_trait::async_trait]
 impl IScheduleRepo for InMemoryScheduleRepo {
-    async fn insert(&self, schedule: &Schedule) -> Result<(), Box<dyn Error>> {
+    async fn insert(&self, schedule: &Schedule) -> anyhow::Result<()> {
         insert(schedule, &self.schedules);
         Ok(())
     }
 
-    async fn save(&self, schedule: &Schedule) -> Result<(), Box<dyn Error>> {
+    async fn save(&self, schedule: &Schedule) -> anyhow::Result<()> {
         save(schedule, &self.schedules);
         Ok(())
     }

@@ -26,14 +26,14 @@ impl MongoScheduleRepo {
 
 #[async_trait::async_trait]
 impl IScheduleRepo for MongoScheduleRepo {
-    async fn insert(&self, schedule: &Schedule) -> Result<(), Box<dyn Error>> {
+    async fn insert(&self, schedule: &Schedule) -> anyhow::Result<()> {
         match mongo_repo::insert::<_, ScheduleMongo>(&self.collection, schedule).await {
             Ok(_) => Ok(()),
             Err(_) => Ok(()), // fix this
         }
     }
 
-    async fn save(&self, schedule: &Schedule) -> Result<(), Box<dyn Error>> {
+    async fn save(&self, schedule: &Schedule) -> anyhow::Result<()> {
         match mongo_repo::save::<_, ScheduleMongo>(&self.collection, schedule).await {
             Ok(_) => Ok(()),
             Err(_) => Ok(()), // fix this

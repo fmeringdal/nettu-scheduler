@@ -17,12 +17,12 @@ impl InMemoryUserRepo {
 
 #[async_trait::async_trait]
 impl IUserRepo for InMemoryUserRepo {
-    async fn insert(&self, user: &User) -> Result<(), Box<dyn Error>> {
+    async fn insert(&self, user: &User) -> anyhow::Result<()> {
         insert(user, &self.users);
         Ok(())
     }
 
-    async fn save(&self, user: &User) -> Result<(), Box<dyn Error>> {
+    async fn save(&self, user: &User) -> anyhow::Result<()> {
         save(user, &self.users);
         Ok(())
     }

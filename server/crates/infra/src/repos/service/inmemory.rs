@@ -17,12 +17,12 @@ impl InMemoryServiceRepo {
 
 #[async_trait::async_trait]
 impl IServiceRepo for InMemoryServiceRepo {
-    async fn insert(&self, service: &Service) -> Result<(), Box<dyn Error>> {
+    async fn insert(&self, service: &Service) -> anyhow::Result<()> {
         insert(service, &self.services);
         Ok(())
     }
 
-    async fn save(&self, service: &Service) -> Result<(), Box<dyn Error>> {
+    async fn save(&self, service: &Service) -> anyhow::Result<()> {
         save(service, &self.services);
         Ok(())
     }
@@ -35,7 +35,7 @@ impl IServiceRepo for InMemoryServiceRepo {
         delete(service_id, &self.services)
     }
 
-    async fn remove_calendar_from_services(&self, calendar_id: &str) -> Result<(), Box<dyn Error>> {
+    async fn remove_calendar_from_services(&self, calendar_id: &str) -> anyhow::Result<()> {
         update_many(
             &self.services,
             |service| {
@@ -55,7 +55,7 @@ impl IServiceRepo for InMemoryServiceRepo {
         Ok(())
     }
 
-    async fn remove_schedule_from_services(&self, schedule_id: &str) -> Result<(), Box<dyn Error>> {
+    async fn remove_schedule_from_services(&self, schedule_id: &str) -> anyhow::Result<()> {
         update_many(
             &self.services,
             |service| {
@@ -75,7 +75,7 @@ impl IServiceRepo for InMemoryServiceRepo {
         Ok(())
     }
 
-    async fn remove_user_from_services(&self, user_id: &str) -> Result<(), Box<dyn Error>> {
+    async fn remove_user_from_services(&self, user_id: &str) -> anyhow::Result<()> {
         update_many(
             &self.services,
             |service| {

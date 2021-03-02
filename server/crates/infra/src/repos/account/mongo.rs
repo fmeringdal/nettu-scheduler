@@ -24,14 +24,14 @@ impl MongoAccountRepo {
 
 #[async_trait::async_trait]
 impl IAccountRepo for MongoAccountRepo {
-    async fn insert(&self, account: &Account) -> Result<(), Box<dyn Error>> {
+    async fn insert(&self, account: &Account) -> anyhow::Result<()> {
         match mongo_repo::insert::<_, AccountMongo>(&self.collection, account).await {
             Ok(_) => Ok(()),
             Err(_) => Ok(()), // fix this
         }
     }
 
-    async fn save(&self, account: &Account) -> Result<(), Box<dyn Error>> {
+    async fn save(&self, account: &Account) -> anyhow::Result<()> {
         match mongo_repo::save::<_, AccountMongo>(&self.collection, account).await {
             Ok(_) => Ok(()),
             Err(_) => Ok(()), // fix this
@@ -43,7 +43,7 @@ impl IAccountRepo for MongoAccountRepo {
         mongo_repo::find::<_, AccountMongo>(&self.collection, &oid).await
     }
 
-    async fn find_many(&self, accounts_ids: &[String]) -> Result<Vec<Account>, Box<dyn Error>> {
+    async fn find_many(&self, accounts_ids: &[String]) -> anyhow::Result<Vec<Account>> {
         let filter = doc! {
             "event_id": {
                 "$in": accounts_ids

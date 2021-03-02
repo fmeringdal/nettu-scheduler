@@ -1,7 +1,6 @@
 use super::IAccountRepo;
 use crate::repos::shared::inmemory_repo::*;
 use nettu_scheduler_domain::Account;
-use std::error::Error;
 
 pub struct InMemoryAccountRepo {
     accounts: std::sync::Mutex<Vec<Account>>,
@@ -17,12 +16,12 @@ impl InMemoryAccountRepo {
 
 #[async_trait::async_trait]
 impl IAccountRepo for InMemoryAccountRepo {
-    async fn insert(&self, account: &Account) -> Result<(), Box<dyn Error>> {
+    async fn insert(&self, account: &Account) -> anyhow::Result<()> {
         insert(account, &self.accounts);
         Ok(())
     }
 
-    async fn save(&self, account: &Account) -> Result<(), Box<dyn Error>> {
+    async fn save(&self, account: &Account) -> anyhow::Result<()> {
         save(account, &self.accounts);
         Ok(())
     }
@@ -35,7 +34,7 @@ impl IAccountRepo for InMemoryAccountRepo {
         delete(account_id, &self.accounts)
     }
 
-    async fn find_many(&self, account_ids: &[String]) -> Result<Vec<Account>, Box<dyn Error>> {
+    async fn find_many(&self, account_ids: &[String]) -> anyhow::Result<Vec<Account>> {
         let res = find_by(&self.accounts, |a| account_ids.contains(&a.id));
         Ok(res)
     }

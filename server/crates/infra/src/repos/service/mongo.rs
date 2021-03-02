@@ -23,14 +23,14 @@ impl MongoServiceRepo {
 
 #[async_trait::async_trait]
 impl IServiceRepo for MongoServiceRepo {
-    async fn insert(&self, service: &Service) -> Result<(), Box<dyn Error>> {
+    async fn insert(&self, service: &Service) -> anyhow::Result<()> {
         match mongo_repo::insert::<_, ServiceMongo>(&self.collection, service).await {
             Ok(_) => Ok(()),
             Err(_) => Ok(()), // fix this
         }
     }
 
-    async fn save(&self, service: &Service) -> Result<(), Box<dyn Error>> {
+    async fn save(&self, service: &Service) -> anyhow::Result<()> {
         match mongo_repo::save::<_, ServiceMongo>(&self.collection, service).await {
             Ok(_) => Ok(()),
             Err(_) => Ok(()), // fix this
@@ -47,7 +47,7 @@ impl IServiceRepo for MongoServiceRepo {
         mongo_repo::delete::<_, ServiceMongo>(&self.collection, &oid).await
     }
 
-    async fn remove_calendar_from_services(&self, calendar_id: &str) -> Result<(), Box<dyn Error>> {
+    async fn remove_calendar_from_services(&self, calendar_id: &str) -> anyhow::Result<()> {
         let filter = doc! {
             "attributes": {
                 "key": "calendars",
@@ -65,7 +65,7 @@ impl IServiceRepo for MongoServiceRepo {
         mongo_repo::update_many::<_, ServiceMongo>(&self.collection, filter, update).await
     }
 
-    async fn remove_schedule_from_services(&self, schedule_id: &str) -> Result<(), Box<dyn Error>> {
+    async fn remove_schedule_from_services(&self, schedule_id: &str) -> anyhow::Result<()> {
         let filter = doc! {
             "attributes": {
                 "key": "schedules",
@@ -83,7 +83,7 @@ impl IServiceRepo for MongoServiceRepo {
         mongo_repo::update_many::<_, ServiceMongo>(&self.collection, filter, update).await
     }
 
-    async fn remove_user_from_services(&self, user_id: &str) -> Result<(), Box<dyn Error>> {
+    async fn remove_user_from_services(&self, user_id: &str) -> anyhow::Result<()> {
         let filter = doc! {
             "users.user_id": user_id
         };

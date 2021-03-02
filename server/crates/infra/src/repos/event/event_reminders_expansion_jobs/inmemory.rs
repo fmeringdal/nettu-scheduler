@@ -18,7 +18,7 @@ impl InMemoryEventRemindersExpansionJobsRepo {
 
 #[async_trait::async_trait]
 impl IEventRemindersExpansionJobsRepo for InMemoryEventRemindersExpansionJobsRepo {
-    async fn bulk_insert(&self, jobs: &[EventRemindersExpansionJob]) -> Result<(), Box<dyn Error>> {
+    async fn bulk_insert(&self, jobs: &[EventRemindersExpansionJob]) -> anyhow::Result<()> {
         for job in jobs {
             insert(job, &self.jobs);
         }
@@ -30,7 +30,7 @@ impl IEventRemindersExpansionJobsRepo for InMemoryEventRemindersExpansionJobsRep
         find_and_delete_by(&self.jobs, |reminder| reminder.timestamp <= before)
     }
 
-    async fn delete_by_event(&self, event_id: &str) -> Result<DeleteResult, Box<dyn Error>> {
+    async fn delete_by_event(&self, event_id: &str) -> anyhow::Result<DeleteResult> {
         let res = delete_by(&self.jobs, |job| job.event_id == event_id);
         Ok(res)
     }

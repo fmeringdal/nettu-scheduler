@@ -1,3 +1,4 @@
+use super::repo::DeleteResult;
 use anyhow::Result;
 use futures::stream::StreamExt;
 use mongodb::{
@@ -5,9 +6,6 @@ use mongodb::{
     Collection,
 };
 use serde::{de::DeserializeOwned, Serialize};
-use std::error::Error;
-
-use super::repo::DeleteResult;
 
 pub trait MongoDocument<E>: Serialize + DeserializeOwned {
     fn to_domain(&self) -> E;
@@ -73,13 +71,12 @@ pub async fn update_many<E, D: MongoDocument<E>>(
     collection: &Collection,
     filter: Document,
     update: Document,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<()> {
     let coll = collection;
-    let res = coll.update_many(filter, update, None).await;
-    match res {
-        Ok(_) => Ok(()),
-        Err(err) => Err(Box::new(err)),
-    }
+    coll.update_many(filter, update, None)
+        .await
+        .map(|_| ())
+        .map_err(anyhow::Error::new)
 }
 
 pub async fn find<E, D: MongoDocument<E>>(collection: &Collection, id: &ObjectId) -> Option<E> {
@@ -105,7 +102,7 @@ pub async fn find_one_by<E, D: MongoDocument<E>>(
 pub async fn find_many_by<E, D: MongoDocument<E>>(
     collection: &Collection,
     filter: Document,
-) -> Result<Vec<E>, Box<dyn Error>> {
+) -> Result<Vec<E>> {
     let coll = collection;
     let res = coll.find(filter, None).await;
 
@@ -125,7 +122,7 @@ pub async fn find_many_by<E, D: MongoDocument<E>>(
 
             Ok(documents)
         }
-        Err(err) => Err(Box::new(err)),
+        Err(err) => Err(anyhow::Error::new(err)),
     }
 }
 
@@ -144,7 +141,7 @@ pub async fn delete<E, D: MongoDocument<E>>(collection: &Collection, id: &Object
 pub async fn delete_many_by<E, D: MongoDocument<E>>(
     collection: &Collection,
     filter: Document,
-) -> anyhow::Result<DeleteResult> {
+) -> Result<DeleteResult> {
     let res = collection.delete_many(filter, None).await?;
     Ok(DeleteResult {
         deleted_count: res.deleted_count,

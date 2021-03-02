@@ -18,7 +18,7 @@ impl InMemoryReminderRepo {
 
 #[async_trait::async_trait]
 impl IReminderRepo for InMemoryReminderRepo {
-    async fn bulk_insert(&self, reminders: &[Reminder]) -> Result<(), Box<dyn Error>> {
+    async fn bulk_insert(&self, reminders: &[Reminder]) -> anyhow::Result<()> {
         for reminder in reminders {
             insert(reminder, &self.reminders);
         }
@@ -39,7 +39,7 @@ impl IReminderRepo for InMemoryReminderRepo {
         find_and_delete_by(&self.reminders, |reminder| reminder.remind_at <= before)
     }
 
-    async fn delete_by_events(&self, event_ids: &[String]) -> Result<DeleteResult, Box<dyn Error>> {
+    async fn delete_by_events(&self, event_ids: &[String]) -> anyhow::Result<DeleteResult> {
         let res = delete_by(&self.reminders, |reminder| {
             event_ids.contains(&reminder.event_id)
         });

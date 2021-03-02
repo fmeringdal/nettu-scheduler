@@ -18,12 +18,12 @@ impl InMemoryEventRepo {
 
 #[async_trait::async_trait]
 impl IEventRepo for InMemoryEventRepo {
-    async fn insert(&self, e: &CalendarEvent) -> Result<(), Box<dyn Error>> {
+    async fn insert(&self, e: &CalendarEvent) -> anyhow::Result<()> {
         insert(e, &self.calendar_events);
         Ok(())
     }
 
-    async fn save(&self, e: &CalendarEvent) -> Result<(), Box<dyn Error>> {
+    async fn save(&self, e: &CalendarEvent) -> anyhow::Result<()> {
         save(e, &self.calendar_events);
         Ok(())
     }
@@ -36,7 +36,7 @@ impl IEventRepo for InMemoryEventRepo {
         &self,
         calendar_id: &str,
         view: Option<&CalendarView>,
-    ) -> Result<Vec<CalendarEvent>, Box<dyn Error>> {
+    ) -> anyhow::Result<Vec<CalendarEvent>> {
         let res = find_by(&self.calendar_events, |event| {
             if event.calendar_id == calendar_id {
                 if let Some(v) = view {
@@ -51,7 +51,7 @@ impl IEventRepo for InMemoryEventRepo {
         Ok(res)
     }
 
-    async fn find_many(&self, event_ids: &[String]) -> Result<Vec<CalendarEvent>, Box<dyn Error>> {
+    async fn find_many(&self, event_ids: &[String]) -> anyhow::Result<Vec<CalendarEvent>> {
         let res = find_by(&self.calendar_events, |event| event_ids.contains(&event.id));
         Ok(res)
     }
@@ -60,7 +60,7 @@ impl IEventRepo for InMemoryEventRepo {
         delete(event_id, &self.calendar_events)
     }
 
-    async fn delete_by_calendar(&self, calendar_id: &str) -> Result<DeleteResult, Box<dyn Error>> {
+    async fn delete_by_calendar(&self, calendar_id: &str) -> anyhow::Result<DeleteResult> {
         let res = delete_by(&self.calendar_events, |e| e.calendar_id == calendar_id);
         Ok(res)
     }

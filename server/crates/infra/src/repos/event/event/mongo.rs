@@ -25,14 +25,14 @@ impl MongoEventRepo {
 
 #[async_trait::async_trait]
 impl IEventRepo for MongoEventRepo {
-    async fn insert(&self, e: &CalendarEvent) -> Result<(), Box<dyn Error>> {
+    async fn insert(&self, e: &CalendarEvent) -> anyhow::Result<()> {
         match mongo_repo::insert::<_, CalendarEventMongo>(&self.collection, e).await {
             Ok(_) => Ok(()),
             Err(_) => Ok(()), // fix this
         }
     }
 
-    async fn save(&self, e: &CalendarEvent) -> Result<(), Box<dyn Error>> {
+    async fn save(&self, e: &CalendarEvent) -> anyhow::Result<()> {
         match mongo_repo::save::<_, CalendarEventMongo>(&self.collection, e).await {
             Ok(_) => Ok(()),
             Err(_) => Ok(()), // fix this
@@ -48,7 +48,7 @@ impl IEventRepo for MongoEventRepo {
         &self,
         calendar_id: &str,
         view: Option<&CalendarView>,
-    ) -> Result<Vec<CalendarEvent>, Box<dyn Error>> {
+    ) -> anyhow::Result<Vec<CalendarEvent>> {
         let mut filter = doc! {
             "calendar_id": calendar_id
         };
@@ -73,7 +73,7 @@ impl IEventRepo for MongoEventRepo {
         mongo_repo::find_many_by::<_, CalendarEventMongo>(&self.collection, filter).await
     }
 
-    async fn find_many(&self, event_ids: &[String]) -> Result<Vec<CalendarEvent>, Box<dyn Error>> {
+    async fn find_many(&self, event_ids: &[String]) -> anyhow::Result<Vec<CalendarEvent>> {
         let filter = doc! {
             "event_id": {
                 "$in": event_ids
@@ -88,16 +88,17 @@ impl IEventRepo for MongoEventRepo {
         mongo_repo::delete::<_, CalendarEventMongo>(&self.collection, &oid).await
     }
 
-    async fn delete_by_calendar(&self, calendar_id: &str) -> Result<DeleteResult, Box<dyn Error>> {
+    async fn delete_by_calendar(&self, calendar_id: &str) -> anyhow::Result<DeleteResult> {
         let filter = doc! {
             "calendar_id": calendar_id
         };
-        match self.collection.delete_many(filter, None).await {
-            Ok(res) => Ok(DeleteResult {
+        self.collection
+            .delete_many(filter, None)
+            .await
+            .map(|res| DeleteResult {
                 deleted_count: res.deleted_count,
-            }),
-            Err(err) => Err(Box::new(err)),
-        }
+            })
+            .map_err(anyhow::Error::new)
     }
 
     async fn delete_by_user(&self, user_id: &str) -> anyhow::Result<DeleteResult> {

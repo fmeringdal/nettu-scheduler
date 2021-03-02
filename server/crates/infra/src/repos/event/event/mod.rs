@@ -9,16 +9,16 @@ use std::error::Error;
 
 #[async_trait::async_trait]
 pub trait IEventRepo: Send + Sync {
-    async fn insert(&self, e: &CalendarEvent) -> Result<(), Box<dyn Error>>;
-    async fn save(&self, e: &CalendarEvent) -> Result<(), Box<dyn Error>>;
+    async fn insert(&self, e: &CalendarEvent) -> anyhow::Result<()>;
+    async fn save(&self, e: &CalendarEvent) -> anyhow::Result<()>;
     async fn find(&self, event_id: &str) -> Option<CalendarEvent>;
-    async fn find_many(&self, event_ids: &[String]) -> Result<Vec<CalendarEvent>, Box<dyn Error>>;
+    async fn find_many(&self, event_ids: &[String]) -> anyhow::Result<Vec<CalendarEvent>>;
     async fn find_by_calendar(
         &self,
         calendar_id: &str,
         view: Option<&CalendarView>,
-    ) -> Result<Vec<CalendarEvent>, Box<dyn Error>>;
+    ) -> anyhow::Result<Vec<CalendarEvent>>;
     async fn delete(&self, event_id: &str) -> Option<CalendarEvent>;
-    async fn delete_by_calendar(&self, calendar_id: &str) -> Result<DeleteResult, Box<dyn Error>>;
+    async fn delete_by_calendar(&self, calendar_id: &str) -> anyhow::Result<DeleteResult>;
     async fn delete_by_user(&self, user_id: &str) -> anyhow::Result<DeleteResult>;
 }
