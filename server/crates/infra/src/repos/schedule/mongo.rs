@@ -1,5 +1,8 @@
 use super::IScheduleRepo;
-use crate::repos::shared::{mongo_repo, repo::DeleteResult};
+use crate::repos::shared::{
+    mongo_repo::{self, create_object_id},
+    repo::DeleteResult,
+};
 use mongo_repo::MongoDocument;
 use mongodb::{
     bson::{doc, oid::ObjectId, Document},
@@ -38,11 +41,8 @@ impl IScheduleRepo for MongoScheduleRepo {
     }
 
     async fn find(&self, schedule_id: &str) -> Option<Schedule> {
-        let id = match ObjectId::with_string(schedule_id) {
-            Ok(oid) => mongo_repo::MongoPersistenceID::ObjectId(oid),
-            Err(_) => return None,
-        };
-        mongo_repo::find::<_, ScheduleMongo>(&self.collection, &id).await
+        let oid = create_object_id(schedule_id)?;
+        mongo_repo::find::<_, ScheduleMongo>(&self.collection, &oid).await
     }
 
     async fn find_by_user(&self, user_id: &str) -> Vec<Schedule> {
@@ -75,11 +75,8 @@ impl IScheduleRepo for MongoScheduleRepo {
     }
 
     async fn delete(&self, schedule_id: &str) -> Option<Schedule> {
-        let id = match ObjectId::with_string(schedule_id) {
-            Ok(oid) => mongo_repo::MongoPersistenceID::ObjectId(oid),
-            Err(_) => return None,
-        };
-        mongo_repo::delete::<_, ScheduleMongo>(&self.collection, &id).await
+        let oid = create_object_id(schedule_id)?;
+        mongo_repo::delete::<_, ScheduleMongo>(&self.collection, &oid).await
     }
 
     async fn delete_by_user(&self, user_id: &str) -> anyhow::Result<DeleteResult> {

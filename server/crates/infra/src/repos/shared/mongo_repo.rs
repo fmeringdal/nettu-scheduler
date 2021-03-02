@@ -9,25 +9,22 @@ use std::error::Error;
 
 use super::repo::DeleteResult;
 
-pub enum MongoPersistenceID {
-    ObjectId(ObjectId),
-    String(String),
-}
-
 pub trait MongoDocument<E>: Serialize + DeserializeOwned {
     fn to_domain(&self) -> E;
     fn from_domain(entity: &E) -> Self;
     fn get_id_filter(&self) -> Document;
 }
 
-fn get_id_filter(val_id: &MongoPersistenceID) -> Document {
-    match val_id {
-        MongoPersistenceID::ObjectId(oid) => doc! {
-            "_id": oid
-        },
-        MongoPersistenceID::String(id) => doc! {
-            "_id": id
-        },
+pub fn create_object_id(id: &str) -> Option<ObjectId> {
+    match ObjectId::with_string(id) {
+        Ok(oid) => Some(oid),
+        Err(_) => None,
+    }
+}
+
+fn get_id_filter(oid: &ObjectId) -> Document {
+    doc! {
+        "_id": oid
     }
 }
 
@@ -85,10 +82,7 @@ pub async fn update_many<E, D: MongoDocument<E>>(
     }
 }
 
-pub async fn find<E, D: MongoDocument<E>>(
-    collection: &Collection,
-    id: &MongoPersistenceID,
-) -> Option<E> {
+pub async fn find<E, D: MongoDocument<E>>(collection: &Collection, id: &ObjectId) -> Option<E> {
     let filter = get_id_filter(id);
     find_one_by::<E, D>(collection, filter).await
 }
@@ -135,10 +129,7 @@ pub async fn find_many_by<E, D: MongoDocument<E>>(
     }
 }
 
-pub async fn delete<E, D: MongoDocument<E>>(
-    collection: &Collection,
-    id: &MongoPersistenceID,
-) -> Option<E> {
+pub async fn delete<E, D: MongoDocument<E>>(collection: &Collection, id: &ObjectId) -> Option<E> {
     let filter = get_id_filter(id);
     let res = collection.find_one_and_delete(filter, None).await;
     match res {

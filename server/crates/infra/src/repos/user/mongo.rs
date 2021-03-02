@@ -1,6 +1,7 @@
 use super::IUserRepo;
 use crate::repos::shared::mongo_repo;
 use crate::repos::shared::mongo_repo::MongoDocument;
+use mongo_repo::create_object_id;
 use mongodb::{
     bson::{doc, oid::ObjectId, Document},
     Collection, Database,
@@ -38,13 +39,13 @@ impl IUserRepo for MongoUserRepo {
     }
 
     async fn find(&self, user_id: &str) -> Option<User> {
-        let id = mongo_repo::MongoPersistenceID::String(String::from(user_id));
-        mongo_repo::find::<_, UserMongo>(&self.collection, &id).await
+        let oid = create_object_id(user_id)?;
+        mongo_repo::find::<_, UserMongo>(&self.collection, &oid).await
     }
 
     async fn delete(&self, user_id: &str) -> Option<User> {
-        let id = mongo_repo::MongoPersistenceID::String(String::from(user_id));
-        mongo_repo::delete::<_, UserMongo>(&self.collection, &id).await
+        let oid = create_object_id(user_id)?;
+        mongo_repo::delete::<_, UserMongo>(&self.collection, &oid).await
     }
 
     async fn find_by_account_id(&self, user_id: &str, account_id: &str) -> Option<User> {

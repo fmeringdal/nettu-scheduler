@@ -1,5 +1,8 @@
 use super::ICalendarRepo;
-use crate::repos::shared::{mongo_repo, repo::DeleteResult};
+use crate::repos::shared::{
+    mongo_repo::{self, create_object_id},
+    repo::DeleteResult,
+};
 use mongo_repo::MongoDocument;
 use mongodb::{
     bson::{doc, oid::ObjectId, Document},
@@ -37,11 +40,8 @@ impl ICalendarRepo for MongoCalendarRepo {
     }
 
     async fn find(&self, calendar_id: &str) -> Option<Calendar> {
-        let id = match ObjectId::with_string(calendar_id) {
-            Ok(oid) => mongo_repo::MongoPersistenceID::ObjectId(oid),
-            Err(_) => return None,
-        };
-        mongo_repo::find::<_, CalendarMongo>(&self.collection, &id).await
+        let oid = create_object_id(calendar_id)?;
+        mongo_repo::find::<_, CalendarMongo>(&self.collection, &oid).await
     }
 
     async fn find_by_user(&self, user_id: &str) -> Vec<Calendar> {
@@ -55,11 +55,8 @@ impl ICalendarRepo for MongoCalendarRepo {
     }
 
     async fn delete(&self, calendar_id: &str) -> Option<Calendar> {
-        let id = match ObjectId::with_string(calendar_id) {
-            Ok(oid) => mongo_repo::MongoPersistenceID::ObjectId(oid),
-            Err(_) => return None,
-        };
-        mongo_repo::delete::<_, CalendarMongo>(&self.collection, &id).await
+        let oid = create_object_id(calendar_id)?;
+        mongo_repo::delete::<_, CalendarMongo>(&self.collection, &oid).await
     }
 
     async fn delete_by_user(&self, user_id: &str) -> anyhow::Result<DeleteResult> {

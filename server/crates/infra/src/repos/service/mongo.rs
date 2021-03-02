@@ -1,5 +1,5 @@
 use super::IServiceRepo;
-use crate::repos::shared::mongo_repo;
+use crate::repos::shared::mongo_repo::{self, create_object_id};
 use mongo_repo::MongoDocument;
 use mongodb::{
     bson::{doc, oid::ObjectId, Document},
@@ -38,19 +38,13 @@ impl IServiceRepo for MongoServiceRepo {
     }
 
     async fn find(&self, service_id: &str) -> Option<Service> {
-        let id = match ObjectId::with_string(service_id) {
-            Ok(oid) => mongo_repo::MongoPersistenceID::ObjectId(oid),
-            Err(_) => return None,
-        };
-        mongo_repo::find::<_, ServiceMongo>(&self.collection, &id).await
+        let oid = create_object_id(service_id)?;
+        mongo_repo::find::<_, ServiceMongo>(&self.collection, &oid).await
     }
 
     async fn delete(&self, service_id: &str) -> Option<Service> {
-        let id = match ObjectId::with_string(service_id) {
-            Ok(oid) => mongo_repo::MongoPersistenceID::ObjectId(oid),
-            Err(_) => return None,
-        };
-        mongo_repo::delete::<_, ServiceMongo>(&self.collection, &id).await
+        let oid = create_object_id(service_id)?;
+        mongo_repo::delete::<_, ServiceMongo>(&self.collection, &oid).await
     }
 
     async fn remove_calendar_from_services(&self, calendar_id: &str) -> Result<(), Box<dyn Error>> {

@@ -1,5 +1,5 @@
 use super::IEventRepo;
-use crate::repos::shared::mongo_repo;
+use crate::repos::shared::mongo_repo::{self, create_object_id};
 use crate::repos::shared::repo::DeleteResult;
 use mongo_repo::MongoDocument;
 use mongodb::{
@@ -40,11 +40,8 @@ impl IEventRepo for MongoEventRepo {
     }
 
     async fn find(&self, event_id: &str) -> Option<CalendarEvent> {
-        let id = match ObjectId::with_string(event_id) {
-            Ok(oid) => mongo_repo::MongoPersistenceID::ObjectId(oid),
-            Err(_) => return None,
-        };
-        mongo_repo::find::<_, CalendarEventMongo>(&self.collection, &id).await
+        let oid = create_object_id(event_id)?;
+        mongo_repo::find::<_, CalendarEventMongo>(&self.collection, &oid).await
     }
 
     async fn find_by_calendar(
@@ -87,11 +84,8 @@ impl IEventRepo for MongoEventRepo {
     }
 
     async fn delete(&self, event_id: &str) -> Option<CalendarEvent> {
-        let id = match ObjectId::with_string(event_id) {
-            Ok(oid) => mongo_repo::MongoPersistenceID::ObjectId(oid),
-            Err(_) => return None,
-        };
-        mongo_repo::delete::<_, CalendarEventMongo>(&self.collection, &id).await
+        let oid = create_object_id(event_id)?;
+        mongo_repo::delete::<_, CalendarEventMongo>(&self.collection, &oid).await
     }
 
     async fn delete_by_calendar(&self, calendar_id: &str) -> Result<DeleteResult, Box<dyn Error>> {

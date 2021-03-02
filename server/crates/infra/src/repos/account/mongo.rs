@@ -1,7 +1,7 @@
 use super::IAccountRepo;
 use nettu_scheduler_domain::{Account, AccountSettings, AccountWebhookSettings};
 
-use crate::repos::shared::mongo_repo;
+use crate::repos::shared::mongo_repo::{self, create_object_id};
 use mongo_repo::MongoDocument;
 use mongodb::{
     bson::{doc, oid::ObjectId, Document},
@@ -39,11 +39,8 @@ impl IAccountRepo for MongoAccountRepo {
     }
 
     async fn find(&self, account_id: &str) -> Option<Account> {
-        let id = match ObjectId::with_string(account_id) {
-            Ok(oid) => mongo_repo::MongoPersistenceID::ObjectId(oid),
-            Err(_) => return None,
-        };
-        mongo_repo::find::<_, AccountMongo>(&self.collection, &id).await
+        let oid = create_object_id(account_id)?;
+        mongo_repo::find::<_, AccountMongo>(&self.collection, &oid).await
     }
 
     async fn find_many(&self, accounts_ids: &[String]) -> Result<Vec<Account>, Box<dyn Error>> {
@@ -71,11 +68,8 @@ impl IAccountRepo for MongoAccountRepo {
     }
 
     async fn delete(&self, account_id: &str) -> Option<Account> {
-        let id = match ObjectId::with_string(account_id) {
-            Ok(oid) => mongo_repo::MongoPersistenceID::ObjectId(oid),
-            Err(_) => return None,
-        };
-        mongo_repo::delete::<_, AccountMongo>(&self.collection, &id).await
+        let oid = create_object_id(account_id)?;
+        mongo_repo::delete::<_, AccountMongo>(&self.collection, &oid).await
     }
 }
 
