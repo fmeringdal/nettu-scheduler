@@ -18,7 +18,7 @@ struct Claims {
     /// Issued at (as UTC timestamp)
     iat: usize,
     /// Subject (whom token refers tok)
-    user_id: String,
+    nettu_scheduler_user_id: String,
     /// The `Policy` that describes what `UseCase`s this `User` can perform
     scheduler_policy: Option<Policy>,
 }
@@ -50,7 +50,7 @@ pub async fn auth_user_req(
                 Ok(claims) => ctx
                     .repos
                     .user_repo
-                    .find_by_account_id(&claims.user_id, &account.id)
+                    .find_by_account_id(&claims.nettu_scheduler_user_id, &account.id)
                     .await
                     .map(|user| (user, claims.scheduler_policy.unwrap_or_default())),
                 Err(_e) => None,
@@ -197,7 +197,7 @@ mod test {
         let claims = Claims {
             exp,
             iat: 19,
-            user_id,
+            nettu_scheduler_user_id: user_id,
             scheduler_policy: None,
         };
         let enc_key = EncodingKey::from_rsa_pem(&priv_key).unwrap();

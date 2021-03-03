@@ -89,11 +89,6 @@ mod test {
         ];
 
         for date in &valid_dates {
-            println!(
-                "Checking date: {} with result {:?}",
-                date,
-                is_valid_date(date)
-            );
             assert!(is_valid_date(date).is_err());
         }
     }

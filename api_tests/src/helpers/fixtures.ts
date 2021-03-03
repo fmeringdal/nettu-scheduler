@@ -38,7 +38,7 @@ export const setupUserClientForAccount = (
   const userId = "123";
   const token = jwt.sign(
     {
-      userId,
+      nettuSchedulerUserId: userId,
       schedulerPolicy: {
         allow: ["*"]
       }

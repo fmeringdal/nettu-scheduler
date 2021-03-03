@@ -389,7 +389,6 @@ mod test {
                 interval: 10,
             },
         );
-        println!("Availibility: {:?}", availibility);
 
         assert_eq!(slots.len(), 2);
         assert_eq!(

@@ -4,14 +4,6 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 
 - More admin and user controllers for different usecases
 - user_id in token needs to be updated
-- Event_instance::remove_busy_event use Enum as return type
-
-- Freebusy queries cleanup
-  - Type Invariants for availibility, timeplan ??
-- Use sorted event instace https://www.lpalmieri.com/posts/2020-12-11-zero-to-production-6-domain-modelling/
-    - compatible
-- https://en.wikipedia.org/wiki/Interval_scheduling
-- http://www.cs.toronto.edu/~lalla/373s16/notes/ISP.pdf
 
 - Better telemtry: implement Display for usecase: https://www.lpalmieri.com/posts/2020-09-27-zero-to-production-4-are-we-observable-yet/#5-1-the-tracing-crate
 

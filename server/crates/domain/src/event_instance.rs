@@ -51,9 +51,7 @@ impl CompatibleInstances {
         self.events = self
             .events
             .iter()
-            .map(|free_instance| {
-                remove_busy_from_free_instance(free_instance, instances, skip).inner()
-            })
+            .map(|free_instance| free_instance.remove_instances(instances, skip).inner())
             .flatten()
             .collect()
     }
@@ -107,15 +105,15 @@ impl CompatibleInstances {
 
 #[derive(PartialEq, Debug)]
 pub enum SubtractInstanceResult {
-    /// Intsances does not overlap
+    /// Instances does not overlap
     NoOverlap,
-    /// Intsances overlaps and free.start > end.start && free.end > end.end
+    /// Instances overlaps and free.start > end.start && free.end > end.end
     OverlapBeginning(CompatibleInstances),
-    /// Intsances overlaps and free.start < end.start && free.end < end.end
+    /// Instances overlaps and free.start < end.start && free.end < end.end
     OverlapEnd(CompatibleInstances),
-    /// Intsances overlaps and free.start < end.start && free.end > end.end
+    /// Instances overlaps and free.start < end.start && free.end > end.end
     Split(CompatibleInstances),
-    /// Intsances overlaps and free.start > énd.start && free.end < end.end
+    /// Instances overlaps and free.start > énd.start && free.end < end.end
     Empty,
 }
 
@@ -141,29 +139,24 @@ impl EventInstance {
         })
     }
 
-    pub fn remove_busy_event(free_instance: &Self, busy_instance: &Self) -> SubtractInstanceResult {
-        if !Self::has_overlap(free_instance, busy_instance)
-            || free_instance.start_ts == busy_instance.end_ts
+    pub fn remove_instance(free_instance: &Self, instance: &Self) -> SubtractInstanceResult {
+        if !Self::has_overlap(free_instance, instance) || free_instance.start_ts == instance.end_ts
         {
             return SubtractInstanceResult::NoOverlap;
         }
 
-        if busy_instance.start_ts <= free_instance.start_ts
-            && busy_instance.end_ts >= free_instance.end_ts
-        {
+        if instance.start_ts <= free_instance.start_ts && instance.end_ts >= free_instance.end_ts {
             return SubtractInstanceResult::Empty;
         }
 
-        if busy_instance.start_ts > free_instance.start_ts
-            && busy_instance.end_ts < free_instance.end_ts
-        {
+        if instance.start_ts > free_instance.start_ts && instance.end_ts < free_instance.end_ts {
             let free_instance_1 = Self {
                 start_ts: free_instance.start_ts,
-                end_ts: busy_instance.start_ts,
+                end_ts: instance.start_ts,
                 busy: false,
             };
             let free_instance_2 = Self {
-                start_ts: busy_instance.end_ts,
+                start_ts: instance.end_ts,
                 end_ts: free_instance.end_ts,
                 busy: false,
             };
@@ -171,9 +164,9 @@ impl EventInstance {
             return SubtractInstanceResult::Split(events);
         }
 
-        if free_instance.start_ts >= busy_instance.start_ts {
+        if free_instance.start_ts >= instance.start_ts {
             let e = CompatibleInstances::new(vec![Self {
-                start_ts: busy_instance.end_ts,
+                start_ts: instance.end_ts,
                 end_ts: free_instance.end_ts,
                 busy: false,
             }]);
@@ -181,100 +174,71 @@ impl EventInstance {
         } else {
             let e = CompatibleInstances::new(vec![Self {
                 start_ts: free_instance.start_ts,
-                end_ts: busy_instance.start_ts,
+                end_ts: instance.start_ts,
                 busy: false,
             }]);
             SubtractInstanceResult::OverlapEnd(e)
         }
     }
-}
 
-pub fn remove_busy_from_free_instance(
-    free_instance: &EventInstance,
-    busy_instances: &CompatibleInstances,
-    skip: usize,
-) -> CompatibleInstances {
-    let mut free_instances_without_conflict = CompatibleInstances::new(vec![]);
+    pub fn remove_instances(
+        &self,
+        intances: &CompatibleInstances,
+        skip: usize,
+    ) -> CompatibleInstances {
+        let mut free_instances_without_conflict = CompatibleInstances::new(vec![]);
 
-    let mut confict = false;
-    for (busy_pos, busy_instance) in busy_instances.as_ref().iter().skip(skip).enumerate() {
-        if busy_instance.start_ts >= free_instance.end_ts {
-            break;
+        let mut conflict = false;
+        for (pos, instance) in intances.as_ref().iter().skip(skip).enumerate() {
+            if instance.start_ts >= self.end_ts {
+                break;
+            }
+            let free_instances = match EventInstance::remove_instance(self, instance) {
+                SubtractInstanceResult::OverlapEnd(event) => {
+                    assert_eq!(event.len(), 1);
+                    conflict = true;
+                    Some(event)
+                }
+                SubtractInstanceResult::OverlapBeginning(mut event) => {
+                    assert_eq!(event.len(), 1);
+                    conflict = true;
+                    event.remove_intances(intances, pos + 1);
+
+                    Some(event)
+                }
+                SubtractInstanceResult::Split(events) => {
+                    assert_eq!(events.len(), 2);
+                    conflict = true;
+
+                    let mut events = events.inner();
+                    let last_event = events.pop_back().unwrap();
+                    let first_event = events.pop_front().unwrap();
+
+                    let mut events = CompatibleInstances::new(vec![last_event.clone()]);
+                    events.remove_intances(intances, pos + 1);
+                    events.push_front(first_event);
+
+                    Some(events)
+                }
+                SubtractInstanceResult::Empty => {
+                    conflict = true;
+                    None
+                }
+                SubtractInstanceResult::NoOverlap => {
+                    conflict = false;
+                    None
+                }
+            };
+            if let Some(new_free_instances) = free_instances {
+                free_instances_without_conflict.extend(new_free_instances);
+            }
         }
-        let free_instances = match EventInstance::remove_busy_event(&free_instance, &busy_instance)
-        {
-            SubtractInstanceResult::OverlapEnd(event) => {
-                assert_eq!(event.len(), 1);
-                confict = true;
-                Some(event)
-            }
-            SubtractInstanceResult::OverlapBeginning(mut event) => {
-                assert_eq!(event.len(), 1);
-                confict = true;
-                event.remove_intances(busy_instances, busy_pos + 1);
-
-                Some(event)
-            }
-            SubtractInstanceResult::Split(events) => {
-                assert_eq!(events.len(), 2);
-                confict = true;
-
-                let mut events = events.inner();
-                let last_event = events.pop_back().unwrap();
-                let first_event = events.pop_front().unwrap();
-
-                let mut events = CompatibleInstances::new(vec![last_event.clone()]);
-                events.remove_intances(busy_instances, busy_pos + 1);
-                events.push_front(first_event);
-
-                Some(events)
-            }
-            SubtractInstanceResult::Empty => {
-                confict = true;
-                None
-            }
-            SubtractInstanceResult::NoOverlap => {
-                confict = false;
-                None
-            }
-        };
-        if let Some(new_free_instances) = free_instances {
-            free_instances_without_conflict.extend(new_free_instances);
+        if !conflict {
+            free_instances_without_conflict.push_back(self.clone());
         }
 
-        // If remove busy events split results in a free event that has start_ts later than end_ts of busy_instance,
-        // we need to check that free event does not conflict with any
-        // of the other later busy events.
-        // if busy_pos < busy_instances.len() - 1
-        //     && !free_events.is_empty()
-        //     && free_events.last().unwrap().start_ts >= busy_instance.end_ts
-        // {
-        //     let last_free_event = vec![free_events.last().unwrap().clone()];
-        //     let last_free_events =
-        //         remove_busy_from_free(&last_free_event, &busy_instances[busy_pos + 1..]);
-        //     if free_events.len() < 2 {
-        //         free_events = last_free_events;
-        //     } else {
-        //         free_events = vec![free_events[0].clone()];
-        //         free_events.extend(last_free_events);
-        //     }
-        // }
-        // free_instances_without_conflict.extend(free_events);
-        // confict = true;
-        // break;
+        free_instances_without_conflict
     }
-    if !confict {
-        // println!("No conflict adding: {:?}", free_instance);
-        free_instances_without_conflict.push_back(free_instance.clone());
-    }
-    // println!("--------------------------------");
-    // println!(
-    //     "Skip: {}, Free: {:?}, busy: {:?}, result: {:?}",
-    //     skip, free_instance, busy_instances, free_instances_without_conflict
-    // );
-    // println!("--------------------------------");
-
-    free_instances_without_conflict
 }
 
 pub struct EventWithInstances {
@@ -403,7 +367,7 @@ mod test {
                 busy: true,
             };
 
-            let res = EventInstance::remove_busy_event(&e1, &e2);
+            let res = EventInstance::remove_instance(&e1, &e2);
             assert_eq!(res, SubtractInstanceResult::NoOverlap);
         }
 
@@ -421,7 +385,7 @@ mod test {
                 busy: true,
             };
 
-            let res = EventInstance::remove_busy_event(&e1, &e2);
+            let res = EventInstance::remove_instance(&e1, &e2);
             assert_eq!(res, SubtractInstanceResult::Empty);
         }
 
@@ -439,7 +403,7 @@ mod test {
                 busy: true,
             };
 
-            let res = EventInstance::remove_busy_event(&e1, &e2);
+            let res = EventInstance::remove_instance(&e1, &e2);
             let expected_e = CompatibleInstances::new(vec![EventInstance {
                 start_ts: 0,
                 end_ts: 3,
@@ -452,7 +416,7 @@ mod test {
             e1.busy = true;
             e2.busy = false;
 
-            let res = EventInstance::remove_busy_event(&e2, &e1);
+            let res = EventInstance::remove_instance(&e2, &e1);
             let expected_e = CompatibleInstances::new(vec![EventInstance {
                 start_ts: 4,
                 end_ts: 10,
@@ -476,7 +440,7 @@ mod test {
                 busy: true,
             };
 
-            let res = EventInstance::remove_busy_event(&e1, &e2);
+            let res = EventInstance::remove_instance(&e1, &e2);
             let expected_events = CompatibleInstances::new(vec![
                 EventInstance {
                     start_ts: 2,
@@ -496,7 +460,7 @@ mod test {
             e1.busy = true;
             e2.busy = false;
 
-            let res = EventInstance::remove_busy_event(&e2, &e1);
+            let res = EventInstance::remove_instance(&e2, &e1);
             assert_eq!(res, SubtractInstanceResult::Empty);
         }
     }
@@ -528,7 +492,6 @@ mod test {
         let busy = CompatibleInstances::new(vec![busy1, busy2, busy3]);
         free.remove_intances(&busy, 0);
         let res = free.inner();
-        println!("Result: {:?}", res);
         assert_eq!(res.len(), 3);
         assert_eq!(
             res[0],
@@ -594,7 +557,6 @@ mod test {
         free.remove_intances(&busy, 0);
 
         let res = free.inner();
-        println!("Result: {:?}", res);
         assert_eq!(res.len(), 4);
         assert_eq!(
             res[0],
