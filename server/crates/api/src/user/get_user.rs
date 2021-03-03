@@ -23,7 +23,7 @@ pub async fn get_user_controller(
     };
     execute(usecase, &ctx)
         .await
-        .map(|usecase_res| HttpResponse::Created().json(APIResponse::new(usecase_res.user)))
+        .map(|usecase_res| HttpResponse::Ok().json(APIResponse::new(usecase_res.user)))
         .map_err(|e| match e {
             UseCaseErrors::UserNotFoundError => NettuError::NotFound(format!(
                 "A user with id: {}, was not found.",

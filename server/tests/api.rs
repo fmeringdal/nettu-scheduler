@@ -82,3 +82,36 @@ async fn test_create_schedule() {
     assert_eq!(res.schedule.user_id, create_user_res.user.id);
     assert_eq!(res.schedule.timezone, "UTC");
 }
+
+#[actix_web::main]
+#[test]
+async fn test_crud_user() {
+    let (app, sdk, address) = spawn_app().await;
+    let res = sdk
+        .account
+        .create(&app.config.create_account_secret_code)
+        .await
+        .expect("Expected to create account");
+    let admin_client = NettuSDK::new(address, res.secret_api_key);
+    let create_user_res = admin_client
+        .user
+        .create()
+        .await
+        .expect("Expected to create user");
+    let get_user_res = admin_client
+        .user
+        .get(create_user_res.user.id.clone())
+        .await
+        .expect("Expected to get user");
+    assert_eq!(get_user_res.user.id, create_user_res.user.id);
+    let delete_user_res = admin_client
+        .user
+        .delete(create_user_res.user.id.clone())
+        .await
+        .expect("Expected to delete user");
+    assert_eq!(delete_user_res.user.id, create_user_res.user.id);
+
+    // Get after deleted should be error
+    let get_user_res = admin_client.user.get(create_user_res.user.id.clone()).await;
+    assert!(get_user_res.is_err());
+}

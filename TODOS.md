@@ -3,7 +3,6 @@ https://github.com/11Takanori/actix-web-clean-architecture-sample
 ## Todos
 
 - More admin and user controllers for different usecases
-- user_id in token needs to be updated
 
 - Better telemtry: implement Display for usecase: https://www.lpalmieri.com/posts/2020-09-27-zero-to-production-4-are-we-observable-yet/#5-1-the-tracing-crate
 

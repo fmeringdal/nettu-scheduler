@@ -19,7 +19,7 @@ pub async fn delete_user_controller(
     };
     execute(usecase, &ctx)
         .await
-        .map(|usecase_res| HttpResponse::Created().json(APIResponse::new(usecase_res.user)))
+        .map(|usecase_res| HttpResponse::Ok().json(APIResponse::new(usecase_res.user)))
         .map_err(|e| match e {
             UseCaseErrors::StorageError => NettuError::InternalError,
             UseCaseErrors::UserNotFoundError => NettuError::NotFound(format!(
