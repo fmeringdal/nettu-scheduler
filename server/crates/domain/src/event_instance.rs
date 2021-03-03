@@ -11,6 +11,48 @@ pub struct EventInstance {
     pub busy: bool,
 }
 
+/// This type contains a list of `EventInstance`s that are compatible and sorted.
+/// Two `EventInstance`s are compatible if they do not overlap.
+pub struct CompatibleInstances {
+    events: Vec<EventInstance>,
+}
+
+impl CompatibleInstances {
+    pub fn new(mut events: Vec<EventInstance>) -> Self {
+        // sort with least start_ts first
+        events.sort_by(|i1, i2| i1.start_ts.cmp(&i2.start_ts));
+
+        let mut compatible_events: Vec<EventInstance> = vec![];
+
+        for (i, instance) in events.into_iter().enumerate() {
+            if i == 0 {
+                compatible_events.push(instance);
+                continue;
+            }
+            if let Some(merged) =
+                EventInstance::merge(&instance, &compatible_events.last().unwrap())
+            {
+                let len = compatible_events.len();
+                compatible_events[len - 1] = merged;
+            } else {
+                compatible_events.push(instance);
+            }
+        }
+
+        Self {
+            events: compatible_events,
+        }
+    }
+
+    pub fn as_ref(&self) -> &Vec<EventInstance> {
+        self.events.as_ref()
+    }
+
+    pub fn inner(self) -> Vec<EventInstance> {
+        self.events
+    }
+}
+
 impl EventInstance {
     pub fn has_overlap(instance1: &Self, instance2: &Self) -> bool {
         instance1.start_ts <= instance2.end_ts && instance1.end_ts >= instance2.start_ts
@@ -20,11 +62,12 @@ impl EventInstance {
         instance1.busy == instance2.busy && Self::has_overlap(instance1, instance2)
     }
 
+    /// Merges two `EventInstance`s into a new `EventInstance` if they overlap.
     pub fn merge(instance1: &Self, instance2: &Self) -> Option<Self> {
         if !Self::can_merge(instance1, instance2) {
             return None;
         }
-        // todo: check for can merge and overlap
+
         Some(Self {
             start_ts: std::cmp::min(instance1.start_ts, instance2.start_ts),
             end_ts: std::cmp::max(instance1.end_ts, instance2.end_ts),
@@ -75,32 +118,11 @@ impl EventInstance {
     }
 }
 
-pub fn sort_and_merge_instances(instances: &mut Vec<&EventInstance>) -> Vec<EventInstance> {
-    // sort with least start_ts first
-    instances.sort_by(|i1, i2| i1.start_ts.cmp(&i2.start_ts));
-
-    let mut sorted: Vec<EventInstance> = vec![];
-
-    for (i, instance) in instances.iter_mut().enumerate() {
-        if i == 0 {
-            sorted.push(instance.to_owned());
-            continue;
-        }
-        if let Some(merged) = EventInstance::merge(&instance, &sorted.last().unwrap()) {
-            let len = sorted.len();
-            sorted[len - 1] = merged;
-        } else {
-            sorted.push(instance.to_owned());
-        }
-    }
-
-    sorted
-}
-
 pub fn remove_busy_from_free_instance(
     free_instance: &EventInstance,
-    busy_instances: &[EventInstance],
+    busy_instances: &CompatibleInstances,
 ) -> Vec<EventInstance> {
+    let busy_instances = busy_instances.as_ref();
     let mut free_instances_without_conflict = vec![];
 
     let mut confict = false;
@@ -146,10 +168,11 @@ pub struct EventWithInstances {
 }
 
 pub fn remove_busy_from_free(
-    free_instances: &Vec<EventInstance>,
-    busy_instances: &[EventInstance],
+    free_instances: &CompatibleInstances,
+    busy_instances: &CompatibleInstances,
 ) -> Vec<EventInstance> {
     free_instances
+        .as_ref()
         .iter()
         .map(|free_instance| remove_busy_from_free_instance(free_instance, busy_instances))
         .flatten()
@@ -174,15 +197,15 @@ pub fn seperate_free_busy_events(
 }
 
 pub struct FreeBusy {
-    pub free: Vec<EventInstance>,
-    pub busy: Vec<EventInstance>,
+    pub free: CompatibleInstances,
+    pub busy: CompatibleInstances,
 }
 
-pub fn get_free_busy(instances: &mut Vec<EventInstance>) -> FreeBusy {
+pub fn get_free_busy(instances: Vec<EventInstance>) -> FreeBusy {
     let (mut free_instances, mut busy_instances) = seperate_free_busy_events(instances);
 
-    let free_instances = sort_and_merge_instances(&mut free_instances);
-    let busy_instances = sort_and_merge_instances(&mut busy_instances);
+    let free_instances = CompatibleInstances::new(free_instances);
+    let busy_instances = CompatibleInstances::new(busy_instances);
 
     let free = remove_busy_from_free(&free_instances, &busy_instances);
 
@@ -502,93 +525,102 @@ mod test {
     }
 
     #[test]
-    fn sort_and_merge_instances_test_1() {
-        let res = sort_and_merge_instances(&mut vec![]);
-        assert_eq!(res.len(), 0);
+    fn compatible_events_test_1() {
+        let c_events = CompatibleInstances::new(vec![]);
+        assert_eq!(c_events.as_ref().len(), 0);
     }
     #[test]
-    fn sort_and_merge_instances_test_2() {
-        let mut e1 = EventInstance {
+    fn compatible_events_test_2() {
+        let e1 = EventInstance {
             start_ts: 0,
             end_ts: 2,
             busy: false,
         };
-        let res = sort_and_merge_instances(&mut vec![&mut e1]);
-        assert_eq!(res.len(), 1);
-        assert_eq!(res[0], e1);
+        let c_events = CompatibleInstances::new(vec![e1.clone()]);
+        let c_events = c_events.inner();
+        assert_eq!(c_events.len(), 1);
+        assert_eq!(c_events[0], e1);
     }
     #[test]
-    fn sort_and_merge_instances_test_3() {
-        let mut e1 = EventInstance {
+    fn compatible_events_test_3() {
+        let e1 = EventInstance {
             start_ts: 0,
             end_ts: 2,
             busy: false,
         };
-        let mut e2 = EventInstance {
+        let e2 = EventInstance {
             start_ts: 0,
             end_ts: 2,
             busy: false,
         };
-        let res = sort_and_merge_instances(&mut vec![&mut e1, &mut e2]);
-        assert_eq!(res.len(), 1);
-        assert_eq!(res[0], e1);
+        let c_events = CompatibleInstances::new(vec![e1.clone(), e2.clone()]);
+        let c_events = c_events.inner();
+        assert_eq!(c_events.len(), 1);
+        assert_eq!(c_events[0], e1);
     }
     #[test]
-    fn sort_and_merge_instances_test_4() {
-        let mut e1 = EventInstance {
+    fn compatible_events_test_4() {
+        let e1 = EventInstance {
             start_ts: 0,
             end_ts: 2,
             busy: false,
         };
-        let mut e2 = EventInstance {
+        let e2 = EventInstance {
             start_ts: 5,
             end_ts: 10,
             busy: false,
         };
-        let res = sort_and_merge_instances(&mut vec![&mut e1, &mut e2]);
-        assert_eq!(res.len(), 2);
-        assert_eq!(res[0], e1);
-        assert_eq!(res[1], e2);
+        let c_events = CompatibleInstances::new(vec![e1.clone(), e2.clone()]);
+        let c_events = c_events.inner();
+        assert_eq!(c_events.len(), 2);
+        assert_eq!(c_events[0], e1);
+        assert_eq!(c_events[1], e2);
     }
 
     #[test]
-    fn sort_and_merge_instances_test_5() {
-        let mut e1 = EventInstance {
+    fn compatible_events_test_5() {
+        let e1 = EventInstance {
             start_ts: 5,
             end_ts: 10,
             busy: false,
         };
-        let mut e2 = EventInstance {
+        let e2 = EventInstance {
             start_ts: 1,
             end_ts: 7,
             busy: false,
         };
-        let mut e3 = EventInstance {
+        let e3 = EventInstance {
             start_ts: 6,
             end_ts: 14,
             busy: false,
         };
-        let mut e4 = EventInstance {
+        let e4 = EventInstance {
             start_ts: 20,
             end_ts: 30,
             busy: false,
         };
-        let mut e5 = EventInstance {
+        let e5 = EventInstance {
             start_ts: 24,
             end_ts: 40,
             busy: false,
         };
-        let mut e6 = EventInstance {
+        let e6 = EventInstance {
             start_ts: 44,
             end_ts: 50,
             busy: false,
         };
-        let res = sort_and_merge_instances(&mut vec![
-            &mut e1, &mut e2, &mut e3, &mut e4, &mut e5, &mut e6,
+        let c_events = CompatibleInstances::new(vec![
+            e1.clone(),
+            e2.clone(),
+            e3.clone(),
+            e4.clone(),
+            e5.clone(),
+            e6.clone(),
         ]);
-        assert_eq!(res.len(), 3);
+        let c_events = c_events.inner();
+        assert_eq!(c_events.len(), 3);
         assert_eq!(
-            res[0],
+            c_events[0],
             EventInstance {
                 start_ts: 1,
                 end_ts: 14,
@@ -596,47 +628,54 @@ mod test {
             }
         );
         assert_eq!(
-            res[1],
+            c_events[1],
             EventInstance {
                 start_ts: 20,
                 end_ts: 40,
                 busy: false
             }
         );
-        assert_eq!(res[2], e6);
+        assert_eq!(c_events[2], e6);
     }
 
     #[test]
-    fn sort_and_merge_instances_test_6() {
-        let mut e1 = EventInstance {
+    fn compatible_events_test_6() {
+        let e1 = EventInstance {
             start_ts: 5,
             end_ts: 10,
             busy: false,
         };
-        let mut e2 = EventInstance {
+        let e2 = EventInstance {
             start_ts: 1,
             end_ts: 7,
             busy: false,
         };
-        let mut e3 = EventInstance {
+        let e3 = EventInstance {
             start_ts: 6,
             end_ts: 14,
             busy: false,
         };
-        let mut e4 = EventInstance {
+        let e4 = EventInstance {
             start_ts: 20,
             end_ts: 30,
             busy: false,
         };
-        let mut e5 = EventInstance {
+        let e5 = EventInstance {
             start_ts: 24,
             end_ts: 40,
             busy: false,
         };
-        let res = sort_and_merge_instances(&mut vec![&mut e1, &mut e2, &mut e3, &mut e4, &mut e5]);
-        assert_eq!(res.len(), 2);
+        let c_events = CompatibleInstances::new(vec![
+            e1.clone(),
+            e2.clone(),
+            e3.clone(),
+            e4.clone(),
+            e5.clone(),
+        ]);
+        let c_events = c_events.inner();
+        assert_eq!(c_events.len(), 2);
         assert_eq!(
-            res[0],
+            c_events[0],
             EventInstance {
                 start_ts: 1,
                 end_ts: 14,
@@ -644,7 +683,7 @@ mod test {
             }
         );
         assert_eq!(
-            res[1],
+            c_events[1],
             EventInstance {
                 start_ts: 20,
                 end_ts: 40,
