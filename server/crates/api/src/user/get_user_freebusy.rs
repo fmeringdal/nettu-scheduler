@@ -3,7 +3,7 @@ use crate::{error::NettuError, shared::auth::protect_public_account_route};
 use actix_web::{web, HttpRequest, HttpResponse};
 use futures::future::join_all;
 use nettu_scheduler_api_structs::get_user_freebusy::{APIResponse, PathParams, QueryParams};
-use nettu_scheduler_domain::{sort_and_merge_instances, EventInstance, TimeSpan};
+use nettu_scheduler_domain::{CompatibleInstances, EventInstance, TimeSpan};
 use nettu_scheduler_infra::NettuContext;
 use std::collections::HashMap;
 
@@ -34,7 +34,7 @@ pub async fn get_freebusy_controller(
         .await
         .map(|usecase_res| {
             HttpResponse::Ok().json(APIResponse {
-                busy: usecase_res.busy,
+                busy: usecase_res.busy.inner(),
                 user_id: usecase_res.user_id,
             })
         })
@@ -55,7 +55,7 @@ pub struct GetFreeBusyUseCase {
 
 #[derive(Debug)]
 pub struct GetFreeBusyResponse {
-    pub busy: Vec<EventInstance>,
+    pub busy: CompatibleInstances,
     pub user_id: String,
 }
 
@@ -85,7 +85,7 @@ impl UseCase for GetFreeBusyUseCase {
             .filter(|e| e.busy)
             .collect::<Vec<_>>();
 
-        let busy = sort_and_merge_instances(&mut busy_event_instances.iter().map(|e| e).collect());
+        let busy = CompatibleInstances::new(busy_event_instances);
 
         Ok(GetFreeBusyResponse {
             busy,
@@ -273,7 +273,7 @@ mod test {
 
         let res = usecase.execute(&ctx).await;
         assert!(res.is_ok());
-        let instances = res.unwrap().busy;
+        let instances = res.unwrap().busy.inner();
         assert_eq!(instances.len(), 2);
         assert_eq!(
             instances[0],

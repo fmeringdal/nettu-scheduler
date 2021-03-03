@@ -1,4 +1,4 @@
-use crate::{date, event_instance::EventInstance};
+use crate::{date, event_instance::EventInstance, CompatibleInstances};
 use chrono::prelude::*;
 use chrono::Duration;
 use chrono_tz::Tz;
@@ -16,9 +16,9 @@ pub struct BookingSlot {
 fn is_cursor_in_events(
     cursor: i64,
     duration: i64,
-    events: &[EventInstance],
+    events: &CompatibleInstances,
 ) -> Option<&EventInstance> {
-    for event in events {
+    for event in events.as_ref() {
         if event.start_ts <= cursor && event.end_ts >= cursor + duration {
             return Some(event);
         }
@@ -34,8 +34,7 @@ pub struct BookingSlotsOptions {
 }
 
 pub struct UserFreeEvents {
-    /// Free events should be sorted and nonoverlapping and not busy
-    pub free_events: Vec<EventInstance>,
+    pub free_events: CompatibleInstances,
     pub user_id: String,
 }
 
@@ -84,9 +83,8 @@ pub fn get_service_bookingslots(
     slots
 }
 
-// Free events should be sorted and nonoverlapping and not busy
 pub fn get_booking_slots(
-    free_events: &[EventInstance],
+    free_events: &CompatibleInstances,
     options: &BookingSlotsOptions,
 ) -> Vec<BookingSlot> {
     let mut booking_slots = vec![];
@@ -178,7 +176,7 @@ mod test {
     #[test]
     fn get_booking_slots_empty() {
         let slots = get_booking_slots(
-            &[],
+            &CompatibleInstances::new(vec![]),
             &BookingSlotsOptions {
                 start_ts: 0,
                 end_ts: 100,
@@ -198,7 +196,7 @@ mod test {
         };
 
         let slots = get_booking_slots(
-            &[e1],
+            &CompatibleInstances::new(vec![e1]),
             &BookingSlotsOptions {
                 start_ts: 0,
                 end_ts: 100,
@@ -219,7 +217,7 @@ mod test {
         };
 
         let slots = get_booking_slots(
-            &[e1],
+            &CompatibleInstances::new(vec![e1]),
             &BookingSlotsOptions {
                 start_ts: 0,
                 end_ts: 100,
@@ -248,7 +246,7 @@ mod test {
         };
 
         let slots = get_booking_slots(
-            &[e1],
+            &CompatibleInstances::new(vec![e1]),
             &BookingSlotsOptions {
                 start_ts: 0,
                 end_ts: 100,
@@ -299,7 +297,7 @@ mod test {
         };
 
         let slots = get_booking_slots(
-            &[e1, e2],
+            &CompatibleInstances::new(vec![e1, e2]),
             &BookingSlotsOptions {
                 start_ts: 0,
                 end_ts: 100,
@@ -380,9 +378,10 @@ mod test {
             start_ts: 140,
             end_ts: 160,
         };
+        let availibility = CompatibleInstances::new(vec![e1, e3, e4, e2, e6, e5]);
 
         let slots = get_booking_slots(
-            &[e1, e2, e3, e4, e5, e6],
+            &availibility,
             &BookingSlotsOptions {
                 start_ts: 0,
                 end_ts: 99,
@@ -390,6 +389,7 @@ mod test {
                 interval: 10,
             },
         );
+        println!("Availibility: {:?}", availibility);
 
         assert_eq!(slots.len(), 2);
         assert_eq!(
@@ -403,7 +403,7 @@ mod test {
         assert_eq!(
             slots[1],
             BookingSlot {
-                available_until: 90,
+                available_until: 120,
                 duration: 10,
                 start: 80
             }
@@ -419,7 +419,7 @@ mod test {
         };
 
         let slots = get_booking_slots(
-            &[e1],
+            &CompatibleInstances::new(vec![e1]),
             &BookingSlotsOptions {
                 start_ts: 0,
                 end_ts: 100,
@@ -448,7 +448,7 @@ mod test {
         };
 
         let slots = get_booking_slots(
-            &[e1],
+            &CompatibleInstances::new(vec![e1]),
             &BookingSlotsOptions {
                 start_ts: 0,
                 end_ts: 100,
@@ -477,7 +477,7 @@ mod test {
         };
 
         let slots = get_booking_slots(
-            &[e1],
+            &CompatibleInstances::new(vec![e1]),
             &BookingSlotsOptions {
                 start_ts: 10,
                 end_ts: 100,
@@ -515,7 +515,7 @@ mod test {
 
         let mut users_free = vec![];
         users_free.push(UserFreeEvents {
-            free_events: vec![e1],
+            free_events: CompatibleInstances::new(vec![e1]),
             user_id: String::from("1"),
         });
 
@@ -564,11 +564,11 @@ mod test {
 
         let mut users_free = vec![];
         users_free.push(UserFreeEvents {
-            free_events: vec![e1.clone()],
+            free_events: CompatibleInstances::new(vec![e1.clone()]),
             user_id: String::from("1"),
         });
         users_free.push(UserFreeEvents {
-            free_events: vec![e1, e2],
+            free_events: CompatibleInstances::new(vec![e1, e2]),
             user_id: String::from("2"),
         });
 

@@ -1,4 +1,7 @@
-use crate::{date, event_instance::EventInstance, shared::entity::Entity, timespan::TimeSpan};
+use crate::{
+    date, event_instance::EventInstance, shared::entity::Entity, timespan::TimeSpan,
+    CompatibleInstances,
+};
 use chrono::{prelude::*, Duration};
 use chrono_tz::Tz;
 use mongodb::bson::oid::ObjectId;
@@ -244,7 +247,7 @@ impl std::cmp::PartialOrd for Day {
 }
 
 impl Schedule {
-    pub fn freebusy(&self, timespan: &TimeSpan) -> Vec<EventInstance> {
+    pub fn freebusy(&self, timespan: &TimeSpan) -> CompatibleInstances {
         let start = self.timezone.timestamp_millis(timespan.start());
         let end = self.timezone.timestamp_millis(timespan.end());
 
@@ -261,7 +264,7 @@ impl Schedule {
             }
         }
 
-        let mut free_instances = vec![];
+        let mut free_instances = CompatibleInstances::new(vec![]);
 
         let mut day_cursor = Day {
             year: start.year(),
@@ -285,11 +288,10 @@ impl Schedule {
                 }
             };
             if let Some(intervals) = intervals {
-                free_instances.extend(
-                    intervals
-                        .into_iter()
-                        .map(|interval| interval.to_event(&day_cursor, &self.timezone)),
-                );
+                for interval in intervals.into_iter() {
+                    let event = interval.to_event(&day_cursor, &self.timezone);
+                    free_instances.push_back(event);
+                }
             }
             day_cursor.inc();
         }
@@ -397,7 +399,7 @@ mod test {
         };
 
         let timespan = TimeSpan::new(0, 1000 * 60 * 60 * 24 * 30);
-        let freebusy = schedule.freebusy(&timespan);
+        let freebusy = schedule.freebusy(&timespan).inner();
 
         assert_eq!(freebusy.len(), 4);
         assert_eq!(

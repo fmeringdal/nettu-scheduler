@@ -95,6 +95,8 @@ pub mod get_calendar {
 }
 
 pub mod get_user_freebusy {
+    use std::collections::VecDeque;
+
     use super::*;
 
     #[derive(Debug, Deserialize)]
@@ -113,7 +115,7 @@ pub mod get_user_freebusy {
     #[derive(Debug, Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct APIResponse {
-        pub busy: Vec<EventInstance>,
+        pub busy: VecDeque<EventInstance>,
         pub user_id: String,
     }
 }

@@ -9,7 +9,8 @@ use nettu_scheduler_domain::{
         BookingQueryError, BookingSlotsOptions, BookingSlotsQuery, ServiceBookingSlot,
         UserFreeEvents,
     },
-    get_free_busy, Calendar, EventInstance, ServiceResource, TimePlan, TimeSpan,
+    get_free_busy, Calendar, CompatibleInstances, EventInstance, ServiceResource, TimePlan,
+    TimeSpan,
 };
 use nettu_scheduler_infra::NettuContext;
 
@@ -152,13 +153,14 @@ impl GetServiceBookingSlotsUseCase {
         user_calendars: &Vec<Calendar>,
         timespan: &TimeSpan,
         ctx: &NettuContext,
-    ) -> Vec<EventInstance> {
+    ) -> CompatibleInstances {
+        let empty = CompatibleInstances::new(vec![]);
         match &user.availibility {
             TimePlan::Calendar(id) => {
                 let calendar = match user_calendars.iter().find(|cal| cal.id == *id) {
                     Some(cal) => cal,
                     None => {
-                        return vec![];
+                        return empty;
                     }
                 };
                 let all_calendar_events = ctx
@@ -168,19 +170,19 @@ impl GetServiceBookingSlotsUseCase {
                     .await
                     .unwrap_or(vec![]);
 
-                let mut all_event_instances = all_calendar_events
+                let all_event_instances = all_calendar_events
                     .iter()
                     .map(|e| e.expand(Some(&timespan), &calendar.settings))
                     .flatten()
                     .collect::<Vec<_>>();
 
-                get_free_busy(&mut all_event_instances).free
+                get_free_busy(all_event_instances).free
             }
             TimePlan::Schedule(id) => match ctx.repos.schedule_repo.find(&id).await {
                 Some(schedule) if schedule.user_id == user.id => schedule.freebusy(&timespan),
-                _ => vec![],
+                _ => empty,
             },
-            TimePlan::Empty => vec![],
+            TimePlan::Empty => empty,
         }
     }
 
@@ -190,7 +192,7 @@ impl GetServiceBookingSlotsUseCase {
         busy_calendars: &Vec<&Calendar>,
         timespan: &TimeSpan,
         ctx: &NettuContext,
-    ) -> Vec<EventInstance> {
+    ) -> CompatibleInstances {
         let mut busy_events: Vec<EventInstance> = vec![];
 
         for cal in busy_calendars {
@@ -228,7 +230,8 @@ impl GetServiceBookingSlotsUseCase {
             }
         }
 
-        busy_events
+        // This should be optimized later
+        CompatibleInstances::new(busy_events)
     }
 
     /// Ensure that calendar timespan fits within user settings for when
@@ -265,7 +268,7 @@ impl GetServiceBookingSlotsUseCase {
         ctx: &NettuContext,
     ) -> UserFreeEvents {
         let empty = UserFreeEvents {
-            free_events: vec![],
+            free_events: CompatibleInstances::new(vec![]),
             user_id: user.id.clone(),
         };
 
@@ -284,16 +287,14 @@ impl GetServiceBookingSlotsUseCase {
             .get_user_availibility(user, &user_calendars, &timespan, ctx)
             .await;
 
-        let mut busy_events = self
+        let busy_events = self
             .get_user_busy(user, &busy_calendars, &timespan, ctx)
             .await;
 
-        let mut all_events = Vec::with_capacity(free_events.len() + busy_events.len());
-        all_events.append(&mut free_events);
-        free_events.append(&mut busy_events);
+        free_events.remove_intances(&busy_events, 0);
 
         UserFreeEvents {
-            free_events: get_free_busy(&mut all_events).free,
+            free_events,
             user_id: user.id.clone(),
         }
     }
