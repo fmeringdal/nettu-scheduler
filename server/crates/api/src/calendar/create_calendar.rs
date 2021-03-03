@@ -1,8 +1,8 @@
+use crate::shared::auth::Permission;
 use crate::shared::{
     auth::{protect_account_route, protect_route},
     usecase::{execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
 };
-use crate::{shared::auth::Permission};
 use crate::{
     error::NettuError,
     shared::usecase::{execute, UseCase},
