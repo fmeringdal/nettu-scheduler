@@ -15,7 +15,7 @@ pub use account::{Account, AccountSettings, AccountWebhookSettings};
 pub use calendar::{Calendar, CalendarSettings};
 pub use event::{CalendarEvent, CalendarEventReminder, RRuleFrequenzy, RRuleOptions};
 pub use event_instance::{
-    get_free_busy, sort_and_merge_instances, EventInstance, EventWithInstances, FreeBusy,
+    get_free_busy, CompatibleInstances, EventInstance, EventWithInstances, FreeBusy,
 };
 pub use reminder::{EventRemindersExpansionJob, Reminder};
 pub use schedule::{Schedule, ScheduleRule};
