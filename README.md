@@ -1,3 +1,3 @@
-## Nettu scheduler
+<img width="400" src="logo.png" alt="logo">
 
-![alt text](logo.png)
+## Nettu scheduler
