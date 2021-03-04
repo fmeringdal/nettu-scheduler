@@ -1,11 +1,13 @@
 <img width="400" src="logo.png" alt="logo">
 
-### Nettu scheduler
-[![Documentation][docs-badge]][https://docs.rs/tracing]
-[![MIT licensed][mit-badge]][LICENSE]
-[![Build Status][actions-badge]][https://github.com/tokio-rs/tracing/actions?query=workflow%3ACI]
+# Nettu scheduler
+[![Read the Docs](https://readthedocs.org/projects/yt2mp3/badge/?version=latest)](https://yt2mp3.readthedocs.io/en/latest/?badge=latest)
+[![MIT licensed](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Travis CI](https://travis-ci.org/tterb/yt2mp3.svg?branch=master)](https://travis-ci.org/tterb/yt2mp3)
+[![CodeCov](https://codecov.io/gh/tterb/yt2mp3/branch/master/graph/badge.svg)](https://codecov.io/gh/tterb/yt2mp3)
 
-[Website](https://nettu.no) |
+
+[Website](https://nettu.no) 
 
 ## Overview
 
