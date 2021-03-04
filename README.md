@@ -1,13 +1,9 @@
 <img width="400" src="logo.png" alt="logo">
 
-## Nettu scheduler
-[![Documentation][docs-badge]][docs-url]
-[![MIT licensed][mit-badge]][mit-url]
-[![Build Status][actions-badge]][actions-url]
-
-[docs-url]: https://docs.rs/tracing
-[mit-url]: LICENSE
-[actions-url]:https://github.com/tokio-rs/tracing/actions?query=workflow%3ACI
+### Nettu scheduler
+[![Documentation][docs-badge]][https://docs.rs/tracing]
+[![MIT licensed][mit-badge]][LICENSE]
+[![Build Status][actions-badge]][https://github.com/tokio-rs/tracing/actions?query=workflow%3ACI]
 
 [Website](https://nettu.no) |
 
