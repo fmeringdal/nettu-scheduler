@@ -5,7 +5,7 @@ use crate::shared::{
 use crate::{error::NettuError, shared::usecase::UseCase};
 use actix_web::{web, HttpResponse};
 use nettu_scheduler_api_structs::delete_schedule::*;
-use nettu_scheduler_domain::Schedule;
+use nettu_scheduler_domain::{Schedule, ID};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn delete_schedule_controller(
@@ -26,25 +26,25 @@ pub async fn delete_schedule_controller(
         .map_err(|e| match e {
             UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
             UseCaseErrorContainer::UseCase(e) => match e {
-                UseCaseErrors::NotFoundError => NettuError::NotFound(format!(
+                UseCaseErrors::NotFound => NettuError::NotFound(format!(
                     "The schedule with id: {}, was not found.",
                     req.schedule_id
                 )),
-                UseCaseErrors::UnableToDelete => NettuError::InternalError,
+                UseCaseErrors::StorageError => NettuError::InternalError,
             },
         })
 }
 
 #[derive(Debug)]
 pub enum UseCaseErrors {
-    NotFoundError,
-    UnableToDelete,
+    NotFound,
+    StorageError,
 }
 
 #[derive(Debug)]
 pub struct DeleteScheduleUseCase {
-    schedule_id: String,
-    user_id: String,
+    schedule_id: ID,
+    user_id: ID,
 }
 
 #[async_trait::async_trait(?Send)]
@@ -61,7 +61,7 @@ impl UseCase for DeleteScheduleUseCase {
             Some(schedule) if schedule.user_id == self.user_id => {
                 let res = ctx.repos.schedule_repo.delete(&schedule.id).await;
                 if res.is_none() {
-                    return Err(UseCaseErrors::UnableToDelete);
+                    return Err(UseCaseErrors::StorageError);
                 }
                 let res = ctx
                     .repos
@@ -69,12 +69,12 @@ impl UseCase for DeleteScheduleUseCase {
                     .remove_schedule_from_services(&schedule.id)
                     .await;
                 if res.is_err() {
-                    return Err(UseCaseErrors::UnableToDelete);
+                    return Err(UseCaseErrors::StorageError);
                 }
 
                 Ok(schedule)
             }
-            _ => Err(UseCaseErrors::NotFoundError),
+            _ => Err(UseCaseErrors::NotFound),
         }
     }
 }

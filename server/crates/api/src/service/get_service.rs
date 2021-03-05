@@ -7,7 +7,7 @@ use crate::{
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::get_service::*;
-use nettu_scheduler_domain::{Account, Service};
+use nettu_scheduler_domain::{Account, Service, ID};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn get_service_controller(
@@ -26,7 +26,7 @@ pub async fn get_service_controller(
         .await
         .map(|usecase_res| HttpResponse::Ok().json(APIResponse::new(usecase_res.service)))
         .map_err(|e| match e {
-            UseCaseErrors::NotFoundError => NettuError::NotFound(format!(
+            UseCaseErrors::NotFound => NettuError::NotFound(format!(
                 "The service with id: {} was not found.",
                 path_params.service_id
             )),
@@ -36,7 +36,7 @@ pub async fn get_service_controller(
 #[derive(Debug)]
 struct GetServiceUseCase {
     account: Account,
-    service_id: String,
+    service_id: ID,
 }
 
 struct UseCaseRes {
@@ -45,7 +45,7 @@ struct UseCaseRes {
 
 #[derive(Debug)]
 enum UseCaseErrors {
-    NotFoundError,
+    NotFound,
 }
 
 #[async_trait::async_trait(?Send)]
@@ -60,7 +60,7 @@ impl UseCase for GetServiceUseCase {
         let res = ctx.repos.service_repo.find(&self.service_id).await;
         match res {
             Some(service) if service.account_id == self.account.id => Ok(UseCaseRes { service }),
-            _ => Err(UseCaseErrors::NotFoundError),
+            _ => Err(UseCaseErrors::NotFound),
         }
     }
 }

@@ -8,7 +8,7 @@ use crate::{
 use actix_web::{web, HttpRequest, HttpResponse};
 
 use nettu_scheduler_api_structs::remove_user_from_service::*;
-use nettu_scheduler_domain::{Account, Service};
+use nettu_scheduler_domain::{Account, Service, ID};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn remove_user_from_service_controller(
@@ -29,10 +29,10 @@ pub async fn remove_user_from_service_controller(
         .map(|usecase_res| HttpResponse::Ok().json(APIResponse::new(usecase_res.service)))
         .map_err(|e| match e {
             UseCaseErrors::StorageError => NettuError::InternalError,
-            UseCaseErrors::ServiceNotFoundError => {
+            UseCaseErrors::ServiceNotFound => {
                 NettuError::NotFound("The requested service was not found".to_string())
             }
-            UseCaseErrors::UserNotFoundError => {
+            UseCaseErrors::UserNotFound => {
                 NettuError::NotFound("The specified user was not found in the service".to_string())
             }
         })
@@ -41,8 +41,8 @@ pub async fn remove_user_from_service_controller(
 #[derive(Debug)]
 struct RemoveUserFromServiceUseCase {
     pub account: Account,
-    pub service_id: String,
-    pub user_id: String,
+    pub service_id: ID,
+    pub user_id: ID,
 }
 
 struct UseCaseRes {
@@ -52,8 +52,8 @@ struct UseCaseRes {
 #[derive(Debug)]
 enum UseCaseErrors {
     StorageError,
-    ServiceNotFoundError,
-    UserNotFoundError,
+    ServiceNotFound,
+    UserNotFound,
 }
 
 #[async_trait::async_trait(?Send)]
@@ -67,7 +67,7 @@ impl UseCase for RemoveUserFromServiceUseCase {
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let mut service = match ctx.repos.service_repo.find(&self.service_id).await {
             Some(service) if service.account_id == self.account.id => service,
-            _ => return Err(UseCaseErrors::ServiceNotFoundError),
+            _ => return Err(UseCaseErrors::ServiceNotFound),
         };
 
         match service.remove_user(&self.user_id) {
@@ -75,7 +75,7 @@ impl UseCase for RemoveUserFromServiceUseCase {
                 Ok(_) => Ok(UseCaseRes { service }),
                 Err(_) => Err(UseCaseErrors::StorageError),
             },
-            None => Err(UseCaseErrors::UserNotFoundError),
+            None => Err(UseCaseErrors::UserNotFound),
         }
     }
 }

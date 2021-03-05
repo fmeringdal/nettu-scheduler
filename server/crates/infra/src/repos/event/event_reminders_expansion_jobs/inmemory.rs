@@ -1,7 +1,7 @@
 use super::IEventRemindersExpansionJobsRepo;
 use crate::repos::shared::inmemory_repo::*;
 use crate::repos::shared::repo::DeleteResult;
-use nettu_scheduler_domain::EventRemindersExpansionJob;
+use nettu_scheduler_domain::{EventRemindersExpansionJob, ID};
 
 pub struct InMemoryEventRemindersExpansionJobsRepo {
     jobs: std::sync::Mutex<Vec<EventRemindersExpansionJob>>,
@@ -29,8 +29,8 @@ impl IEventRemindersExpansionJobsRepo for InMemoryEventRemindersExpansionJobsRep
         find_and_delete_by(&self.jobs, |reminder| reminder.timestamp <= before)
     }
 
-    async fn delete_by_event(&self, event_id: &str) -> anyhow::Result<DeleteResult> {
-        let res = delete_by(&self.jobs, |job| job.event_id == event_id);
+    async fn delete_by_event(&self, event_id: &ID) -> anyhow::Result<DeleteResult> {
+        let res = delete_by(&self.jobs, |job| job.event_id == *event_id);
         Ok(res)
     }
 }

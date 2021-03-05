@@ -1,6 +1,6 @@
 use crate::{APIResponse, BaseClient};
-use add_user_to_service::PathParams;
 use nettu_scheduler_api_structs::*;
+use nettu_scheduler_domain::ID;
 use reqwest::StatusCode;
 use std::{collections::HashMap, sync::Arc};
 
@@ -21,13 +21,13 @@ impl UserClient {
             .await
     }
 
-    pub async fn get(&self, user_id: String) -> APIResponse<get_user::APIResponse> {
+    pub async fn get(&self, user_id: ID) -> APIResponse<get_user::APIResponse> {
         self.base
             .get(format!("user/{}", user_id), StatusCode::OK)
             .await
     }
 
-    pub async fn delete(&self, user_id: String) -> APIResponse<delete_user::APIResponse> {
+    pub async fn delete(&self, user_id: ID) -> APIResponse<delete_user::APIResponse> {
         self.base
             .delete(format!("user/{}", user_id), StatusCode::OK)
             .await

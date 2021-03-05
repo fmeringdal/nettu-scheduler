@@ -14,7 +14,7 @@ use event::sync_event_reminders::{
     EventOperation, SyncEventRemindersTrigger, SyncEventRemindersUseCase,
 };
 use nettu_scheduler_api_structs::update_event::*;
-use nettu_scheduler_domain::{CalendarEvent, RRuleOptions};
+use nettu_scheduler_domain::{CalendarEvent, RRuleOptions, ID};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn update_event_controller(
@@ -41,7 +41,7 @@ pub async fn update_event_controller(
         .map_err(|e| match e {
             UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
             UseCaseErrorContainer::UseCase(e) => match e {
-                UseCaseErrors::NotFoundError => NettuError::NotFound(format!(
+                UseCaseErrors::NotFound => NettuError::NotFound(format!(
                     "The event with id: {}, was not found.",
                     path_params.event_id
                 )),
@@ -55,8 +55,8 @@ pub async fn update_event_controller(
 
 #[derive(Debug)]
 pub struct UpdateEventUseCase {
-    pub user_id: String,
-    pub event_id: String,
+    pub user_id: ID,
+    pub event_id: ID,
     pub start_ts: Option<i64>,
     pub busy: Option<bool>,
     pub duration: Option<i64>,
@@ -66,7 +66,7 @@ pub struct UpdateEventUseCase {
 
 #[derive(Debug)]
 pub enum UseCaseErrors {
-    NotFoundError,
+    NotFound,
     StorageError,
     InvalidRecurrenceRule,
 }
@@ -92,7 +92,7 @@ impl UseCase for UpdateEventUseCase {
 
         let mut e = match ctx.repos.event_repo.find(&event_id).await {
             Some(event) if event.user_id == *user_id => event,
-            _ => return Err(UseCaseErrors::NotFoundError),
+            _ => return Err(UseCaseErrors::NotFound),
         };
 
         if let Some(services) = services {
@@ -101,7 +101,7 @@ impl UseCase for UpdateEventUseCase {
 
         let calendar = match ctx.repos.calendar_repo.find(&e.calendar_id).await {
             Some(cal) => cal,
-            _ => return Err(UseCaseErrors::NotFoundError),
+            _ => return Err(UseCaseErrors::NotFound),
         };
 
         let mut start_or_duration_change = false;
@@ -171,12 +171,12 @@ mod test {
     #[test]
     async fn update_notexisting_event() {
         let mut usecase = UpdateEventUseCase {
-            event_id: String::from(""),
+            event_id: Default::default(),
             start_ts: Some(500),
             duration: Some(800),
             rrule_options: None,
             busy: Some(false),
-            user_id: String::from("cool"),
+            user_id: Default::default(),
             services: None,
         };
         let ctx = setup_context().await;

@@ -1,6 +1,6 @@
 use super::IUserRepo;
 use crate::repos::shared::inmemory_repo::*;
-use nettu_scheduler_domain::User;
+use nettu_scheduler_domain::{User, ID};
 
 pub struct InMemoryUserRepo {
     users: std::sync::Mutex<Vec<User>>,
@@ -26,17 +26,17 @@ impl IUserRepo for InMemoryUserRepo {
         Ok(())
     }
 
-    async fn delete(&self, user_id: &str) -> Option<User> {
+    async fn delete(&self, user_id: &ID) -> Option<User> {
         delete(user_id, &self.users)
     }
 
-    async fn find(&self, user_id: &str) -> Option<User> {
+    async fn find(&self, user_id: &ID) -> Option<User> {
         find(user_id, &self.users)
     }
 
-    async fn find_by_account_id(&self, user_id: &str, account_id: &str) -> Option<User> {
+    async fn find_by_account_id(&self, user_id: &ID, account_id: &ID) -> Option<User> {
         let mut user = find_by(&self.users, |u| {
-            u.id == user_id && u.account_id == account_id
+            u.id == *user_id && u.account_id == *account_id
         });
         if user.is_empty() {
             return None;

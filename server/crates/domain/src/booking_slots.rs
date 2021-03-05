@@ -1,4 +1,4 @@
-use crate::{date, event_instance::EventInstance, CompatibleInstances};
+use crate::{date, event_instance::EventInstance, CompatibleInstances, ID};
 use chrono::prelude::*;
 use chrono::Duration;
 use chrono_tz::Tz;
@@ -35,14 +35,14 @@ pub struct BookingSlotsOptions {
 
 pub struct UserFreeEvents {
     pub free_events: CompatibleInstances,
-    pub user_id: String,
+    pub user_id: ID,
 }
 
 #[derive(PartialEq, Debug)]
 pub struct ServiceBookingSlot {
     pub start: i64,
     pub duration: i64,
-    pub user_ids: Vec<String>,
+    pub user_ids: Vec<ID>,
 }
 
 pub fn get_service_bookingslots(
@@ -130,9 +130,9 @@ pub struct BookingSlotsQuery {
 }
 
 pub enum BookingQueryError {
-    InvalidIntervalError,
-    InvalidDateError(String),
-    InvalidTimezoneError(String),
+    InvalidInterval,
+    InvalidDate(String),
+    InvalidTimezone(String),
 }
 
 pub struct BookingTimespan {
@@ -144,18 +144,18 @@ pub fn validate_bookingslots_query(
     query: &BookingSlotsQuery,
 ) -> Result<BookingTimespan, BookingQueryError> {
     if !validate_slots_interval(query.interval) {
-        return Err(BookingQueryError::InvalidIntervalError);
+        return Err(BookingQueryError::InvalidInterval);
     }
 
     let iana_tz = query.iana_tz.clone().unwrap_or(String::from("UTC"));
     let tz: Tz = match iana_tz.parse() {
         Ok(tz) => tz,
-        Err(_) => return Err(BookingQueryError::InvalidTimezoneError(iana_tz)),
+        Err(_) => return Err(BookingQueryError::InvalidTimezone(iana_tz)),
     };
 
     let parsed_date = match date::is_valid_date(&query.date) {
         Ok(val) => val,
-        Err(_) => return Err(BookingQueryError::InvalidDateError(query.date.clone())),
+        Err(_) => return Err(BookingQueryError::InvalidDate(query.date.clone())),
     };
 
     let date = tz.ymd(parsed_date.0, parsed_date.1, parsed_date.2);
@@ -512,10 +512,12 @@ mod test {
             end_ts: 30,
         };
 
+        let user_id = ID::default();
+
         let mut users_free = vec![];
         users_free.push(UserFreeEvents {
             free_events: CompatibleInstances::new(vec![e1]),
-            user_id: String::from("1"),
+            user_id: user_id.clone(),
         });
 
         let slots = get_service_bookingslots(
@@ -534,7 +536,7 @@ mod test {
             ServiceBookingSlot {
                 duration: 10,
                 start: 10,
-                user_ids: vec![String::from("1")]
+                user_ids: vec![user_id.clone()]
             }
         );
         assert_eq!(
@@ -542,7 +544,7 @@ mod test {
             ServiceBookingSlot {
                 duration: 10,
                 start: 20,
-                user_ids: vec![String::from("1")]
+                user_ids: vec![user_id.clone()]
             }
         );
     }
@@ -561,14 +563,16 @@ mod test {
             end_ts: 52,
         };
 
+        let user_id_1 = ID::default();
+        let user_id_2 = ID::default();
         let mut users_free = vec![];
         users_free.push(UserFreeEvents {
             free_events: CompatibleInstances::new(vec![e1.clone()]),
-            user_id: String::from("1"),
+            user_id: user_id_1.clone(),
         });
         users_free.push(UserFreeEvents {
             free_events: CompatibleInstances::new(vec![e1, e2]),
-            user_id: String::from("2"),
+            user_id: user_id_2.clone(),
         });
 
         let slots = get_service_bookingslots(
@@ -586,7 +590,7 @@ mod test {
             ServiceBookingSlot {
                 duration: 10,
                 start: 10,
-                user_ids: vec![String::from("1"), String::from("2")]
+                user_ids: vec![user_id_1.clone(), user_id_2.clone()]
             }
         );
         assert_eq!(
@@ -594,7 +598,7 @@ mod test {
             ServiceBookingSlot {
                 duration: 10,
                 start: 20,
-                user_ids: vec![String::from("1"), String::from("2")]
+                user_ids: vec![user_id_1.clone(), user_id_2.clone()]
             }
         );
         assert_eq!(
@@ -602,7 +606,7 @@ mod test {
             ServiceBookingSlot {
                 duration: 10,
                 start: 40,
-                user_ids: vec![String::from("2")]
+                user_ids: vec![user_id_2.clone()]
             }
         );
     }

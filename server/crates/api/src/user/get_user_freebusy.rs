@@ -3,14 +3,20 @@ use crate::{error::NettuError, shared::auth::protect_public_account_route};
 use actix_web::{web, HttpRequest, HttpResponse};
 use futures::future::join_all;
 use nettu_scheduler_api_structs::get_user_freebusy::{APIResponse, PathParams, QueryParams};
-use nettu_scheduler_domain::{CompatibleInstances, EventInstance, TimeSpan};
+use nettu_scheduler_domain::{CompatibleInstances, EventInstance, TimeSpan, ID};
 use nettu_scheduler_infra::NettuContext;
 use std::collections::HashMap;
 
 /// "1,2,3" -> Vec<1,2,3>
-fn parse_vec_query_value(val: &Option<String>) -> Option<Vec<String>> {
-    val.as_ref()
-        .map(|ids| ids.split(',').map(String::from).collect())
+fn parse_vec_query_value(val: &Option<String>) -> Option<Vec<ID>> {
+    val.as_ref().map(|ids| {
+        ids.split(',')
+            .map(String::from)
+            .map(|id| id.parse::<ID>())
+            .filter(|id| id.is_ok())
+            .map(|id| id.unwrap())
+            .collect()
+    })
 }
 
 pub async fn get_freebusy_controller(
@@ -24,7 +30,7 @@ pub async fn get_freebusy_controller(
     let calendar_ids = parse_vec_query_value(&query_params.calendar_ids);
 
     let usecase = GetFreeBusyUseCase {
-        user_id: params.0.external_user_id,
+        user_id: params.0.user_id,
         calendar_ids,
         start_ts: query_params.start_ts,
         end_ts: query_params.end_ts,
@@ -35,7 +41,7 @@ pub async fn get_freebusy_controller(
         .map(|usecase_res| {
             HttpResponse::Ok().json(APIResponse {
                 busy: usecase_res.busy.inner(),
-                user_id: usecase_res.user_id,
+                user_id: usecase_res.user_id.to_string(),
             })
         })
         .map_err(|e| match e {
@@ -47,8 +53,8 @@ pub async fn get_freebusy_controller(
 
 #[derive(Debug)]
 pub struct GetFreeBusyUseCase {
-    pub user_id: String,
-    pub calendar_ids: Option<Vec<String>>,
+    pub user_id: ID,
+    pub calendar_ids: Option<Vec<ID>>,
     pub start_ts: i64,
     pub end_ts: i64,
 }
@@ -56,7 +62,7 @@ pub struct GetFreeBusyUseCase {
 #[derive(Debug)]
 pub struct GetFreeBusyResponse {
     pub busy: CompatibleInstances,
-    pub user_id: String,
+    pub user_id: ID,
 }
 
 #[derive(Debug)]
@@ -115,7 +121,10 @@ impl GetFreeBusyUseCase {
                 .collect();
         }
 
-        let calendars_lookup: HashMap<_, _> = calendars.iter().map(|cal| (&cal.id, cal)).collect();
+        let calendars_lookup: HashMap<_, _> = calendars
+            .iter()
+            .map(|cal| (cal.id.to_string(), cal))
+            .collect();
 
         let all_events_futures = calendars.iter().map(|calendar| {
             ctx.repos
@@ -131,7 +140,9 @@ impl GetFreeBusyUseCase {
                 events
                     .into_iter()
                     .map(|event| {
-                        let calendar = calendars_lookup.get(&event.calendar_id).unwrap();
+                        let calendar = calendars_lookup
+                            .get(&event.calendar_id.to_string())
+                            .unwrap();
                         event.expand(Some(&timespan), &calendar.settings)
                     })
                     // It is possible that there are no instances in the expanded event, should remove them
@@ -156,22 +167,12 @@ mod test {
     #[test]
     fn it_parses_vec_query_params_correctly() {
         assert_eq!(parse_vec_query_value(&None), None);
+        assert_eq!(parse_vec_query_value(&Some("".to_string())), Some(vec![]));
+        assert_eq!(parse_vec_query_value(&Some("2".to_string())), Some(vec![]));
+        let ids = vec![ID::default(), ID::default()];
         assert_eq!(
-            parse_vec_query_value(&Some("".to_string())),
-            Some(vec!["".to_string()])
-        );
-        assert_eq!(
-            parse_vec_query_value(&Some("2".to_string())),
-            Some(vec!["2".to_string()])
-        );
-        assert_eq!(
-            parse_vec_query_value(&Some("12,2,3,56".to_string())),
-            Some(
-                vec!["12", "2", "3", "56"]
-                    .into_iter()
-                    .map(String::from)
-                    .collect::<Vec<_>>()
-            )
+            parse_vec_query_value(&Some(format!("{},{}", ids[0], ids[1]))),
+            Some(ids)
         );
     }
 
@@ -179,7 +180,7 @@ mod test {
     #[test]
     async fn freebusy_works() {
         let ctx = setup_context().await;
-        let user = User::new("yoyoyo");
+        let user = User::new(Default::default());
 
         let calendar = Calendar::new(&user.id());
 
@@ -193,7 +194,7 @@ mod test {
             duration: one_hour,
             end_ts: CalendarEvent::get_max_timestamp(),
             exdates: vec![],
-            id: String::from("1"),
+            id: Default::default(),
             start_ts: 0,
             recurrence: None,
             reminder: None,
@@ -218,7 +219,7 @@ mod test {
             duration: one_hour,
             end_ts: CalendarEvent::get_max_timestamp(),
             exdates: vec![],
-            id: String::from("2"),
+            id: Default::default(),
             start_ts: one_hour * 4,
             recurrence: None,
             reminder: None,
@@ -243,7 +244,7 @@ mod test {
             duration: one_hour,
             end_ts: one_hour,
             exdates: vec![],
-            id: String::from("3"),
+            id: Default::default(),
             start_ts: 0,
             recurrence: None,
             reminder: None,
@@ -265,7 +266,7 @@ mod test {
         ctx.repos.event_repo.insert(&e3).await.unwrap();
 
         let mut usecase = GetFreeBusyUseCase {
-            user_id: user.id(),
+            user_id: user.id().clone(),
             calendar_ids: Some(vec![calendar.id.clone()]),
             start_ts: 86400000,
             end_ts: 172800000,

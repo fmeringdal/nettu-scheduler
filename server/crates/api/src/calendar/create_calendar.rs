@@ -9,7 +9,7 @@ use crate::{
 };
 use actix_web::{web, HttpResponse};
 use nettu_scheduler_api_structs::create_calendar::{APIResponse, PathParams};
-use nettu_scheduler_domain::Calendar;
+use nettu_scheduler_domain::{Calendar, ID};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn create_calendar_admin_controller(
@@ -29,7 +29,7 @@ pub async fn create_calendar_admin_controller(
         .map(|calendar| HttpResponse::Created().json(APIResponse::new(calendar)))
         .map_err(|e| match e {
             UseCaseErrors::StorageError => NettuError::InternalError,
-            UseCaseErrors::UserNotFoundError => NettuError::NotFound(format!(
+            UseCaseErrors::UserNotFound => NettuError::NotFound(format!(
                 "The user with id: {}, was not found.",
                 path_params.user_id
             )),
@@ -56,7 +56,7 @@ pub async fn create_calendar_controller(
                 UseCaseErrorContainer::UseCase(e) => match e {
                     UseCaseErrors::StorageError => NettuError::InternalError,
                     // This should never happen
-                    UseCaseErrors::UserNotFoundError => {
+                    UseCaseErrors::UserNotFound => {
                         NettuError::NotFound("The user was not found.".into())
                     }
                 },
@@ -66,13 +66,13 @@ pub async fn create_calendar_controller(
 
 #[derive(Debug)]
 struct CreateCalendarUseCase {
-    pub user_id: String,
-    pub account_id: String,
+    pub user_id: ID,
+    pub account_id: ID,
 }
 
 #[derive(Debug)]
 enum UseCaseErrors {
-    UserNotFoundError,
+    UserNotFound,
     StorageError,
 }
 
@@ -87,7 +87,7 @@ impl UseCase for CreateCalendarUseCase {
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let _user = match ctx.repos.user_repo.find(&self.user_id).await {
             Some(user) if user.account_id == self.account_id => user,
-            _ => return Err(UseCaseErrors::UserNotFoundError),
+            _ => return Err(UseCaseErrors::UserNotFound),
         };
 
         let calendar = Calendar::new(&self.user_id);

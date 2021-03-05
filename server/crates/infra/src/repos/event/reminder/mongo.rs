@@ -7,7 +7,7 @@ use mongodb::{
     bson::{oid::ObjectId, Document},
     Collection, Database,
 };
-use nettu_scheduler_domain::Reminder;
+use nettu_scheduler_domain::{Reminder, ID};
 use serde::{Deserialize, Serialize};
 
 pub struct MongoReminderRepo {
@@ -28,9 +28,9 @@ impl IReminderRepo for MongoReminderRepo {
         mongo_repo::bulk_insert::<_, ReminderMongo>(&self.collection, reminders).await
     }
 
-    async fn find_by_event_and_priority(&self, event_id: &str, priority: i64) -> Option<Reminder> {
+    async fn find_by_event_and_priority(&self, event_id: &ID, priority: i64) -> Option<Reminder> {
         let filter = doc! {
-            "event_id": event_id,
+            "event_id": event_id.inner_ref(),
             "priority": priority,
         };
 
@@ -64,10 +64,10 @@ impl IReminderRepo for MongoReminderRepo {
         docs
     }
 
-    async fn delete_by_events(&self, event_ids: &[String]) -> anyhow::Result<DeleteResult> {
+    async fn delete_by_events(&self, event_ids: &[ID]) -> anyhow::Result<DeleteResult> {
         let filter = doc! {
             "event_id": {
-                "$in": event_ids
+                "$in": event_ids.iter().map(|e| e.inner_ref()).collect::<Vec<_>>()
             }
         };
         self.collection
@@ -84,27 +84,27 @@ impl IReminderRepo for MongoReminderRepo {
 struct ReminderMongo {
     _id: ObjectId,
     remind_at: i64,
-    event_id: String,
-    account_id: String,
+    event_id: ObjectId,
+    account_id: ObjectId,
     priority: i64,
 }
 
 impl MongoDocument<Reminder> for ReminderMongo {
     fn to_domain(&self) -> Reminder {
         Reminder {
-            id: self._id.to_string(),
+            id: ID::from(self._id.clone()),
             remind_at: self.remind_at,
-            event_id: self.event_id.clone(),
-            account_id: self.account_id.clone(),
+            event_id: ID::from(self.event_id.clone()),
+            account_id: ID::from(self.account_id.clone()),
             priority: self.priority,
         }
     }
 
     fn from_domain(event: &Reminder) -> Self {
         Self {
-            _id: ObjectId::with_string(&event.id).unwrap(),
-            event_id: event.event_id.to_owned(),
-            account_id: event.account_id.to_owned(),
+            _id: event.id.inner_ref().clone(),
+            event_id: event.event_id.inner_ref().clone(),
+            account_id: event.account_id.inner_ref().clone(),
             remind_at: event.remind_at,
             priority: event.priority,
         }

@@ -1,5 +1,4 @@
-use crate::shared::entity::Entity;
-use mongodb::bson::oid::ObjectId;
+use crate::shared::entity::{Entity, ID};
 use serde::{Deserialize, Serialize};
 
 /// A type that describes a time plan and is either a `Calendar` og a `Schedule`
@@ -8,9 +7,9 @@ use serde::{Deserialize, Serialize};
 #[serde(tag = "variant", content = "id")]
 pub enum TimePlan {
     /// Calendar id
-    Calendar(String),
+    Calendar(ID),
     /// Schedule id
-    Schedule(String),
+    Schedule(ID),
     // No plan
     Empty,
 }
@@ -18,9 +17,9 @@ pub enum TimePlan {
 /// A bookable `User` registered on a `Service`
 #[derive(Clone, Debug, Serialize)]
 pub struct ServiceResource {
-    pub id: String,
+    pub id: ID,
     /// Id of the `User` registered on this `Service`
-    pub user_id: String,
+    pub user_id: ID,
     /// Every available event in a `Calendar` or a `Shedule` in this field
     /// describes the time when this `ServiceResource` will be bookable.
     /// Note: If there are busy `CalendarEvent`s in the `Calendar` then the user
@@ -28,7 +27,7 @@ pub struct ServiceResource {
     pub availibility: TimePlan,
     /// List of `Calendar` ids that should be subtracted from the availibility
     /// time plan.
-    pub busy: Vec<String>,
+    pub busy: Vec<ID>,
     /// This `ServiceResource` will not be bookable this amount of *minutes*
     /// after a meeting. A `CalendarEvent` will be interpreted as a meeting
     /// if the attribute `services` on the `CalendarEvent` includes this
@@ -48,10 +47,10 @@ pub struct ServiceResource {
 }
 
 impl ServiceResource {
-    pub fn new(user_id: &str, availibility: TimePlan, busy: Vec<String>) -> Self {
+    pub fn new(user_id: ID, availibility: TimePlan, busy: Vec<ID>) -> Self {
         Self {
-            id: ObjectId::new().to_string(),
-            user_id: String::from(user_id),
+            id: Default::default(),
+            user_id,
             availibility,
             busy,
             buffer: 0,
@@ -64,7 +63,7 @@ impl ServiceResource {
         self.availibility = availibility;
     }
 
-    pub fn set_busy(&mut self, busy: Vec<String>) {
+    pub fn set_busy(&mut self, busy: Vec<ID>) {
         self.busy = busy;
     }
 
@@ -78,7 +77,7 @@ impl ServiceResource {
         true
     }
 
-    pub fn get_calendar_ids(&self) -> Vec<String> {
+    pub fn get_calendar_ids(&self) -> Vec<ID> {
         let mut calendar_ids = self.busy.clone();
 
         match &self.availibility {
@@ -91,14 +90,14 @@ impl ServiceResource {
         calendar_ids
     }
 
-    pub fn get_schedule_id(&self) -> Option<String> {
+    pub fn get_schedule_id(&self) -> Option<ID> {
         match &self.availibility {
             TimePlan::Schedule(id) => Some(id.clone()),
             _ => None,
         }
     }
 
-    pub fn contains_calendar(&self, calendar_id: &str) -> bool {
+    pub fn contains_calendar(&self, calendar_id: &ID) -> bool {
         match &self.availibility {
             TimePlan::Calendar(id) if id == calendar_id => {
                 return true;
@@ -106,10 +105,10 @@ impl ServiceResource {
             _ => (),
         }
 
-        self.busy.contains(&String::from(calendar_id))
+        self.busy.contains(calendar_id)
     }
 
-    pub fn remove_calendar(&mut self, calendar_id: &str) {
+    pub fn remove_calendar(&mut self, calendar_id: &ID) {
         match &self.availibility {
             TimePlan::Calendar(id) if id == calendar_id => {
                 self.availibility = TimePlan::Empty;
@@ -120,14 +119,14 @@ impl ServiceResource {
         self.busy.retain(|cal_id| cal_id != calendar_id);
     }
 
-    pub fn contains_schedule(&self, schedule_id: &str) -> bool {
+    pub fn contains_schedule(&self, schedule_id: &ID) -> bool {
         match &self.availibility {
             TimePlan::Schedule(id) if id == schedule_id => true,
             _ => false,
         }
     }
 
-    pub fn remove_schedule(&mut self, schedule_id: &str) {
+    pub fn remove_schedule(&mut self, schedule_id: &ID) {
         match &self.availibility {
             TimePlan::Schedule(id) if id == schedule_id => {
                 self.availibility = TimePlan::Empty;
@@ -139,8 +138,8 @@ impl ServiceResource {
 
 #[derive(Clone, Debug)]
 pub struct Service {
-    pub id: String,
-    pub account_id: String,
+    pub id: ID,
+    pub account_id: ID,
     // interval: usize,
     // allow_more_booking_requests_in_queue_than_resources
     pub users: Vec<ServiceResource>,
@@ -148,16 +147,16 @@ pub struct Service {
 }
 
 impl Entity for Service {
-    fn id(&self) -> String {
-        self.id.clone()
+    fn id(&self) -> &ID {
+        &self.id
     }
 }
 
 impl Service {
-    pub fn new(account_id: &str) -> Self {
+    pub fn new(account_id: ID) -> Self {
         Self {
-            id: ObjectId::new().to_string(),
-            account_id: String::from(account_id),
+            id: Default::default(),
+            account_id,
             users: vec![],
         }
     }
@@ -166,20 +165,20 @@ impl Service {
         self.users.push(user);
     }
 
-    pub fn remove_user(&mut self, user_id: &str) -> Option<ServiceResource> {
+    pub fn remove_user(&mut self, user_id: &ID) -> Option<ServiceResource> {
         for (pos, user) in self.users.iter().enumerate() {
-            if user.user_id == user_id {
+            if user.user_id == *user_id {
                 return Some(self.users.remove(pos));
             }
         }
         None
     }
 
-    pub fn find_user(&self, user_id: &str) -> Option<&ServiceResource> {
-        self.users.iter().find(|u| u.user_id == user_id)
+    pub fn find_user(&self, user_id: &ID) -> Option<&ServiceResource> {
+        self.users.iter().find(|u| u.user_id == *user_id)
     }
 
-    pub fn find_user_mut(&mut self, user_id: &str) -> Option<&mut ServiceResource> {
-        self.users.iter_mut().find(|u| u.user_id == user_id)
+    pub fn find_user_mut(&mut self, user_id: &ID) -> Option<&mut ServiceResource> {
+        self.users.iter_mut().find(|u| u.user_id == *user_id)
     }
 }

@@ -1,18 +1,18 @@
-use nettu_scheduler_domain::User;
+use nettu_scheduler_domain::{User, ID};
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UserDTO {
-    pub id: String,
-    pub account_id: String,
+    pub id: ID,
+    pub account_id: ID,
 }
 
 impl UserDTO {
     pub fn new(user: User) -> Self {
         Self {
-            id: user.id,
-            account_id: user.account_id,
+            id: user.id.clone(),
+            account_id: user.account_id.clone(),
         }
     }
 }

@@ -1,11 +1,11 @@
-use nettu_scheduler_domain::{Calendar, CalendarSettings};
+use nettu_scheduler_domain::{Calendar, CalendarSettings, ID};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CalendarDTO {
-    pub id: String,
-    pub user_id: String,
+    pub id: ID,
+    pub user_id: ID,
     pub settings: CalendarSettingsDTO,
 }
 
@@ -19,8 +19,8 @@ pub struct CalendarSettingsDTO {
 impl CalendarDTO {
     pub fn new(calendar: Calendar) -> Self {
         Self {
-            id: calendar.id,
-            user_id: calendar.user_id,
+            id: calendar.id.clone(),
+            user_id: calendar.user_id.clone(),
             settings: CalendarSettingsDTO::new(&calendar.settings),
         }
     }

@@ -1,26 +1,28 @@
 use crate::{
-    date, event_instance::EventInstance, shared::entity::Entity, timespan::TimeSpan,
+    date,
+    event_instance::EventInstance,
+    shared::entity::{Entity, ID},
+    timespan::TimeSpan,
     CompatibleInstances,
 };
 use chrono::{prelude::*, Duration};
 use chrono_tz::Tz;
-use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, str::FromStr};
 
 #[derive(Debug, Clone)]
 pub struct Schedule {
-    pub id: String,
-    pub user_id: String,
+    pub id: ID,
+    pub user_id: ID,
     pub rules: Vec<ScheduleRule>,
     pub timezone: Tz,
 }
 
 impl Schedule {
-    pub fn new(user_id: &str, timezone: &Tz) -> Self {
+    pub fn new(user_id: ID, timezone: &Tz) -> Self {
         Self {
-            id: ObjectId::new().to_string(),
-            user_id: user_id.to_string(),
+            id: Default::default(),
+            user_id,
             rules: ScheduleRule::default_rules(),
             timezone: timezone.to_owned(),
         }
@@ -53,8 +55,8 @@ impl Schedule {
 }
 
 impl Entity for Schedule {
-    fn id(&self) -> String {
-        self.id.clone()
+    fn id(&self) -> &ID {
+        &self.id
     }
 }
 
@@ -365,8 +367,8 @@ mod test {
     #[test]
     fn it_computes_freebusy_for_schedule() {
         let schedule = Schedule {
-            id: "0".into(),
-            user_id: "0".into(),
+            id: Default::default(),
+            user_id: Default::default(),
             timezone: chrono_tz::UTC,
             rules: vec![
                 ScheduleRule {

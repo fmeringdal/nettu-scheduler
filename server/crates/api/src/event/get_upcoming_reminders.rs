@@ -45,7 +45,7 @@ async fn get_accounts_from_reminders(
         .await
         .unwrap()
         .into_iter()
-        .map(|a| (a.id.to_owned(), a))
+        .map(|a| (a.id.as_string(), a))
         .collect()
 }
 
@@ -59,23 +59,23 @@ async fn create_reminders_for_accounts(
     let mut account_reminders: HashMap<String, (&Account, Vec<CalendarEvent>)> = HashMap::new();
 
     for reminder in reminders {
-        let account = match account_lookup.get(&reminder.account_id) {
+        let account = match account_lookup.get(&reminder.account_id.as_string()) {
             Some(a) => a,
             None => continue,
         };
 
         // Remove instead of get because there shouldnt be multiple reminders for the same event id
         // and also we get ownership over calendar_event
-        let calendar_event = match event_lookup.remove(&reminder.event_id) {
+        let calendar_event = match event_lookup.remove(&reminder.event_id.as_string()) {
             Some(e) => e,
             None => continue,
         };
-        match account_reminders.get_mut(&account.id) {
+        match account_reminders.get_mut(&account.id.as_string()) {
             Some(acc_reminders) => {
                 acc_reminders.1.push(calendar_event);
             }
             None => {
-                account_reminders.insert(account.id.to_owned(), (account, vec![calendar_event]));
+                account_reminders.insert(account.id.as_string(), (account, vec![calendar_event]));
             }
         };
     }
@@ -127,11 +127,11 @@ async fn remove_old_reminders(reminders: &mut Vec<Reminder>, ctx: &NettuContext)
             .await
             .is_some()
         {
-            event_ids_to_remove.insert(reminder.event_id.clone(), ());
+            event_ids_to_remove.insert(reminder.event_id.as_string(), ());
         }
     }
 
-    reminders.retain(|r| !event_ids_to_remove.contains_key(&r.event_id));
+    reminders.retain(|r| !event_ids_to_remove.contains_key(&r.event_id.as_string()));
 }
 
 #[async_trait::async_trait(?Send)]
@@ -159,13 +159,13 @@ impl UseCase for GetUpcomingRemindersUseCase {
             .find_many(
                 &reminders
                     .iter()
-                    .map(|r| r.event_id.to_owned())
-                    .collect::<Vec<String>>(),
+                    .map(|r| r.event_id.clone())
+                    .collect::<Vec<_>>(),
             )
             .await
             .unwrap()
             .into_iter()
-            .map(|e| (e.id.to_owned(), e))
+            .map(|e| (e.id.as_string(), e))
             .collect::<HashMap<_, _>>();
 
         let grouped_reminders = create_reminders_for_accounts(reminders, event_lookup, ctx).await;
@@ -185,15 +185,21 @@ impl UseCase for GetUpcomingRemindersUseCase {
 mod tests {
     use super::super::create_event::CreateEventUseCase;
     use super::*;
-    use nettu_scheduler_domain::{Calendar, CalendarEventReminder, RRuleFrequenzy, RRuleOptions};
-    use nettu_scheduler_infra::{setup_context, ISys, ObjectId};
+    use nettu_scheduler_domain::{
+        Calendar, CalendarEventReminder, RRuleFrequenzy, RRuleOptions, ID,
+    };
+    use nettu_scheduler_infra::{setup_context, ISys};
     use std::sync::Arc;
 
-    fn reminder_factory(event_id: &str, priority: i64) -> Reminder {
+    fn get_account_id() -> ID {
+        "507f1f77bcf86cd799439011".parse().expect("Valid ID")
+    }
+
+    fn reminder_factory(event_id: &ID, priority: i64) -> Reminder {
         Reminder {
-            account_id: "1".into(),
-            event_id: event_id.into(),
-            id: ObjectId::new().to_string(),
+            id: Default::default(),
+            account_id: get_account_id(),
+            event_id: event_id.clone(),
             priority,
             remind_at: 200,
         }
@@ -205,15 +211,26 @@ mod tests {
         dedup_reminders(&mut reminders);
         assert_eq!(reminders.len(), 0);
 
-        let mut reminders = vec![reminder_factory("1", 0), reminder_factory("2", 0)];
+        let event_id = ID::default();
+        let event_id_2 = ID::default();
+        let mut reminders = vec![
+            reminder_factory(&event_id, 0),
+            reminder_factory(&event_id_2, 0),
+        ];
         dedup_reminders(&mut reminders);
         assert_eq!(reminders.len(), 2);
 
-        let mut reminders = vec![reminder_factory("1", 1), reminder_factory("1", 0)];
+        let mut reminders = vec![
+            reminder_factory(&event_id, 1),
+            reminder_factory(&event_id, 0),
+        ];
         dedup_reminders(&mut reminders);
         assert_eq!(reminders.len(), 1);
 
-        let mut reminders = vec![reminder_factory("1", 0), reminder_factory("1", 1)];
+        let mut reminders = vec![
+            reminder_factory(&event_id, 0),
+            reminder_factory(&event_id, 1),
+        ];
         dedup_reminders(&mut reminders);
         assert_eq!(reminders.len(), 1);
     }
@@ -223,30 +240,30 @@ mod tests {
     async fn removes_old_priorites() {
         let ctx = setup_context().await;
 
-        let event_id = "1";
-        let reminder_p1 = reminder_factory(event_id, 1);
+        let event_id = ID::default();
+        let reminder_p1 = reminder_factory(&event_id, 1);
         ctx.repos
             .reminder_repo
             .bulk_insert(&[reminder_p1])
             .await
             .unwrap();
 
-        let reminder_p0 = reminder_factory(event_id, 0);
+        let reminder_p0 = reminder_factory(&event_id, 0);
         let mut reminders = vec![reminder_p0];
         remove_old_reminders(&mut reminders, &ctx).await;
         assert_eq!(reminders.len(), 0);
 
         let ctx = setup_context().await;
 
-        let event_id = "1";
-        let reminder_p0 = reminder_factory(event_id, 0);
+        let event_id = ID::default();
+        let reminder_p0 = reminder_factory(&event_id, 0);
         ctx.repos
             .reminder_repo
             .bulk_insert(&[reminder_p0])
             .await
             .unwrap();
 
-        let reminder_p1 = reminder_factory(event_id, 1);
+        let reminder_p1 = reminder_factory(&event_id, 1);
         let mut reminders = vec![reminder_p1];
         remove_old_reminders(&mut reminders, &ctx).await;
         assert_eq!(reminders.len(), 1);
@@ -277,15 +294,15 @@ mod tests {
         let account = Account::default();
         ctx.repos.account_repo.insert(&account).await.unwrap();
 
-        let user_id = "1";
-        let mut calendar = Calendar::new(user_id.into());
+        let user_id = ID::default();
+        let mut calendar = Calendar::new(&user_id);
         calendar.settings.timezone = chrono_tz::Europe::Oslo;
         ctx.repos.calendar_repo.insert(&calendar).await.unwrap();
 
         let mut usecase = CreateEventUseCase {
             account_id: account.id.clone(),
             calendar_id: calendar.id.clone(),
-            user_id: user_id.into(),
+            user_id: user_id.clone(),
             start_ts: ctx.sys.get_timestamp_millis(),
             duration: 1000 * 60 * 60 * 2,
             busy: false,
@@ -308,7 +325,7 @@ mod tests {
         let mut usecase = CreateEventUseCase {
             account_id: account.id.clone(),
             calendar_id: calendar.id.clone(),
-            user_id: user_id.into(),
+            user_id,
             start_ts: sys3.get_timestamp_millis() + 1000 * 60 * 5,
             duration: 1000 * 60 * 60 * 2,
             busy: false,

@@ -1,4 +1,7 @@
-use crate::shared::usecase::{execute, UseCase};
+use crate::{
+    error::NettuError,
+    shared::usecase::{execute, UseCase},
+};
 use actix_web::{web, HttpResponse};
 use nettu_scheduler_api_structs::create_account::{APIResponse, RequestBody};
 use nettu_scheduler_domain::Account;
@@ -7,28 +10,28 @@ use nettu_scheduler_infra::NettuContext;
 pub async fn create_account_controller(
     ctx: web::Data<NettuContext>,
     body: web::Json<RequestBody>,
-) -> HttpResponse {
-    if body.code != ctx.config.create_account_secret_code {
-        return HttpResponse::Unauthorized().finish();
-    }
-
-    let usecase = CreateAccountUseCase {};
-    let res = execute(usecase, &ctx).await;
-
-    match res {
-        Ok(account) => HttpResponse::Created().json(APIResponse::new(account)),
-        Err(e) => match e {
-            UseCaseErrors::StorageError => HttpResponse::InternalServerError().finish(),
-        },
-    }
+) -> Result<HttpResponse, NettuError> {
+    let usecase = CreateAccountUseCase { code: body.0.code };
+    execute(usecase, &ctx)
+        .await
+        .map(|account| HttpResponse::Created().json(APIResponse::new(account)))
+        .map_err(|e| match e {
+            UseCaseErrors::InvalidCreateAccountCode => {
+                NettuError::Unauthorized("Invalid code provided".into())
+            }
+            UseCaseErrors::StorageError => NettuError::InternalError,
+        })
 }
 
 #[derive(Debug)]
-struct CreateAccountUseCase {}
+struct CreateAccountUseCase {
+    code: String,
+}
 
 #[derive(Debug)]
 enum UseCaseErrors {
     StorageError,
+    InvalidCreateAccountCode,
 }
 
 #[async_trait::async_trait(?Send)]
@@ -40,6 +43,9 @@ impl UseCase for CreateAccountUseCase {
     type Context = NettuContext;
 
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+        if self.code != ctx.config.create_account_secret_code {
+            return Err(UseCaseErrors::InvalidCreateAccountCode);
+        }
         let account = Account::new();
         let res = ctx.repos.account_repo.insert(&account).await;
 

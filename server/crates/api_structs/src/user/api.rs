@@ -1,4 +1,4 @@
-use nettu_scheduler_domain::User;
+use nettu_scheduler_domain::{User, ID};
 use serde::{Deserialize, Serialize};
 
 use crate::dtos::UserDTO;
@@ -34,7 +34,7 @@ pub mod delete_user {
 
     #[derive(Deserialize)]
     pub struct PathParams {
-        pub user_id: String,
+        pub user_id: ID,
     }
 
     pub type APIResponse = UserResponse;
@@ -45,7 +45,7 @@ pub mod get_user {
 
     #[derive(Deserialize)]
     pub struct PathParams {
-        pub user_id: String,
+        pub user_id: ID,
     }
 
     pub type APIResponse = UserResponse;

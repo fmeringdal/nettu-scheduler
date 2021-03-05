@@ -8,7 +8,7 @@ use crate::{
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::delete_event::*;
-use nettu_scheduler_domain::CalendarEvent;
+use nettu_scheduler_domain::{CalendarEvent, ID};
 use nettu_scheduler_infra::NettuContext;
 
 use super::sync_event_reminders::{
@@ -43,8 +43,8 @@ pub async fn delete_event_controller(
 
 #[derive(Debug)]
 pub struct DeleteEventUseCase {
-    pub user_id: String,
-    pub event_id: String,
+    pub user_id: ID,
+    pub event_id: ID,
 }
 
 #[derive(Debug)]

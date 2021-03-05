@@ -51,7 +51,7 @@ impl UseCase for SetAccountPubKeyUseCase {
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         if self
             .account
-            .set_public_key_b64(self.public_key_b64.clone())
+            .set_public_jwt_key(self.public_key_b64.clone())
             .is_err()
         {
             return Err(UseCaseErrors::InvalidBase64Key);

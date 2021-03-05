@@ -10,7 +10,7 @@ use crate::{
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::update_service_user::*;
-use nettu_scheduler_domain::{Account, Service, TimePlan};
+use nettu_scheduler_domain::{Account, Service, TimePlan, ID};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn update_service_user_controller(
@@ -37,10 +37,10 @@ pub async fn update_service_user_controller(
         .map(|usecase_res| HttpResponse::Ok().json(APIResponse::new(usecase_res.service)))
         .map_err(|e| match e {
             UseCaseErrors::StorageError => NettuError::InternalError,
-            UseCaseErrors::ServiceNotFoundError => {
+            UseCaseErrors::ServiceNotFound => {
                 NettuError::NotFound("The requested service was not found".into())
             }
-            UseCaseErrors::UserNotFoundError => {
+            UseCaseErrors::UserNotFound => {
                 NettuError::NotFound("The specified user was not found".into())
             }
             UseCaseErrors::InvalidValue(e) => e.to_nettu_error(),
@@ -50,10 +50,10 @@ pub async fn update_service_user_controller(
 #[derive(Debug)]
 struct UpdateServiceUserUseCase {
     pub account: Account,
-    pub service_id: String,
-    pub user_id: String,
+    pub service_id: ID,
+    pub user_id: ID,
     pub availibility: Option<TimePlan>,
-    pub busy: Option<Vec<String>>,
+    pub busy: Option<Vec<ID>>,
     pub buffer: Option<i64>,
     pub closest_booking_time: Option<i64>,
     pub furthest_booking_time: Option<i64>,
@@ -66,8 +66,8 @@ struct UseCaseRes {
 #[derive(Debug)]
 enum UseCaseErrors {
     StorageError,
-    ServiceNotFoundError,
-    UserNotFoundError,
+    ServiceNotFound,
+    UserNotFound,
     InvalidValue(UpdateServiceResourceError),
 }
 
@@ -82,12 +82,12 @@ impl UseCase for UpdateServiceUserUseCase {
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let mut service = match ctx.repos.service_repo.find(&self.service_id).await {
             Some(service) if service.account_id == self.account.id => service,
-            _ => return Err(UseCaseErrors::ServiceNotFoundError),
+            _ => return Err(UseCaseErrors::ServiceNotFound),
         };
 
         let mut user_resource = match service.find_user_mut(&self.user_id) {
             Some(res) => res,
-            _ => return Err(UseCaseErrors::UserNotFoundError),
+            _ => return Err(UseCaseErrors::UserNotFound),
         };
 
         update_resource_values(

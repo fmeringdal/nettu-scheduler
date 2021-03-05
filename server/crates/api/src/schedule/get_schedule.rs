@@ -2,7 +2,7 @@ use crate::shared::usecase::{execute, UseCase};
 use crate::{error::NettuError, shared::auth::protect_route};
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::get_schedule::*;
-use nettu_scheduler_domain::Schedule;
+use nettu_scheduler_domain::{Schedule, ID};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn get_schedule_controller(
@@ -30,8 +30,8 @@ pub async fn get_schedule_controller(
 
 #[derive(Debug)]
 struct GetScheduleUseCase {
-    pub user_id: String,
-    pub schedule_id: String,
+    pub user_id: ID,
+    pub schedule_id: ID,
 }
 
 #[derive(Debug)]

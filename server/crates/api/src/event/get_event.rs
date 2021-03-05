@@ -7,7 +7,7 @@ use crate::{
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::get_event::*;
-use nettu_scheduler_domain::CalendarEvent;
+use nettu_scheduler_domain::{CalendarEvent, ID};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn get_event_controller(
@@ -26,7 +26,7 @@ pub async fn get_event_controller(
         .await
         .map(|calendar_event| HttpResponse::Ok().json(APIResponse::new(calendar_event)))
         .map_err(|e| match e {
-            UseCaseErrors::NotFoundError => NettuError::NotFound(format!(
+            UseCaseErrors::NotFound => NettuError::NotFound(format!(
                 "The event with id: {}, was not found",
                 path_params.event_id
             )),
@@ -35,13 +35,13 @@ pub async fn get_event_controller(
 
 #[derive(Debug)]
 pub struct GetEventUseCase {
-    pub event_id: String,
-    pub user_id: String,
+    pub event_id: ID,
+    pub user_id: ID,
 }
 
 #[derive(Debug)]
 pub enum UseCaseErrors {
-    NotFoundError,
+    NotFound,
 }
 
 #[async_trait::async_trait(?Send)]
@@ -56,7 +56,7 @@ impl UseCase for GetEventUseCase {
         let e = ctx.repos.event_repo.find(&self.event_id).await;
         match e {
             Some(event) if event.user_id == self.user_id => Ok(event),
-            _ => Err(UseCaseErrors::NotFoundError),
+            _ => Err(UseCaseErrors::NotFound),
         }
     }
 }

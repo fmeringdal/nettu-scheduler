@@ -1,6 +1,6 @@
 use super::IAccountRepo;
 use crate::repos::shared::inmemory_repo::*;
-use nettu_scheduler_domain::Account;
+use nettu_scheduler_domain::{Account, ID};
 
 pub struct InMemoryAccountRepo {
     accounts: std::sync::Mutex<Vec<Account>>,
@@ -26,15 +26,15 @@ impl IAccountRepo for InMemoryAccountRepo {
         Ok(())
     }
 
-    async fn find(&self, account_id: &str) -> Option<Account> {
+    async fn find(&self, account_id: &ID) -> Option<Account> {
         find(account_id, &self.accounts)
     }
 
-    async fn delete(&self, account_id: &str) -> Option<Account> {
+    async fn delete(&self, account_id: &ID) -> Option<Account> {
         delete(account_id, &self.accounts)
     }
 
-    async fn find_many(&self, account_ids: &[String]) -> anyhow::Result<Vec<Account>> {
+    async fn find_many(&self, account_ids: &[ID]) -> anyhow::Result<Vec<Account>> {
         let res = find_by(&self.accounts, |a| account_ids.contains(&a.id));
         Ok(res)
     }

@@ -8,9 +8,8 @@ use crate::shared::{
 };
 use actix_web::{web, HttpResponse};
 use nettu_scheduler_api_structs::create_event::*;
-use nettu_scheduler_domain::{CalendarEvent, CalendarEventReminder, RRuleOptions};
+use nettu_scheduler_domain::{CalendarEvent, CalendarEventReminder, RRuleOptions, ID};
 use nettu_scheduler_infra::NettuContext;
-use nettu_scheduler_infra::ObjectId;
 
 pub async fn create_event_controller(
     http_req: web::HttpRequest,
@@ -37,7 +36,7 @@ pub async fn create_event_controller(
         .map_err(|e| match e {
             UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
             UseCaseErrorContainer::UseCase(e) => match e {
-                UseCaseErrors::NotFoundError => NettuError::NotFound(format!(
+                UseCaseErrors::NotFound => NettuError::NotFound(format!(
                     "The calendar with id: {}, was not found.",
                     req.calendar_id
                 )),
@@ -51,9 +50,9 @@ pub async fn create_event_controller(
 
 #[derive(Debug)]
 pub struct CreateEventUseCase {
-    pub account_id: String,
-    pub calendar_id: String,
-    pub user_id: String,
+    pub account_id: ID,
+    pub calendar_id: ID,
+    pub user_id: ID,
     pub start_ts: i64,
     pub duration: i64,
     pub busy: bool,
@@ -65,7 +64,7 @@ pub struct CreateEventUseCase {
 #[derive(Debug, PartialEq)]
 pub enum UseCaseErrors {
     InvalidRecurrenceRule,
-    NotFoundError,
+    NotFound,
     StorageError,
 }
 
@@ -80,11 +79,11 @@ impl UseCase for CreateEventUseCase {
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let calendar = match ctx.repos.calendar_repo.find(&self.calendar_id).await {
             Some(calendar) if calendar.user_id == self.user_id => calendar,
-            _ => return Err(UseCaseErrors::NotFoundError),
+            _ => return Err(UseCaseErrors::NotFound),
         };
 
         let mut e = CalendarEvent {
-            id: ObjectId::new().to_string(),
+            id: Default::default(),
             busy: self.busy,
             start_ts: self.start_ts,
             duration: self.duration,
@@ -144,7 +143,7 @@ mod test {
 
     async fn setup() -> TestContext {
         let ctx = setup_context().await;
-        let user = User::new("cool2");
+        let user = User::new(Default::default());
 
         let calendar = Calendar::new(&user.id);
 
@@ -222,7 +221,7 @@ mod test {
             duration: 800,
             rrule_options: Some(Default::default()),
             busy: false,
-            calendar_id: format!("1{}", calendar.id),
+            calendar_id: ID::default(),
             user_id: user.id.clone(),
             account_id: user.account_id,
             reminder: None,
@@ -231,7 +230,7 @@ mod test {
 
         let res = usecase.execute(&ctx).await;
         assert!(res.is_err());
-        assert_eq!(res.unwrap_err(), UseCaseErrors::NotFoundError);
+        assert_eq!(res.unwrap_err(), UseCaseErrors::NotFound);
     }
 
     #[actix_web::main]

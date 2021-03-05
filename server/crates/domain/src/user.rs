@@ -1,24 +1,22 @@
-use mongodb::bson::oid::ObjectId;
-
-use crate::shared::entity::Entity;
+use crate::shared::entity::{Entity, ID};
 
 #[derive(Debug, Clone)]
 pub struct User {
-    pub id: String,
-    pub account_id: String,
+    pub id: ID,
+    pub account_id: ID,
 }
 
 impl User {
-    pub fn new(account_id: &str) -> Self {
+    pub fn new(account_id: ID) -> Self {
         Self {
-            id: ObjectId::new().to_string(),
-            account_id: String::from(account_id),
+            id: Default::default(),
+            account_id,
         }
     }
 }
 
 impl Entity for User {
-    fn id(&self) -> String {
-        self.id.clone()
+    fn id(&self) -> &ID {
+        &self.id
     }
 }

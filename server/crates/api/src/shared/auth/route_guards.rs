@@ -1,10 +1,10 @@
 use actix_web::HttpRequest;
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
-use nettu_scheduler_domain::{Account, User};
+use nettu_scheduler_domain::{Account, User, ID};
 use nettu_scheduler_infra::NettuContext;
 use serde::{Deserialize, Serialize};
 
-use crate::error::NettuError;
+use crate::{error::NettuError, shared::Guard};
 
 use super::Policy;
 
@@ -18,7 +18,7 @@ struct Claims {
     /// Issued at (as UTC timestamp)
     iat: usize,
     /// Subject (whom token refers tok)
-    nettu_scheduler_user_id: String,
+    nettu_scheduler_user_id: ID,
     /// The `Policy` that describes what `UseCase`s this `User` can perform
     scheduler_policy: Option<Policy>,
 }
@@ -68,14 +68,19 @@ pub async fn get_client_account(req: &HttpRequest, ctx: &NettuContext) -> Option
     }
 }
 
-pub fn get_nettu_account_header(req: &HttpRequest) -> Option<Result<String, NettuError>> {
+pub fn get_nettu_account_header(req: &HttpRequest) -> Option<Result<ID, NettuError>> {
     if let Some(account_id) = req.headers().get("nettu-account") {
-        let res = account_id.to_str().map(|acc| acc.to_string()).map_err(|_| {
-            NettuError::UnidentifiableClient(format!(
-                "Malformed nettu account header provided: {:?}",
-                account_id
-            ))
-        });
+        let err = NettuError::UnidentifiableClient(format!(
+            "Malformed nettu account header provided: {:?}",
+            account_id
+        ));
+
+        // Validate that is is string
+        let res = match account_id.to_str() {
+            Ok(account_id) => Guard::against_malformed_id(account_id.to_string()),
+            Err(_) => Err(err),
+        };
+
         Some(res)
     } else {
         None
@@ -85,7 +90,7 @@ pub fn get_nettu_account_header(req: &HttpRequest) -> Option<Result<String, Nett
 /// Decodes the JWT token by checking if the signature matches the public
 /// key provided by the `Account`
 fn decode_token(account: &Account, token: &str) -> anyhow::Result<Claims> {
-    let public_key_b64 = match &account.public_key_b64 {
+    let public_key_b64 = match &account.public_jwt_key {
         Some(public_key_b64) => public_key_b64,
         None => return Err(anyhow::Error::msg("Account does not support user tokens")),
     };
@@ -179,7 +184,7 @@ mod test {
     use super::*;
     use actix_web::test::TestRequest;
     use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
-    use nettu_scheduler_infra::{setup_context, ObjectId};
+    use nettu_scheduler_infra::setup_context;
 
     async fn setup_account(ctx: &NettuContext) -> Account {
         let account = get_account();
@@ -187,7 +192,7 @@ mod test {
         account
     }
 
-    fn get_token(expired: bool, user_id: String) -> String {
+    fn get_token(expired: bool, user_id: ID) -> String {
         let priv_key = std::fs::read("./config/test_private_rsa_key.pem").unwrap();
         let exp = if expired {
             100 // year 1970
@@ -208,8 +213,8 @@ mod test {
         let pub_key = std::fs::read("./config/test_public_rsa_key.crt").unwrap();
         let public_key_b64 = base64::encode(pub_key);
         Account {
-            id: ObjectId::new().to_string(),
-            public_key_b64: Some(public_key_b64),
+            id: Default::default(),
+            public_jwt_key: Some(public_key_b64),
             secret_api_key: String::from("yoyo"),
             settings: Default::default(),
         }
@@ -220,11 +225,11 @@ mod test {
     async fn decodes_valid_token_for_existing_user_in_account() {
         let ctx = setup_context().await;
         let account = setup_account(&ctx).await;
-        let user = User::new(&account.id);
+        let user = User::new(account.id.clone());
         ctx.repos.user_repo.insert(&user).await.unwrap();
         let token = get_token(false, user.id.clone());
 
-        let req = TestRequest::with_header("nettu-account", account.id)
+        let req = TestRequest::with_header("nettu-account", account.id.to_string())
             .header("Authorization", format!("Bearer {}", token))
             .to_http_request();
         let res = protect_route(&req, &ctx).await;
@@ -237,12 +242,12 @@ mod test {
         let ctx = setup_context().await;
         let account = setup_account(&ctx).await;
         let account2 = setup_account(&ctx).await;
-        let user = User::new(&account2.id); // user belongs to account2
+        let user = User::new(account2.id.clone()); // user belongs to account2
         ctx.repos.user_repo.insert(&user).await.unwrap();
         // account1 tries to sign a token with user_id that belongs to account2
         let token = get_token(false, user.id.clone());
 
-        let req = TestRequest::with_header("nettu-account", account.id.clone())
+        let req = TestRequest::with_header("nettu-account", account.id.to_string())
             .header("Authorization", format!("Bearer {}", token))
             .to_http_request();
         let res = protect_route(&req, &ctx).await;
@@ -254,11 +259,11 @@ mod test {
     async fn rejects_expired_token() {
         let ctx = setup_context().await;
         let account = setup_account(&ctx).await;
-        let user = User::new(&account.id);
+        let user = User::new(account.id.clone());
         ctx.repos.user_repo.insert(&user).await.unwrap();
         let token = get_token(true, user.id.clone());
 
-        let req = TestRequest::with_header("nettu-account", account.id)
+        let req = TestRequest::with_header("nettu-account", account.id.to_string())
             .header("Authorization", format!("Bearer {}", token))
             .to_http_request();
         let res = protect_route(&req, &ctx).await;
@@ -270,7 +275,7 @@ mod test {
     async fn rejects_valid_token_without_account_header() {
         let ctx = setup_context().await;
         let account = setup_account(&ctx).await;
-        let user = User::new(&account.id);
+        let user = User::new(account.id.clone());
         ctx.repos.user_repo.insert(&user).await.unwrap();
         let token = get_token(true, user.id.clone());
 
@@ -285,11 +290,11 @@ mod test {
     async fn rejects_valid_token_with_invalid_account_header() {
         let ctx = setup_context().await;
         let account = setup_account(&ctx).await;
-        let user = User::new(&account.id);
+        let user = User::new(account.id.clone());
         ctx.repos.user_repo.insert(&user).await.unwrap();
         let token = get_token(true, user.id.clone());
 
-        let req = TestRequest::with_header("nettu-account", account.id + "s")
+        let req = TestRequest::with_header("nettu-account", account.id.to_string() + "s")
             .header("Authorization", format!("Bearer {}", token))
             .to_http_request();
         let res = protect_route(&req, &ctx).await;

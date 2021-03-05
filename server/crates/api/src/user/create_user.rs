@@ -2,7 +2,7 @@ use crate::shared::usecase::{execute, UseCase};
 use crate::{error::NettuError, shared::auth::protect_account_route};
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::create_user::*;
-use nettu_scheduler_domain::User;
+use nettu_scheduler_domain::{User, ID};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn create_user_controller(
@@ -29,7 +29,7 @@ pub async fn create_user_controller(
 
 #[derive(Debug)]
 pub struct CreateUserUseCase {
-    pub account_id: String,
+    pub account_id: ID,
 }
 
 pub struct UseCaseRes {
@@ -49,7 +49,7 @@ impl UseCase for CreateUserUseCase {
     type Context = NettuContext;
 
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
-        let user = User::new(&self.account_id);
+        let user = User::new(self.account_id.clone());
 
         if let Some(_existing_user) = ctx.repos.user_repo.find(&user.id).await {
             return Err(UseCaseErrors::UserAlreadyExists);

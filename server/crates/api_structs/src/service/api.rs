@@ -1,5 +1,4 @@
-use nettu_scheduler_domain::Service;
-use nettu_scheduler_domain::TimePlan;
+use nettu_scheduler_domain::{Service, TimePlan, ID};
 use serde::{Deserialize, Serialize};
 
 use crate::dtos::ServiceDTO;
@@ -23,15 +22,15 @@ pub mod add_user_to_service {
 
     #[derive(Deserialize)]
     pub struct PathParams {
-        pub service_id: String,
+        pub service_id: ID,
     }
 
     #[derive(Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
-        pub user_id: String,
+        pub user_id: ID,
         pub availibility: Option<TimePlan>,
-        pub busy: Option<Vec<String>>,
+        pub busy: Option<Vec<ID>>,
         pub buffer: Option<i64>,
         pub closest_booking_time: Option<i64>,
         pub furthest_booking_time: Option<i64>,
@@ -53,7 +52,7 @@ pub mod get_service_bookingslots {
 
     #[derive(Debug, Deserialize)]
     pub struct PathParams {
-        pub service_id: String,
+        pub service_id: ID,
     }
 
     #[derive(Debug, Deserialize)]
@@ -70,7 +69,7 @@ pub mod get_service_bookingslots {
     pub struct ServiceBookingSlotDTO {
         pub start: i64,
         pub duration: i64,
-        pub user_ids: Vec<String>,
+        pub user_ids: Vec<ID>,
     }
 
     impl ServiceBookingSlotDTO {
@@ -106,7 +105,7 @@ pub mod get_service {
 
     #[derive(Deserialize)]
     pub struct PathParams {
-        pub service_id: String,
+        pub service_id: ID,
     }
 
     pub type APIResponse = ServiceResponse;
@@ -117,8 +116,8 @@ pub mod remove_user_from_service {
 
     #[derive(Deserialize)]
     pub struct PathParams {
-        pub service_id: String,
-        pub user_id: String,
+        pub service_id: ID,
+        pub user_id: ID,
     }
 
     pub type APIResponse = ServiceResponse;
@@ -129,15 +128,15 @@ pub mod update_service_user {
 
     #[derive(Deserialize)]
     pub struct PathParams {
-        pub service_id: String,
-        pub user_id: String,
+        pub service_id: ID,
+        pub user_id: ID,
     }
 
     #[derive(Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
         pub availibility: Option<TimePlan>,
-        pub busy: Option<Vec<String>>,
+        pub busy: Option<Vec<ID>>,
         pub buffer: Option<i64>,
         pub closest_booking_time: Option<i64>,
         pub furthest_booking_time: Option<i64>,

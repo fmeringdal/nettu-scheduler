@@ -1,6 +1,6 @@
 use super::ICalendarRepo;
 use crate::repos::shared::{
-    mongo_repo::{self, create_object_id},
+    mongo_repo::{self},
     repo::DeleteResult,
 };
 use mongo_repo::MongoDocument;
@@ -8,7 +8,7 @@ use mongodb::{
     bson::{doc, oid::ObjectId, Document},
     Collection, Database,
 };
-use nettu_scheduler_domain::{Calendar, CalendarSettings};
+use nettu_scheduler_domain::{Calendar, CalendarSettings, ID};
 use serde::{Deserialize, Serialize};
 
 pub struct MongoCalendarRepo {
@@ -33,14 +33,14 @@ impl ICalendarRepo for MongoCalendarRepo {
         mongo_repo::save::<_, CalendarMongo>(&self.collection, calendar).await
     }
 
-    async fn find(&self, calendar_id: &str) -> Option<Calendar> {
-        let oid = create_object_id(calendar_id)?;
+    async fn find(&self, calendar_id: &ID) -> Option<Calendar> {
+        let oid = calendar_id.inner_ref();
         mongo_repo::find::<_, CalendarMongo>(&self.collection, &oid).await
     }
 
-    async fn find_by_user(&self, user_id: &str) -> Vec<Calendar> {
+    async fn find_by_user(&self, user_id: &ID) -> Vec<Calendar> {
         let filter = doc! {
-            "user_id": user_id
+            "user_id": user_id.inner_ref()
         };
         match mongo_repo::find_many_by::<_, CalendarMongo>(&self.collection, filter).await {
             Ok(cals) => cals,
@@ -48,14 +48,14 @@ impl ICalendarRepo for MongoCalendarRepo {
         }
     }
 
-    async fn delete(&self, calendar_id: &str) -> Option<Calendar> {
-        let oid = create_object_id(calendar_id)?;
+    async fn delete(&self, calendar_id: &ID) -> Option<Calendar> {
+        let oid = calendar_id.inner_ref();
         mongo_repo::delete::<_, CalendarMongo>(&self.collection, &oid).await
     }
 
-    async fn delete_by_user(&self, user_id: &str) -> anyhow::Result<DeleteResult> {
+    async fn delete_by_user(&self, user_id: &ID) -> anyhow::Result<DeleteResult> {
         let filter = doc! {
-            "user_id": user_id
+            "user_id": user_id.inner_ref()
         };
         mongo_repo::delete_many_by::<_, CalendarMongo>(&self.collection, filter).await
     }
@@ -64,7 +64,7 @@ impl ICalendarRepo for MongoCalendarRepo {
 #[derive(Debug, Serialize, Deserialize)]
 struct CalendarMongo {
     _id: ObjectId,
-    user_id: String,
+    user_id: ObjectId,
     settings: CalendarSettingsMongo,
 }
 
@@ -77,8 +77,8 @@ struct CalendarSettingsMongo {
 impl MongoDocument<Calendar> for CalendarMongo {
     fn to_domain(&self) -> Calendar {
         Calendar {
-            id: self._id.to_string(),
-            user_id: self.user_id.clone(),
+            id: ID::from(self._id.clone()),
+            user_id: ID::from(self.user_id.clone()),
             settings: CalendarSettings {
                 wkst: self.settings.wkst,
                 timezone: self.settings.timezone.parse().unwrap(),
@@ -88,8 +88,8 @@ impl MongoDocument<Calendar> for CalendarMongo {
 
     fn from_domain(calendar: &Calendar) -> Self {
         Self {
-            _id: ObjectId::with_string(&calendar.id).unwrap(),
-            user_id: calendar.user_id.clone(),
+            _id: calendar.id.inner_ref().clone(),
+            user_id: calendar.user_id.inner_ref().clone(),
             settings: CalendarSettingsMongo {
                 wkst: calendar.settings.wkst,
                 timezone: calendar.settings.timezone.to_string(),

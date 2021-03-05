@@ -9,7 +9,7 @@ use crate::{
 use actix_web::{web, HttpResponse};
 use chrono_tz::Tz;
 use nettu_scheduler_api_structs::update_schedule::*;
-use nettu_scheduler_domain::{Schedule, ScheduleRule};
+use nettu_scheduler_domain::{Schedule, ScheduleRule, ID};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn update_schedule_controller(
@@ -34,7 +34,7 @@ pub async fn update_schedule_controller(
             UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
             UseCaseErrorContainer::UseCase(e) => match e {
                 UseCaseErrors::StorageError => NettuError::InternalError,
-                UseCaseErrors::ScheduleNotFoundError => {
+                UseCaseErrors::ScheduleNotFound => {
                     NettuError::NotFound("The schedule was not found.".into())
                 }
                 UseCaseErrors::InvalidSettings(err) => NettuError::BadClientData(format!(
@@ -47,15 +47,15 @@ pub async fn update_schedule_controller(
 
 #[derive(Debug)]
 struct UpdateScheduleUseCase {
-    pub user_id: String,
-    pub schedule_id: String,
+    pub user_id: ID,
+    pub schedule_id: ID,
     pub timezone: Option<String>,
     pub rules: Option<Vec<ScheduleRule>>,
 }
 
 #[derive(Debug)]
 enum UseCaseErrors {
-    ScheduleNotFoundError,
+    ScheduleNotFound,
     StorageError,
     InvalidSettings(String),
 }
@@ -74,7 +74,7 @@ impl UseCase for UpdateScheduleUseCase {
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let mut schedule = match ctx.repos.schedule_repo.find(&self.schedule_id).await {
             Some(cal) if cal.user_id == self.user_id => cal,
-            _ => return Err(UseCaseErrors::ScheduleNotFoundError),
+            _ => return Err(UseCaseErrors::ScheduleNotFound),
         };
 
         if let Some(tz) = &self.timezone {

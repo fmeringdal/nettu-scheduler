@@ -1,5 +1,5 @@
 use super::IEventRepo;
-use crate::repos::shared::mongo_repo::{self, create_object_id};
+use crate::repos::shared::mongo_repo::{self};
 use crate::repos::shared::repo::DeleteResult;
 use mongo_repo::MongoDocument;
 use mongodb::{
@@ -7,7 +7,7 @@ use mongodb::{
     bson::{oid::ObjectId, Document},
     Collection, Database,
 };
-use nettu_scheduler_domain::{CalendarEvent, CalendarEventReminder, RRuleOptions, TimeSpan};
+use nettu_scheduler_domain::{CalendarEvent, CalendarEventReminder, RRuleOptions, TimeSpan, ID};
 use serde::{Deserialize, Serialize};
 
 pub struct MongoEventRepo {
@@ -32,22 +32,22 @@ impl IEventRepo for MongoEventRepo {
         mongo_repo::save::<_, CalendarEventMongo>(&self.collection, e).await
     }
 
-    async fn find(&self, event_id: &str) -> Option<CalendarEvent> {
-        let oid = create_object_id(event_id)?;
+    async fn find(&self, event_id: &ID) -> Option<CalendarEvent> {
+        let oid = event_id.inner_ref();
         mongo_repo::find::<_, CalendarEventMongo>(&self.collection, &oid).await
     }
 
     async fn find_by_calendar(
         &self,
-        calendar_id: &str,
+        calendar_id: &ID,
         timespan: Option<&TimeSpan>,
     ) -> anyhow::Result<Vec<CalendarEvent>> {
         let mut filter = doc! {
-            "calendar_id": calendar_id
+            "calendar_id": calendar_id.inner_ref()
         };
         if let Some(timespan) = timespan {
             filter = doc! {
-                "calendar_id": calendar_id,
+                "calendar_id": calendar_id.inner_ref(),
                 "$and": [
                     {
                         "start_ts": {
@@ -66,24 +66,24 @@ impl IEventRepo for MongoEventRepo {
         mongo_repo::find_many_by::<_, CalendarEventMongo>(&self.collection, filter).await
     }
 
-    async fn find_many(&self, event_ids: &[String]) -> anyhow::Result<Vec<CalendarEvent>> {
+    async fn find_many(&self, event_ids: &[ID]) -> anyhow::Result<Vec<CalendarEvent>> {
         let filter = doc! {
             "event_id": {
-                "$in": event_ids
+                "$in": event_ids.iter().map(|id| id.inner_ref()).collect::<Vec<_>>()
             }
         };
 
         mongo_repo::find_many_by::<_, CalendarEventMongo>(&self.collection, filter).await
     }
 
-    async fn delete(&self, event_id: &str) -> Option<CalendarEvent> {
-        let oid = create_object_id(event_id)?;
+    async fn delete(&self, event_id: &ID) -> Option<CalendarEvent> {
+        let oid = event_id.inner_ref();
         mongo_repo::delete::<_, CalendarEventMongo>(&self.collection, &oid).await
     }
 
-    async fn delete_by_calendar(&self, calendar_id: &str) -> anyhow::Result<DeleteResult> {
+    async fn delete_by_calendar(&self, calendar_id: &ID) -> anyhow::Result<DeleteResult> {
         let filter = doc! {
-            "calendar_id": calendar_id
+            "calendar_id": calendar_id.inner_ref()
         };
         self.collection
             .delete_many(filter, None)
@@ -94,9 +94,9 @@ impl IEventRepo for MongoEventRepo {
             .map_err(anyhow::Error::new)
     }
 
-    async fn delete_by_user(&self, user_id: &str) -> anyhow::Result<DeleteResult> {
+    async fn delete_by_user(&self, user_id: &ID) -> anyhow::Result<DeleteResult> {
         let filter = doc! {
-            "user_id": user_id
+            "user_id": user_id.inner_ref()
         };
         mongo_repo::delete_many_by::<_, CalendarEventMongo>(&self.collection, filter).await
     }
@@ -109,10 +109,10 @@ struct CalendarEventMongo {
     duration: i64,
     end_ts: i64,
     busy: bool,
-    user_id: String,
+    user_id: ObjectId,
     exdates: Vec<i64>,
-    calendar_id: String,
-    account_id: String,
+    calendar_id: ObjectId,
+    account_id: ObjectId,
     recurrence: Option<RRuleOptions>,
     reminder: Option<CalendarEventReminder>,
     services: Vec<String>,
@@ -121,15 +121,15 @@ struct CalendarEventMongo {
 impl MongoDocument<CalendarEvent> for CalendarEventMongo {
     fn to_domain(&self) -> CalendarEvent {
         CalendarEvent {
-            id: self._id.to_string(),
+            id: ID::from(self._id.clone()),
             start_ts: self.start_ts,
             duration: self.duration,
             end_ts: self.end_ts,
             busy: self.busy,
-            user_id: self.user_id.clone(),
-            account_id: self.account_id.clone(),
+            user_id: ID::from(self.user_id.clone()),
+            account_id: ID::from(self.account_id.clone()),
+            calendar_id: ID::from(self.calendar_id.clone()),
             exdates: self.exdates.clone(),
-            calendar_id: self.calendar_id.clone(),
             recurrence: self.recurrence.clone(),
             reminder: self.reminder.clone(),
             services: self.services.clone(),
@@ -138,15 +138,15 @@ impl MongoDocument<CalendarEvent> for CalendarEventMongo {
 
     fn from_domain(event: &CalendarEvent) -> Self {
         Self {
-            _id: ObjectId::with_string(&event.id).unwrap(),
+            _id: event.id.inner_ref().clone(),
             start_ts: event.start_ts,
             duration: event.duration,
             end_ts: event.end_ts,
             busy: event.busy,
-            user_id: event.user_id.clone(),
-            account_id: event.account_id.clone(),
+            user_id: event.user_id.inner_ref().clone(),
+            account_id: event.account_id.inner_ref().clone(),
+            calendar_id: event.calendar_id.inner_ref().clone(),
             exdates: event.exdates.clone(),
-            calendar_id: event.calendar_id.clone(),
             recurrence: event.recurrence.clone(),
             reminder: event.reminder.clone(),
             services: event.services.clone(),

@@ -2,7 +2,6 @@ use crate::shared::usecase::UseCase;
 
 use nettu_scheduler_domain::{Calendar, CalendarEvent, EventRemindersExpansionJob, Reminder};
 use nettu_scheduler_infra::NettuContext;
-use nettu_scheduler_infra::ObjectId;
 use std::iter::Iterator;
 
 #[derive(Debug)]
@@ -53,8 +52,8 @@ async fn create_event_reminders(
             if dates.len() == 100 {
                 // There are more reminders to generate, store a job to expand them later
                 let job = EventRemindersExpansionJob {
-                    id: ObjectId::new().to_string(),
-                    event_id: event.id.to_owned(),
+                    id: Default::default(),
+                    event_id: event.id.clone(),
                     timestamp: dates[90].timestamp_millis(),
                 };
                 if ctx
@@ -74,19 +73,19 @@ async fn create_event_reminders(
             dates
                 .iter()
                 .map(|d| Reminder {
+                    id: Default::default(),
                     event_id: event.id.to_owned(),
                     account_id: event.account_id.to_owned(),
                     remind_at: d.timestamp_millis() - millis_before,
-                    id: ObjectId::new().to_string(),
                     priority,
                 })
                 .collect()
         }
         None => vec![Reminder {
+            id: Default::default(),
             event_id: event.id.to_owned(),
             account_id: event.account_id.to_owned(),
             remind_at: event.start_ts - millis_before,
-            id: ObjectId::new().to_string(),
             priority,
         }],
     };

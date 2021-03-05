@@ -5,7 +5,7 @@ use crate::shared::{
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::add_user_to_service::*;
-use nettu_scheduler_domain::{Account, Service, ServiceResource, TimePlan};
+use nettu_scheduler_domain::{Account, Service, ServiceResource, TimePlan, ID};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn add_user_to_service_controller(
@@ -31,8 +31,8 @@ pub async fn add_user_to_service_controller(
         .map(|res| HttpResponse::Ok().json(APIResponse::new(res.service)))
         .map_err(|e| match e {
             UseCaseErrors::StorageError => NettuError::InternalError,
-            UseCaseErrors::ServiceNotFoundError => NettuError::NotFound("The requested service was not found".into()),
-            UseCaseErrors::UserNotFoundError => NettuError::NotFound("The specified user was not found".into()),
+            UseCaseErrors::ServiceNotFound => NettuError::NotFound("The requested service was not found".into()),
+            UseCaseErrors::UserNotFound => NettuError::NotFound("The specified user was not found".into()),
             UseCaseErrors::UserAlreadyInService => NettuError::Conflict("The specified user is already registered on the service, can not add the user more than once.".into()),
             UseCaseErrors::InvalidValue(e) => e.to_nettu_error(),
         })
@@ -41,10 +41,10 @@ pub async fn add_user_to_service_controller(
 #[derive(Debug)]
 struct AddUserToServiceUseCase {
     pub account: Account,
-    pub service_id: String,
-    pub user_id: String,
+    pub service_id: ID,
+    pub user_id: ID,
     pub availibility: Option<TimePlan>,
-    pub busy: Option<Vec<String>>,
+    pub busy: Option<Vec<ID>>,
     pub buffer: Option<i64>,
     pub closest_booking_time: Option<i64>,
     pub furthest_booking_time: Option<i64>,
@@ -57,8 +57,8 @@ struct UseCaseRes {
 #[derive(Debug)]
 enum UseCaseErrors {
     StorageError,
-    ServiceNotFoundError,
-    UserNotFoundError,
+    ServiceNotFound,
+    UserNotFound,
     UserAlreadyInService,
     InvalidValue(UpdateServiceResourceError),
 }
@@ -79,19 +79,19 @@ impl UseCase for AddUserToServiceUseCase {
             .await
             .is_none()
         {
-            return Err(UseCaseErrors::UserNotFoundError);
+            return Err(UseCaseErrors::UserNotFound);
         }
 
         let mut service = match ctx.repos.service_repo.find(&self.service_id).await {
             Some(service) if service.account_id == self.account.id => service,
-            _ => return Err(UseCaseErrors::ServiceNotFoundError),
+            _ => return Err(UseCaseErrors::ServiceNotFound),
         };
 
         if let Some(_user_resource) = service.find_user(&self.user_id) {
             return Err(UseCaseErrors::UserAlreadyInService);
         }
 
-        let mut user_resource = ServiceResource::new(&self.user_id, TimePlan::Empty, vec![]);
+        let mut user_resource = ServiceResource::new(self.user_id.clone(), TimePlan::Empty, vec![]);
 
         update_resource_values(
             &mut user_resource,
@@ -119,7 +119,7 @@ impl UseCase for AddUserToServiceUseCase {
 
 pub struct ServiceResourceUpdate {
     pub availibility: Option<TimePlan>,
-    pub busy: Option<Vec<String>>,
+    pub busy: Option<Vec<ID>>,
     pub buffer: Option<i64>,
     pub closest_booking_time: Option<i64>,
     pub furthest_booking_time: Option<i64>,
@@ -171,7 +171,7 @@ pub async fn update_resource_values(
         for calendar_id in busy {
             if !user_calendars.contains(calendar_id) {
                 return Err(UpdateServiceResourceError::CalendarNotOwnedByUser(
-                    calendar_id.clone(),
+                    calendar_id.to_string(),
                 ));
             }
         }
@@ -183,7 +183,7 @@ pub async fn update_resource_values(
             TimePlan::Calendar(id) => {
                 if !user_calendars.contains(id) {
                     return Err(UpdateServiceResourceError::CalendarNotOwnedByUser(
-                        id.clone(),
+                        id.to_string(),
                     ));
                 }
             }
@@ -193,7 +193,7 @@ pub async fn update_resource_values(
                     Some(schedule) if schedule.user_id == user_resource.user_id => {}
                     _ => {
                         return Err(UpdateServiceResourceError::ScheduleNotOwnedByUser(
-                            id.clone(),
+                            id.to_string(),
                         ))
                     }
                 }

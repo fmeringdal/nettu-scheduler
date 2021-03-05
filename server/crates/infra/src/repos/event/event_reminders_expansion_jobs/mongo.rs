@@ -7,7 +7,7 @@ use mongodb::{
     bson::{oid::ObjectId, Document},
     Collection, Database,
 };
-use nettu_scheduler_domain::EventRemindersExpansionJob;
+use nettu_scheduler_domain::{EventRemindersExpansionJob, ID};
 use serde::{Deserialize, Serialize};
 
 pub struct MongoEventRemindersExpansionsJobRepo {
@@ -57,9 +57,9 @@ impl IEventRemindersExpansionJobsRepo for MongoEventRemindersExpansionsJobRepo {
         docs
     }
 
-    async fn delete_by_event(&self, event_id: &str) -> anyhow::Result<DeleteResult> {
+    async fn delete_by_event(&self, event_id: &ID) -> anyhow::Result<DeleteResult> {
         let filter = doc! {
-            "event_id": event_id
+            "event_id": event_id.inner_ref()
         };
         self.collection
             .delete_many(filter, None)
@@ -74,23 +74,23 @@ impl IEventRemindersExpansionJobsRepo for MongoEventRemindersExpansionsJobRepo {
 #[derive(Debug, Serialize, Deserialize)]
 struct EventRemindersExpansionJobMongo {
     _id: ObjectId,
-    event_id: String,
+    event_id: ObjectId,
     timestamp: i64,
 }
 
 impl MongoDocument<EventRemindersExpansionJob> for EventRemindersExpansionJobMongo {
     fn to_domain(&self) -> EventRemindersExpansionJob {
         EventRemindersExpansionJob {
-            id: self._id.to_string(),
-            event_id: self.event_id.clone(),
+            id: ID::from(self._id.clone()),
+            event_id: ID::from(self.event_id.clone()),
             timestamp: self.timestamp,
         }
     }
 
     fn from_domain(job: &EventRemindersExpansionJob) -> Self {
         Self {
-            _id: ObjectId::with_string(&job.id).unwrap(),
-            event_id: job.event_id.to_owned(),
+            _id: job.id.inner_ref().clone(),
+            event_id: job.event_id.inner_ref().clone(),
             timestamp: job.timestamp.to_owned(),
         }
     }

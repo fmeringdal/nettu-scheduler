@@ -5,7 +5,7 @@ use crate::shared::{
 use crate::{error::NettuError, shared::usecase::UseCase};
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::create_event_exception::*;
-use nettu_scheduler_domain::CalendarEvent;
+use nettu_scheduler_domain::{CalendarEvent, ID};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn create_event_exception_controller(
@@ -28,7 +28,7 @@ pub async fn create_event_exception_controller(
         .map_err(|e| match e {
             UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
             UseCaseErrorContainer::UseCase(e) => match e {
-                UseCaseErrors::NotFoundError => NettuError::NotFound(format!(
+                UseCaseErrors::NotFound => NettuError::NotFound(format!(
                     "The event with id: {}, was not found",
                     path_params.event_id
                 )),
@@ -39,14 +39,14 @@ pub async fn create_event_exception_controller(
 
 #[derive(Debug)]
 pub struct CreateEventExceptionUseCase {
-    event_id: String,
+    event_id: ID,
     exception_ts: i64,
-    user_id: String,
+    user_id: ID,
 }
 
 #[derive(Debug)]
 pub enum UseCaseErrors {
-    NotFoundError,
+    NotFound,
     StorageError,
 }
 
@@ -61,7 +61,7 @@ impl UseCase for CreateEventExceptionUseCase {
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let mut event = match ctx.repos.event_repo.find(&self.event_id).await {
             Some(event) if event.user_id == self.user_id => event,
-            _ => return Err(UseCaseErrors::NotFoundError),
+            _ => return Err(UseCaseErrors::NotFound),
         };
 
         event.exdates.push(self.exception_ts);

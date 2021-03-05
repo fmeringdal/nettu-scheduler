@@ -5,7 +5,7 @@ use crate::shared::{
 use crate::{error::NettuError, shared::auth::protect_route};
 use actix_web::{web, HttpResponse};
 use nettu_scheduler_api_structs::update_calendar_settings::{APIResponse, PathParams, RequestBody};
-use nettu_scheduler_domain::Calendar;
+use nettu_scheduler_domain::{Calendar, ID};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn update_calendar_settings_controller(
@@ -30,7 +30,7 @@ pub async fn update_calendar_settings_controller(
             UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
             UseCaseErrorContainer::UseCase(e) => match e {
                 UseCaseErrors::StorageError => NettuError::InternalError,
-                UseCaseErrors::CalendarNotFoundError => {
+                UseCaseErrors::CalendarNotFound => {
                     NettuError::NotFound("The calendar was not found.".into())
                 }
                 UseCaseErrors::InvalidSettings(err) => NettuError::BadClientData(format!(
@@ -43,15 +43,15 @@ pub async fn update_calendar_settings_controller(
 
 #[derive(Debug)]
 struct UpdateCalendarSettingsUseCase {
-    pub user_id: String,
-    pub calendar_id: String,
+    pub user_id: ID,
+    pub calendar_id: ID,
     pub wkst: Option<isize>,
     pub timezone: Option<String>,
 }
 
 #[derive(Debug)]
 enum UseCaseErrors {
-    CalendarNotFoundError,
+    CalendarNotFound,
     StorageError,
     InvalidSettings(String),
 }
@@ -67,7 +67,7 @@ impl UseCase for UpdateCalendarSettingsUseCase {
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         let mut calendar = match ctx.repos.calendar_repo.find(&self.calendar_id).await {
             Some(cal) if cal.user_id == self.user_id => cal,
-            _ => return Err(UseCaseErrors::CalendarNotFoundError),
+            _ => return Err(UseCaseErrors::CalendarNotFound),
         };
 
         if let Some(wkst) = self.wkst {
@@ -113,7 +113,7 @@ mod test {
     #[test]
     async fn it_rejects_invalid_wkst() {
         let ctx = setup_context().await;
-        let user_id = "1".to_string();
+        let user_id = ID::default();
         let calendar = Calendar::new(&user_id);
         ctx.repos.calendar_repo.insert(&calendar).await.unwrap();
 
@@ -131,7 +131,7 @@ mod test {
     #[test]
     async fn it_update_settings_with_valid_wkst() {
         let ctx = setup_context().await;
-        let user_id = "1".to_string();
+        let user_id = ID::default();
         let calendar = Calendar::new(&user_id);
         ctx.repos.calendar_repo.insert(&calendar).await.unwrap();
 
@@ -139,7 +139,7 @@ mod test {
         let new_wkst = 3;
         let mut usecase = UpdateCalendarSettingsUseCase {
             calendar_id: calendar.id.clone(),
-            user_id: user_id.into(),
+            user_id,
             wkst: Some(new_wkst),
             timezone: None,
         };

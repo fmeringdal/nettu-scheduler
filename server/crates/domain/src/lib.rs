@@ -20,6 +20,6 @@ pub use event_instance::{
 pub use reminder::{EventRemindersExpansionJob, Reminder};
 pub use schedule::{Schedule, ScheduleRule};
 pub use service::{Service, ServiceResource, TimePlan};
-pub use shared::entity::Entity;
+pub use shared::entity::{Entity, ID};
 pub use timespan::TimeSpan;
 pub use user::User;

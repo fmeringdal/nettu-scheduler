@@ -1,5 +1,5 @@
-use crate::event_instance::EventInstance;
 use crate::{calendar::CalendarSettings, shared::entity::Entity, timespan::TimeSpan};
+use crate::{event_instance::EventInstance, shared::entity::ID};
 use chrono::{prelude::*, Duration};
 use rrule::{Frequenzy, ParsedOptions, RRule, RRuleSet};
 use serde::{Deserialize, Serialize};
@@ -40,16 +40,16 @@ impl Default for RRuleOptions {
 
 #[derive(Debug, Clone)]
 pub struct CalendarEvent {
-    pub id: String,
+    pub id: ID,
     pub start_ts: i64,
     pub duration: i64,
     pub busy: bool,
     pub end_ts: i64,
     pub recurrence: Option<RRuleOptions>,
     pub exdates: Vec<i64>,
-    pub calendar_id: String,
-    pub user_id: String,
-    pub account_id: String,
+    pub calendar_id: ID,
+    pub user_id: ID,
+    pub account_id: ID,
     pub reminder: Option<CalendarEventReminder>,
     pub services: Vec<String>,
 }
@@ -269,8 +269,8 @@ impl CalendarEvent {
 }
 
 impl Entity for CalendarEvent {
-    fn id(&self) -> String {
-        self.id.clone()
+    fn id(&self) -> &ID {
+        &self.id
     }
 }
 
@@ -286,7 +286,7 @@ mod test {
             wkst: 0,
         };
         let event = CalendarEvent {
-            id: String::from("dsa"),
+            id: Default::default(),
             start_ts: 1521317491239,
             busy: false,
             duration: 1000 * 60 * 60,
@@ -301,9 +301,9 @@ mod test {
             }),
             end_ts: 2521317491239,
             exdates: vec![1521317491239],
-            calendar_id: String::from(""),
-            user_id: String::from(""),
-            account_id: String::from(""),
+            calendar_id: Default::default(),
+            user_id: Default::default(),
+            account_id: Default::default(),
             reminder: None,
             services: vec![],
         };
@@ -319,16 +319,16 @@ mod test {
             wkst: 0,
         };
         let event = CalendarEvent {
-            id: String::from("dsa"),
+            id: Default::default(),
             start_ts: 1521317491239,
             busy: false,
             duration: 1000 * 60 * 60,
             recurrence: None,
             end_ts: 2521317491239,
             exdates: vec![1521317491239],
-            calendar_id: String::from(""),
-            user_id: String::from(""),
-            account_id: String::from(""),
+            calendar_id: Default::default(),
+            user_id: Default::default(),
+            account_id: Default::default(),
             reminder: None,
             services: vec![],
         };
@@ -379,15 +379,15 @@ mod test {
         });
         for rrule in invalid_rrules {
             let mut event = CalendarEvent {
-                id: String::from("dsa"),
+                id: Default::default(),
                 start_ts: 1521317491239,
                 busy: false,
                 duration: 1000 * 60 * 60,
                 end_ts: 2521317491239,
                 exdates: vec![],
-                calendar_id: String::from(""),
-                user_id: String::from(""),
-                account_id: String::from(""),
+                calendar_id: Default::default(),
+                user_id: Default::default(),
+                account_id: Default::default(),
                 recurrence: None,
                 reminder: None,
                 services: vec![],
@@ -425,15 +425,15 @@ mod test {
         });
         for rrule in valid_rrules {
             let mut event = CalendarEvent {
-                id: String::from("dsa"),
+                id: Default::default(),
                 start_ts: start_ts as i64,
                 busy: false,
                 duration: 1000 * 60 * 60,
                 end_ts: 2521317491239,
                 exdates: vec![],
-                calendar_id: String::from(""),
-                account_id: String::from(""),
-                user_id: String::from(""),
+                calendar_id: Default::default(),
+                account_id: Default::default(),
+                user_id: Default::default(),
                 recurrence: None,
                 reminder: None,
                 services: vec![],

@@ -1,5 +1,5 @@
 use crate::repos::shared::repo::DeleteResult;
-use nettu_scheduler_domain::Entity;
+use nettu_scheduler_domain::{Entity, ID};
 use std::sync::Mutex;
 
 /// Useful functions for creating inmemory repositories
@@ -18,7 +18,7 @@ pub fn save<T: Clone + Entity + std::fmt::Debug>(val: &T, collection: &Mutex<Vec
     }
 }
 
-pub fn find<T: Clone + Entity>(val_id: &str, collection: &Mutex<Vec<T>>) -> Option<T> {
+pub fn find<T: Clone + Entity>(val_id: &ID, collection: &Mutex<Vec<T>>) -> Option<T> {
     let collection = collection.lock().unwrap();
     for i in 0..collection.len() {
         if collection[i].id() == val_id {
@@ -42,7 +42,7 @@ pub fn find_by<T: Clone + Entity, F: Fn(&T) -> bool>(
     items
 }
 
-pub fn delete<T: Clone + Entity>(val_id: &str, collection: &Mutex<Vec<T>>) -> Option<T> {
+pub fn delete<T: Clone + Entity>(val_id: &ID, collection: &Mutex<Vec<T>>) -> Option<T> {
     let mut collection = collection.lock().unwrap();
     for i in 0..collection.len() {
         if collection[i].id() == val_id {

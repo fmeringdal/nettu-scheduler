@@ -1,6 +1,6 @@
 use super::ICalendarRepo;
 use crate::repos::shared::{inmemory_repo::*, repo::DeleteResult};
-use nettu_scheduler_domain::Calendar;
+use nettu_scheduler_domain::{Calendar, ID};
 
 pub struct InMemoryCalendarRepo {
     calendars: std::sync::Mutex<Vec<Calendar>>,
@@ -26,20 +26,20 @@ impl ICalendarRepo for InMemoryCalendarRepo {
         Ok(())
     }
 
-    async fn find(&self, calendar_id: &str) -> Option<Calendar> {
+    async fn find(&self, calendar_id: &ID) -> Option<Calendar> {
         find(calendar_id, &self.calendars)
     }
 
-    async fn find_by_user(&self, user_id: &str) -> Vec<Calendar> {
-        find_by(&self.calendars, |cal| cal.user_id == user_id)
+    async fn find_by_user(&self, user_id: &ID) -> Vec<Calendar> {
+        find_by(&self.calendars, |cal| cal.user_id == *user_id)
     }
 
-    async fn delete(&self, calendar_id: &str) -> Option<Calendar> {
+    async fn delete(&self, calendar_id: &ID) -> Option<Calendar> {
         delete(calendar_id, &self.calendars)
     }
 
-    async fn delete_by_user(&self, user_id: &str) -> anyhow::Result<DeleteResult> {
-        let res = delete_by(&self.calendars, |cal| cal.user_id == user_id);
+    async fn delete_by_user(&self, user_id: &ID) -> anyhow::Result<DeleteResult> {
+        let res = delete_by(&self.calendars, |cal| cal.user_id == *user_id);
         Ok(res)
     }
 }

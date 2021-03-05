@@ -5,13 +5,15 @@ pub use inmemory::InMemoryAccountRepo;
 pub use mongo::MongoAccountRepo;
 use nettu_scheduler_domain::Account;
 
+use nettu_scheduler_domain::ID;
+
 #[async_trait::async_trait]
 pub trait IAccountRepo: Send + Sync {
     async fn insert(&self, account: &Account) -> anyhow::Result<()>;
     async fn save(&self, account: &Account) -> anyhow::Result<()>;
-    async fn find(&self, account_id: &str) -> Option<Account>;
-    async fn find_many(&self, account_ids: &[String]) -> anyhow::Result<Vec<Account>>;
-    async fn delete(&self, account_id: &str) -> Option<Account>;
+    async fn find(&self, account_id: &ID) -> Option<Account>;
+    async fn find_many(&self, account_ids: &[ID]) -> anyhow::Result<Vec<Account>>;
+    async fn delete(&self, account_id: &ID) -> Option<Account>;
     async fn find_by_apikey(&self, api_key: &str) -> Option<Account>;
     async fn find_by_webhook_url(&self, url: &str) -> Option<Account>;
 }
@@ -64,8 +66,10 @@ mod tests {
         // Insert
         assert!(ctx.repos.account_repo.insert(&account).await.is_ok());
 
-        let pubkey = String::from("12312412");
-        account.set_public_key_b64(Some(pubkey.clone())).unwrap();
+        let pubkey = std::fs::read("../api/config/test_public_rsa_key.crt").unwrap();
+        let pubkey = String::from_utf8(pubkey).unwrap();
+
+        account.set_public_jwt_key(Some(pubkey)).unwrap();
 
         // Save
         assert!(ctx.repos.account_repo.save(&account).await.is_ok());

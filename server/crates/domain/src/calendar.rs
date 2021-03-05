@@ -1,11 +1,10 @@
-use crate::shared::entity::Entity;
+use crate::shared::entity::{Entity, ID};
 use chrono_tz::{Tz, UTC};
-use mongodb::bson::oid::ObjectId;
 
 #[derive(Debug, Clone)]
 pub struct Calendar {
-    pub id: String,
-    pub user_id: String,
+    pub id: ID,
+    pub user_id: ID,
     pub settings: CalendarSettings,
 }
 
@@ -37,10 +36,10 @@ impl CalendarSettings {
 }
 
 impl Calendar {
-    pub fn new(user_id: &str) -> Self {
+    pub fn new(user_id: &ID) -> Self {
         Self {
-            id: ObjectId::new().to_hex(),
-            user_id: user_id.to_string(),
+            id: Default::default(),
+            user_id: user_id.clone(),
             settings: CalendarSettings {
                 wkst: 0,
                 timezone: UTC,
@@ -50,7 +49,7 @@ impl Calendar {
 }
 
 impl Entity for Calendar {
-    fn id(&self) -> String {
-        self.id.clone()
+    fn id(&self) -> &ID {
+        &self.id
     }
 }

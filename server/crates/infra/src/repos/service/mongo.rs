@@ -1,11 +1,11 @@
 use super::IServiceRepo;
-use crate::repos::shared::mongo_repo::{self, create_object_id};
+use crate::repos::shared::mongo_repo::{self};
 use mongo_repo::MongoDocument;
 use mongodb::{
     bson::{doc, oid::ObjectId, Document},
     Collection, Database,
 };
-use nettu_scheduler_domain::{Service, ServiceResource, TimePlan};
+use nettu_scheduler_domain::{Service, ServiceResource, TimePlan, ID};
 use serde::{Deserialize, Serialize};
 
 pub struct MongoServiceRepo {
@@ -30,60 +30,63 @@ impl IServiceRepo for MongoServiceRepo {
         mongo_repo::save::<_, ServiceMongo>(&self.collection, service).await
     }
 
-    async fn find(&self, service_id: &str) -> Option<Service> {
-        let oid = create_object_id(service_id)?;
+    async fn find(&self, service_id: &ID) -> Option<Service> {
+        let oid = service_id.inner_ref();
         mongo_repo::find::<_, ServiceMongo>(&self.collection, &oid).await
     }
 
-    async fn delete(&self, service_id: &str) -> Option<Service> {
-        let oid = create_object_id(service_id)?;
+    async fn delete(&self, service_id: &ID) -> Option<Service> {
+        let oid = service_id.inner_ref();
         mongo_repo::delete::<_, ServiceMongo>(&self.collection, &oid).await
     }
 
-    async fn remove_calendar_from_services(&self, calendar_id: &str) -> anyhow::Result<()> {
+    async fn remove_calendar_from_services(&self, calendar_id: &ID) -> anyhow::Result<()> {
+        let calendar_id = calendar_id.as_string();
         let filter = doc! {
             "attributes": {
                 "key": "calendars",
-                "value": calendar_id
+                "value": &calendar_id
             }
         };
         let update = doc! {
             "attributes.value": {
-                "$pull": calendar_id
+                "$pull": &calendar_id
             },
             "users.calendar_ids": {
-                "$pull": calendar_id
+                "$pull": &calendar_id
             }
         };
         mongo_repo::update_many::<_, ServiceMongo>(&self.collection, filter, update).await
     }
 
-    async fn remove_schedule_from_services(&self, schedule_id: &str) -> anyhow::Result<()> {
+    async fn remove_schedule_from_services(&self, schedule_id: &ID) -> anyhow::Result<()> {
+        let schedule_id = schedule_id.as_string();
         let filter = doc! {
             "attributes": {
                 "key": "schedules",
-                "value": schedule_id
+                "value": &schedule_id
             }
         };
         let update = doc! {
             "attributes.value": {
-                "$pull": schedule_id
+                "$pull": &schedule_id
             },
             "users.schedule_ids": {
-                "$pull": schedule_id
+                "$pull": &schedule_id
             }
         };
         mongo_repo::update_many::<_, ServiceMongo>(&self.collection, filter, update).await
     }
 
-    async fn remove_user_from_services(&self, user_id: &str) -> anyhow::Result<()> {
+    async fn remove_user_from_services(&self, user_id: &ID) -> anyhow::Result<()> {
+        let user_id = user_id.as_string();
         let filter = doc! {
-            "users.user_id": user_id
+            "users.user_id": &user_id
         };
         let update = doc! {
             "$pull": {
                 "users": {
-                    "user_id": user_id
+                    "user_id": &user_id
                 }
             }
         };
@@ -94,9 +97,9 @@ impl IServiceRepo for MongoServiceRepo {
 #[derive(Debug, Serialize, Deserialize)]
 struct ServiceResourceMongo {
     pub _id: ObjectId,
-    pub user_id: String,
+    pub user_id: ObjectId,
     pub availibility: TimePlan,
-    pub busy: Vec<String>,
+    pub busy: Vec<ObjectId>,
     pub buffer: i64,
     pub closest_booking_time: i64,
     pub furthest_booking_time: Option<i64>,
@@ -111,7 +114,7 @@ struct DocumentAttribute {
 #[derive(Debug, Serialize, Deserialize)]
 struct ServiceMongo {
     pub _id: ObjectId,
-    pub account_id: String,
+    pub account_id: ObjectId,
     pub users: Vec<ServiceResourceMongo>,
     pub attributes: Vec<DocumentAttribute>,
 }
@@ -119,16 +122,16 @@ struct ServiceMongo {
 impl MongoDocument<Service> for ServiceMongo {
     fn to_domain(&self) -> Service {
         Service {
-            id: self._id.to_string(),
-            account_id: self.account_id.clone(),
+            id: ID::from(self._id.clone()),
+            account_id: ID::from(self.account_id.clone()),
             users: self
                 .users
                 .iter()
                 .map(|user| ServiceResource {
-                    id: user._id.to_string(),
-                    user_id: user.user_id.clone(),
+                    id: ID::from(user._id.clone()),
+                    user_id: ID::from(user.user_id.clone()),
                     availibility: user.availibility.clone(),
-                    busy: user.busy.clone(),
+                    busy: user.busy.iter().map(|id| ID::from(id.clone())).collect(),
                     buffer: user.buffer,
                     closest_booking_time: user.closest_booking_time,
                     furthest_booking_time: user.furthest_booking_time,
@@ -139,16 +142,16 @@ impl MongoDocument<Service> for ServiceMongo {
 
     fn from_domain(service: &Service) -> Self {
         Self {
-            _id: ObjectId::with_string(&service.id).unwrap(),
-            account_id: service.account_id.clone(),
+            _id: service.id.inner_ref().clone(),
+            account_id: service.account_id.inner_ref().clone(),
             users: service
                 .users
                 .iter()
                 .map(|user| ServiceResourceMongo {
-                    _id: ObjectId::with_string(&user.id).unwrap(),
-                    user_id: user.user_id.clone(),
+                    _id: user.id.inner_ref().clone(),
+                    user_id: user.user_id.inner_ref().clone(),
                     availibility: user.availibility.clone(),
-                    busy: user.busy.clone(),
+                    busy: user.busy.iter().map(|id| id.inner_ref().clone()).collect(),
                     buffer: user.buffer,
                     closest_booking_time: user.closest_booking_time,
                     furthest_booking_time: user.furthest_booking_time,
@@ -160,7 +163,12 @@ impl MongoDocument<Service> for ServiceMongo {
                     value: service
                         .users
                         .iter()
-                        .map(|u| u.get_calendar_ids())
+                        .map(|u| {
+                            u.get_calendar_ids()
+                                .iter()
+                                .map(|id| id.as_string())
+                                .collect::<Vec<_>>()
+                        })
                         .flatten()
                         .collect(),
                 },
@@ -169,7 +177,7 @@ impl MongoDocument<Service> for ServiceMongo {
                     value: service
                         .users
                         .iter()
-                        .map(|u| u.get_schedule_id())
+                        .map(|u| u.get_schedule_id().map(|id| id.as_string()))
                         .filter(|schedule| schedule.is_some())
                         .map(|schedule| schedule.unwrap())
                         .collect(),

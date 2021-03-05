@@ -1,6 +1,6 @@
 use super::IScheduleRepo;
 use crate::repos::shared::{inmemory_repo::*, repo::DeleteResult};
-use nettu_scheduler_domain::Schedule;
+use nettu_scheduler_domain::{Schedule, ID};
 
 pub struct InMemoryScheduleRepo {
     schedules: std::sync::Mutex<Vec<Schedule>>,
@@ -26,26 +26,26 @@ impl IScheduleRepo for InMemoryScheduleRepo {
         Ok(())
     }
 
-    async fn find(&self, schedule_id: &str) -> Option<Schedule> {
+    async fn find(&self, schedule_id: &ID) -> Option<Schedule> {
         find(schedule_id, &self.schedules)
     }
 
-    async fn find_by_user(&self, user_id: &str) -> Vec<Schedule> {
-        find_by(&self.schedules, |schedule| schedule.user_id == user_id)
+    async fn find_by_user(&self, user_id: &ID) -> Vec<Schedule> {
+        find_by(&self.schedules, |schedule| schedule.user_id == *user_id)
     }
 
-    async fn find_many(&self, schedule_ids: &[String]) -> Vec<Schedule> {
+    async fn find_many(&self, schedule_ids: &[ID]) -> Vec<Schedule> {
         find_by(&self.schedules, |schedule| {
             schedule_ids.contains(&schedule.id)
         })
     }
 
-    async fn delete(&self, schedule_id: &str) -> Option<Schedule> {
+    async fn delete(&self, schedule_id: &ID) -> Option<Schedule> {
         delete(schedule_id, &self.schedules)
     }
 
-    async fn delete_by_user(&self, user_id: &str) -> anyhow::Result<DeleteResult> {
-        let res = delete_by(&self.schedules, |schedule| schedule.user_id == user_id);
+    async fn delete_by_user(&self, user_id: &ID) -> anyhow::Result<DeleteResult> {
+        let res = delete_by(&self.schedules, |schedule| schedule.user_id == *user_id);
         Ok(res)
     }
 }

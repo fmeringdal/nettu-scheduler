@@ -1,4 +1,4 @@
-use nettu_scheduler_domain::Schedule;
+use nettu_scheduler_domain::{Schedule, ID};
 use serde::{Deserialize, Serialize};
 
 use crate::dtos::ScheduleDTO;
@@ -22,7 +22,7 @@ pub mod create_schedule {
 
     #[derive(Deserialize)]
     pub struct AdminPathParams {
-        pub user_id: String,
+        pub user_id: ID,
     }
 
     #[derive(Serialize, Deserialize)]
@@ -39,7 +39,7 @@ pub mod delete_schedule {
 
     #[derive(Deserialize)]
     pub struct PathParams {
-        pub schedule_id: String,
+        pub schedule_id: ID,
     }
 
     pub type APIResponse = ScheduleResponse;
@@ -50,7 +50,7 @@ pub mod get_schedule {
 
     #[derive(Deserialize)]
     pub struct PathParams {
-        pub schedule_id: String,
+        pub schedule_id: ID,
     }
 
     pub type APIResponse = ScheduleResponse;
@@ -63,7 +63,7 @@ pub mod update_schedule {
 
     #[derive(Deserialize)]
     pub struct PathParams {
-        pub schedule_id: String,
+        pub schedule_id: ID,
     }
 
     #[derive(Deserialize)]

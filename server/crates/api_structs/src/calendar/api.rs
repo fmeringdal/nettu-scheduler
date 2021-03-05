@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::dtos::{CalendarDTO, EventWithInstancesDTO};
-use nettu_scheduler_domain::{Calendar, EventInstance};
+use nettu_scheduler_domain::{Calendar, EventInstance, ID};
 
 #[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -22,7 +22,7 @@ pub mod create_calendar {
 
     #[derive(Deserialize)]
     pub struct PathParams {
-        pub user_id: String,
+        pub user_id: ID,
     }
 
     pub type APIResponse = CalendarResponse;
@@ -33,7 +33,7 @@ pub mod delete_calendar {
 
     #[derive(Deserialize)]
     pub struct PathParams {
-        pub calendar_id: String,
+        pub calendar_id: ID,
     }
 
     pub type APIResponse = CalendarResponse;
@@ -49,7 +49,7 @@ pub mod get_calendar_events {
     #[derive(Debug, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct PathParams {
-        pub calendar_id: String,
+        pub calendar_id: ID,
     }
 
     #[derive(Debug, Deserialize)]
@@ -88,7 +88,7 @@ pub mod get_calendar {
     #[derive(Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct PathParams {
-        pub calendar_id: String,
+        pub calendar_id: ID,
     }
 
     pub type APIResponse = CalendarResponse;
@@ -101,7 +101,7 @@ pub mod get_user_freebusy {
 
     #[derive(Debug, Deserialize)]
     pub struct PathParams {
-        pub external_user_id: String,
+        pub user_id: ID,
     }
 
     #[derive(Debug, Deserialize)]
@@ -125,7 +125,7 @@ pub mod update_calendar_settings {
 
     #[derive(Deserialize)]
     pub struct PathParams {
-        pub calendar_id: String,
+        pub calendar_id: ID,
     }
 
     #[derive(Deserialize)]

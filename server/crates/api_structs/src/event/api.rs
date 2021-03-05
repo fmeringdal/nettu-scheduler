@@ -1,6 +1,6 @@
 use crate::dtos::CalendarEventDTO;
 use nettu_scheduler_domain::{CalendarEvent, EventInstance};
-use nettu_scheduler_domain::{CalendarEventReminder, RRuleOptions};
+use nettu_scheduler_domain::{CalendarEventReminder, RRuleOptions, ID};
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize)]
@@ -22,7 +22,7 @@ pub mod create_event_exception {
 
     #[derive(Deserialize)]
     pub struct PathParams {
-        pub event_id: String,
+        pub event_id: ID,
     }
     #[derive(Deserialize)]
     #[serde(rename_all = "camelCase")]
@@ -39,7 +39,7 @@ pub mod create_event {
     #[derive(Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
-        pub calendar_id: String,
+        pub calendar_id: ID,
         pub start_ts: i64,
         pub duration: i64,
         pub busy: Option<bool>,
@@ -56,7 +56,7 @@ pub mod delete_event {
 
     #[derive(Deserialize)]
     pub struct PathParams {
-        pub event_id: String,
+        pub event_id: ID,
     }
 
     pub type APIResponse = CalendarEventResponse;
@@ -68,7 +68,7 @@ pub mod get_event_instances {
 
     #[derive(Deserialize)]
     pub struct PathParams {
-        pub event_id: String,
+        pub event_id: ID,
     }
     #[derive(Serialize, Deserialize, Debug)]
     #[serde(rename_all = "camelCase")]
@@ -99,7 +99,7 @@ pub mod get_event {
 
     #[derive(Deserialize)]
     pub struct PathParams {
-        pub event_id: String,
+        pub event_id: ID,
     }
 
     pub type APIResponse = CalendarEventResponse;
@@ -120,7 +120,7 @@ pub mod update_event {
 
     #[derive(Deserialize)]
     pub struct PathParams {
-        pub event_id: String,
+        pub event_id: ID,
     }
 
     pub type APIResponse = CalendarEventResponse;

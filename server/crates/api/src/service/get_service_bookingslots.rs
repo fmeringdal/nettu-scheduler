@@ -10,7 +10,7 @@ use nettu_scheduler_domain::{
         UserFreeEvents,
     },
     get_free_busy, Calendar, CompatibleInstances, EventInstance, ServiceResource, TimePlan,
-    TimeSpan,
+    TimeSpan, ID,
 };
 use nettu_scheduler_infra::NettuContext;
 
@@ -59,7 +59,7 @@ pub async fn get_service_bookingslots_controller(
 
 #[derive(Debug)]
 struct GetServiceBookingSlotsUseCase {
-    pub service_id: String,
+    pub service_id: ID,
     pub date: String,
     pub iana_tz: Option<String>,
     pub duration: i64,
@@ -101,13 +101,9 @@ impl UseCase for GetServiceBookingSlotsUseCase {
         let booking_timespan = match validate_bookingslots_query(&query) {
             Ok(t) => t,
             Err(e) => match e {
-                BookingQueryError::InvalidIntervalError => {
-                    return Err(UseCaseErrors::InvalidInterval)
-                }
-                BookingQueryError::InvalidDateError(d) => {
-                    return Err(UseCaseErrors::InvalidDate(d))
-                }
-                BookingQueryError::InvalidTimezoneError(d) => {
+                BookingQueryError::InvalidInterval => return Err(UseCaseErrors::InvalidInterval),
+                BookingQueryError::InvalidDate(d) => return Err(UseCaseErrors::InvalidDate(d)),
+                BookingQueryError::InvalidTimezone(d) => {
                     return Err(UseCaseErrors::InvalidTimezone(d))
                 }
             },
@@ -209,7 +205,7 @@ impl GetServiceBookingSlotsUseCase {
                         .map(|e| {
                             let mut instances = e.expand(Some(&timespan), &cal.settings);
                             let is_service_event = e.services.contains(&String::from("*"))
-                                || e.services.contains(&self.service_id);
+                                || e.services.contains(&self.service_id.as_string());
 
                             // Add buffer to instances if event is a service event
                             if user.buffer > 0 && is_service_event {
@@ -327,7 +323,7 @@ mod test {
         let mut ctx = setup_context().await;
         ctx.sys = Arc::new(DummySys {});
 
-        let service = Service::new("123".into());
+        let service = Service::new(Default::default());
         ctx.repos.service_repo.insert(&service).await.unwrap();
 
         TestContext { ctx, service }
@@ -335,8 +331,8 @@ mod test {
 
     async fn setup_service_users(ctx: &NettuContext, service: &mut Service) {
         let mut resource1 = ServiceResource {
-            id: "1".into(),
-            user_id: "1".into(),
+            id: Default::default(),
+            user_id: Default::default(),
             buffer: 0,
             availibility: TimePlan::Empty,
             busy: vec![],
@@ -344,8 +340,8 @@ mod test {
             furthest_booking_time: None,
         };
         let mut resource2 = ServiceResource {
-            id: "2".into(),
-            user_id: "2".into(),
+            id: Default::default(),
+            user_id: Default::default(),
             buffer: 0,
             availibility: TimePlan::Empty,
             busy: vec![],
@@ -369,45 +365,47 @@ mod test {
             .await
             .unwrap();
 
+        let account_id = ID::default();
+
         let availibility_event1 = CalendarEvent {
+            id: Default::default(),
+            account_id: account_id.clone(),
             busy: false,
             calendar_id: calendar_user_1.id,
             duration: 1000 * 60 * 60,
             end_ts: 0,
             exdates: vec![],
-            id: "1".into(),
             recurrence: None,
             start_ts: 1000 * 60 * 60,
-            account_id: "1".into(),
             user_id: resource1.user_id.to_owned(),
             reminder: None,
             services: vec![],
         };
         let availibility_event2 = CalendarEvent {
+            id: ID::default(),
+            account_id: account_id.clone(),
             busy: false,
             calendar_id: calendar_user_2.id.clone(),
             duration: 1000 * 60 * 60,
             end_ts: 0,
             exdates: vec![],
-            id: "2".into(),
             recurrence: None,
             start_ts: 1000 * 60 * 60,
-            account_id: "1".into(),
             user_id: resource2.user_id.to_owned(),
             reminder: None,
             services: vec![],
         };
         let mut availibility_event3 = CalendarEvent {
+            id: ID::default(),
+            account_id: account_id.clone(),
             busy: false,
             calendar_id: calendar_user_2.id,
             duration: 1000 * 60 * 105,
             end_ts: 0,
             exdates: vec![],
-            id: "3".into(),
             recurrence: None,
             start_ts: 1000 * 60 * 60 * 4,
             user_id: resource1.user_id.to_owned(),
-            account_id: "1".into(),
             reminder: None,
             services: vec![],
         };
@@ -475,7 +473,7 @@ mod test {
         assert_eq!(booking_slots.len(), 4);
         for i in 0..4 {
             assert_eq!(booking_slots[i].duration, usecase.duration);
-            assert_eq!(booking_slots[i].user_ids, vec!["2"]);
+            assert_eq!(booking_slots[i].user_ids.len(), 1);
             assert_eq!(
                 booking_slots[i].start,
                 Utc.ymd(2010, 1, 1)
@@ -496,11 +494,11 @@ mod test {
         assert!(res.is_ok());
         let booking_slots = res.unwrap().booking_slots;
         assert_eq!(booking_slots.len(), 5);
-        assert_eq!(booking_slots[0].user_ids, vec!["1", "2"]);
+        assert_eq!(booking_slots[0].user_ids.len(), 2);
         for i in 0..5 {
             assert_eq!(booking_slots[i].duration, usecase.duration);
             if i > 0 {
-                assert_eq!(booking_slots[i].user_ids, vec!["2"]);
+                assert_eq!(booking_slots[i].user_ids.len(), 1);
                 assert_eq!(
                     booking_slots[i].start,
                     Utc.ymd(1970, 1, 1)

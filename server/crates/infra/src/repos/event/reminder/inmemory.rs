@@ -1,7 +1,7 @@
 use super::IReminderRepo;
 use crate::repos::shared::inmemory_repo::*;
 use crate::repos::shared::repo::DeleteResult;
-use nettu_scheduler_domain::Reminder;
+use nettu_scheduler_domain::{Reminder, ID};
 
 pub struct InMemoryReminderRepo {
     reminders: std::sync::Mutex<Vec<Reminder>>,
@@ -24,9 +24,9 @@ impl IReminderRepo for InMemoryReminderRepo {
         Ok(())
     }
 
-    async fn find_by_event_and_priority(&self, event_id: &str, priority: i64) -> Option<Reminder> {
+    async fn find_by_event_and_priority(&self, event_id: &ID, priority: i64) -> Option<Reminder> {
         let reminders = find_by(&self.reminders, |reminder| {
-            reminder.event_id == event_id && reminder.priority == priority
+            reminder.event_id == *event_id && reminder.priority == priority
         });
         if reminders.is_empty() {
             return None;
@@ -38,7 +38,7 @@ impl IReminderRepo for InMemoryReminderRepo {
         find_and_delete_by(&self.reminders, |reminder| reminder.remind_at <= before)
     }
 
-    async fn delete_by_events(&self, event_ids: &[String]) -> anyhow::Result<DeleteResult> {
+    async fn delete_by_events(&self, event_ids: &[ID]) -> anyhow::Result<DeleteResult> {
         let res = delete_by(&self.reminders, |reminder| {
             event_ids.contains(&reminder.event_id)
         });

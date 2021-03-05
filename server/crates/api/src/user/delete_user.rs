@@ -3,7 +3,7 @@ use crate::{error::NettuError, shared::auth::protect_account_route};
 use actix_web::{web, HttpRequest, HttpResponse};
 use futures::future::join_all;
 use nettu_scheduler_api_structs::delete_user::*;
-use nettu_scheduler_domain::{Account, User};
+use nettu_scheduler_domain::{Account, User, ID};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn delete_user_controller(
@@ -22,7 +22,7 @@ pub async fn delete_user_controller(
         .map(|usecase_res| HttpResponse::Ok().json(APIResponse::new(usecase_res.user)))
         .map_err(|e| match e {
             UseCaseErrors::StorageError => NettuError::InternalError,
-            UseCaseErrors::UserNotFoundError => NettuError::NotFound(format!(
+            UseCaseErrors::UserNotFound => NettuError::NotFound(format!(
                 "A user with id: {}, was not found.",
                 path_params.user_id
             )),
@@ -32,7 +32,7 @@ pub async fn delete_user_controller(
 #[derive(Debug)]
 struct DeleteUserUseCase {
     account: Account,
-    user_id: String,
+    user_id: ID,
 }
 
 struct UseCaseRes {
@@ -42,7 +42,7 @@ struct UseCaseRes {
 #[derive(Debug)]
 enum UseCaseErrors {
     StorageError,
-    UserNotFoundError,
+    UserNotFound,
 }
 
 #[async_trait::async_trait(?Send)]
@@ -61,7 +61,7 @@ impl UseCase for DeleteUserUseCase {
                     None => return Err(UseCaseErrors::StorageError),
                 }
             }
-            _ => return Err(UseCaseErrors::UserNotFoundError),
+            _ => return Err(UseCaseErrors::UserNotFound),
         };
 
         let _ = join_all(vec![

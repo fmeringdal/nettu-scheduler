@@ -13,13 +13,6 @@ pub trait MongoDocument<E>: Serialize + DeserializeOwned {
     fn get_id_filter(&self) -> Document;
 }
 
-pub fn create_object_id(id: &str) -> Option<ObjectId> {
-    match ObjectId::with_string(id) {
-        Ok(oid) => Some(oid),
-        Err(_) => None,
-    }
-}
-
 fn get_id_filter(oid: &ObjectId) -> Document {
     doc! {
         "_id": oid

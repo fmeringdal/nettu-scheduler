@@ -1,15 +1,15 @@
-use crate::shared::entity::Entity;
+use crate::shared::entity::{Entity, ID};
 
 /// A `Reminder` represents a specific time before the occurence a
 /// `CalendarEvent` when the corresponding `Account` should be notified.
 #[derive(Debug, Clone)]
 pub struct Reminder {
-    pub id: String,
+    pub id: ID,
     /// The `CalendarEvent` this `Reminder` is associated with
-    pub event_id: String,
+    pub event_id: ID,
     /// The `Account` this `Reminder` is associated with and which
     /// should receive a webhook notification at `remind_at`
-    pub account_id: String,
+    pub account_id: ID,
     /// The timestamp at which the `Account` should be notified.
     /// This is usually some minutes before a `CalendarEvent`
     pub remind_at: i64,
@@ -25,20 +25,20 @@ pub struct Reminder {
 }
 
 impl Entity for Reminder {
-    fn id(&self) -> String {
-        self.id.clone()
+    fn id(&self) -> &ID {
+        &self.id
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct EventRemindersExpansionJob {
-    pub id: String,
-    pub event_id: String,
+    pub id: ID,
+    pub event_id: ID,
     pub timestamp: i64,
 }
 
 impl Entity for EventRemindersExpansionJob {
-    fn id(&self) -> String {
-        self.id.clone()
+    fn id(&self) -> &ID {
+        &self.id
     }
 }

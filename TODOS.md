@@ -1,9 +1,9 @@
 
 ## Todos
 
+- fjerne base64 public cert?
+- fjerne context fra UseCase
 - More admin and user controllers for different usecases
-- why base64 public cert?
-- remove error postfix on enum variants
 https://rust-lang.github.io/api-guidelines/type-safety.html
 https://github.com/Qovery/engine
 https://vector.dev/

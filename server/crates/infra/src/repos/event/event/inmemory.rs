@@ -1,7 +1,7 @@
 use super::IEventRepo;
 use crate::repos::shared::inmemory_repo::*;
 use crate::repos::shared::repo::DeleteResult;
-use nettu_scheduler_domain::{CalendarEvent, TimeSpan};
+use nettu_scheduler_domain::{CalendarEvent, TimeSpan, ID};
 
 pub struct InMemoryEventRepo {
     calendar_events: std::sync::Mutex<Vec<CalendarEvent>>,
@@ -27,17 +27,17 @@ impl IEventRepo for InMemoryEventRepo {
         Ok(())
     }
 
-    async fn find(&self, event_id: &str) -> Option<CalendarEvent> {
+    async fn find(&self, event_id: &ID) -> Option<CalendarEvent> {
         find(event_id, &self.calendar_events)
     }
 
     async fn find_by_calendar(
         &self,
-        calendar_id: &str,
+        calendar_id: &ID,
         timespan: Option<&TimeSpan>,
     ) -> anyhow::Result<Vec<CalendarEvent>> {
         let res = find_by(&self.calendar_events, |event| {
-            if event.calendar_id == calendar_id {
+            if event.calendar_id == *calendar_id {
                 if let Some(span) = timespan {
                     // TODO: Consider if this should be strict equals or not
                     return span.start() <= event.end_ts && span.end() >= event.start_ts;
@@ -50,22 +50,22 @@ impl IEventRepo for InMemoryEventRepo {
         Ok(res)
     }
 
-    async fn find_many(&self, event_ids: &[String]) -> anyhow::Result<Vec<CalendarEvent>> {
+    async fn find_many(&self, event_ids: &[ID]) -> anyhow::Result<Vec<CalendarEvent>> {
         let res = find_by(&self.calendar_events, |event| event_ids.contains(&event.id));
         Ok(res)
     }
 
-    async fn delete(&self, event_id: &str) -> Option<CalendarEvent> {
+    async fn delete(&self, event_id: &ID) -> Option<CalendarEvent> {
         delete(event_id, &self.calendar_events)
     }
 
-    async fn delete_by_calendar(&self, calendar_id: &str) -> anyhow::Result<DeleteResult> {
-        let res = delete_by(&self.calendar_events, |e| e.calendar_id == calendar_id);
+    async fn delete_by_calendar(&self, calendar_id: &ID) -> anyhow::Result<DeleteResult> {
+        let res = delete_by(&self.calendar_events, |e| e.calendar_id == *calendar_id);
         Ok(res)
     }
 
-    async fn delete_by_user(&self, user_id: &str) -> anyhow::Result<DeleteResult> {
-        let res = delete_by(&self.calendar_events, |e| e.user_id == user_id);
+    async fn delete_by_user(&self, user_id: &ID) -> anyhow::Result<DeleteResult> {
+        let res = delete_by(&self.calendar_events, |e| e.user_id == *user_id);
         Ok(res)
     }
 }

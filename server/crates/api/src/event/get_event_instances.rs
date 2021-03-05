@@ -2,7 +2,7 @@ use crate::shared::usecase::{execute, UseCase};
 use crate::{error::NettuError, shared::auth::protect_route};
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::get_event_instances::*;
-use nettu_scheduler_domain::{CalendarEvent, EventInstance, TimeSpan};
+use nettu_scheduler_domain::{CalendarEvent, EventInstance, TimeSpan, ID};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn get_event_instances_controller(
@@ -25,10 +25,10 @@ pub async fn get_event_instances_controller(
             HttpResponse::Ok().json(APIResponse::new(usecase_res.event, usecase_res.instances))
         })
         .map_err(|e| match e {
-            UseCaseErrors::InvalidTimespanError => {
+            UseCaseErrors::InvalidTimespan => {
                 NettuError::BadClientData("The provided start_ts and end_ts is invalid".into())
             }
-            UseCaseErrors::NotFoundError => NettuError::NotFound(format!(
+            UseCaseErrors::NotFound => NettuError::NotFound(format!(
                 "The event with id: {}, was not found",
                 path_params.event_id
             )),
@@ -37,15 +37,15 @@ pub async fn get_event_instances_controller(
 
 #[derive(Debug)]
 pub struct GetEventInstancesUseCase {
-    pub user_id: String,
-    pub event_id: String,
+    pub user_id: ID,
+    pub event_id: ID,
     pub timespan: QueryParams,
 }
 
 #[derive(Debug)]
 pub enum UseCaseErrors {
-    NotFoundError,
-    InvalidTimespanError,
+    NotFound,
+    InvalidTimespan,
 }
 
 pub struct UseCaseResponse {
@@ -67,17 +67,17 @@ impl UseCase for GetEventInstancesUseCase {
             Some(event) if self.user_id == event.user_id => {
                 let calendar = match ctx.repos.calendar_repo.find(&event.calendar_id).await {
                     Some(cal) => cal,
-                    None => return Err(UseCaseErrors::NotFoundError {}),
+                    None => return Err(UseCaseErrors::NotFound {}),
                 };
 
                 let timespan = TimeSpan::new(self.timespan.start_ts, self.timespan.end_ts);
                 if timespan.greater_than(ctx.config.event_instances_query_duration_limit) {
-                    return Err(UseCaseErrors::InvalidTimespanError);
+                    return Err(UseCaseErrors::InvalidTimespan);
                 }
                 let instances = event.expand(Some(&timespan), &calendar.settings);
                 Ok(UseCaseResponse { event, instances })
             }
-            _ => Err(UseCaseErrors::NotFoundError {}),
+            _ => Err(UseCaseErrors::NotFound {}),
         }
     }
 }

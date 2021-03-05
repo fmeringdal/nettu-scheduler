@@ -9,7 +9,7 @@ use crate::{
 use actix_web::{web, HttpResponse};
 use chrono_tz::Tz;
 use nettu_scheduler_api_structs::create_schedule::*;
-use nettu_scheduler_domain::Schedule;
+use nettu_scheduler_domain::{Schedule, ID};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn create_schedule_admin_controller(
@@ -78,8 +78,8 @@ pub async fn create_schedule_controller(
 
 #[derive(Debug)]
 struct CreateScheduleUseCase {
-    pub user_id: String,
-    pub account_id: String,
+    pub user_id: ID,
+    pub account_id: ID,
     pub tzid: String,
 }
 
@@ -117,7 +117,7 @@ impl UseCase for CreateScheduleUseCase {
             return Err(UseCaseErrors::UserNotFound);
         }
 
-        let schedule = Schedule::new(&self.user_id, &tz);
+        let schedule = Schedule::new(self.user_id.clone(), &tz);
 
         let res = ctx.repos.schedule_repo.insert(&schedule).await;
         match res {

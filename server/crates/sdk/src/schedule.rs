@@ -1,5 +1,6 @@
 use crate::{APIResponse, BaseClient};
 use nettu_scheduler_api_structs::*;
+use nettu_scheduler_domain::ID;
 use reqwest::StatusCode;
 use std::sync::Arc;
 
@@ -36,5 +37,5 @@ impl ScheduleClient {
 
 pub struct CreateScheduleInput {
     pub timezone: String,
-    pub user_id: String,
+    pub user_id: ID,
 }

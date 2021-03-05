@@ -1,12 +1,11 @@
 use super::IAccountRepo;
-use nettu_scheduler_domain::{Account, AccountSettings, AccountWebhookSettings};
-
-use crate::repos::shared::mongo_repo::{self, create_object_id};
+use crate::repos::shared::mongo_repo::{self};
 use mongo_repo::MongoDocument;
 use mongodb::{
     bson::{doc, oid::ObjectId, Document},
     Collection, Database,
 };
+use nettu_scheduler_domain::{Account, AccountSettings, AccountWebhookSettings, ID};
 use serde::{Deserialize, Serialize};
 
 pub struct MongoAccountRepo {
@@ -31,15 +30,15 @@ impl IAccountRepo for MongoAccountRepo {
         mongo_repo::save::<_, AccountMongo>(&self.collection, account).await
     }
 
-    async fn find(&self, account_id: &str) -> Option<Account> {
-        let oid = create_object_id(account_id)?;
+    async fn find(&self, account_id: &ID) -> Option<Account> {
+        let oid = account_id.inner_ref();
         mongo_repo::find::<_, AccountMongo>(&self.collection, &oid).await
     }
 
-    async fn find_many(&self, accounts_ids: &[String]) -> anyhow::Result<Vec<Account>> {
+    async fn find_many(&self, accounts_ids: &[ID]) -> anyhow::Result<Vec<Account>> {
         let filter = doc! {
             "event_id": {
-                "$in": accounts_ids
+                "$in": accounts_ids.iter().map(|id| id.inner_ref()).collect::<Vec<_>>()
             }
         };
 
@@ -60,8 +59,8 @@ impl IAccountRepo for MongoAccountRepo {
         mongo_repo::find_one_by::<_, AccountMongo>(&self.collection, filter).await
     }
 
-    async fn delete(&self, account_id: &str) -> Option<Account> {
-        let oid = create_object_id(account_id)?;
+    async fn delete(&self, account_id: &ID) -> Option<Account> {
+        let oid = account_id.inner_ref();
         mongo_repo::delete::<_, AccountMongo>(&self.collection, &oid).await
     }
 }
@@ -96,8 +95,8 @@ impl<'de> MongoDocument<Account> for AccountMongo {
         }
 
         Account {
-            id: self._id.to_string(),
-            public_key_b64: self.public_key_b64.clone(),
+            id: ID::from(self._id.clone()),
+            public_jwt_key: self.public_key_b64.clone(),
             secret_api_key: self.secret_api_key.clone(),
             settings,
         }
@@ -113,8 +112,8 @@ impl<'de> MongoDocument<Account> for AccountMongo {
         }
 
         Self {
-            _id: ObjectId::with_string(&account.id).unwrap(),
-            public_key_b64: account.public_key_b64.clone(),
+            _id: account.id.inner_ref().clone(),
+            public_key_b64: account.public_jwt_key.clone(),
             secret_api_key: account.secret_api_key.clone(),
             settings,
         }

@@ -4,7 +4,7 @@ use crate::shared::usecase::{execute, UseCase};
 
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::get_calendar_events::{APIResponse, PathParams, QueryParams};
-use nettu_scheduler_domain::{Calendar, EventWithInstances, TimeSpan};
+use nettu_scheduler_domain::{Calendar, EventWithInstances, TimeSpan, ID};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn get_calendar_events_controller(
@@ -28,10 +28,10 @@ pub async fn get_calendar_events_controller(
             HttpResponse::Ok().json(APIResponse::new(usecase_res.calendar, usecase_res.events))
         })
         .map_err(|e| match e {
-            UseCaseErrors::InvalidTimespanError => {
+            UseCaseErrors::InvalidTimespan => {
                 NettuError::BadClientData("The start and end timespan is invalid".into())
             }
-            UseCaseErrors::NotFoundError => NettuError::NotFound(format!(
+            UseCaseErrors::NotFound => NettuError::NotFound(format!(
                 "The calendar with id: {}, was not found.",
                 params.calendar_id
             )),
@@ -39,8 +39,8 @@ pub async fn get_calendar_events_controller(
 }
 #[derive(Debug)]
 pub struct GetCalendarEventsUseCase {
-    pub calendar_id: String,
-    pub user_id: String,
+    pub calendar_id: ID,
+    pub user_id: ID,
     pub start_ts: i64,
     pub end_ts: i64,
 }
@@ -52,8 +52,8 @@ pub struct UseCaseResponse {
 
 #[derive(Debug)]
 pub enum UseCaseErrors {
-    NotFoundError,
-    InvalidTimespanError,
+    NotFound,
+    InvalidTimespan,
 }
 
 #[async_trait::async_trait(?Send)]
@@ -69,7 +69,7 @@ impl UseCase for GetCalendarEventsUseCase {
 
         let timespan = TimeSpan::new(self.start_ts, self.end_ts);
         if timespan.greater_than(ctx.config.event_instances_query_duration_limit) {
-            return Err(UseCaseErrors::InvalidTimespanError);
+            return Err(UseCaseErrors::InvalidTimespan);
         }
 
         match calendar {
@@ -91,7 +91,7 @@ impl UseCase for GetCalendarEventsUseCase {
 
                 Ok(UseCaseResponse { calendar, events })
             }
-            _ => Err(UseCaseErrors::NotFoundError),
+            _ => Err(UseCaseErrors::NotFound),
         }
     }
 }

@@ -1,10 +1,10 @@
-use nettu_scheduler_domain::{Account, AccountSettings, AccountWebhookSettings};
+use nettu_scheduler_domain::{Account, AccountSettings, AccountWebhookSettings, ID};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AccountDTO {
-    pub id: String,
+    pub id: ID,
     pub public_key_b64: Option<String>,
     pub settings: AccountSettingsDTO,
 }
@@ -13,7 +13,7 @@ impl AccountDTO {
     pub fn new(account: &Account) -> Self {
         Self {
             id: account.id.clone(),
-            public_key_b64: account.public_key_b64.clone(),
+            public_key_b64: account.public_jwt_key.clone(),
             settings: AccountSettingsDTO::new(&account.settings),
         }
     }
