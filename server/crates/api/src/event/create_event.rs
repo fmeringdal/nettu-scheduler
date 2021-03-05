@@ -212,7 +212,7 @@ mod test {
     async fn rejects_invalid_calendar_id() {
         let TestContext {
             ctx,
-            calendar,
+            calendar: _,
             user,
         } = setup().await;
 

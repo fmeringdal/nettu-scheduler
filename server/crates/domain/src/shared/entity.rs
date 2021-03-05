@@ -1,7 +1,7 @@
 use mongodb::bson::oid::ObjectId;
 use serde::{de::Visitor, Deserialize, Serialize};
 use std::{
-    fmt::{write, Display},
+    fmt::{Display},
     str::FromStr,
 };
 use thiserror::Error;
