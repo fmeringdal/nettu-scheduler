@@ -130,6 +130,7 @@ pub mod send_account_event_reminders {
     use super::*;
 
     #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct AccountEventRemindersDTO {
         events: Vec<CalendarEventDTO>,
     }

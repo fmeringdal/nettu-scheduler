@@ -12,7 +12,7 @@ pub struct CalendarDTO {
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CalendarSettingsDTO {
-    pub wkst: isize,
+    pub week_start: isize,
     pub timezone: String,
 }
 
@@ -29,7 +29,7 @@ impl CalendarDTO {
 impl CalendarSettingsDTO {
     pub fn new(settings: &CalendarSettings) -> Self {
         Self {
-            wkst: settings.wkst,
+            week_start: settings.week_start,
             timezone: settings.timezone.to_string(),
         }
     }

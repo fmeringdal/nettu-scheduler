@@ -20,12 +20,6 @@ impl UserResponse {
 pub mod create_user {
     use super::*;
 
-    // #[derive(Serialize, Deserialize)]
-    // #[serde(rename_all = "camelCase")]
-    // pub struct RequestBody {
-    //     pub user_id: String,
-    // }
-
     pub type APIResponse = UserResponse;
 }
 

@@ -46,9 +46,8 @@ pub mod create_service {
 }
 
 pub mod get_service_bookingslots {
-    use nettu_scheduler_domain::booking_slots::ServiceBookingSlot;
-
     use super::*;
+    use nettu_scheduler_domain::booking_slots::ServiceBookingSlot;
 
     #[derive(Debug, Deserialize)]
     pub struct PathParams {

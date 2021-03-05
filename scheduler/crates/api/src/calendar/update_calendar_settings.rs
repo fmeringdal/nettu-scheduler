@@ -19,7 +19,7 @@ pub async fn update_calendar_settings_controller(
     let usecase = UpdateCalendarSettingsUseCase {
         user_id: user.id,
         calendar_id: path_params.calendar_id.clone(),
-        wkst: body.wkst.clone(),
+        week_start: body.week_start.clone(),
         timezone: body.timezone.clone(),
     };
 
@@ -45,7 +45,7 @@ pub async fn update_calendar_settings_controller(
 struct UpdateCalendarSettingsUseCase {
     pub user_id: ID,
     pub calendar_id: ID,
-    pub wkst: Option<isize>,
+    pub week_start: Option<isize>,
     pub timezone: Option<String>,
 }
 
@@ -62,18 +62,16 @@ impl UseCase for UpdateCalendarSettingsUseCase {
 
     type Errors = UseCaseErrors;
 
-    
-
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         let mut calendar = match ctx.repos.calendar_repo.find(&self.calendar_id).await {
             Some(cal) if cal.user_id == self.user_id => cal,
             _ => return Err(UseCaseErrors::CalendarNotFound),
         };
 
-        if let Some(wkst) = self.wkst {
-            if !calendar.settings.set_wkst(wkst) {
+        if let Some(wkst) = self.week_start {
+            if !calendar.settings.set_week_start(wkst) {
                 return Err(UseCaseErrors::InvalidSettings(format!(
-                    "Invalid wkst property: {}, must be between 0 and 6",
+                    "Invalid week start: {}, must be between 0 and 6",
                     wkst
                 )));
             }
@@ -82,7 +80,7 @@ impl UseCase for UpdateCalendarSettingsUseCase {
         if let Some(timezone) = &self.timezone {
             if !calendar.settings.set_timezone(timezone) {
                 return Err(UseCaseErrors::InvalidSettings(format!(
-                    "Invalid timezone property: {}, must be a valid IANA Timezone string",
+                    "Invalid timezone: {}, must be a valid IANA Timezone string",
                     timezone
                 )));
             }
@@ -120,7 +118,7 @@ mod test {
         let mut usecase = UpdateCalendarSettingsUseCase {
             calendar_id: calendar.id.into(),
             user_id: user_id.into(),
-            wkst: Some(20),
+            week_start: Some(20),
             timezone: None,
         };
         let res = usecase.execute(&ctx).await;
@@ -135,12 +133,12 @@ mod test {
         let calendar = Calendar::new(&user_id);
         ctx.repos.calendar_repo.insert(&calendar).await.unwrap();
 
-        assert_eq!(calendar.settings.wkst, 0);
+        assert_eq!(calendar.settings.week_start, 0);
         let new_wkst = 3;
         let mut usecase = UpdateCalendarSettingsUseCase {
             calendar_id: calendar.id.clone(),
             user_id,
-            wkst: Some(new_wkst),
+            week_start: Some(new_wkst),
             timezone: None,
         };
         let res = usecase.execute(&ctx).await;
@@ -148,6 +146,6 @@ mod test {
 
         // Check that calendar settings have been updated
         let calendar = ctx.repos.calendar_repo.find(&calendar.id).await.unwrap();
-        assert_eq!(calendar.settings.wkst, new_wkst);
+        assert_eq!(calendar.settings.week_start, new_wkst);
     }
 }

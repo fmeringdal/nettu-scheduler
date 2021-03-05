@@ -10,14 +10,14 @@ pub struct Calendar {
 
 #[derive(Debug, Clone)]
 pub struct CalendarSettings {
-    pub wkst: isize,
+    pub week_start: isize,
     pub timezone: Tz,
 }
 
 impl CalendarSettings {
-    pub fn set_wkst(&mut self, wkst: isize) -> bool {
+    pub fn set_week_start(&mut self, wkst: isize) -> bool {
         if wkst >= 0 && wkst <= 6 {
-            self.wkst = wkst;
+            self.week_start = wkst;
             true
         } else {
             false
@@ -35,15 +35,21 @@ impl CalendarSettings {
     }
 }
 
+impl Default for CalendarSettings {
+    fn default() -> Self {
+        Self {
+            week_start: 0,
+            timezone: UTC,
+        }
+    }
+}
+
 impl Calendar {
     pub fn new(user_id: &ID) -> Self {
         Self {
             id: Default::default(),
             user_id: user_id.clone(),
-            settings: CalendarSettings {
-                wkst: 0,
-                timezone: UTC,
-            },
+            settings: Default::default(),
         }
     }
 }

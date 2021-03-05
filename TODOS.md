@@ -2,7 +2,7 @@
 ## Todos
 
 - More admin and user controllers for different usecases
-- calendar settings, default and on creation
+- bysetpos stuff
 https://rust-lang.github.io/api-guidelines/type-safety.html
 https://github.com/Qovery/engine
 https://vector.dev/

@@ -70,7 +70,7 @@ struct CalendarMongo {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct CalendarSettingsMongo {
-    wkst: isize,
+    week_start: isize,
     timezone: String,
 }
 
@@ -80,7 +80,7 @@ impl MongoDocument<Calendar> for CalendarMongo {
             id: ID::from(self._id.clone()),
             user_id: ID::from(self.user_id.clone()),
             settings: CalendarSettings {
-                wkst: self.settings.wkst,
+                week_start: self.settings.week_start,
                 timezone: self.settings.timezone.parse().unwrap(),
             },
         }
@@ -91,7 +91,7 @@ impl MongoDocument<Calendar> for CalendarMongo {
             _id: calendar.id.inner_ref().clone(),
             user_id: calendar.user_id.inner_ref().clone(),
             settings: CalendarSettingsMongo {
-                wkst: calendar.settings.wkst,
+                week_start: calendar.settings.week_start,
                 timezone: calendar.settings.timezone.to_string(),
             },
         }

@@ -25,6 +25,13 @@ pub mod create_calendar {
         pub user_id: ID,
     }
 
+    #[derive(Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct RequestBody {
+        pub timezone: String,
+        pub week_start: isize,
+    }
+
     pub type APIResponse = CalendarResponse;
 }
 
@@ -47,7 +54,6 @@ pub mod get_calendar_events {
     use super::*;
 
     #[derive(Debug, Deserialize)]
-    #[serde(rename_all = "camelCase")]
     pub struct PathParams {
         pub calendar_id: ID,
     }
@@ -86,7 +92,6 @@ pub mod get_calendar {
     use super::*;
 
     #[derive(Serialize, Deserialize)]
-    #[serde(rename_all = "camelCase")]
     pub struct PathParams {
         pub calendar_id: ID,
     }
@@ -129,8 +134,9 @@ pub mod update_calendar_settings {
     }
 
     #[derive(Deserialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
-        pub wkst: Option<isize>,
+        pub week_start: Option<isize>,
         pub timezone: Option<String>,
     }
 
