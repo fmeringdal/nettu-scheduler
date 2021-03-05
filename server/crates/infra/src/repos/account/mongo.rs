@@ -68,7 +68,7 @@ impl IAccountRepo for MongoAccountRepo {
 #[derive(Debug, Serialize, Deserialize)]
 struct AccountMongo {
     pub _id: ObjectId,
-    pub public_key_b64: Option<String>,
+    pub public_jwt_key: Option<String>,
     pub secret_api_key: String,
     pub settings: AccountSettingsMongo,
 }
@@ -96,7 +96,7 @@ impl<'de> MongoDocument<Account> for AccountMongo {
 
         Account {
             id: ID::from(self._id.clone()),
-            public_jwt_key: self.public_key_b64.clone(),
+            public_jwt_key: self.public_jwt_key.clone(),
             secret_api_key: self.secret_api_key.clone(),
             settings,
         }
@@ -113,7 +113,7 @@ impl<'de> MongoDocument<Account> for AccountMongo {
 
         Self {
             _id: account.id.inner_ref().clone(),
-            public_key_b64: account.public_jwt_key.clone(),
+            public_jwt_key: account.public_jwt_key.clone(),
             secret_api_key: account.secret_api_key.clone(),
             settings,
         }

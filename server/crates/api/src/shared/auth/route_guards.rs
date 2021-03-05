@@ -90,12 +90,11 @@ pub fn get_nettu_account_header(req: &HttpRequest) -> Option<Result<ID, NettuErr
 /// Decodes the JWT token by checking if the signature matches the public
 /// key provided by the `Account`
 fn decode_token(account: &Account, token: &str) -> anyhow::Result<Claims> {
-    let public_key_b64 = match &account.public_jwt_key {
-        Some(public_key_b64) => public_key_b64,
+    let public_key = match &account.public_jwt_key {
+        Some(val) => val,
         None => return Err(anyhow::Error::msg("Account does not support user tokens")),
     };
-    let public_key = base64::decode(&public_key_b64)?;
-    let decoding_key = DecodingKey::from_rsa_pem(&public_key)?;
+    let decoding_key = DecodingKey::from_rsa_pem(public_key.as_bytes())?;
     let claims =
         decode::<Claims>(&token, &decoding_key, &Validation::new(Algorithm::RS256))?.claims;
 
@@ -211,12 +210,10 @@ mod test {
 
     fn get_account() -> Account {
         let pub_key = std::fs::read("./config/test_public_rsa_key.crt").unwrap();
-        let public_key_b64 = base64::encode(pub_key);
+        let pub_key = String::from_utf8(pub_key).expect("Valid pem file");
         Account {
-            id: Default::default(),
-            public_jwt_key: Some(public_key_b64),
-            secret_api_key: String::from("yoyo"),
-            settings: Default::default(),
+            public_jwt_key: Some(pub_key),
+            ..Default::default()
         }
     }
 

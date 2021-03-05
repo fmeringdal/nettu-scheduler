@@ -20,7 +20,6 @@ chrono = { version = "0.4.19", features = ["serde"] }
 chrono-tz = "0.5.3"
 anyhow = "1.0.0"
 jsonwebtoken = "7"
-base64 = "0.13.0"
 thiserror = "1.0"
 tracing = "0.1.25"
 tracing-actix-web = "0.2.1"

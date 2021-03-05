@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "camelCase")]
 pub struct AccountDTO {
     pub id: ID,
-    pub public_key_b64: Option<String>,
+    pub public_jwt_key: Option<String>,
     pub settings: AccountSettingsDTO,
 }
 
@@ -13,7 +13,7 @@ impl AccountDTO {
     pub fn new(account: &Account) -> Self {
         Self {
             id: account.id.clone(),
-            public_key_b64: account.public_jwt_key.clone(),
+            public_jwt_key: account.public_jwt_key.clone(),
             settings: AccountSettingsDTO::new(&account.settings),
         }
     }

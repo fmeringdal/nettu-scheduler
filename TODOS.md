@@ -1,9 +1,10 @@
 
 ## Todos
 
-- fjerne base64 public cert?
 - fjerne context fra UseCase
+- server -> scheduler
 - More admin and user controllers for different usecases
+- calendar settings, default and on creation
 https://rust-lang.github.io/api-guidelines/type-safety.html
 https://github.com/Qovery/engine
 https://vector.dev/
@@ -12,6 +13,7 @@ https://vector.dev/
 ## Backlog
 
 - Shared calendars, events etc
+- metadata
 - More api tests for [calendarevent, booking]
 - smarter mongodb schema
 

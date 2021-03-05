@@ -1713,7 +1713,6 @@ dependencies = [
  "actix-web",
  "anyhow",
  "async-trait",
- "base64 0.13.0",
  "chrono",
  "chrono-tz",
  "env_logger",

@@ -1,9 +1,6 @@
 use mongodb::bson::oid::ObjectId;
 use serde::{de::Visitor, Deserialize, Serialize};
-use std::{
-    fmt::{Display},
-    str::FromStr,
-};
+use std::{fmt::Display, str::FromStr};
 use thiserror::Error;
 
 pub trait Entity {

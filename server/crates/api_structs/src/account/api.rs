@@ -55,7 +55,7 @@ pub mod set_account_pub_key {
     #[derive(Debug, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
-        pub public_key_b64: Option<String>,
+        pub public_jwt_key: Option<String>,
     }
 
     pub type APIResponse = AccountResponse;

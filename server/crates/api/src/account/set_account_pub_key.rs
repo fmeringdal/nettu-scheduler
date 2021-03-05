@@ -14,15 +14,15 @@ pub async fn set_account_pub_key_controller(
 
     let usecase = SetAccountPubKeyUseCase {
         account,
-        public_key_b64: body.public_key_b64.clone(),
+        public_jwt_key: body.public_jwt_key.clone(),
     };
 
     execute(usecase, &ctx)
         .await
         .map(|account| HttpResponse::Ok().json(APIResponse::new(account)))
         .map_err(|e| match e {
-            UseCaseErrors::InvalidBase64Key => {
-                NettuError::BadClientData("Invalid base64 encoding of public key".into())
+            UseCaseErrors::InvalidPemKey => {
+                NettuError::BadClientData("Malformed public pem key provided".into())
             }
             UseCaseErrors::StorageError => NettuError::InternalError,
         })
@@ -31,12 +31,12 @@ pub async fn set_account_pub_key_controller(
 #[derive(Debug)]
 struct SetAccountPubKeyUseCase {
     pub account: Account,
-    pub public_key_b64: Option<String>,
+    pub public_jwt_key: Option<String>,
 }
 
 #[derive(Debug)]
 enum UseCaseErrors {
-    InvalidBase64Key,
+    InvalidPemKey,
     StorageError,
 }
 
@@ -51,10 +51,10 @@ impl UseCase for SetAccountPubKeyUseCase {
     async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
         if self
             .account
-            .set_public_jwt_key(self.public_key_b64.clone())
+            .set_public_jwt_key(self.public_jwt_key.clone())
             .is_err()
         {
-            return Err(UseCaseErrors::InvalidBase64Key);
+            return Err(UseCaseErrors::InvalidPemKey);
         }
 
         match ctx.repos.account_repo.save(&self.account).await {
