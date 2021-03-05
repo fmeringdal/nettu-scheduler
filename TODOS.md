@@ -1,7 +1,6 @@
 
 ## Todos
 
-- server -> scheduler
 - More admin and user controllers for different usecases
 - calendar settings, default and on creation
 https://rust-lang.github.io/api-guidelines/type-safety.html
