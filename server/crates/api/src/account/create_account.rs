@@ -40,9 +40,7 @@ impl UseCase for CreateAccountUseCase {
 
     type Errors = UseCaseErrors;
 
-    type Context = NettuContext;
-
-    async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         if self.code != ctx.config.create_account_secret_code {
             return Err(UseCaseErrors::InvalidCreateAccountCode);
         }

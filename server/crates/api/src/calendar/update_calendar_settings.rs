@@ -62,9 +62,9 @@ impl UseCase for UpdateCalendarSettingsUseCase {
 
     type Errors = UseCaseErrors;
 
-    type Context = NettuContext;
+    
 
-    async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         let mut calendar = match ctx.repos.calendar_repo.find(&self.calendar_id).await {
             Some(cal) if cal.user_id == self.user_id => cal,
             _ => return Err(UseCaseErrors::CalendarNotFound),

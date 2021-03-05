@@ -53,9 +53,7 @@ impl UseCase for DeleteScheduleUseCase {
 
     type Errors = UseCaseErrors;
 
-    type Context = NettuContext;
-
-    async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         let schedule = ctx.repos.schedule_repo.find(&self.schedule_id).await;
         match schedule {
             Some(schedule) if schedule.user_id == self.user_id => {

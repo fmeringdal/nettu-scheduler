@@ -46,9 +46,7 @@ impl UseCase for SetAccountPubKeyUseCase {
 
     type Errors = UseCaseErrors;
 
-    type Context = NettuContext;
-
-    async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         if self
             .account
             .set_public_jwt_key(self.public_jwt_key.clone())

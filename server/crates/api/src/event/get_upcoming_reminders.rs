@@ -140,10 +140,8 @@ impl UseCase for GetUpcomingRemindersUseCase {
 
     type Errors = UseCaseErrors;
 
-    type Context = NettuContext;
-
     /// This will run every minute
-    async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         // Find all occurences for the next interval and delete them
         let conf = Self::get_config();
         let ts = ctx.sys.get_timestamp_millis() + conf.send_interval + conf.computation_time;

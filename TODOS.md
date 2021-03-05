@@ -1,7 +1,6 @@
 
 ## Todos
 
-- fjerne context fra UseCase
 - server -> scheduler
 - More admin and user controllers for different usecases
 - calendar settings, default and on creation

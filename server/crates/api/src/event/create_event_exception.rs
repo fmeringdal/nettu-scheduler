@@ -56,9 +56,7 @@ impl UseCase for CreateEventExceptionUseCase {
 
     type Errors = UseCaseErrors;
 
-    type Context = NettuContext;
-
-    async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         let mut event = match ctx.repos.event_repo.find(&self.event_id).await {
             Some(event) if event.user_id == self.user_id => event,
             _ => return Err(UseCaseErrors::NotFound),

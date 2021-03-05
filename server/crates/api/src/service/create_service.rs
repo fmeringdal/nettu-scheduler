@@ -40,9 +40,7 @@ impl UseCase for CreateServiceUseCase {
 
     type Errors = UseCaseErrors;
 
-    type Context = NettuContext;
-
-    async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         let service = Service::new(self.account.id.clone());
         let res = ctx.repos.service_repo.insert(&service).await;
         match res {

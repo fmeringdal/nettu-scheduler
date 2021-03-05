@@ -46,9 +46,8 @@ pub enum UseCaseErrors {
 impl UseCase for CreateUserUseCase {
     type Response = UseCaseRes;
     type Errors = UseCaseErrors;
-    type Context = NettuContext;
 
-    async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         let user = User::new(self.account_id.clone());
 
         if let Some(_existing_user) = ctx.repos.user_repo.find(&user.id).await {

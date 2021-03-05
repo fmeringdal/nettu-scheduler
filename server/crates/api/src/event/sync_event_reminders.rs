@@ -110,9 +110,7 @@ impl<'a> UseCase for SyncEventRemindersUseCase<'a> {
 
     type Errors = UseCaseErrors;
 
-    type Context = NettuContext;
-
-    async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         match &self.request {
             SyncEventRemindersTrigger::EventModified(calendar_event, op) => {
                 // Delete event reminder expansion job if it exists

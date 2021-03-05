@@ -1,3 +1,5 @@
+use nettu_scheduler_infra::NettuContext;
+
 use super::auth::{Permission, Policy};
 use std::fmt::Debug;
 
@@ -5,9 +7,8 @@ use std::fmt::Debug;
 pub trait UseCase: Debug {
     type Response;
     type Errors;
-    type Context;
 
-    async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors>;
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors>;
 }
 
 pub trait PermissionBoundary: UseCase {
@@ -25,7 +26,7 @@ pub enum UseCaseErrorContainer<T: Debug> {
 pub async fn execute_with_policy<U>(
     usecase: U,
     policy: &Policy,
-    ctx: &U::Context,
+    ctx: &NettuContext,
 ) -> Result<U::Response, UseCaseErrorContainer<U::Errors>>
 where
     U: PermissionBoundary,
@@ -46,7 +47,7 @@ where
 
 // TODO: Better †racing context
 #[tracing::instrument(name = "Executing usecase", skip(usecase, ctx))]
-pub async fn execute<U>(mut usecase: U, ctx: &U::Context) -> Result<U::Response, U::Errors>
+pub async fn execute<U>(mut usecase: U, ctx: &NettuContext) -> Result<U::Response, U::Errors>
 where
     U: UseCase,
     U::Errors: Debug,

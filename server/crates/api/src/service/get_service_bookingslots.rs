@@ -85,9 +85,7 @@ impl UseCase for GetServiceBookingSlotsUseCase {
 
     type Errors = UseCaseErrors;
 
-    type Context = NettuContext;
-
-    async fn execute(&mut self, ctx: &Self::Context) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         if !validate_slots_interval(self.interval) {
             return Err(UseCaseErrors::InvalidInterval);
         }
