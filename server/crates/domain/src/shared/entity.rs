@@ -6,7 +6,6 @@ use std::{
 };
 use thiserror::Error;
 
-// Also require Eq ?
 pub trait Entity {
     fn id(&self) -> &ID;
     fn eq(&self, other: &Self) -> bool {
