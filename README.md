@@ -1,13 +1,12 @@
+<div align="center">
 <img width="400" src="logo.png" alt="logo">
+</div>
 
 # Nettu scheduler
 [![Read the Docs](https://readthedocs.org/projects/yt2mp3/badge/?version=latest)](https://yt2mp3.readthedocs.io/en/latest/?badge=latest)
 [![MIT licensed](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Travis CI](https://travis-ci.org/tterb/yt2mp3.svg?branch=master)](https://travis-ci.org/tterb/yt2mp3)
 [![Build status](https://github.com/fmeringdal/nettu-scheduler/actions/workflows/main.yml/badge.svg)](https://github.com/fmeringdal/nettu-scheduler/actions/workflows/main.yml/badge.svg)
 [![codecov](https://codecov.io/gh/fmeringdal/nettu-scheduler/branch/master/graph/badge.svg?token=l5z2mzzdHu)](https://codecov.io/gh/fmeringdal/nettu-scheduler)
-
-[Website](https://nettu.no) 
 
 ## Overview
 
