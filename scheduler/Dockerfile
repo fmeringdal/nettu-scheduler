@@ -1,32 +1,20 @@
-FROM rust:1.49 as builder
+FROM ekidd/rust-musl-builder as builder
 
-# RUN USER=root cargo new --bin nettu_scheduler
-WORKDIR ./nettu_scheduler
-COPY ./ ./
+WORKDIR /home/rust/
+
+COPY . .
+
+USER root
+RUN chown -R rust:rust .
+USER rust
+# RUN cargo test
 RUN cargo build --release
 
+# Size optimization
+RUN strip target/x86_64-unknown-linux-musl/release/nettu_scheduler
 
-FROM debian:buster-slim
-ARG APP=/usr/src/app
-
-RUN apt-get update \
-    && apt-get install -y ca-certificates tzdata \
-    && rm -rf /var/lib/apt/lists/*
-
-EXPOSE 8000
-
-ENV TZ=Etc/UTC \
-    APP_USER=appuser
-
-RUN groupadd $APP_USER \
-    && useradd -g $APP_USER $APP_USER \
-    && mkdir -p ${APP}
-
-COPY --from=builder /nettu_scheduler/target/release/server ${APP}/nettu_scheduler
-
-RUN chown -R $APP_USER:$APP_USER ${APP}
-
-USER $APP_USER
-WORKDIR ${APP}
-
-CMD ["./nettu_scheduler"]
+# Start building the final image
+FROM scratch
+WORKDIR /home/rust/
+COPY --from=builder /home/rust/target/x86_64-unknown-linux-musl/release/nettu_scheduler .
+ENTRYPOINT ["./nettu_scheduler"]
