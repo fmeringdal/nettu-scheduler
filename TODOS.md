@@ -1,8 +1,9 @@
 
 ## Todos
 
+- metadata
 - More admin and user controllers for different usecases
-- schedule and service and calendarevent impls freebusy or generate instances ?
+  - Admin routes maybe just need an additionl userid in path params
 - sjekke ut postgresql
 - having timezone and week start settings on user might clean up a lot ?
 https://rust-lang.github.io/api-guidelines/type-safety.html
@@ -13,10 +14,9 @@ https://vector.dev/
 ## Backlog
 
 - Shared calendars, events etc
-- metadata
 - More api tests for [calendarevent, booking]
 - smarter mongodb schema
-- recurrence validation 
+- more recurrence validation 
 
 ## Need to have a data model that will support google and outlook calendars in the future
 
