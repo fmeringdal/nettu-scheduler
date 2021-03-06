@@ -3,6 +3,10 @@
 
 - More admin and user controllers for different usecases
 - bysetpos stuff
+- uniqueentitiy id
+- schedule and service and calendarevent impls freebusy or generate instances ?
+- teste ut postgresql
+- having timezone and week start settings on user might clean up a lot ?
 https://rust-lang.github.io/api-guidelines/type-safety.html
 https://github.com/Qovery/engine
 https://vector.dev/

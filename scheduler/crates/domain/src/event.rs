@@ -1,42 +1,13 @@
-use crate::{calendar::CalendarSettings, shared::entity::Entity, timespan::TimeSpan};
+use crate::{
+    calendar::CalendarSettings,
+    shared::entity::Entity,
+    shared::recurrence::{RRuleFrequenzy, RRuleOptions},
+    timespan::TimeSpan,
+};
 use crate::{event_instance::EventInstance, shared::entity::ID};
 use chrono::{prelude::*, Duration};
 use rrule::{Frequenzy, ParsedOptions, RRule, RRuleSet};
 use serde::{Deserialize, Serialize};
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-#[serde(rename_all = "lowercase")]
-pub enum RRuleFrequenzy {
-    Yearly,
-    Monthly,
-    Weekly,
-    Daily,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct RRuleOptions {
-    pub freq: RRuleFrequenzy,
-    pub interval: isize,
-    pub count: Option<i32>,
-    pub until: Option<isize>,
-    pub bysetpos: Option<Vec<isize>>,
-    pub byweekday: Option<Vec<isize>>,
-    pub bynweekday: Option<Vec<Vec<isize>>>,
-}
-
-impl Default for RRuleOptions {
-    fn default() -> Self {
-        Self {
-            freq: RRuleFrequenzy::Daily,
-            interval: 1,
-            bynweekday: None,
-            byweekday: None,
-            bysetpos: None,
-            count: None,
-            until: None,
-        }
-    }
-}
 
 #[derive(Debug, Clone)]
 pub struct CalendarEvent {
@@ -81,21 +52,28 @@ impl CalendarEvent {
             }
         }
 
-        if !is_none_or_empty(&recurrence.bynweekday) && !is_none_or_empty(&recurrence.byweekday) {
-            return false;
-        }
-
-        if !is_none_or_empty(&recurrence.bysetpos) && is_none_or_empty(&recurrence.byweekday) {
-            return false;
-        }
-
-        if !is_none_or_empty(&recurrence.bysetpos) && !is_none_or_empty(&recurrence.bynweekday) {
-            return false;
-        }
-
-        if (!is_none_or_empty(&recurrence.bysetpos) || !is_none_or_empty(&recurrence.bynweekday))
-            && recurrence.freq != RRuleFrequenzy::Monthly
-        {
+        let valid_by_set_pos = if let Some(bysetpos) = &recurrence.bysetpos {
+            // Check that bysetpos is used with some other by* rule
+            if bysetpos.is_empty() {
+                true
+            } else if !is_none_or_empty(&recurrence.byweekday) {
+                true
+            } else if !is_none_or_empty(&recurrence.byweekno) {
+                true
+            } else if !is_none_or_empty(&recurrence.bymonth) {
+                true
+            } else if !is_none_or_empty(&recurrence.bymonthday) {
+                true
+            } else if !is_none_or_empty(&recurrence.byyearday) {
+                true
+            } else {
+                // No other by* rule was specified
+                false
+            }
+        } else {
+            true
+        };
+        if !valid_by_set_pos {
             return false;
         }
 
@@ -239,17 +217,25 @@ impl CalendarEvent {
             None => None,
         };
 
+        let mut byweekday = vec![];
+        let mut bynweekday: Vec<Vec<isize>> = vec![];
+        if let Some(opts_byweekday) = options.byweekday {
+            for wday in opts_byweekday {
+                match wday.nth() {
+                    None => byweekday.push(wday.weekday()),
+                    Some(n) => {
+                        bynweekday.push(vec![wday.weekday() as isize, n]);
+                    }
+                }
+            }
+        }
+
         Ok(ParsedOptions {
             freq: Self::freq_convert(&options.freq),
             count,
             bymonth: vec![],
             dtstart,
-            byweekday: options
-                .byweekday
-                .unwrap_or_default()
-                .iter()
-                .map(|d| *d as usize)
-                .collect(),
+            byweekday,
             byhour: vec![dtstart.hour() as usize],
             bysetpos: options.bysetpos.unwrap_or_default(),
             byweekno: vec![],
@@ -257,7 +243,7 @@ impl CalendarEvent {
             bysecond: vec![dtstart.second() as usize],
             byyearday: vec![],
             bymonthday: vec![],
-            bynweekday: options.bynweekday.clone().unwrap_or_default(),
+            bynweekday,
             bynmonthday: vec![],
             until,
             wkst: calendar_settings.week_start as usize,
@@ -277,6 +263,7 @@ impl Entity for CalendarEvent {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::shared::recurrence::WeekDay;
     use chrono_tz::UTC;
 
     #[test]
@@ -293,11 +280,8 @@ mod test {
             recurrence: Some(RRuleOptions {
                 freq: RRuleFrequenzy::Daily,
                 interval: 1,
-                until: None,
                 count: Some(4),
-                bynweekday: None,
-                byweekday: None,
-                bysetpos: None,
+                ..Default::default()
             }),
             end_ts: 2521317491239,
             exdates: vec![1521317491239],
@@ -353,28 +337,9 @@ mod test {
             ..Default::default()
         });
         invalid_rrules.push(RRuleOptions {
-            // Both byweekday and bynweekday is set
-            byweekday: Some(vec![1]),
-            bynweekday: Some(vec![vec![1, 1]]),
-            ..Default::default()
-        });
-        invalid_rrules.push(RRuleOptions {
-            // Both bysetpos and bynweekday is set
-            bysetpos: Some(vec![1]),
-            bynweekday: Some(vec![vec![1, 1]]),
-            ..Default::default()
-        });
-        invalid_rrules.push(RRuleOptions {
             // Only bysetpos and no by*
             bysetpos: Some(vec![1]),
             freq: RRuleFrequenzy::Monthly,
-            ..Default::default()
-        });
-        invalid_rrules.push(RRuleOptions {
-            // Bysetpos and freq=monthly
-            bysetpos: Some(vec![1]),
-            byweekday: Some(vec![1]),
-            freq: RRuleFrequenzy::Daily,
             ..Default::default()
         });
         for rrule in invalid_rrules {
@@ -415,11 +380,11 @@ mod test {
             ..Default::default()
         });
         valid_rrules.push(RRuleOptions {
-            byweekday: Some(vec![1]),
+            byweekday: Some(vec![WeekDay::new(1).unwrap()]),
             ..Default::default()
         });
         valid_rrules.push(RRuleOptions {
-            bynweekday: Some(vec![vec![1, 1]]),
+            byweekday: Some(vec![WeekDay::new_nth(1, 1).unwrap()]),
             freq: RRuleFrequenzy::Monthly,
             ..Default::default()
         });
