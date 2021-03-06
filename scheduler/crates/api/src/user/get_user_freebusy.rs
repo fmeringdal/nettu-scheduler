@@ -200,9 +200,6 @@ mod test {
         };
         let e1rr = RRuleOptions {
             count: Some(100),
-            freq: RRuleFrequenzy::Daily,
-            interval: 1,
-            until: None,
             ..Default::default()
         };
         e1.set_recurrence(e1rr, &calendar.settings, true);
@@ -223,8 +220,6 @@ mod test {
         };
         let e2rr = RRuleOptions {
             count: Some(100),
-            freq: RRuleFrequenzy::Daily,
-            interval: 1,
             ..Default::default()
         };
         e2.set_recurrence(e2rr, &calendar.settings, true);
@@ -245,7 +240,6 @@ mod test {
         };
         let e3rr = RRuleOptions {
             count: Some(100),
-            freq: RRuleFrequenzy::Daily,
             interval: 2,
             ..Default::default()
         };

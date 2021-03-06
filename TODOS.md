@@ -2,10 +2,8 @@
 ## Todos
 
 - More admin and user controllers for different usecases
-- bysetpos stuff
-- uniqueentitiy id
 - schedule and service and calendarevent impls freebusy or generate instances ?
-- teste ut postgresql
+- sjekke ut postgresql
 - having timezone and week start settings on user might clean up a lot ?
 https://rust-lang.github.io/api-guidelines/type-safety.html
 https://github.com/Qovery/engine
@@ -18,6 +16,7 @@ https://vector.dev/
 - metadata
 - More api tests for [calendarevent, booking]
 - smarter mongodb schema
+- recurrence validation 
 
 ## Need to have a data model that will support google and outlook calendars in the future
 

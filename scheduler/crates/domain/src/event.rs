@@ -1,12 +1,10 @@
 use crate::{
-    calendar::CalendarSettings,
-    shared::entity::Entity,
-    shared::recurrence::{RRuleFrequenzy, RRuleOptions},
+    calendar::CalendarSettings, shared::entity::Entity, shared::recurrence::RRuleOptions,
     timespan::TimeSpan,
 };
 use crate::{event_instance::EventInstance, shared::entity::ID};
 use chrono::{prelude::*, Duration};
-use rrule::{Frequenzy, ParsedOptions, RRule, RRuleSet};
+use rrule::{RRule, RRuleSet};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone)]
@@ -31,67 +29,23 @@ pub struct CalendarEventReminder {
     pub minutes_before: i64,
 }
 
-fn is_none_or_empty<T>(v: &Option<Vec<T>>) -> bool {
-    match v {
-        Some(v) if !v.is_empty() => false,
-        _ => true,
-    }
-}
-
 impl CalendarEvent {
-    fn validate_recurrence(start_ts: i64, recurrence: &RRuleOptions) -> bool {
-        if let Some(count) = recurrence.count {
-            if count > 740 || count < 1 {
-                return false;
-            }
-        }
-        let two_years_in_millis = 1000 * 60 * 60 * 24 * 366 * 2;
-        if let Some(until) = recurrence.until.map(|val| val as i64) {
-            if until < start_ts || until - start_ts > two_years_in_millis {
-                return false;
-            }
-        }
-
-        let valid_by_set_pos = if let Some(bysetpos) = &recurrence.bysetpos {
-            // Check that bysetpos is used with some other by* rule
-            if bysetpos.is_empty() {
-                true
-            } else if !is_none_or_empty(&recurrence.byweekday) {
-                true
-            } else if !is_none_or_empty(&recurrence.byweekno) {
-                true
-            } else if !is_none_or_empty(&recurrence.bymonth) {
-                true
-            } else if !is_none_or_empty(&recurrence.bymonthday) {
-                true
-            } else if !is_none_or_empty(&recurrence.byyearday) {
-                true
-            } else {
-                // No other by* rule was specified
-                false
-            }
-        } else {
-            true
-        };
-        if !valid_by_set_pos {
-            return false;
-        }
-
-        true
-    }
-
     fn update_endtime(&mut self, calendar_settings: &CalendarSettings) -> bool {
-        let opts = match self.get_rrule_options(calendar_settings) {
-            Ok(opts) => opts,
-            Err(_) => return false,
-        };
-        if (opts.count.is_some() && opts.count.unwrap() > 0) || opts.until.is_some() {
-            let expand = self.expand(None, calendar_settings);
-            self.end_ts = expand.last().unwrap().end_ts;
-        } else {
-            self.end_ts = Self::get_max_timestamp();
+        match self.recurrence.clone() {
+            Some(recurrence) => {
+                let rrule_options = recurrence.get_parsed_options(self.start_ts, calendar_settings);
+                if (rrule_options.count.is_some() && rrule_options.count.unwrap() > 0)
+                    || rrule_options.until.is_some()
+                {
+                    let expand = self.expand(None, calendar_settings);
+                    self.end_ts = expand.last().unwrap().end_ts;
+                } else {
+                    self.end_ts = Self::get_max_timestamp();
+                }
+                true
+            }
+            None => true,
         }
-        true
     }
 
     pub fn set_recurrence(
@@ -100,7 +54,7 @@ impl CalendarEvent {
         calendar_settings: &CalendarSettings,
         update_endtime: bool,
     ) -> bool {
-        let valid_recurrence = Self::validate_recurrence(self.start_ts, &reccurence);
+        let valid_recurrence = reccurence.is_valid(self.start_ts);
         if !valid_recurrence {
             return false;
         }
@@ -117,12 +71,8 @@ impl CalendarEvent {
     }
 
     pub fn get_rrule_set(&self, calendar_settings: &CalendarSettings) -> Option<RRuleSet> {
-        if self.recurrence.is_some() {
-            let rrule_options = match self.get_rrule_options(calendar_settings) {
-                Ok(opts) => opts,
-                Err(_) => return Default::default(),
-            };
-
+        self.recurrence.clone().map(|recurrence| {
+            let rrule_options = recurrence.get_parsed_options(self.start_ts, calendar_settings);
             let tzid = rrule_options.tzid;
             let mut rrule_set = RRuleSet::new();
             for exdate in &self.exdates {
@@ -131,10 +81,8 @@ impl CalendarEvent {
             }
             let rrule = RRule::new(rrule_options);
             rrule_set.rrule(rrule);
-            Some(rrule_set)
-        } else {
-            None
-        }
+            rrule_set
+        })
     }
 
     pub fn expand(
@@ -142,115 +90,50 @@ impl CalendarEvent {
         timespan: Option<&TimeSpan>,
         calendar_settings: &CalendarSettings,
     ) -> Vec<EventInstance> {
-        if self.recurrence.is_some() {
-            let rrule_options = match self.get_rrule_options(calendar_settings) {
-                Ok(opts) => opts,
-                Err(_) => return Default::default(),
-            };
-            let tzid = rrule_options.tzid;
-            let rrule_set = self.get_rrule_set(calendar_settings).unwrap();
+        match self.recurrence.clone() {
+            Some(recurrence) => {
+                let rrule_options = recurrence.get_parsed_options(self.start_ts, calendar_settings);
+                let tzid = rrule_options.tzid;
+                let rrule_set = self.get_rrule_set(calendar_settings).unwrap();
 
-            let instances = match timespan {
-                Some(timespan) => {
-                    let timespan = timespan.as_datetime(&tzid);
+                let instances = match timespan {
+                    Some(timespan) => {
+                        let timespan = timespan.as_datetime(&tzid);
 
-                    // Also take the duration of events into consideration as the rrule library
-                    // does not support duration on events.
-                    let end = timespan.end - Duration::milliseconds(self.duration);
+                        // Also take the duration of events into consideration as the rrule library
+                        // does not support duration on events.
+                        let end = timespan.end - Duration::milliseconds(self.duration);
 
-                    // RRule v0.5.5 is not inclusive on start, so just by subtracting one millisecond
-                    // will make it inclusive
-                    let start = timespan.start - Duration::milliseconds(1);
+                        // RRule v0.5.5 is not inclusive on start, so just by subtracting one millisecond
+                        // will make it inclusive
+                        let start = timespan.start - Duration::milliseconds(1);
 
-                    rrule_set.between(start, end, true)
-                }
-                None => rrule_set.all(),
-            };
-
-            instances
-                .iter()
-                .map(|occurence| {
-                    let start_ts = occurence.timestamp_millis();
-
-                    EventInstance {
-                        start_ts,
-                        end_ts: start_ts + self.duration,
-                        busy: self.busy,
+                        rrule_set.between(start, end, true)
                     }
-                })
-                .collect()
-        } else {
-            vec![EventInstance {
-                start_ts: self.start_ts,
-                end_ts: self.start_ts + self.duration,
-                busy: self.busy,
-            }]
-        }
-    }
+                    None => rrule_set.all(),
+                };
 
-    fn freq_convert(freq: &RRuleFrequenzy) -> Frequenzy {
-        match freq {
-            RRuleFrequenzy::Yearly => Frequenzy::Yearly,
-            RRuleFrequenzy::Monthly => Frequenzy::Monthly,
-            RRuleFrequenzy::Weekly => Frequenzy::Weekly,
-            RRuleFrequenzy::Daily => Frequenzy::Daily,
-        }
-    }
+                instances
+                    .iter()
+                    .map(|occurence| {
+                        let start_ts = occurence.timestamp_millis();
 
-    fn get_rrule_options(
-        &self,
-        calendar_settings: &CalendarSettings,
-    ) -> anyhow::Result<ParsedOptions> {
-        let options = self.recurrence.clone().unwrap();
-
-        let timezone = calendar_settings.timezone.clone();
-
-        let until = match options.until {
-            Some(ts) => Some(timezone.timestamp(ts as i64 / 1000, 0)),
-            None => None,
-        };
-
-        let dtstart = timezone.timestamp(self.start_ts / 1000, 0);
-
-        let count = match options.count {
-            Some(c) => Some(std::cmp::max(c, 0) as u32),
-            None => None,
-        };
-
-        let mut byweekday = vec![];
-        let mut bynweekday: Vec<Vec<isize>> = vec![];
-        if let Some(opts_byweekday) = options.byweekday {
-            for wday in opts_byweekday {
-                match wday.nth() {
-                    None => byweekday.push(wday.weekday()),
-                    Some(n) => {
-                        bynweekday.push(vec![wday.weekday() as isize, n]);
-                    }
-                }
+                        EventInstance {
+                            start_ts,
+                            end_ts: start_ts + self.duration,
+                            busy: self.busy,
+                        }
+                    })
+                    .collect()
+            }
+            None => {
+                vec![EventInstance {
+                    start_ts: self.start_ts,
+                    end_ts: self.start_ts + self.duration,
+                    busy: self.busy,
+                }]
             }
         }
-
-        Ok(ParsedOptions {
-            freq: Self::freq_convert(&options.freq),
-            count,
-            bymonth: vec![],
-            dtstart,
-            byweekday,
-            byhour: vec![dtstart.hour() as usize],
-            bysetpos: options.bysetpos.unwrap_or_default(),
-            byweekno: vec![],
-            byminute: vec![dtstart.minute() as usize],
-            bysecond: vec![dtstart.second() as usize],
-            byyearday: vec![],
-            bymonthday: vec![],
-            bynweekday,
-            bynmonthday: vec![],
-            until,
-            wkst: calendar_settings.week_start as usize,
-            tzid: timezone,
-            interval: options.interval as usize,
-            byeaster: None,
-        })
     }
 }
 
@@ -263,7 +146,7 @@ impl Entity for CalendarEvent {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::shared::recurrence::WeekDay;
+    use crate::{shared::recurrence::WeekDay, RRuleFrequenzy};
     use chrono_tz::UTC;
 
     #[test]

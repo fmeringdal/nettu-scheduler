@@ -1,7 +1,11 @@
+use rrule::{Frequenzy, ParsedOptions};
 use std::{fmt::Display, str::FromStr};
 use thiserror::Error;
 
+use chrono::prelude::*;
 use serde::{de::Visitor, Deserialize, Serialize};
+
+use crate::CalendarSettings;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
@@ -13,6 +17,7 @@ pub enum RRuleFrequenzy {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RRuleOptions {
     pub freq: RRuleFrequenzy,
     pub interval: isize,
@@ -20,11 +25,130 @@ pub struct RRuleOptions {
     pub until: Option<isize>,
     pub bysetpos: Option<Vec<isize>>,
     pub byweekday: Option<Vec<WeekDay>>,
-    // by_month_day, by_month, by_year_day, by_week_no
     pub bymonthday: Option<Vec<isize>>,
     pub bymonth: Option<Vec<usize>>,
     pub byyearday: Option<Vec<isize>>,
     pub byweekno: Option<Vec<isize>>,
+}
+
+fn freq_convert(freq: &RRuleFrequenzy) -> Frequenzy {
+    match freq {
+        RRuleFrequenzy::Yearly => Frequenzy::Yearly,
+        RRuleFrequenzy::Monthly => Frequenzy::Monthly,
+        RRuleFrequenzy::Weekly => Frequenzy::Weekly,
+        RRuleFrequenzy::Daily => Frequenzy::Daily,
+    }
+}
+
+fn is_none_or_empty<T>(v: &Option<Vec<T>>) -> bool {
+    match v {
+        Some(v) if !v.is_empty() => false,
+        _ => true,
+    }
+}
+
+impl RRuleOptions {
+    pub fn is_valid(&self, start_ts: i64) -> bool {
+        if let Some(count) = self.count {
+            if count > 740 || count < 1 {
+                return false;
+            }
+        }
+        let two_years_in_millis = 1000 * 60 * 60 * 24 * 366 * 2;
+        if let Some(until) = self.until.map(|val| val as i64) {
+            if until < start_ts || until - start_ts > two_years_in_millis {
+                return false;
+            }
+        }
+
+        let valid_by_set_pos = if let Some(bysetpos) = &self.bysetpos {
+            // Check that bysetpos is used with some other by* rule
+            if bysetpos.is_empty() {
+                true
+            } else if !is_none_or_empty(&self.byweekday) {
+                true
+            } else if !is_none_or_empty(&self.byweekno) {
+                true
+            } else if !is_none_or_empty(&self.bymonth) {
+                true
+            } else if !is_none_or_empty(&self.bymonthday) {
+                true
+            } else if !is_none_or_empty(&self.byyearday) {
+                true
+            } else {
+                // No other by* rule was specified
+                false
+            }
+        } else {
+            true
+        };
+        if !valid_by_set_pos {
+            return false;
+        }
+
+        true
+    }
+
+    pub fn get_parsed_options(
+        self,
+        start_ts: i64,
+        calendar_settings: &CalendarSettings,
+    ) -> ParsedOptions {
+        let timezone = calendar_settings.timezone.clone();
+
+        let until = self.until.map(|ts| timezone.timestamp(ts as i64 / 1000, 0));
+
+        let dtstart = timezone.timestamp(start_ts / 1000, 0);
+
+        let count = self.count.map(|c| std::cmp::max(c, 0) as u32);
+
+        let mut byweekday = vec![];
+        let mut bynweekday: Vec<Vec<isize>> = vec![];
+        if let Some(opts_byweekday) = self.byweekday {
+            for wday in opts_byweekday {
+                match wday.nth() {
+                    None => byweekday.push(wday.weekday()),
+                    Some(n) => {
+                        bynweekday.push(vec![wday.weekday() as isize, n]);
+                    }
+                }
+            }
+        }
+
+        let mut bymonthday = vec![];
+        let mut bynmonthday = vec![];
+        if let Some(opts_bymonthday) = self.bymonthday {
+            for monthday in opts_bymonthday {
+                if monthday > 0 {
+                    bymonthday.push(monthday);
+                } else if monthday < 0 {
+                    bynmonthday.push(monthday);
+                }
+            }
+        }
+
+        ParsedOptions {
+            freq: freq_convert(&self.freq),
+            count,
+            dtstart,
+            bymonth: self.bymonth.unwrap_or_default(),
+            bymonthday,
+            bynmonthday,
+            byweekday,
+            bynweekday,
+            byyearday: self.byyearday.unwrap_or_default(),
+            bysetpos: self.bysetpos.unwrap_or_default(),
+            byweekno: self.byweekno.unwrap_or_default(),
+            byhour: vec![dtstart.hour() as usize],
+            byminute: vec![dtstart.minute() as usize],
+            bysecond: vec![dtstart.second() as usize],
+            until,
+            wkst: calendar_settings.week_start as usize,
+            tzid: timezone,
+            interval: self.interval as usize,
+            byeaster: None,
+        }
+    }
 }
 
 impl Default for RRuleOptions {
@@ -36,7 +160,6 @@ impl Default for RRuleOptions {
             bysetpos: None,
             count: None,
             until: None,
-            //
             bymonthday: None,
             bymonth: None,
             byyearday: None,
