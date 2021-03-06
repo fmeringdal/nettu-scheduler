@@ -12,11 +12,9 @@ jobs:
       - name:                   Checkout repository
         uses:                   actions/checkout@v2
 
-      - name:                   Workdir
-        run: |
-          cd scheduler
       - name:                   Generate code coverage
         run: |
+          cd scheduler
           cargo tarpaulin --verbose --all-features --workspace --timeout 120 --out Xml
 
       - name:                   Upload to codecov.io
