@@ -13,6 +13,10 @@
 structured, event-based diagnostic information. `tracing` is maintained by the
 Tokio project, but does _not_ require the `tokio` runtime to be used.
 
+<div align="center">
+<img src="docs/flow.svg" alt="Application flow">
+</div>
+
 ## Usage
 
 ### In Applications
