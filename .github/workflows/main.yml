@@ -3,7 +3,7 @@ name:                           coverage
 on:                             [push]
 jobs:
   test:
-    name:                       coverage
+    name:                       Build
     runs-on:                    ubuntu-latest
     container:
       image:                    xd009642/tarpaulin
