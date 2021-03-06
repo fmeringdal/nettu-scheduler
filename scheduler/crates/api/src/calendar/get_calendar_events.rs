@@ -62,8 +62,6 @@ impl UseCase for GetCalendarEventsUseCase {
 
     type Errors = UseCaseErrors;
 
-    
-
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         let calendar = ctx.repos.calendar_repo.find(&self.calendar_id).await;
 
