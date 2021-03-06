@@ -304,15 +304,7 @@ mod tests {
             start_ts: ctx.sys.get_timestamp_millis(),
             duration: 1000 * 60 * 60 * 2,
             busy: false,
-            rrule_options: Some(RRuleOptions {
-                freq: RRuleFrequenzy::Daily,
-                interval: 1,
-                count: None,
-                until: None,
-                bysetpos: None,
-                byweekday: None,
-                bynweekday: None,
-            }),
+            rrule_options: Some(Default::default()),
             reminder: Some(CalendarEventReminder { minutes_before: 10 }),
             services: vec![],
         };

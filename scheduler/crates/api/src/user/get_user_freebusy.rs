@@ -199,13 +199,11 @@ mod test {
             services: vec![],
         };
         let e1rr = RRuleOptions {
-            bynweekday: Default::default(),
-            bysetpos: Default::default(),
-            byweekday: Default::default(),
             count: Some(100),
             freq: RRuleFrequenzy::Daily,
             interval: 1,
             until: None,
+            ..Default::default()
         };
         e1.set_recurrence(e1rr, &calendar.settings, true);
 
@@ -224,13 +222,10 @@ mod test {
             services: vec![],
         };
         let e2rr = RRuleOptions {
-            bynweekday: Default::default(),
-            bysetpos: Default::default(),
-            byweekday: Default::default(),
             count: Some(100),
             freq: RRuleFrequenzy::Daily,
             interval: 1,
-            until: None,
+            ..Default::default()
         };
         e2.set_recurrence(e2rr, &calendar.settings, true);
 
@@ -249,13 +244,10 @@ mod test {
             services: vec![],
         };
         let e3rr = RRuleOptions {
-            bynweekday: Default::default(),
-            bysetpos: Default::default(),
-            byweekday: Default::default(),
             count: Some(100),
             freq: RRuleFrequenzy::Daily,
             interval: 2,
-            until: None,
+            ..Default::default()
         };
         e3.set_recurrence(e3rr, &calendar.settings, true);
 
