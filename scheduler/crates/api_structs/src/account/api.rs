@@ -6,7 +6,7 @@ use crate::dtos::AccountDTO;
 #[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AccountResponse {
-    account: AccountDTO,
+    pub account: AccountDTO,
 }
 
 impl AccountResponse {
@@ -52,7 +52,7 @@ pub mod get_account {
 pub mod set_account_pub_key {
     use super::*;
 
-    #[derive(Debug, Deserialize)]
+    #[derive(Debug, Deserialize, Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
         pub public_jwt_key: Option<String>,
@@ -64,7 +64,7 @@ pub mod set_account_pub_key {
 pub mod set_account_webhook {
     use super::*;
 
-    #[derive(Debug, Deserialize)]
+    #[derive(Debug, Deserialize, Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
         pub webhook_url: String,

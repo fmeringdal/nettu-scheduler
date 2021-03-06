@@ -23,4 +23,31 @@ impl AccountClient {
             .post(body, "account".into(), StatusCode::CREATED)
             .await
     }
+
+    pub async fn create_webhook(&self, url: &str) -> APIResponse<set_account_webhook::APIResponse> {
+        let body = set_account_webhook::RequestBody {
+            webhook_url: url.into(),
+        };
+        self.base
+            .put(body, "account/webhook".into(), StatusCode::OK)
+            .await
+    }
+
+    pub async fn delete_webhook(&self) -> APIResponse<delete_account_webhook::APIResponse> {
+        self.base
+            .delete("account/webhook".into(), StatusCode::OK)
+            .await
+    }
+
+    pub async fn set_account_pub_key(
+        &self,
+        key: Option<String>,
+    ) -> APIResponse<set_account_pub_key::APIResponse> {
+        let body = set_account_pub_key::RequestBody {
+            public_jwt_key: key,
+        };
+        self.base
+            .put(body, "account/pubkey".into(), StatusCode::OK)
+            .await
+    }
 }

@@ -5,7 +5,6 @@
 - More admin and user controllers for different usecases
   - Admin routes maybe just need an additionl userid in path params
 - sjekke ut postgresql
-- having timezone and week start settings on user might clean up a lot ?
 https://rust-lang.github.io/api-guidelines/type-safety.html
 https://github.com/Qovery/engine
 https://vector.dev/
