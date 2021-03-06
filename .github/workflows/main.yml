@@ -1,9 +1,9 @@
-name:                           coverage
+name:                           Build
 
 on:                             [push]
 jobs:
   test:
-    name:                       Build
+    name:                       test
     runs-on:                    ubuntu-latest
     container:
       image:                    xd009642/tarpaulin

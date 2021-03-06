@@ -36,7 +36,8 @@ impl BaseClient {
 
     fn get_client(&self, method: Method, path: String) -> RequestBuilder {
         let client = Client::new();
-        let url = format!("{}/{}", self.address, path);
+        let prefix = "/api/v1/";
+        let url = format!("{}{}{}", self.address, prefix, path);
         let builder = match method {
             Method::GET => client.get(&url),
             Method::POST => client.post(&url),

@@ -60,7 +60,8 @@ impl Application {
                 .wrap(middleware::Compress::default())
                 .wrap(TracingLogger)
                 .data(ctx)
-                .configure(|cfg| configure_server_api(cfg))
+                .service(web::scope("/api/v1").configure(|cfg| configure_server_api(cfg)))
+            // .configure(|cfg| configure_server_api(cfg))
         })
         .listen(listener)?
         .workers(4)

@@ -2,8 +2,9 @@
 ## Todos
 
 - metadata
-- More admin and user controllers for different usecases
-  - Admin routes maybe just need an additionl userid in path params
+- Path naming for admin and user routes 
+  - Admin routes maybe just need an additional userid in path params
+  - Complete SDK
 - sjekke ut postgresql
 https://rust-lang.github.io/api-guidelines/type-safety.html
 https://github.com/Qovery/engine
@@ -13,7 +14,6 @@ https://vector.dev/
 ## Backlog
 
 - Shared calendars, events etc
-- More api tests for [calendarevent, booking]
 - smarter mongodb schema
 - more recurrence validation 
 

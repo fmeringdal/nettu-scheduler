@@ -1,5 +1,6 @@
 mod account;
 mod base;
+mod calendar;
 mod schedule;
 mod status;
 mod user;

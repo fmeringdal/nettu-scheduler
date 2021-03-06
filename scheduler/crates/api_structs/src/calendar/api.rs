@@ -25,7 +25,7 @@ pub mod create_calendar {
         pub user_id: ID,
     }
 
-    #[derive(Deserialize)]
+    #[derive(Deserialize, Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
         pub timezone: String,
