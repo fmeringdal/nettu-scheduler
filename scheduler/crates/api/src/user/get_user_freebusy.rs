@@ -158,7 +158,7 @@ impl GetFreeBusyUseCase {
 mod test {
     use super::*;
     use nettu_scheduler_domain::{
-        Calendar, CalendarEvent, Entity, RRuleFrequenzy, RRuleOptions, User,
+        Calendar, CalendarEvent, Entity, RRuleOptions, User,
     };
     use nettu_scheduler_infra::setup_context;
 

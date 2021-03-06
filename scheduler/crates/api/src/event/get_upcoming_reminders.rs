@@ -184,7 +184,7 @@ mod tests {
     use super::super::create_event::CreateEventUseCase;
     use super::*;
     use nettu_scheduler_domain::{
-        Calendar, CalendarEventReminder, RRuleFrequenzy, RRuleOptions, ID,
+        Calendar, CalendarEventReminder, ID,
     };
     use nettu_scheduler_infra::{setup_context, ISys};
     use std::sync::Arc;
