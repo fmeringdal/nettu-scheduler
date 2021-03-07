@@ -202,7 +202,6 @@ async fn test_crud_calendars() {
     let calendar_get_res = admin_client
         .calendar
         .get(&GetCalendarInput {
-            user_id: user.id.to_string(),
             calendar_id: calendar.id.to_string(),
         })
         .await
@@ -214,7 +213,6 @@ async fn test_crud_calendars() {
     let events = admin_client
         .calendar
         .get_events(&GetCalendarEventsInput {
-            user_id: user.id.to_string(),
             calendar_id: calendar.id.to_string(),
             start_ts: 0,
             end_ts: 1000 * 60 * 60 * 24,
@@ -228,7 +226,6 @@ async fn test_crud_calendars() {
     let calendar_with_new_settings = admin_client
         .calendar
         .update_settings(&UpdateCalendarSettingsInput {
-            user_id: user.id.to_string(),
             calendar_id: calendar.id.to_string(),
             timezone: None,
             week_start: Some(week_start.clone()),
@@ -242,7 +239,6 @@ async fn test_crud_calendars() {
     assert!(admin_client
         .calendar
         .delete(&DeleteCalendarInput {
-            user_id: user.id.to_string(),
             calendar_id: calendar.id.to_string(),
         })
         .await
@@ -252,7 +248,6 @@ async fn test_crud_calendars() {
     assert!(admin_client
         .calendar
         .get(&GetCalendarInput {
-            user_id: user.id.to_string(),
             calendar_id: calendar.id.to_string(),
         })
         .await

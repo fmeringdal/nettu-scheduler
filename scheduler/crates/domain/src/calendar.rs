@@ -5,6 +5,7 @@ use chrono_tz::{Tz, UTC};
 pub struct Calendar {
     pub id: ID,
     pub user_id: ID,
+    pub account_id: ID,
     pub settings: CalendarSettings,
 }
 
@@ -45,10 +46,11 @@ impl Default for CalendarSettings {
 }
 
 impl Calendar {
-    pub fn new(user_id: &ID) -> Self {
+    pub fn new(user_id: &ID, account_id: &ID) -> Self {
         Self {
             id: Default::default(),
             user_id: user_id.clone(),
+            account_id: account_id.clone(),
             settings: Default::default(),
         }
     }

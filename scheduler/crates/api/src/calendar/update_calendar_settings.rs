@@ -1,5 +1,5 @@
 use crate::shared::{
-    auth::{account_can_modify_user, protect_account_route, Permission},
+    auth::{account_can_modify_calendar, protect_account_route, Permission},
     usecase::{execute, execute_with_policy, PermissionBoundary, UseCase, UseCaseErrorContainer},
 };
 use crate::{error::NettuError, shared::auth::protect_route};
@@ -28,12 +28,11 @@ pub async fn update_calendar_settings_admin_controller(
     body: web::Json<RequestBody>,
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
-    let user_id = path.user_id.clone().unwrap();
-    account_can_modify_user(&account, &user_id, &ctx).await?;
+    let cal = account_can_modify_calendar(&account, &path.calendar_id, &ctx).await?;
 
     let usecase = UpdateCalendarSettingsUseCase {
-        user_id: user_id.clone(),
-        calendar_id: path.calendar_id.clone(),
+        user_id: cal.user_id,
+        calendar_id: cal.id,
         week_start: body.week_start.clone(),
         timezone: body.timezone.clone(),
     };
@@ -139,7 +138,8 @@ mod test {
     async fn it_rejects_invalid_wkst() {
         let ctx = setup_context().await;
         let user_id = ID::default();
-        let calendar = Calendar::new(&user_id);
+        let account_id = ID::default();
+        let calendar = Calendar::new(&user_id, &account_id);
         ctx.repos.calendar_repo.insert(&calendar).await.unwrap();
 
         let mut usecase = UpdateCalendarSettingsUseCase {
@@ -157,7 +157,8 @@ mod test {
     async fn it_update_settings_with_valid_wkst() {
         let ctx = setup_context().await;
         let user_id = ID::default();
-        let calendar = Calendar::new(&user_id);
+        let account_id = ID::default();
+        let calendar = Calendar::new(&user_id, &account_id);
         ctx.repos.calendar_repo.insert(&calendar).await.unwrap();
 
         assert_eq!(calendar.settings.week_start, 0);

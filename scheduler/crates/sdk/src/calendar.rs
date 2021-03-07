@@ -15,24 +15,20 @@ pub struct CreateCalendarInput {
 }
 
 pub struct GetCalendarInput {
-    pub user_id: String,
     pub calendar_id: String,
 }
 
 pub struct GetCalendarEventsInput {
-    pub user_id: String,
     pub calendar_id: String,
     pub start_ts: i64,
     pub end_ts: i64,
 }
 
 pub struct DeleteCalendarInput {
-    pub user_id: String,
     pub calendar_id: String,
 }
 
 pub struct UpdateCalendarSettingsInput {
-    pub user_id: String,
     pub calendar_id: String,
     pub week_start: Option<isize>,
     pub timezone: Option<String>,
@@ -54,10 +50,7 @@ impl CalendarClient {
         self.base
             .put(
                 body,
-                format!(
-                    "user/{}/calendar/{}/settings",
-                    input.user_id, input.calendar_id
-                ),
+                format!("user/calendar/{}/settings", input.calendar_id),
                 StatusCode::OK,
             )
             .await
@@ -69,7 +62,7 @@ impl CalendarClient {
     ) -> APIResponse<delete_calendar::APIResponse> {
         self.base
             .delete(
-                format!("user/{}/calendar/{}", input.user_id, input.calendar_id),
+                format!("user/calendar/{}", input.calendar_id),
                 StatusCode::OK,
             )
             .await
@@ -78,7 +71,7 @@ impl CalendarClient {
     pub async fn get(&self, input: &GetCalendarInput) -> APIResponse<get_calendar::APIResponse> {
         self.base
             .get(
-                format!("user/{}/calendar/{}", input.user_id, input.calendar_id),
+                format!("user/calendar/{}", input.calendar_id),
                 StatusCode::OK,
             )
             .await
@@ -91,8 +84,8 @@ impl CalendarClient {
         self.base
             .get(
                 format!(
-                    "user/{}/calendar/{}/events?startTs={}&endTs={}",
-                    input.user_id, input.calendar_id, input.start_ts, input.end_ts
+                    "user/calendar/{}/events?startTs={}&endTs={}",
+                    input.calendar_id, input.start_ts, input.end_ts
                 ),
                 StatusCode::OK,
             )

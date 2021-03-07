@@ -88,7 +88,7 @@ impl UseCase for CreateCalendarUseCase {
     type Errors = UseCaseErrors;
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
-        let _user = match ctx.repos.user_repo.find(&self.user_id).await {
+        let user = match ctx.repos.user_repo.find(&self.user_id).await {
             Some(user) if user.account_id == self.account_id => user,
             _ => return Err(UseCaseErrors::UserNotFound),
         };
@@ -107,7 +107,7 @@ impl UseCase for CreateCalendarUseCase {
             )));
         }
 
-        let mut calendar = Calendar::new(&self.user_id);
+        let mut calendar = Calendar::new(&self.user_id, &user.account_id);
         calendar.settings = settings;
 
         let res = ctx.repos.calendar_repo.insert(&calendar).await;

@@ -143,7 +143,8 @@ mod test {
         let ctx = setup_context().await;
         let user = User::new(Default::default());
 
-        let calendar = Calendar::new(&user.id);
+        let account_id = ID::default();
+        let calendar = Calendar::new(&user.id, &account_id);
 
         ctx.repos.calendar_repo.insert(&calendar).await.unwrap();
         TestContext {

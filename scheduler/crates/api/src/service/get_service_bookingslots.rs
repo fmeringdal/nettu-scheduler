@@ -347,9 +347,11 @@ mod test {
             furthest_booking_time: None,
         };
 
-        let calendar_user_1 = Calendar::new(&resource1.user_id);
+        let account_id = ID::default();
+
+        let calendar_user_1 = Calendar::new(&resource1.user_id, &account_id);
         resource1.availibility = TimePlan::Calendar(calendar_user_1.id.clone());
-        let calendar_user_2 = Calendar::new(&resource2.user_id);
+        let calendar_user_2 = Calendar::new(&resource2.user_id, &account_id);
         resource2.availibility = TimePlan::Calendar(calendar_user_2.id.clone());
 
         ctx.repos

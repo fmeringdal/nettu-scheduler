@@ -1,5 +1,5 @@
 use crate::shared::{
-    auth::{account_can_modify_user, protect_account_route, protect_route, Permission},
+    auth::{account_can_modify_calendar, protect_account_route, protect_route, Permission},
     usecase::{execute, execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
 };
 use crate::{error::NettuError, shared::usecase::UseCase};
@@ -24,12 +24,11 @@ pub async fn delete_calendar_admin_controller(
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
-    let user_id = path.user_id.clone().unwrap();
-    account_can_modify_user(&account, &user_id, &ctx).await?;
+    let cal = account_can_modify_calendar(&account, &path.calendar_id, &ctx).await?;
 
     let usecase = DeleteCalendarUseCase {
-        user_id: user_id.clone(),
-        calendar_id: path.calendar_id.clone(),
+        user_id: cal.user_id,
+        calendar_id: cal.id,
     };
 
     execute(usecase, &ctx)

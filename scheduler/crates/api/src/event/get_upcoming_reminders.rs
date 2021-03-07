@@ -183,9 +183,7 @@ impl UseCase for GetUpcomingRemindersUseCase {
 mod tests {
     use super::super::create_event::CreateEventUseCase;
     use super::*;
-    use nettu_scheduler_domain::{
-        Calendar, CalendarEventReminder, ID,
-    };
+    use nettu_scheduler_domain::{Calendar, CalendarEventReminder, ID};
     use nettu_scheduler_infra::{setup_context, ISys};
     use std::sync::Arc;
 
@@ -293,7 +291,7 @@ mod tests {
         ctx.repos.account_repo.insert(&account).await.unwrap();
 
         let user_id = ID::default();
-        let mut calendar = Calendar::new(&user_id);
+        let mut calendar = Calendar::new(&user_id, &account.id);
         calendar.settings.timezone = chrono_tz::Europe::Oslo;
         ctx.repos.calendar_repo.insert(&calendar).await.unwrap();
 

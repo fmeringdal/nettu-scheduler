@@ -65,6 +65,7 @@ impl ICalendarRepo for MongoCalendarRepo {
 struct CalendarMongo {
     _id: ObjectId,
     user_id: ObjectId,
+    account_id: ObjectId,
     settings: CalendarSettingsMongo,
 }
 
@@ -79,6 +80,7 @@ impl MongoDocument<Calendar> for CalendarMongo {
         Calendar {
             id: ID::from(self._id.clone()),
             user_id: ID::from(self.user_id.clone()),
+            account_id: ID::from(self.account_id.clone()),
             settings: CalendarSettings {
                 week_start: self.settings.week_start,
                 timezone: self.settings.timezone.parse().unwrap(),
@@ -90,6 +92,7 @@ impl MongoDocument<Calendar> for CalendarMongo {
         Self {
             _id: calendar.id.inner_ref().clone(),
             user_id: calendar.user_id.inner_ref().clone(),
+            account_id: calendar.account_id.inner_ref().clone(),
             settings: CalendarSettingsMongo {
                 week_start: calendar.settings.week_start,
                 timezone: calendar.settings.timezone.to_string(),

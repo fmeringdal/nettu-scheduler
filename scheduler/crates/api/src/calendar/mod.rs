@@ -26,7 +26,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
         web::get().to(get_calendar_controller),
     );
     cfg.route(
-        "/user/{user_id}/calendar/{calendar_id}",
+        "/user/calendar/{calendar_id}",
         web::get().to(get_calendar_admin_controller),
     );
 
@@ -35,7 +35,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
         web::delete().to(delete_calendar_controller),
     );
     cfg.route(
-        "/user/{user_id}/calendar/{calendar_id}",
+        "/user/calendar/{calendar_id}",
         web::delete().to(delete_calendar_admin_controller),
     );
 
@@ -44,7 +44,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
         web::put().to(update_calendar_settings_controller),
     );
     cfg.route(
-        "/user/{user_id}/calendar/{calendar_id}/settings",
+        "/user/calendar/{calendar_id}/settings",
         web::put().to(update_calendar_settings_admin_controller),
     );
 
@@ -53,7 +53,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
         web::get().to(get_calendar_events_controller),
     );
     cfg.route(
-        "/user/{user_id}/calendar/{calendar_id}/events",
+        "/user/calendar/{calendar_id}/events",
         web::get().to(get_calendar_events_admin_controller),
     );
 }

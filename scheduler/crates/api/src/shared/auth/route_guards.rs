@@ -1,6 +1,6 @@
 use actix_web::HttpRequest;
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
-use nettu_scheduler_domain::{Account, User, ID};
+use nettu_scheduler_domain::{Account, Calendar, User, ID};
 use nettu_scheduler_infra::NettuContext;
 use serde::{Deserialize, Serialize};
 
@@ -179,22 +179,17 @@ pub async fn protect_public_account_route(
 }
 
 /// Used for account admin routes by checking that account
-/// is not modifying a user in another account
-pub async fn account_can_modify_user(
+/// is not modifying a calendar in another account
+pub async fn account_can_modify_calendar(
     account: &Account,
-    user_id: &ID,
+    calendar_id: &ID,
     ctx: &NettuContext,
-) -> Result<User, NettuError> {
-    match ctx
-        .repos
-        .user_repo
-        .find_by_account_id(user_id, &account.id)
-        .await
-    {
-        Some(user) => Ok(user),
-        None => Err(NettuError::NotFound(format!(
-            "User with id: {} was not found",
-            user_id
+) -> Result<Calendar, NettuError> {
+    match ctx.repos.calendar_repo.find(calendar_id).await {
+        Some(cal) if cal.account_id == account.id => Ok(cal),
+        _ => Err(NettuError::NotFound(format!(
+            "Calendar with id: {} was not found",
+            calendar_id
         ))),
     }
 }

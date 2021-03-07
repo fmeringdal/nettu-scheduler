@@ -25,7 +25,8 @@ mod tests {
     async fn create_and_delete() {
         let ctx = setup_context().await;
         let user_id = ID::default();
-        let calendar = Calendar::new(&user_id);
+        let account_id = ID::default();
+        let calendar = Calendar::new(&user_id, &account_id);
 
         // Insert
         assert!(ctx.repos.calendar_repo.insert(&calendar).await.is_ok());
@@ -49,7 +50,8 @@ mod tests {
     async fn update() {
         let ctx = setup_context().await;
         let user_id = ID::default();
-        let mut calendar = Calendar::new(&user_id);
+        let account_id = ID::default();
+        let mut calendar = Calendar::new(&user_id, &account_id);
 
         // Insert
         assert!(ctx.repos.calendar_repo.insert(&calendar).await.is_ok());
@@ -73,7 +75,8 @@ mod tests {
     async fn delete_by_user() {
         let ctx = setup_context().await;
         let user_id = ID::default();
-        let calendar = Calendar::new(&user_id);
+        let account_id = ID::default();
+        let calendar = Calendar::new(&user_id, &account_id);
 
         // Insert
         assert!(ctx.repos.calendar_repo.insert(&calendar).await.is_ok());

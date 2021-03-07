@@ -1,4 +1,4 @@
-use crate::shared::auth::{account_can_modify_user, protect_route};
+use crate::shared::auth::{account_can_modify_calendar, protect_route};
 use crate::shared::usecase::{execute, UseCase};
 use crate::{error::NettuError, shared::auth::protect_account_route};
 
@@ -26,12 +26,11 @@ pub async fn get_calendar_events_admin_controller(
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
-    let user_id = path.user_id.clone().unwrap();
-    account_can_modify_user(&account, &user_id, &ctx).await?;
+    let cal = account_can_modify_calendar(&account, &path.calendar_id, &ctx).await?;
 
     let usecase = GetCalendarEventsUseCase {
-        user_id: user_id.clone(),
-        calendar_id: path.calendar_id.clone(),
+        user_id: cal.user_id,
+        calendar_id: cal.id,
         start_ts: query_params.start_ts,
         end_ts: query_params.end_ts,
     };
