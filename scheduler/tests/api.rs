@@ -189,7 +189,7 @@ async fn test_crud_calendars() {
         .calendar
         .create(&CreateCalendarInput {
             user_id: user.id.to_string(),
-            timezone: "utc".into(),
+            timezone: "UTC".into(),
             week_start: 0,
         })
         .await
