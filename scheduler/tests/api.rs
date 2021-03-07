@@ -1,5 +1,4 @@
 mod helpers;
-use std::rc::Weak;
 
 use helpers::setup::spawn_app;
 use nettu_scheduler_sdk::{CreateScheduleInput, NettuSDK};

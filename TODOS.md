@@ -2,6 +2,7 @@
 ## Todos
 
 - metadata
+- startup warning etc 
 - Path naming for admin and user routes 
   - Admin routes maybe just need an additional userid in path params
   - Complete SDK

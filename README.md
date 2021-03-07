@@ -9,9 +9,22 @@
 
 ## Overview
 
-`Nettu scheduler` is a calendar and scheduler server for instrumenting Rust programs to collect
-structured, event-based diagnostic information. `tracing` is maintained by the
-Tokio project, but does _not_ require the `tokio` runtime to be used.
+`Nettu scheduler` is a self-hosted calendar and scheduler server. It has a simple REST API and also a [JavaScript SDK](https://github.com/fmeringdal/nettu-scheduler-js-client) and [Rust SDK](https://crates.io/crates/nettu_scheduler_sdk). 
+
+This project aims to provide the building blocks for building Calendar / Booking / Appointment apps with ease. That
+includes dealing with event recurrences, event reminders, freebusy queries, bookingslots queries and a flexible way for bookable
+`User`s to configure their availibility (also supports buffers, closest- and furthest booking times and more!).  
+
+
+Some of the features it provides:
+* **Authentication**: It supports authentication through JWT tokens signed by your server and api-key for server to server communication. 
+* **Calendar**: Grouping of `Calendar Event`s
+* **Calendar Events**: Supports recurrence rules and reminders
+* **Booking**: Create a `Service` and add bookable `User`s to it with their own preffered availibility `TimePlan`. Then easily query the `Service` for bookingslots
+* **Schedule**: An alternative to `Calendar Event` for describing weekly availibility
+* **Webhook**: For notifying your server about `CalendarEvent` reminders.
+
+<br/>
 
 <div align="center">
 <img src="docs/flow.svg" alt="Application flow">
