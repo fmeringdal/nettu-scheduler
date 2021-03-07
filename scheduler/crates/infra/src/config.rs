@@ -1,4 +1,5 @@
 use nettu_scheduler_utils::create_random_secret;
+use tracing::{info, log::warn};
 
 #[derive(Debug, Clone)]
 pub struct Config {
@@ -23,9 +24,9 @@ impl Config {
         let create_account_secret_code = match std::env::var("CREATE_ACCOUNT_SECRET_CODE") {
             Ok(code) => code,
             Err(_) => {
-                println!("Did not find CREATE_ACCOUNT_SECRET_CODE environment variable. Going to create one.");
+                info!("Did not find CREATE_ACCOUNT_SECRET_CODE environment variable. Going to create one.");
                 let code = create_random_secret(16);
-                println!(
+                info!(
                     "Secret code for creating accounts was generated and set to: {}",
                     code
                 );
@@ -37,7 +38,7 @@ impl Config {
         let port = match port.parse::<usize>() {
             Ok(port) => port,
             Err(_) => {
-                println!(
+                warn!(
                     "The given PORT: {} is not valid, falling back to the default port: {}.",
                     port, default_port
                 );

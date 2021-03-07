@@ -8,6 +8,7 @@ use repos::Repos;
 use std::sync::Arc;
 pub use system::ISys;
 use system::RealSys;
+use tracing::{info, warn};
 
 #[derive(Clone)]
 pub struct NettuContext {
@@ -55,12 +56,12 @@ pub async fn setup_context() -> NettuContext {
     // cargo run inmemory
     let inmemory_arg_set = args.len() > 1 && args[1].eq("inmemory");
     if inmemory_arg_set {
-        println!("Inmemory argument provided. Going to use inmemory infra.");
+        info!("Inmemory argument provided. Going to use inmemory infra.");
         return NettuContext::create_inmemory();
     }
 
     if mongodb_conncetion_string.is_ok() && mongodb_db_name.is_ok() {
-        println!(
+        info!(
             "{} and {} env vars was provided. Going to use mongodb.",
             MONGODB_CONNECTION_STRING, MONGODB_NAME
         );
@@ -69,8 +70,8 @@ pub async fn setup_context() -> NettuContext {
         })
         .await
     } else {
-        println!(
-            "{} and {} env vars was not provided. Going to use inmemory infra.",
+        warn!(
+            "{} and {} env vars was not provided. Going to use inmemory infra. This should only be used during testing!",
             MONGODB_CONNECTION_STRING, MONGODB_NAME
         );
         NettuContext::create_inmemory()

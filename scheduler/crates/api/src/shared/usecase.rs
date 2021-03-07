@@ -2,6 +2,7 @@ use nettu_scheduler_infra::NettuContext;
 
 use super::auth::{Permission, Policy};
 use std::fmt::Debug;
+use tracing::error;
 
 #[async_trait::async_trait(?Send)]
 pub trait UseCase: Debug {
@@ -55,7 +56,7 @@ where
     let res = usecase.execute(ctx).await;
 
     if let Err(e) = &res {
-        println!("Use case error: {:?}", e);
+        error!("Use case error: {:?}", e);
     }
 
     res

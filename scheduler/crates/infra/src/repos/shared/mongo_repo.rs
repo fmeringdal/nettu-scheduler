@@ -6,6 +6,7 @@ use mongodb::{
     Collection,
 };
 use serde::{de::DeserializeOwned, Serialize};
+use tracing::error;
 
 pub trait MongoDocument<E>: Serialize + DeserializeOwned {
     fn to_domain(&self) -> E;
@@ -108,7 +109,7 @@ pub async fn find_many_by<E, D: MongoDocument<E>>(
                         documents.push(persistence_to_entity::<E, D>(document));
                     }
                     Err(e) => {
-                        println!("Error getting cursor calendar event: {:?}", e);
+                        error!("Error getting cursor for calendar event repo: {:?}", e);
                     }
                 }
             }

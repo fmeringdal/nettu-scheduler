@@ -9,9 +9,16 @@
 
 ## Overview
 
-`Nettu scheduler` is a self-hosted calendar and scheduler server that aims to provide the building blocks for building calendar / booking / appointments apps with ease. That includes dealing with event recurrences, event reminders, freebusy queries, bookingslots queries and a flexible way for bookable `User`s to configure their availibility (also supports buffers, closest- and furthest booking times and more!). It has a simple REST API and also a [JavaScript SDK](https://github.com/fmeringdal/nettu-scheduler-js-client) and [Rust SDK](https://crates.io/crates/nettu_scheduler_sdk). 
+`Nettu scheduler` is a self-hosted calendar and scheduler server that aims to provide the building blocks for building calendar / booking / appointments apps with ease. It has a simple REST API and also a [JavaScript SDK](https://github.com/fmeringdal/nettu-scheduler-js-client) and [Rust SDK](https://crates.io/crates/nettu_scheduler_sdk). 
 
-`Nettu scheduler` supports authentication through JWT tokens signed by your server and api-keys for server to server communication. 
+## Features
+- **Authentication**: JWT tokens signed by your server for browser clients and api-keys for server to server communication. 
+- **Authorization**: JWT tokens have support for attaching policies which defines what actions the subject can take.
+- **Booking**: Create a `Service` and register `User`s on it to make them bookable.
+- **Calendar Events**: Supports recurrence rules, flexible querying and reminders.
+- **Calendars**: For grouping `Calendar Event`s.
+- **Freebusy**: Find out when `User`s are free and when they are busy.
+- **Webhooks**: Notifying your server about `Calendar Event` reminders.
 
 <br/>
 
@@ -147,5 +154,5 @@ project.
 
 ## Special thanks
 
-* [Lemmy](https://github.com/LemmyNet/lemmy) for inspiration on how to use cargo workspaces to organize a web app. 
+* [Lemmy](https://github.com/LemmyNet/lemmy) for inspiration on how to use cargo workspace to organize a web app. 
 * [The author of this blog post](https://www.lpalmieri.com/posts/2020-09-27-zero-to-production-4-are-we-observable-yet/) for an excellent introduction on how to do telemetry in rust. 

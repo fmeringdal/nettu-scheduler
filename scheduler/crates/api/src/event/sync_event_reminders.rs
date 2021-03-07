@@ -4,6 +4,8 @@ use nettu_scheduler_domain::{Calendar, CalendarEvent, EventRemindersExpansionJob
 use nettu_scheduler_infra::NettuContext;
 use std::iter::Iterator;
 
+use tracing::error;
+
 #[derive(Debug)]
 pub enum EventOperation<'a> {
     Created(&'a Calendar),
@@ -63,7 +65,7 @@ async fn create_event_reminders(
                     .await
                     .is_err()
                 {
-                    println!(
+                    error!(
                         "Unable to store event reminders expansion job for event: {}",
                         event.id
                     );
@@ -121,7 +123,7 @@ impl<'a> UseCase for SyncEventRemindersUseCase<'a> {
                     .await
                     .is_err()
                 {
-                    println!(
+                    error!(
                         "Unable to delete event reminder expansion job for event: {}",
                         calendar_event.id
                     );
@@ -185,11 +187,11 @@ impl<'a> UseCase for SyncEventRemindersUseCase<'a> {
                         Some(cal) => cal,
                         None => continue,
                     };
-                    if create_event_reminders(&event, &calendar, 0, ctx)
-                        .await
-                        .is_err()
-                    {
-                        println!("Unable to create event reminders for event {}", event.id);
+                    if let Err(err) = create_event_reminders(&event, &calendar, 0, ctx).await {
+                        error!(
+                            "Unable to create event reminders for event {}, Error: {:?}",
+                            event.id, err
+                        );
                     }
                 }
 

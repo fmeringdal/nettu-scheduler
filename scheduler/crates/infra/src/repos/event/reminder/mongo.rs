@@ -9,6 +9,7 @@ use mongodb::{
 };
 use nettu_scheduler_domain::{Reminder, ID};
 use serde::{Deserialize, Serialize};
+use tracing::error;
 
 pub struct MongoReminderRepo {
     collection: Collection,
@@ -51,14 +52,14 @@ impl IReminderRepo for MongoReminderRepo {
             {
                 Ok(docs) => docs,
                 Err(err) => {
-                    println!("Error: {:?}", err);
+                    error!("Error: {:?}", err);
                     return vec![];
                 }
             };
 
         // Now delete
         if let Err(err) = self.collection.delete_many(filter, None).await {
-            println!("Error: {:?}", err);
+            error!("Error: {:?}", err);
         }
 
         docs

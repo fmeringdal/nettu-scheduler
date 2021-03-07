@@ -10,6 +10,7 @@ use actix_web::rt::time::{delay_until, interval, Instant};
 use nettu_scheduler_api_structs::send_account_event_reminders::AccountEventRemindersDTO;
 use nettu_scheduler_infra::NettuContext;
 use std::time::Duration;
+use tracing::error;
 
 pub fn get_start_delay(now_ts: usize, secs_before_min: usize) -> usize {
     let secs_to_next_minute = 60 - (now_ts / 1000) % 60;
@@ -52,7 +53,6 @@ pub fn start_send_reminders_job(ctx: NettuContext) {
 
 async fn send_reminders(context: NettuContext) {
     let client = Client::new();
-    println!("Minute tick at: {:?}", context.sys.get_timestamp_millis());
 
     let usecase = GetUpcomingRemindersUseCase {};
     let account_reminders = match execute(usecase, &context).await {
@@ -62,11 +62,7 @@ async fn send_reminders(context: NettuContext) {
 
     let send_instant = account_reminders.1;
     delay_until(send_instant).await;
-    println!(
-        "Finished the delay at: {:?}",
-        context.sys.get_timestamp_millis()
-    );
-    println!("Reminders to send: {:?}", account_reminders);
+    // println!("Reminders to send: {:?}", account_reminders);
 
     for (acc, reminders) in account_reminders.0 {
         match acc.settings.webhook {
@@ -78,7 +74,7 @@ async fn send_reminders(context: NettuContext) {
                     .send_json(&AccountEventRemindersDTO::new(reminders.events))
                     .await
                 {
-                    println!("Error informing client of reminders: {:?}", e);
+                    error!("Error informing client of reminders: {:?}", e);
                 }
             }
         }

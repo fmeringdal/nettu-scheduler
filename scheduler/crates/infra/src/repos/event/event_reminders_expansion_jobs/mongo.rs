@@ -9,6 +9,7 @@ use mongodb::{
 };
 use nettu_scheduler_domain::{EventRemindersExpansionJob, ID};
 use serde::{Deserialize, Serialize};
+use tracing::error;
 
 pub struct MongoEventRemindersExpansionsJobRepo {
     collection: Collection,
@@ -44,14 +45,14 @@ impl IEventRemindersExpansionJobsRepo for MongoEventRemindersExpansionsJobRepo {
         {
             Ok(docs) => docs,
             Err(err) => {
-                println!("Error: {:?}", err);
+                error!("{}", err);
                 return vec![];
             }
         };
 
         // Now delete
         if let Err(err) = self.collection.delete_many(filter, None).await {
-            println!("Error: {:?}", err);
+            error!("{}", err);
         }
 
         docs

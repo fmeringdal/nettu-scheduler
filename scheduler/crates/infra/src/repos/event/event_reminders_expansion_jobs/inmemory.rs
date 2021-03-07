@@ -25,7 +25,6 @@ impl IEventRemindersExpansionJobsRepo for InMemoryEventRemindersExpansionJobsRep
     }
 
     async fn delete_all_before(&self, before: i64) -> Vec<EventRemindersExpansionJob> {
-        // println!("Reminders: {:?}", self.reminders);
         find_and_delete_by(&self.jobs, |reminder| reminder.timestamp <= before)
     }
 

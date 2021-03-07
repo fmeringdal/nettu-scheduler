@@ -17,6 +17,7 @@ use mongodb::{options::ClientOptions, Client};
 use schedule::{IScheduleRepo, InMemoryScheduleRepo, MongoScheduleRepo};
 use service::{IServiceRepo, InMemoryServiceRepo, MongoServiceRepo};
 use std::sync::Arc;
+use tracing::info;
 use user::{IUserRepo, InMemoryUserRepo, MongoUserRepo};
 
 pub use mongodb::bson::oid::ObjectId;
@@ -43,7 +44,7 @@ impl Repos {
         let db = client.database(db_name);
 
         // This is needed to make sure that db is ready when opening server
-        println!("DB CHECKING CONNECTION ...");
+        info!("DB CHECKING CONNECTION ...");
         db.collection("server-start")
             .insert_one(
                 mongodb::bson::doc! {
@@ -52,7 +53,7 @@ impl Repos {
                 None,
             )
             .await?;
-        println!("DB CHECKING CONNECTION ... [done]");
+        info!("DB CHECKING CONNECTION ... [done]");
         Ok(Self {
             event_repo: Arc::new(MongoEventRepo::new(&db)),
             calendar_repo: Arc::new(MongoCalendarRepo::new(&db)),
