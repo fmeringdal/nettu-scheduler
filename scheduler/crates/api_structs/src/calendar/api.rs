@@ -67,7 +67,7 @@ pub mod get_calendar_events {
         pub end_ts: i64,
     }
 
-    #[derive(Serialize)]
+    #[derive(Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct APIResponse {
         pub calendar: CalendarDTO,
@@ -136,7 +136,7 @@ pub mod update_calendar_settings {
         pub user_id: Option<ID>,
     }
 
-    #[derive(Deserialize)]
+    #[derive(Deserialize, Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
         pub week_start: Option<isize>,

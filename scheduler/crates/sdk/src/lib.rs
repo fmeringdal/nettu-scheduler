@@ -14,7 +14,10 @@ use user::UserClient;
 
 pub(crate) use base::{APIResponse, BaseClient};
 
-pub use calendar::{CreateCalendarInput, GetCalendarInput};
+pub use calendar::{
+    CreateCalendarInput, DeleteCalendarInput, GetCalendarEventsInput, GetCalendarInput,
+    UpdateCalendarSettingsInput,
+};
 pub use schedule::CreateScheduleInput;
 
 /// Nettu Scheduler Server SDK

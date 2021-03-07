@@ -1,7 +1,6 @@
 use crate::{APIResponse, BaseClient};
 use nettu_scheduler_api_structs::*;
 use reqwest::StatusCode;
-use serde::Serialize;
 use std::sync::Arc;
 
 #[derive(Clone)]
@@ -9,17 +8,34 @@ pub struct CalendarClient {
     base: Arc<BaseClient>,
 }
 
-#[derive(Serialize)]
 pub struct CreateCalendarInput {
     pub user_id: String,
     pub timezone: String,
     pub week_start: isize,
 }
 
-#[derive(Serialize)]
 pub struct GetCalendarInput {
     pub user_id: String,
     pub calendar_id: String,
+}
+
+pub struct GetCalendarEventsInput {
+    pub user_id: String,
+    pub calendar_id: String,
+    pub start_ts: i64,
+    pub end_ts: i64,
+}
+
+pub struct DeleteCalendarInput {
+    pub user_id: String,
+    pub calendar_id: String,
+}
+
+pub struct UpdateCalendarSettingsInput {
+    pub user_id: String,
+    pub calendar_id: String,
+    pub week_start: Option<isize>,
+    pub timezone: Option<String>,
 }
 
 impl CalendarClient {
@@ -27,10 +43,57 @@ impl CalendarClient {
         Self { base }
     }
 
+    pub async fn update_settings(
+        &self,
+        input: &UpdateCalendarSettingsInput,
+    ) -> APIResponse<update_calendar_settings::APIResponse> {
+        let body = update_calendar_settings::RequestBody {
+            timezone: input.timezone.clone(),
+            week_start: input.week_start,
+        };
+        self.base
+            .put(
+                body,
+                format!(
+                    "user/{}/calendar/{}/settings",
+                    input.user_id, input.calendar_id
+                ),
+                StatusCode::OK,
+            )
+            .await
+    }
+
+    pub async fn delete(
+        &self,
+        input: &DeleteCalendarInput,
+    ) -> APIResponse<delete_calendar::APIResponse> {
+        self.base
+            .delete(
+                format!("user/{}/calendar/{}", input.user_id, input.calendar_id),
+                StatusCode::OK,
+            )
+            .await
+    }
+
     pub async fn get(&self, input: &GetCalendarInput) -> APIResponse<get_calendar::APIResponse> {
         self.base
             .get(
                 format!("user/{}/calendar/{}", input.user_id, input.calendar_id),
+                StatusCode::OK,
+            )
+            .await
+    }
+
+    pub async fn get_events(
+        &self,
+        input: &GetCalendarEventsInput,
+    ) -> APIResponse<get_calendar_events::APIResponse> {
+        self.base
+            .get(
+                format!(
+                    "user/{}/calendar/{}/events?startTs={}&endTs={}",
+                    input.user_id, input.calendar_id, input.start_ts, input.end_ts
+                ),
                 StatusCode::OK,
             )
             .await

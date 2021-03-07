@@ -1,9 +1,9 @@
 use crate::CalendarEvent;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 
 /// Occurence of a `CalendarEvent`
-#[derive(Clone, Debug, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EventInstance {
     pub start_ts: i64,

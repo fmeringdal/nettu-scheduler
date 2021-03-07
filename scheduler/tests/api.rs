@@ -2,7 +2,10 @@ mod helpers;
 
 use helpers::setup::spawn_app;
 use nettu_scheduler_domain::PEMKey;
-use nettu_scheduler_sdk::{CreateCalendarInput, CreateScheduleInput, GetCalendarInput, NettuSDK};
+use nettu_scheduler_sdk::{
+    CreateCalendarInput, CreateScheduleInput, DeleteCalendarInput, GetCalendarEventsInput,
+    GetCalendarInput, NettuSDK, UpdateCalendarSettingsInput,
+};
 
 #[actix_web::main]
 #[test]
@@ -207,4 +210,51 @@ async fn test_crud_calendars() {
         .calendar;
 
     assert_eq!(calendar_get_res.id, calendar.id);
+
+    let events = admin_client
+        .calendar
+        .get_events(&GetCalendarEventsInput {
+            user_id: user.id.to_string(),
+            calendar_id: calendar.id.to_string(),
+            start_ts: 0,
+            end_ts: 1000 * 60 * 60 * 24,
+        })
+        .await
+        .unwrap();
+
+    assert_eq!(events.events.len(), 0);
+
+    let week_start = 2;
+    let calendar_with_new_settings = admin_client
+        .calendar
+        .update_settings(&UpdateCalendarSettingsInput {
+            user_id: user.id.to_string(),
+            calendar_id: calendar.id.to_string(),
+            timezone: None,
+            week_start: Some(week_start.clone()),
+        })
+        .await
+        .unwrap()
+        .calendar;
+    assert_eq!(calendar_with_new_settings.settings.week_start, week_start);
+
+    // Delete calendar
+    assert!(admin_client
+        .calendar
+        .delete(&DeleteCalendarInput {
+            user_id: user.id.to_string(),
+            calendar_id: calendar.id.to_string(),
+        })
+        .await
+        .is_ok());
+
+    // Get now returns 404
+    assert!(admin_client
+        .calendar
+        .get(&GetCalendarInput {
+            user_id: user.id.to_string(),
+            calendar_id: calendar.id.to_string(),
+        })
+        .await
+        .is_err());
 }
