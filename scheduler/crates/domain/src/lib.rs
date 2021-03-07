@@ -11,7 +11,7 @@ mod shared;
 mod timespan;
 mod user;
 
-pub use account::{Account, AccountSettings, AccountWebhookSettings};
+pub use account::{Account, AccountSettings, AccountWebhookSettings, PEMKey};
 pub use calendar::{Calendar, CalendarSettings};
 pub use event::{CalendarEvent, CalendarEventReminder};
 pub use event_instance::{

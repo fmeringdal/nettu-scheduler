@@ -33,11 +33,11 @@ where
     U: PermissionBoundary,
     U::Errors: Debug,
 {
-    let permissions_boundary = usecase.permissions();
-    if !policy.authorize(&permissions_boundary) {
+    let required_permissions = usecase.permissions();
+    if !policy.authorize(&required_permissions) {
         return Err(UseCaseErrorContainer::Unauthorized(format!(
             "Client is not permitted to perform some or all of these actions: {:?}",
-            permissions_boundary
+            required_permissions
         )));
     }
 

@@ -1,6 +1,7 @@
 mod helpers;
 
 use helpers::setup::spawn_app;
+use nettu_scheduler_domain::PEMKey;
 use nettu_scheduler_sdk::{CreateScheduleInput, NettuSDK};
 
 #[actix_web::main]
@@ -148,7 +149,10 @@ async fn test_crud_account() {
         .await
         .expect("Expected to set account jwt key");
     let account = admin_client.account.get().await.unwrap();
-    assert_eq!(account.account.public_jwt_key, Some(key));
+    assert_eq!(
+        account.account.public_jwt_key,
+        Some(PEMKey::new(key).unwrap())
+    );
 
     // Removing pub jwt key
     admin_client

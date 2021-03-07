@@ -1,11 +1,11 @@
-use nettu_scheduler_domain::{Account, AccountSettings, AccountWebhookSettings, ID};
+use nettu_scheduler_domain::{Account, AccountSettings, AccountWebhookSettings, PEMKey, ID};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AccountDTO {
     pub id: ID,
-    pub public_jwt_key: Option<String>,
+    pub public_jwt_key: Option<PEMKey>,
     pub settings: AccountSettingsDTO,
 }
 

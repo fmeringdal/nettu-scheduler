@@ -183,6 +183,7 @@ mod test {
     use super::*;
     use actix_web::test::TestRequest;
     use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
+    use nettu_scheduler_domain::PEMKey;
     use nettu_scheduler_infra::setup_context;
 
     async fn setup_account(ctx: &NettuContext) -> Account {
@@ -211,6 +212,7 @@ mod test {
     fn get_account() -> Account {
         let pub_key = std::fs::read("./config/test_public_rsa_key.crt").unwrap();
         let pub_key = String::from_utf8(pub_key).expect("Valid pem file");
+        let pub_key = PEMKey::new(pub_key).unwrap();
         Account {
             public_jwt_key: Some(pub_key),
             ..Default::default()

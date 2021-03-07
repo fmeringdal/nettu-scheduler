@@ -21,7 +21,7 @@ pub trait IAccountRepo: Send + Sync {
 #[cfg(test)]
 mod tests {
     use crate::setup_context;
-    use nettu_scheduler_domain::Entity;
+    use nettu_scheduler_domain::{Entity, PEMKey};
 
     #[tokio::test]
     async fn create_and_delete() {
@@ -69,7 +69,8 @@ mod tests {
         let pubkey = std::fs::read("../api/config/test_public_rsa_key.crt").unwrap();
         let pubkey = String::from_utf8(pubkey).unwrap();
 
-        account.set_public_jwt_key(Some(pubkey)).unwrap();
+        let pubkey = PEMKey::new(pubkey).unwrap();
+        account.set_public_jwt_key(Some(pubkey));
 
         // Save
         assert!(ctx.repos.account_repo.save(&account).await.is_ok());

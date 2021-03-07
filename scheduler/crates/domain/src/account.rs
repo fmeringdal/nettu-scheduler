@@ -1,5 +1,6 @@
 use crate::shared::entity::{Entity, ID};
 use nettu_scheduler_utils::create_random_secret;
+use serde::{Deserialize, Serialize};
 
 const API_KEY_LEN: usize = 30;
 
@@ -9,9 +10,23 @@ const API_KEY_LEN: usize = 30;
 #[derive(Debug, Clone)]
 pub struct Account {
     pub id: ID,
-    pub public_jwt_key: Option<String>,
     pub secret_api_key: String,
+    pub public_jwt_key: Option<PEMKey>,
     pub settings: AccountSettings,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+pub struct PEMKey(String);
+
+impl PEMKey {
+    pub fn new(key: String) -> anyhow::Result<Self> {
+        jsonwebtoken::DecodingKey::from_rsa_pem(key.as_bytes().as_ref())?;
+        Ok(Self(key))
+    }
+
+    pub fn as_bytes(&self) -> &[u8] {
+        self.0.as_bytes()
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -75,18 +90,8 @@ impl Account {
         format!("sk_{}", rand_secret)
     }
 
-    pub fn set_public_jwt_key(&mut self, key: Option<String>) -> anyhow::Result<()> {
-        match key {
-            Some(key) => {
-                jsonwebtoken::DecodingKey::from_rsa_pem(key.as_bytes().as_ref())?;
-                self.public_jwt_key = Some(key);
-                Ok(())
-            }
-            None => {
-                self.public_jwt_key = None;
-                Ok(())
-            }
-        }
+    pub fn set_public_jwt_key(&mut self, key: Option<PEMKey>) {
+        self.public_jwt_key = key;
     }
 }
 
@@ -115,23 +120,14 @@ mod test {
 
     #[test]
     fn it_rejects_invalid_public_key() {
-        let mut acc = Account::new();
-        assert!(acc.set_public_jwt_key(Some("badpem".into())).is_err());
-        assert!(acc.public_jwt_key.is_none());
+        assert!(PEMKey::new("badpem".into()).is_err());
     }
 
     #[test]
     fn it_accepts_valid_public_key() {
-        let mut acc = Account::new();
-
         let pub_key = std::fs::read("../api/config/test_public_rsa_key.crt").unwrap();
         let pub_key = String::from_utf8(pub_key).expect("Test public key to be valid utf8");
 
-        assert!(acc.set_public_jwt_key(Some(pub_key.clone())).is_ok());
-        assert_eq!(acc.public_jwt_key.clone().unwrap(), pub_key);
-
-        // Remove pub key
-        assert!(acc.set_public_jwt_key(None).is_ok());
-        assert!(acc.public_jwt_key.is_none());
+        assert!(PEMKey::new(pub_key).is_ok());
     }
 }

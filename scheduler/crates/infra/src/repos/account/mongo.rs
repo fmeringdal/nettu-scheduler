@@ -5,7 +5,7 @@ use mongodb::{
     bson::{doc, oid::ObjectId, Document},
     Collection, Database,
 };
-use nettu_scheduler_domain::{Account, AccountSettings, AccountWebhookSettings, ID};
+use nettu_scheduler_domain::{Account, AccountSettings, AccountWebhookSettings, PEMKey, ID};
 use serde::{Deserialize, Serialize};
 
 pub struct MongoAccountRepo {
@@ -68,8 +68,8 @@ impl IAccountRepo for MongoAccountRepo {
 #[derive(Debug, Serialize, Deserialize)]
 struct AccountMongo {
     pub _id: ObjectId,
-    pub public_jwt_key: Option<String>,
     pub secret_api_key: String,
+    pub public_jwt_key: Option<PEMKey>,
     pub settings: AccountSettingsMongo,
 }
 
