@@ -14,7 +14,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
     cfg.route("/user/{user_id}", web::get().to(get_user_controller));
     cfg.route("/user/{user_id}", web::delete().to(delete_user_controller));
     cfg.route(
-        "/user/{external_user_id}/freebusy",
+        "/user/{user_id}/freebusy",
         web::get().to(get_freebusy_controller),
     );
 }

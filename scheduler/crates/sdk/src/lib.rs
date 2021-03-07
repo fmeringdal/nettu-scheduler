@@ -6,6 +6,7 @@ mod status;
 mod user;
 
 use account::AccountClient;
+use calendar::CalendarClient;
 use schedule::ScheduleClient;
 use status::StatusClient;
 use std::sync::Arc;
@@ -13,6 +14,7 @@ use user::UserClient;
 
 pub(crate) use base::{APIResponse, BaseClient};
 
+pub use calendar::{CreateCalendarInput, GetCalendarInput};
 pub use schedule::CreateScheduleInput;
 
 /// Nettu Scheduler Server SDK
@@ -22,6 +24,7 @@ pub use schedule::CreateScheduleInput;
 #[derive(Clone)]
 pub struct NettuSDK {
     pub account: AccountClient,
+    pub calendar: CalendarClient,
     pub schedule: ScheduleClient,
     pub status: StatusClient,
     pub user: UserClient,
@@ -33,12 +36,14 @@ impl NettuSDK {
         base.set_api_key(api_key.into());
         let base = Arc::new(base);
         let account = AccountClient::new(base.clone());
+        let calendar = CalendarClient::new(base.clone());
         let schedule = ScheduleClient::new(base.clone());
         let status = StatusClient::new(base.clone());
         let user = UserClient::new(base.clone());
 
         Self {
             account,
+            calendar,
             schedule,
             status,
             user,

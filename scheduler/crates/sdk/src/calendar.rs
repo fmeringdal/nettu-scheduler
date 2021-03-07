@@ -16,13 +16,24 @@ pub struct CreateCalendarInput {
     pub week_start: isize,
 }
 
+#[derive(Serialize)]
+pub struct GetCalendarInput {
+    pub user_id: String,
+    pub calendar_id: String,
+}
+
 impl CalendarClient {
     pub(crate) fn new(base: Arc<BaseClient>) -> Self {
         Self { base }
     }
 
-    pub async fn get(&self) -> APIResponse<get_account::APIResponse> {
-        self.base.get("account".into(), StatusCode::OK).await
+    pub async fn get(&self, input: &GetCalendarInput) -> APIResponse<get_calendar::APIResponse> {
+        self.base
+            .get(
+                format!("user/{}/calendar/{}", input.user_id, input.calendar_id),
+                StatusCode::OK,
+            )
+            .await
     }
 
     pub async fn create(

@@ -1,23 +1,37 @@
-use crate::error::NettuError;
-use crate::shared::auth::protect_route;
+use crate::shared::auth::{account_can_modify_user, protect_route};
 use crate::shared::usecase::{execute, UseCase};
+use crate::{error::NettuError, shared::auth::protect_account_route};
 
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::get_calendar_events::{APIResponse, PathParams, QueryParams};
 use nettu_scheduler_domain::{Calendar, EventWithInstances, TimeSpan, ID};
 use nettu_scheduler_infra::NettuContext;
 
-pub async fn get_calendar_events_controller(
-    http_req: HttpRequest,
+fn handle_errors(e: UseCaseErrors) -> NettuError {
+    match e {
+        UseCaseErrors::InvalidTimespan => {
+            NettuError::BadClientData("The start and end timespan is invalid".into())
+        }
+        UseCaseErrors::NotFound(calendar_id) => NettuError::NotFound(format!(
+            "The calendar with id: {}, was not found.",
+            calendar_id
+        )),
+    }
+}
+
+pub async fn get_calendar_events_admin_controller(
+    http_req: web::HttpRequest,
     query_params: web::Query<QueryParams>,
-    params: web::Path<PathParams>,
+    path: web::Path<PathParams>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
-    let (user, _policy) = protect_route(&http_req, &ctx).await?;
+    let account = protect_account_route(&http_req, &ctx).await?;
+    let user_id = path.user_id.clone().unwrap();
+    account_can_modify_user(&account, &user_id, &ctx).await?;
 
     let usecase = GetCalendarEventsUseCase {
-        user_id: user.id,
-        calendar_id: params.calendar_id.clone(),
+        user_id: user_id.clone(),
+        calendar_id: path.calendar_id.clone(),
         start_ts: query_params.start_ts,
         end_ts: query_params.end_ts,
     };
@@ -27,15 +41,30 @@ pub async fn get_calendar_events_controller(
         .map(|usecase_res| {
             HttpResponse::Ok().json(APIResponse::new(usecase_res.calendar, usecase_res.events))
         })
-        .map_err(|e| match e {
-            UseCaseErrors::InvalidTimespan => {
-                NettuError::BadClientData("The start and end timespan is invalid".into())
-            }
-            UseCaseErrors::NotFound => NettuError::NotFound(format!(
-                "The calendar with id: {}, was not found.",
-                params.calendar_id
-            )),
+        .map_err(handle_errors)
+}
+
+pub async fn get_calendar_events_controller(
+    http_req: HttpRequest,
+    query_params: web::Query<QueryParams>,
+    path: web::Path<PathParams>,
+    ctx: web::Data<NettuContext>,
+) -> Result<HttpResponse, NettuError> {
+    let (user, _policy) = protect_route(&http_req, &ctx).await?;
+
+    let usecase = GetCalendarEventsUseCase {
+        user_id: user.id,
+        calendar_id: path.calendar_id.clone(),
+        start_ts: query_params.start_ts,
+        end_ts: query_params.end_ts,
+    };
+
+    execute(usecase, &ctx)
+        .await
+        .map(|usecase_res| {
+            HttpResponse::Ok().json(APIResponse::new(usecase_res.calendar, usecase_res.events))
         })
+        .map_err(handle_errors)
 }
 #[derive(Debug)]
 pub struct GetCalendarEventsUseCase {
@@ -52,7 +81,7 @@ pub struct UseCaseResponse {
 
 #[derive(Debug)]
 pub enum UseCaseErrors {
-    NotFound,
+    NotFound(ID),
     InvalidTimespan,
 }
 
@@ -89,7 +118,7 @@ impl UseCase for GetCalendarEventsUseCase {
 
                 Ok(UseCaseResponse { calendar, events })
             }
-            _ => Err(UseCaseErrors::NotFound),
+            _ => Err(UseCaseErrors::NotFound(self.calendar_id.clone())),
         }
     }
 }

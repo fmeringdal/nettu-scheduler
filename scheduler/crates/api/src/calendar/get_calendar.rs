@@ -1,31 +1,58 @@
-use crate::shared::usecase::{execute, UseCase};
+use crate::shared::{
+    auth::{account_can_modify_user, protect_account_route},
+    usecase::{execute, UseCase},
+};
 use crate::{error::NettuError, shared::auth::protect_route};
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::get_calendar::{APIResponse, PathParams};
 use nettu_scheduler_domain::{Calendar, ID};
 use nettu_scheduler_infra::NettuContext;
 
+fn handle_errors(e: UseCaseErrors) -> NettuError {
+    match e {
+        UseCaseErrors::NotFound(calendar_id) => NettuError::NotFound(format!(
+            "The calendar with id: {}, was not found.",
+            calendar_id
+        )),
+    }
+}
+
+pub async fn get_calendar_admin_controller(
+    http_req: web::HttpRequest,
+    path: web::Path<PathParams>,
+    ctx: web::Data<NettuContext>,
+) -> Result<HttpResponse, NettuError> {
+    let account = protect_account_route(&http_req, &ctx).await?;
+    let user_id = path.user_id.clone().unwrap();
+    account_can_modify_user(&account, &user_id, &ctx).await?;
+
+    let usecase = GetCalendarUseCase {
+        user_id: user_id.clone(),
+        calendar_id: path.calendar_id.clone(),
+    };
+
+    execute(usecase, &ctx)
+        .await
+        .map(|calendar| HttpResponse::Ok().json(APIResponse::new(calendar)))
+        .map_err(handle_errors)
+}
+
 pub async fn get_calendar_controller(
     http_req: HttpRequest,
-    req: web::Path<PathParams>,
+    path: web::Path<PathParams>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let (user, _policy) = protect_route(&http_req, &ctx).await?;
 
     let usecase = GetCalendarUseCase {
         user_id: user.id.clone(),
-        calendar_id: req.calendar_id.clone(),
+        calendar_id: path.calendar_id.clone(),
     };
 
     execute(usecase, &ctx)
         .await
         .map(|calendar| HttpResponse::Ok().json(APIResponse::new(calendar)))
-        .map_err(|e| match e {
-            UseCaseErrors::NotFound => NettuError::NotFound(format!(
-                "The calendar with id: {}, was not found.",
-                req.calendar_id
-            )),
-        })
+        .map_err(handle_errors)
 }
 
 #[derive(Debug)]
@@ -36,7 +63,7 @@ struct GetCalendarUseCase {
 
 #[derive(Debug)]
 enum UseCaseErrors {
-    NotFound,
+    NotFound(ID),
 }
 
 #[async_trait::async_trait(?Send)]
@@ -49,7 +76,7 @@ impl UseCase for GetCalendarUseCase {
         let cal = ctx.repos.calendar_repo.find(&self.calendar_id).await;
         match cal {
             Some(cal) if cal.user_id == self.user_id => Ok(cal),
-            _ => Err(UseCaseErrors::NotFound),
+            _ => Err(UseCaseErrors::NotFound(self.calendar_id.clone())),
         }
     }
 }

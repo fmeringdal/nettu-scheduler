@@ -2,7 +2,7 @@ mod helpers;
 
 use helpers::setup::spawn_app;
 use nettu_scheduler_domain::PEMKey;
-use nettu_scheduler_sdk::{CreateScheduleInput, NettuSDK};
+use nettu_scheduler_sdk::{CreateCalendarInput, CreateScheduleInput, GetCalendarInput, NettuSDK};
 
 #[actix_web::main]
 #[test]
@@ -171,4 +171,40 @@ async fn test_crud_account() {
         .expect("Expected to delete account webhook");
     let account = admin_client.account.get().await.unwrap();
     assert!(account.account.settings.webhook.is_none());
+}
+
+#[actix_web::main]
+#[test]
+async fn test_crud_calendars() {
+    let (app, sdk, address) = spawn_app().await;
+    let res = sdk
+        .account
+        .create(&app.config.create_account_secret_code)
+        .await
+        .expect("Expected to create account");
+    let admin_client = NettuSDK::new(address, res.secret_api_key);
+    let user = admin_client.user.create().await.unwrap().user;
+
+    let calendar = admin_client
+        .calendar
+        .create(&CreateCalendarInput {
+            user_id: user.id.to_string(),
+            timezone: "utc".into(),
+            week_start: 0,
+        })
+        .await
+        .unwrap()
+        .calendar;
+
+    let calendar_get_res = admin_client
+        .calendar
+        .get(&GetCalendarInput {
+            user_id: user.id.to_string(),
+            calendar_id: calendar.id.to_string(),
+        })
+        .await
+        .unwrap()
+        .calendar;
+
+    assert_eq!(calendar_get_res.id, calendar.id);
 }

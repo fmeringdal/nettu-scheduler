@@ -178,6 +178,27 @@ pub async fn protect_public_account_route(
     }
 }
 
+/// Used for account admin routes by checking that account
+/// is not modifying a user in another account
+pub async fn account_can_modify_user(
+    account: &Account,
+    user_id: &ID,
+    ctx: &NettuContext,
+) -> Result<User, NettuError> {
+    match ctx
+        .repos
+        .user_repo
+        .find_by_account_id(user_id, &account.id)
+        .await
+    {
+        Some(user) => Ok(user),
+        None => Err(NettuError::NotFound(format!(
+            "User with id: {} was not found",
+            user_id
+        ))),
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;

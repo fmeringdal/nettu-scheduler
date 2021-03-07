@@ -1,6 +1,6 @@
 use crate::shared::{
-    auth::Permission,
-    usecase::{execute_with_policy, PermissionBoundary, UseCase, UseCaseErrorContainer},
+    auth::{account_can_modify_user, protect_account_route, Permission},
+    usecase::{execute, execute_with_policy, PermissionBoundary, UseCase, UseCaseErrorContainer},
 };
 use crate::{error::NettuError, shared::auth::protect_route};
 use actix_web::{web, HttpResponse};
@@ -8,17 +8,53 @@ use nettu_scheduler_api_structs::update_calendar_settings::{APIResponse, PathPar
 use nettu_scheduler_domain::{Calendar, ID};
 use nettu_scheduler_infra::NettuContext;
 
+fn handle_errors(e: UseCaseErrors) -> NettuError {
+    match e {
+        UseCaseErrors::StorageError => NettuError::InternalError,
+        UseCaseErrors::CalendarNotFound => {
+            NettuError::NotFound("The calendar was not found.".into())
+        }
+        UseCaseErrors::InvalidSettings(err) => NettuError::BadClientData(format!(
+            "Bad calendar settings provided. Error message: {}",
+            err
+        )),
+    }
+}
+
+pub async fn update_calendar_settings_admin_controller(
+    http_req: web::HttpRequest,
+    ctx: web::Data<NettuContext>,
+    path: web::Path<PathParams>,
+    body: web::Json<RequestBody>,
+) -> Result<HttpResponse, NettuError> {
+    let account = protect_account_route(&http_req, &ctx).await?;
+    let user_id = path.user_id.clone().unwrap();
+    account_can_modify_user(&account, &user_id, &ctx).await?;
+
+    let usecase = UpdateCalendarSettingsUseCase {
+        user_id: user_id.clone(),
+        calendar_id: path.calendar_id.clone(),
+        week_start: body.week_start.clone(),
+        timezone: body.timezone.clone(),
+    };
+
+    execute(usecase, &ctx)
+        .await
+        .map(|calendar| HttpResponse::Ok().json(APIResponse::new(calendar)))
+        .map_err(handle_errors)
+}
+
 pub async fn update_calendar_settings_controller(
     http_req: web::HttpRequest,
     ctx: web::Data<NettuContext>,
-    path_params: web::Path<PathParams>,
+    path: web::Path<PathParams>,
     body: web::Json<RequestBody>,
 ) -> Result<HttpResponse, NettuError> {
     let (user, policy) = protect_route(&http_req, &ctx).await?;
 
     let usecase = UpdateCalendarSettingsUseCase {
         user_id: user.id,
-        calendar_id: path_params.calendar_id.clone(),
+        calendar_id: path.calendar_id.clone(),
         week_start: body.week_start.clone(),
         timezone: body.timezone.clone(),
     };
@@ -28,16 +64,7 @@ pub async fn update_calendar_settings_controller(
         .map(|calendar| HttpResponse::Ok().json(APIResponse::new(calendar)))
         .map_err(|e| match e {
             UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
-            UseCaseErrorContainer::UseCase(e) => match e {
-                UseCaseErrors::StorageError => NettuError::InternalError,
-                UseCaseErrors::CalendarNotFound => {
-                    NettuError::NotFound("The calendar was not found.".into())
-                }
-                UseCaseErrors::InvalidSettings(err) => NettuError::BadClientData(format!(
-                    "Bad calendar settings provided. Error message: {}",
-                    err
-                )),
-            },
+            UseCaseErrorContainer::UseCase(e) => handle_errors(e),
         })
 }
 

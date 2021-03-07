@@ -1,6 +1,6 @@
 use crate::shared::{
-    auth::{protect_route, Permission},
-    usecase::{execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
+    auth::{account_can_modify_user, protect_account_route, protect_route, Permission},
+    usecase::{execute, execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
 };
 use crate::{error::NettuError, shared::usecase::UseCase};
 use actix_web::{web, HttpResponse};
@@ -8,16 +8,46 @@ use nettu_scheduler_api_structs::delete_calendar::{APIResponse, PathParams};
 use nettu_scheduler_domain::{Calendar, ID};
 use nettu_scheduler_infra::NettuContext;
 
+fn handle_errors(e: UseCaseErrors) -> NettuError {
+    match e {
+        UseCaseErrors::NotFound(calendar_id) => NettuError::NotFound(format!(
+            "The calendar with id: {}, was not found.",
+            calendar_id
+        )),
+        UseCaseErrors::UnableToDelete => NettuError::InternalError,
+    }
+}
+
+pub async fn delete_calendar_admin_controller(
+    http_req: web::HttpRequest,
+    path: web::Path<PathParams>,
+    ctx: web::Data<NettuContext>,
+) -> Result<HttpResponse, NettuError> {
+    let account = protect_account_route(&http_req, &ctx).await?;
+    let user_id = path.user_id.clone().unwrap();
+    account_can_modify_user(&account, &user_id, &ctx).await?;
+
+    let usecase = DeleteCalendarUseCase {
+        user_id: user_id.clone(),
+        calendar_id: path.calendar_id.clone(),
+    };
+
+    execute(usecase, &ctx)
+        .await
+        .map(|calendar| HttpResponse::Ok().json(APIResponse::new(calendar)))
+        .map_err(handle_errors)
+}
+
 pub async fn delete_calendar_controller(
     http_req: web::HttpRequest,
-    req: web::Path<PathParams>,
+    path: web::Path<PathParams>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let (user, policy) = protect_route(&http_req, &ctx).await?;
 
     let usecase = DeleteCalendarUseCase {
         user_id: user.id,
-        calendar_id: req.calendar_id.clone(),
+        calendar_id: path.calendar_id.clone(),
     };
 
     execute_with_policy(usecase, &policy, &ctx)
@@ -25,19 +55,13 @@ pub async fn delete_calendar_controller(
         .map(|calendar| HttpResponse::Ok().json(APIResponse::new(calendar)))
         .map_err(|e| match e {
             UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
-            UseCaseErrorContainer::UseCase(e) => match e {
-                UseCaseErrors::NotFound => NettuError::NotFound(format!(
-                    "The calendar with id: {}, was not found.",
-                    req.calendar_id
-                )),
-                UseCaseErrors::UnableToDelete => NettuError::InternalError,
-            },
+            UseCaseErrorContainer::UseCase(e) => handle_errors(e),
         })
 }
 
 #[derive(Debug)]
 pub enum UseCaseErrors {
-    NotFound,
+    NotFound(ID),
     UnableToDelete,
 }
 
@@ -73,7 +97,7 @@ impl UseCase for DeleteCalendarUseCase {
 
                 Ok(calendar)
             }
-            _ => Err(UseCaseErrors::NotFound),
+            _ => Err(UseCaseErrors::NotFound(self.calendar_id.clone())),
         }
     }
 }

@@ -6,7 +6,7 @@ use nettu_scheduler_domain::{Calendar, EventInstance, ID};
 #[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CalendarResponse {
-    calendar: CalendarDTO,
+    pub calendar: CalendarDTO,
 }
 
 impl CalendarResponse {
@@ -41,6 +41,7 @@ pub mod delete_calendar {
     #[derive(Deserialize)]
     pub struct PathParams {
         pub calendar_id: ID,
+        pub user_id: Option<ID>,
     }
 
     pub type APIResponse = CalendarResponse;
@@ -56,6 +57,7 @@ pub mod get_calendar_events {
     #[derive(Debug, Deserialize)]
     pub struct PathParams {
         pub calendar_id: ID,
+        pub user_id: Option<ID>,
     }
 
     #[derive(Debug, Deserialize)]
@@ -94,15 +96,15 @@ pub mod get_calendar {
     #[derive(Serialize, Deserialize)]
     pub struct PathParams {
         pub calendar_id: ID,
+        pub user_id: Option<ID>,
     }
 
     pub type APIResponse = CalendarResponse;
 }
 
 pub mod get_user_freebusy {
-    use std::collections::VecDeque;
-
     use super::*;
+    use std::collections::VecDeque;
 
     #[derive(Debug, Deserialize)]
     pub struct PathParams {
@@ -131,6 +133,7 @@ pub mod update_calendar_settings {
     #[derive(Deserialize)]
     pub struct PathParams {
         pub calendar_id: ID,
+        pub user_id: Option<ID>,
     }
 
     #[derive(Deserialize)]
