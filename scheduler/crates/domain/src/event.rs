@@ -189,14 +189,14 @@ mod test {
             timezone: UTC,
             week_start: 0,
         };
-        let event = CalendarEvent {
+        let mut event = CalendarEvent {
             id: Default::default(),
             start_ts: 1521317491239,
             busy: false,
             duration: 1000 * 60 * 60,
             recurrence: None,
             end_ts: 2521317491239,
-            exdates: vec![1521317491239],
+            exdates: vec![],
             calendar_id: Default::default(),
             user_id: Default::default(),
             account_id: Default::default(),
@@ -206,6 +206,11 @@ mod test {
 
         let oc = event.expand(None, &settings);
         assert_eq!(oc.len(), 1);
+
+        // Without recurrence but with exdate at start time
+        event.exdates = vec![event.start_ts];
+        let oc = event.expand(None, &settings);
+        assert_eq!(oc.len(), 0);
     }
 
     #[test]
