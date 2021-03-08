@@ -1,0 +1,24 @@
+name:                           Docker tests
+
+on:                             [push]
+jobs:
+  test:
+    name:                       test
+    runs-on:                    ubuntu-latest
+    env:
+      PORT:                    5000
+      MONGODB_CONNECTION_STRNG:        verycool
+      MONGODB_NAME:              woooow
+    steps:
+      - name:                   Checkout repository
+        uses:                   actions/checkout@v2
+
+      - name:                   Build docker compose stack
+        run: |
+          cd scheduler
+          docker-compose -f ./integrations/docker-compose.yml up
+
+      - name:                   Run tests
+        run: |
+          cd scheduler
+          cargo test --all

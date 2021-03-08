@@ -14,21 +14,21 @@ services:
     logging:
       driver: none
 
-  app:
-    build: ..
-    ports:
-      - "5000:5000"
-    environment:
-      MONGODB_CONNECTION_STRING: mongodb://root:rootpassword@mongodb:27017
-      MONGODB_NAME: nettuscheduler
-    volumes:
-      - ../:/var/application
-    command: bash -c "cargo watch -x run"
-    init: true
-    entrypoint:
-      - "integrations/wait-for.sh"
-      - "mongodb:27017"
-      - "--"
+  # app:
+  #   build: ..
+  #   ports:
+  #     - "5000:5000"
+  #   environment:
+  #     MONGODB_CONNECTION_STRING: mongodb://root:rootpassword@mongodb:27017
+  #     MONGODB_NAME: nettuscheduler
+  #   volumes:
+  #     - ../:/var/application
+  #   command: bash -c "cargo watch -x run"
+  #   init: true
+  #   entrypoint:
+  #     - "integrations/wait-for.sh"
+  #     - "mongodb:27017"
+  #     - "--"
 
 volumes:
   mongodb_data_nettuscheduler_container:

@@ -1,9 +1,6 @@
 
 ## Todos
 
-- Path naming for admin and user routes
-  - Admin routes maybe just need an additional userid in path params
-  - Complete SDK
 - validate minutes_before on reminder
 - use id in sdk params and remember to expose it, api_tests should only import from nettu_scheduler_sdk and not domain
 - event reminders execution time
