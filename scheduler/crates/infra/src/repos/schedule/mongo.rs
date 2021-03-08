@@ -77,6 +77,7 @@ impl IScheduleRepo for MongoScheduleRepo {
 struct ScheduleMongo {
     _id: ObjectId,
     user_id: ObjectId,
+    account_id: ObjectId,
     rules: Vec<ScheduleRule>,
     timezone: String,
 }
@@ -86,6 +87,7 @@ impl MongoDocument<Schedule> for ScheduleMongo {
         Schedule {
             id: ID::from(self._id.clone()),
             user_id: ID::from(self.user_id.clone()),
+            account_id: ID::from(self.account_id.clone()),
             rules: self.rules.to_owned(),
             timezone: self.timezone.parse().unwrap(),
         }
@@ -95,6 +97,7 @@ impl MongoDocument<Schedule> for ScheduleMongo {
         Self {
             _id: schedule.id.inner_ref().clone(),
             user_id: schedule.user_id.inner_ref().clone(),
+            account_id: schedule.account_id.inner_ref().clone(),
             rules: schedule.rules.to_owned(),
             timezone: schedule.timezone.to_string(),
         }

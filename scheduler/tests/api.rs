@@ -6,6 +6,7 @@ use nettu_scheduler_sdk::{
     CreateCalendarInput, CreateEventInput, CreateScheduleInput, DeleteCalendarInput,
     DeleteEventInput, GetCalendarEventsInput, GetCalendarInput, GetEventInput,
     GetEventsInstancesInput, NettuSDK, UpdateCalendarSettingsInput, UpdateEventInput,
+    UpdateScheduleInput,
 };
 
 #[actix_web::main]
@@ -63,7 +64,7 @@ async fn test_create_user() {
 
 #[actix_web::main]
 #[test]
-async fn test_create_schedule() {
+async fn test_crud_schedule() {
     let (app, sdk, address) = spawn_app().await;
     let res = sdk
         .account
@@ -77,16 +78,53 @@ async fn test_create_schedule() {
         .create()
         .await
         .expect("Expected to create user");
-    let res = admin_client
+
+    let schedule = admin_client
         .schedule
         .create(CreateScheduleInput {
             user_id: create_user_res.user.id.clone(),
+            rules: None,
             timezone: "UTC".into(),
         })
         .await
-        .expect("Expected to create schedule");
-    assert_eq!(res.schedule.user_id, create_user_res.user.id);
-    assert_eq!(res.schedule.timezone, "UTC");
+        .expect("Expected to create schedule")
+        .schedule;
+    assert_eq!(schedule.user_id, create_user_res.user.id);
+    assert_eq!(schedule.timezone, "UTC");
+    assert_eq!(schedule.rules.len(), 5); // mon-fri
+
+    let schedule = admin_client
+        .schedule
+        .update(UpdateScheduleInput {
+            rules: Some(vec![]),
+            timezone: Some("Europe/Oslo".into()),
+            schedule_id: schedule.id.clone(),
+        })
+        .await
+        .unwrap()
+        .schedule;
+
+    let get_schedule = admin_client
+        .schedule
+        .get(schedule.id.to_string())
+        .await
+        .unwrap()
+        .schedule;
+
+    assert_eq!(get_schedule.rules.len(), 0);
+    assert_eq!(get_schedule.timezone, "Europe/Oslo");
+
+    assert!(admin_client
+        .schedule
+        .delete(schedule.id.to_string())
+        .await
+        .is_ok());
+
+    assert!(admin_client
+        .schedule
+        .get(schedule.id.to_string())
+        .await
+        .is_err());
 }
 
 #[actix_web::main]

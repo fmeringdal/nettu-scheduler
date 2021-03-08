@@ -5,6 +5,7 @@
   - Admin routes maybe just need an additional userid in path params
   - Complete SDK
 - validate minutes_before on reminder
+- use id in sdk params and remember to expose it
 - event reminders execution time
 - metadata
 - infra double contexts in tests with docker compose in github actions

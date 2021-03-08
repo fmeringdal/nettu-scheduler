@@ -23,7 +23,7 @@ pub use calendar::{
 pub use event::{
     CreateEventInput, DeleteEventInput, GetEventInput, GetEventsInstancesInput, UpdateEventInput,
 };
-pub use schedule::CreateScheduleInput;
+pub use schedule::{CreateScheduleInput, UpdateScheduleInput};
 
 /// Nettu Scheduler Server SDK
 ///

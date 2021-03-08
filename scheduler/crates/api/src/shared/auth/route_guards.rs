@@ -1,6 +1,6 @@
 use actix_web::HttpRequest;
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
-use nettu_scheduler_domain::{Account, Calendar, CalendarEvent, User, ID};
+use nettu_scheduler_domain::{Account, Calendar, CalendarEvent, Schedule, User, ID};
 use nettu_scheduler_infra::NettuContext;
 use serde::{Deserialize, Serialize};
 
@@ -222,6 +222,22 @@ pub async fn account_can_modify_event(
         _ => Err(NettuError::NotFound(format!(
             "Calendar event with id: {} was not found",
             event_id
+        ))),
+    }
+}
+
+/// Used for account admin routes by checking that account
+/// is not modifying a schedule in another account
+pub async fn account_can_modify_schedule(
+    account: &Account,
+    schedule_id: &ID,
+    ctx: &NettuContext,
+) -> Result<Schedule, NettuError> {
+    match ctx.repos.schedule_repo.find(schedule_id).await {
+        Some(schedule) if schedule.account_id == account.id => Ok(schedule),
+        _ => Err(NettuError::NotFound(format!(
+            "Schedule with id: {} was not found",
+            schedule_id
         ))),
     }
 }

@@ -1,4 +1,7 @@
-use crate::shared::usecase::UseCase;
+use crate::shared::{
+    auth::{account_can_modify_schedule, protect_account_route},
+    usecase::{execute, UseCase},
+};
 use crate::{
     error::NettuError,
     shared::{
@@ -12,19 +15,57 @@ use nettu_scheduler_api_structs::update_schedule::*;
 use nettu_scheduler_domain::{Schedule, ScheduleRule, ID};
 use nettu_scheduler_infra::NettuContext;
 
+fn handle_error(e: UseCaseErrors) -> NettuError {
+    match e {
+        UseCaseErrors::ScheduleNotFound(schedule_id) => NettuError::NotFound(format!(
+            "The schedule with id: {}, was not found.",
+            schedule_id
+        )),
+        UseCaseErrors::StorageError => NettuError::InternalError,
+        UseCaseErrors::InvalidSettings(err) => NettuError::BadClientData(format!(
+            "Bad schedule settings provided. Error message: {}",
+            err
+        )),
+    }
+}
+
+pub async fn update_schedule_admin_controller(
+    http_req: web::HttpRequest,
+    path: web::Path<PathParams>,
+    body: web::Json<RequestBody>,
+    ctx: web::Data<NettuContext>,
+) -> Result<HttpResponse, NettuError> {
+    let account = protect_account_route(&http_req, &ctx).await?;
+    let schedule = account_can_modify_schedule(&account, &path.schedule_id, &ctx).await?;
+
+    let body = body.0;
+    let usecase = UpdateScheduleUseCase {
+        user_id: schedule.user_id,
+        schedule_id: schedule.id,
+        timezone: body.timezone,
+        rules: body.rules,
+    };
+
+    execute(usecase, &ctx)
+        .await
+        .map(|res| HttpResponse::Ok().json(APIResponse::new(res.schedule)))
+        .map_err(handle_error)
+}
+
 pub async fn update_schedule_controller(
     http_req: web::HttpRequest,
     ctx: web::Data<NettuContext>,
-    path_params: web::Path<PathParams>,
-    body_params: web::Json<RequestBody>,
+    path: web::Path<PathParams>,
+    body: web::Json<RequestBody>,
 ) -> Result<HttpResponse, NettuError> {
     let (user, policy) = protect_route(&http_req, &ctx).await?;
 
+    let body = body.0;
     let usecase = UpdateScheduleUseCase {
         user_id: user.id,
-        schedule_id: path_params.schedule_id.clone(),
-        timezone: body_params.timezone.to_owned(),
-        rules: body_params.rules.to_owned(),
+        schedule_id: path.0.schedule_id,
+        timezone: body.timezone,
+        rules: body.rules,
     };
 
     execute_with_policy(usecase, &policy, &ctx)
@@ -32,16 +73,7 @@ pub async fn update_schedule_controller(
         .map(|res| HttpResponse::Ok().json(APIResponse::new(res.schedule)))
         .map_err(|e| match e {
             UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
-            UseCaseErrorContainer::UseCase(e) => match e {
-                UseCaseErrors::StorageError => NettuError::InternalError,
-                UseCaseErrors::ScheduleNotFound => {
-                    NettuError::NotFound("The schedule was not found.".into())
-                }
-                UseCaseErrors::InvalidSettings(err) => NettuError::BadClientData(format!(
-                    "Bad schedule settings provided. Error message: {}",
-                    err
-                )),
-            },
+            UseCaseErrorContainer::UseCase(e) => handle_error(e),
         })
 }
 
@@ -55,7 +87,7 @@ struct UpdateScheduleUseCase {
 
 #[derive(Debug)]
 enum UseCaseErrors {
-    ScheduleNotFound,
+    ScheduleNotFound(ID),
     StorageError,
     InvalidSettings(String),
 }
@@ -72,7 +104,7 @@ impl UseCase for UpdateScheduleUseCase {
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         let mut schedule = match ctx.repos.schedule_repo.find(&self.schedule_id).await {
             Some(cal) if cal.user_id == self.user_id => cal,
-            _ => return Err(UseCaseErrors::ScheduleNotFound),
+            _ => return Err(UseCaseErrors::ScheduleNotFound(self.schedule_id.clone())),
         };
 
         if let Some(tz) = &self.timezone {

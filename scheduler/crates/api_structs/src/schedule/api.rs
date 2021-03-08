@@ -18,17 +18,20 @@ impl ScheduleResponse {
 }
 
 pub mod create_schedule {
+    use nettu_scheduler_domain::ScheduleRule;
+
     use super::*;
 
     #[derive(Deserialize)]
-    pub struct AdminPathParams {
+    pub struct PathParams {
         pub user_id: ID,
     }
 
     #[derive(Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
-    pub struct RequstBody {
+    pub struct RequestBody {
         pub timezone: String,
+        pub rules: Option<Vec<ScheduleRule>>,
     }
 
     pub type APIResponse = ScheduleResponse;
@@ -66,7 +69,7 @@ pub mod update_schedule {
         pub schedule_id: ID,
     }
 
-    #[derive(Deserialize)]
+    #[derive(Deserialize, Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
         pub timezone: Option<String>,

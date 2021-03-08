@@ -14,15 +14,17 @@ use std::{collections::HashMap, str::FromStr};
 pub struct Schedule {
     pub id: ID,
     pub user_id: ID,
+    pub account_id: ID,
     pub rules: Vec<ScheduleRule>,
     pub timezone: Tz,
 }
 
 impl Schedule {
-    pub fn new(user_id: ID, timezone: &Tz) -> Self {
+    pub fn new(user_id: ID, account_id: ID, timezone: &Tz) -> Self {
         Self {
             id: Default::default(),
             user_id,
+            account_id,
             rules: ScheduleRule::default_rules(),
             timezone: timezone.to_owned(),
         }
@@ -369,6 +371,7 @@ mod test {
         let schedule = Schedule {
             id: Default::default(),
             user_id: Default::default(),
+            account_id: Default::default(),
             timezone: chrono_tz::UTC,
             rules: vec![
                 ScheduleRule {

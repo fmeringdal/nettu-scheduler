@@ -1,6 +1,6 @@
 use crate::shared::{
-    auth::{protect_route, Permission},
-    usecase::{execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
+    auth::{account_can_modify_schedule, protect_account_route, protect_route, Permission},
+    usecase::{execute, execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
 };
 use crate::{error::NettuError, shared::usecase::UseCase};
 use actix_web::{web, HttpResponse};
@@ -8,16 +8,45 @@ use nettu_scheduler_api_structs::delete_schedule::*;
 use nettu_scheduler_domain::{Schedule, ID};
 use nettu_scheduler_infra::NettuContext;
 
+fn handle_error(e: UseCaseErrors) -> NettuError {
+    match e {
+        UseCaseErrors::StorageError => NettuError::InternalError,
+        UseCaseErrors::NotFound(schedule_id) => NettuError::NotFound(format!(
+            "The schedule with id: {}, was not found.",
+            schedule_id
+        )),
+    }
+}
+
+pub async fn delete_schedule_admin_controller(
+    http_req: web::HttpRequest,
+    path: web::Path<PathParams>,
+    ctx: web::Data<NettuContext>,
+) -> Result<HttpResponse, NettuError> {
+    let account = protect_account_route(&http_req, &ctx).await?;
+    let schedule = account_can_modify_schedule(&account, &path.schedule_id, &ctx).await?;
+
+    let usecase = DeleteScheduleUseCase {
+        user_id: schedule.user_id,
+        schedule_id: schedule.id,
+    };
+
+    execute(usecase, &ctx)
+        .await
+        .map(|schedule| HttpResponse::Ok().json(APIResponse::new(schedule)))
+        .map_err(handle_error)
+}
+
 pub async fn delete_schedule_controller(
     http_req: web::HttpRequest,
-    req: web::Path<PathParams>,
+    path: web::Path<PathParams>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let (user, policy) = protect_route(&http_req, &ctx).await?;
 
     let usecase = DeleteScheduleUseCase {
         user_id: user.id,
-        schedule_id: req.schedule_id.clone(),
+        schedule_id: path.schedule_id.clone(),
     };
 
     execute_with_policy(usecase, &policy, &ctx)
@@ -25,19 +54,13 @@ pub async fn delete_schedule_controller(
         .map(|schedule| HttpResponse::Ok().json(APIResponse::new(schedule)))
         .map_err(|e| match e {
             UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
-            UseCaseErrorContainer::UseCase(e) => match e {
-                UseCaseErrors::NotFound => NettuError::NotFound(format!(
-                    "The schedule with id: {}, was not found.",
-                    req.schedule_id
-                )),
-                UseCaseErrors::StorageError => NettuError::InternalError,
-            },
+            UseCaseErrorContainer::UseCase(e) => handle_error(e),
         })
 }
 
 #[derive(Debug)]
 pub enum UseCaseErrors {
-    NotFound,
+    NotFound(ID),
     StorageError,
 }
 
@@ -72,7 +95,7 @@ impl UseCase for DeleteScheduleUseCase {
 
                 Ok(schedule)
             }
-            _ => Err(UseCaseErrors::NotFound),
+            _ => Err(UseCaseErrors::NotFound(self.schedule_id.clone())),
         }
     }
 }
