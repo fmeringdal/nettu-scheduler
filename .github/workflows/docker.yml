@@ -7,8 +7,8 @@ jobs:
     runs-on:                    ubuntu-latest
     env:
       PORT:                    5000
-      MONGODB_CONNECTION_STRNG:        verycool
-      MONGODB_NAME:              woooow
+      MONGODB_CONNECTION_STRING: mongodb://root:rootpassword@mongodb:27017
+      MONGODB_NAME: nettuscheduler
     steps:
       - name:                   Checkout repository
         uses:                   actions/checkout@v2
