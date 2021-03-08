@@ -3,7 +3,7 @@ use crate::{
     event,
     shared::auth::protect_route,
     shared::{
-        auth::Permission,
+        auth::{account_can_modify_event, protect_account_route, Permission},
         usecase::{
             execute, execute_with_policy, PermissionBoundary, UseCase, UseCaseErrorContainer,
         },
@@ -17,6 +17,44 @@ use nettu_scheduler_api_structs::update_event::*;
 use nettu_scheduler_domain::{CalendarEvent, RRuleOptions, ID};
 use nettu_scheduler_infra::NettuContext;
 
+fn handle_error(e: UseCaseErrors) -> NettuError {
+    match e {
+        UseCaseErrors::NotFound(entity, event_id) => NettuError::NotFound(format!(
+            "The {} with id: {}, was not found.",
+            entity, event_id
+        )),
+        UseCaseErrors::InvalidRecurrenceRule => {
+            NettuError::BadClientData("Invalid recurrence rule specified for the event".into())
+        }
+        UseCaseErrors::StorageError => NettuError::InternalError,
+    }
+}
+
+pub async fn update_event_admin_controller(
+    http_req: HttpRequest,
+    body: web::Json<RequestBody>,
+    path_params: web::Path<PathParams>,
+    ctx: web::Data<NettuContext>,
+) -> Result<HttpResponse, NettuError> {
+    let account = protect_account_route(&http_req, &ctx).await?;
+    let e = account_can_modify_event(&account, &path_params.event_id, &ctx).await?;
+
+    let usecase = UpdateEventUseCase {
+        user_id: e.user_id,
+        event_id: e.id,
+        duration: body.duration,
+        start_ts: body.start_ts,
+        rrule_options: body.rrule_options.clone(),
+        busy: body.busy,
+        services: body.services.clone(),
+    };
+
+    execute(usecase, &ctx)
+        .await
+        .map(|event| HttpResponse::Ok().json(APIResponse::new(event)))
+        .map_err(handle_error)
+}
+
 pub async fn update_event_controller(
     http_req: HttpRequest,
     body: web::Json<RequestBody>,
@@ -27,10 +65,10 @@ pub async fn update_event_controller(
 
     let usecase = UpdateEventUseCase {
         user_id: user.id.clone(),
+        event_id: path_params.event_id.clone(),
         duration: body.duration,
         start_ts: body.start_ts,
         rrule_options: body.rrule_options.clone(),
-        event_id: path_params.event_id.clone(),
         busy: body.busy,
         services: body.services.clone(),
     };
@@ -40,16 +78,7 @@ pub async fn update_event_controller(
         .map(|event| HttpResponse::Ok().json(APIResponse::new(event)))
         .map_err(|e| match e {
             UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
-            UseCaseErrorContainer::UseCase(e) => match e {
-                UseCaseErrors::NotFound => NettuError::NotFound(format!(
-                    "The event with id: {}, was not found.",
-                    path_params.event_id
-                )),
-                UseCaseErrors::InvalidRecurrenceRule => NettuError::BadClientData(
-                    "Invalid recurrence rule specified for the event".into(),
-                ),
-                UseCaseErrors::StorageError => NettuError::InternalError,
-            },
+            UseCaseErrorContainer::UseCase(e) => handle_error(e),
         })
 }
 
@@ -66,7 +95,7 @@ pub struct UpdateEventUseCase {
 
 #[derive(Debug)]
 pub enum UseCaseErrors {
-    NotFound,
+    NotFound(String, ID),
     StorageError,
     InvalidRecurrenceRule,
 }
@@ -90,7 +119,12 @@ impl UseCase for UpdateEventUseCase {
 
         let mut e = match ctx.repos.event_repo.find(&event_id).await {
             Some(event) if event.user_id == *user_id => event,
-            _ => return Err(UseCaseErrors::NotFound),
+            _ => {
+                return Err(UseCaseErrors::NotFound(
+                    "Calendar Event".into(),
+                    event_id.clone(),
+                ))
+            }
         };
 
         if let Some(services) = services {
@@ -99,7 +133,12 @@ impl UseCase for UpdateEventUseCase {
 
         let calendar = match ctx.repos.calendar_repo.find(&e.calendar_id).await {
             Some(cal) => cal,
-            _ => return Err(UseCaseErrors::NotFound),
+            _ => {
+                return Err(UseCaseErrors::NotFound(
+                    "Calendar".into(),
+                    e.calendar_id.clone(),
+                ))
+            }
         };
 
         let mut start_or_duration_change = false;

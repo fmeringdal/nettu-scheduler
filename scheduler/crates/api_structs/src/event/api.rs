@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CalendarEventResponse {
-    event: CalendarEventDTO,
+    pub event: CalendarEventDTO,
 }
 
 impl CalendarEventResponse {
@@ -35,6 +35,11 @@ pub mod create_event_exception {
 
 pub mod create_event {
     use super::*;
+
+    #[derive(Serialize, Deserialize)]
+    pub struct PathParams {
+        pub user_id: ID,
+    }
 
     #[derive(Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
@@ -77,7 +82,7 @@ pub mod get_event_instances {
         pub end_ts: i64,
     }
 
-    #[derive(Serialize)]
+    #[derive(Deserialize, Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct APIResponse {
         pub event: CalendarEventDTO,

@@ -3,8 +3,9 @@ mod helpers;
 use helpers::setup::spawn_app;
 use nettu_scheduler_domain::PEMKey;
 use nettu_scheduler_sdk::{
-    CreateCalendarInput, CreateScheduleInput, DeleteCalendarInput, GetCalendarEventsInput,
-    GetCalendarInput, NettuSDK, UpdateCalendarSettingsInput,
+    CreateCalendarInput, CreateEventInput, CreateScheduleInput, DeleteCalendarInput,
+    DeleteEventInput, GetCalendarEventsInput, GetCalendarInput, GetEventInput, NettuSDK,
+    UpdateCalendarSettingsInput,
 };
 
 #[actix_web::main]
@@ -252,4 +253,75 @@ async fn test_crud_calendars() {
         })
         .await
         .is_err());
+}
+
+#[actix_web::main]
+#[test]
+async fn test_crud_events() {
+    let (app, sdk, address) = spawn_app().await;
+    let res = sdk
+        .account
+        .create(&app.config.create_account_secret_code)
+        .await
+        .expect("Expected to create account");
+    let admin_client = NettuSDK::new(address, res.secret_api_key);
+    let user = admin_client.user.create().await.unwrap().user;
+
+    let calendar = admin_client
+        .calendar
+        .create(&CreateCalendarInput {
+            user_id: user.id.to_string(),
+            timezone: "UTC".into(),
+            week_start: 0,
+        })
+        .await
+        .unwrap()
+        .calendar;
+
+    let event = admin_client
+        .event
+        .create(
+            user.id.to_string(),
+            &CreateEventInput {
+                calendar_id: calendar.id.clone(),
+                busy: None,
+                duration: 1000 * 60 * 60,
+                reminder: None,
+                rrule_options: None,
+                services: None,
+                start_ts: 0,
+            },
+        )
+        .await
+        .unwrap()
+        .event;
+    assert_eq!(event.calendar_id, calendar.id);
+
+    let event = admin_client
+        .event
+        .get(&GetEventInput {
+            event_id: event.id.to_string(),
+        })
+        .await
+        .unwrap()
+        .event;
+    assert_eq!(event.calendar_id, calendar.id);
+
+    let event = admin_client
+        .event
+        .delete(&DeleteEventInput {
+            event_id: event.id.to_string(),
+        })
+        .await
+        .unwrap()
+        .event;
+    assert_eq!(event.calendar_id, calendar.id);
+
+    assert!(admin_client
+        .event
+        .get(&GetEventInput {
+            event_id: event.id.to_string(),
+        })
+        .await
+        .is_err())
 }

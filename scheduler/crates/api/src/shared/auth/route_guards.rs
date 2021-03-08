@@ -1,6 +1,6 @@
 use actix_web::HttpRequest;
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
-use nettu_scheduler_domain::{Account, Calendar, User, ID};
+use nettu_scheduler_domain::{Account, Calendar, CalendarEvent, User, ID};
 use nettu_scheduler_infra::NettuContext;
 use serde::{Deserialize, Serialize};
 
@@ -179,6 +179,22 @@ pub async fn protect_public_account_route(
 }
 
 /// Used for account admin routes by checking that account
+/// is not modifying a user in another account
+pub async fn account_can_modify_user(
+    account: &Account,
+    user_id: &ID,
+    ctx: &NettuContext,
+) -> Result<User, NettuError> {
+    match ctx.repos.user_repo.find(user_id).await {
+        Some(user) if user.account_id == account.id => Ok(user),
+        _ => Err(NettuError::NotFound(format!(
+            "User with id: {} was not found",
+            user_id
+        ))),
+    }
+}
+
+/// Used for account admin routes by checking that account
 /// is not modifying a calendar in another account
 pub async fn account_can_modify_calendar(
     account: &Account,
@@ -190,6 +206,22 @@ pub async fn account_can_modify_calendar(
         _ => Err(NettuError::NotFound(format!(
             "Calendar with id: {} was not found",
             calendar_id
+        ))),
+    }
+}
+
+/// Used for account admin routes by checking that account
+/// is not modifying an event in another account
+pub async fn account_can_modify_event(
+    account: &Account,
+    event_id: &ID,
+    ctx: &NettuContext,
+) -> Result<CalendarEvent, NettuError> {
+    match ctx.repos.event_repo.find(event_id).await {
+        Some(event) if event.account_id == account.id => Ok(event),
+        _ => Err(NettuError::NotFound(format!(
+            "Calendar event with id: {} was not found",
+            event_id
         ))),
     }
 }

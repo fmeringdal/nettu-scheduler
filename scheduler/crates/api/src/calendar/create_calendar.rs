@@ -1,4 +1,4 @@
-use crate::shared::auth::Permission;
+use crate::shared::auth::{account_can_modify_user, Permission};
 use crate::shared::{
     auth::{protect_account_route, protect_route},
     usecase::{execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
@@ -29,9 +29,10 @@ pub async fn create_calendar_admin_controller(
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
+    let user = account_can_modify_user(&account, &path_params.user_id, &ctx).await?;
 
     let usecase = CreateCalendarUseCase {
-        user_id: path_params.user_id.clone(),
+        user_id: user.id,
         account_id: account.id,
         week_start: body.0.week_start,
         timezone: body.0.timezone,
