@@ -26,6 +26,10 @@ pub use event::{
     CreateEventInput, DeleteEventInput, GetEventInput, GetEventsInstancesInput, UpdateEventInput,
 };
 pub use schedule::{CreateScheduleInput, UpdateScheduleInput};
+pub use service::{
+    AddServiceUserInput, GetSerivceBookingSlotsInput, RemoveServiceUserInput,
+    UpdateServiceUserInput,
+};
 
 /// Nettu Scheduler Server SDK
 ///

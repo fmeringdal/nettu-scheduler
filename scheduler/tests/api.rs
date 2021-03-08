@@ -3,10 +3,10 @@ mod helpers;
 use helpers::setup::spawn_app;
 use nettu_scheduler_domain::PEMKey;
 use nettu_scheduler_sdk::{
-    CreateCalendarInput, CreateEventInput, CreateScheduleInput, DeleteCalendarInput,
-    DeleteEventInput, GetCalendarEventsInput, GetCalendarInput, GetEventInput,
-    GetEventsInstancesInput, NettuSDK, UpdateCalendarSettingsInput, UpdateEventInput,
-    UpdateScheduleInput,
+    AddServiceUserInput, CreateCalendarInput, CreateEventInput, CreateScheduleInput,
+    DeleteCalendarInput, DeleteEventInput, GetCalendarEventsInput, GetCalendarInput, GetEventInput,
+    GetEventsInstancesInput, GetSerivceBookingSlotsInput, NettuSDK, RemoveServiceUserInput,
+    UpdateCalendarSettingsInput, UpdateEventInput, UpdateScheduleInput, UpdateServiceUserInput,
 };
 
 #[actix_web::main]
@@ -398,4 +398,94 @@ async fn test_crud_events() {
         })
         .await
         .is_err())
+}
+
+#[actix_web::main]
+#[test]
+async fn test_crud_service() {
+    let (app, sdk, address) = spawn_app().await;
+    let res = sdk
+        .account
+        .create(&app.config.create_account_secret_code)
+        .await
+        .expect("Expected to create account");
+    let admin_client = NettuSDK::new(address, res.secret_api_key);
+    let user = admin_client.user.create().await.unwrap().user;
+
+    let service = admin_client.service.create().await.unwrap().service;
+
+    let service = admin_client
+        .service
+        .add_user(AddServiceUserInput {
+            service_id: service.id.clone(),
+            user_id: user.id.clone(),
+            availibility: None,
+            buffer: None,
+            busy: None,
+            closest_booking_time: None,
+            furthest_booking_time: None,
+        })
+        .await
+        .unwrap()
+        .service;
+
+    assert_eq!(service.users.len(), 1);
+    let new_closest_booking_time = service.users[0].closest_booking_time + 1000 * 60 * 60;
+    let service = admin_client
+        .service
+        .update_user(UpdateServiceUserInput {
+            service_id: service.id.clone(),
+            user_id: user.id.clone(),
+            availibility: None,
+            buffer: None,
+            busy: None,
+            closest_booking_time: Some(new_closest_booking_time),
+            furthest_booking_time: None,
+        })
+        .await
+        .unwrap()
+        .service;
+
+    assert_eq!(
+        service.users[0].closest_booking_time,
+        new_closest_booking_time
+    );
+    let service = admin_client
+        .service
+        .remove_user(RemoveServiceUserInput {
+            service_id: service.id.clone(),
+            user_id: user.id.clone(),
+        })
+        .await
+        .unwrap()
+        .service;
+    assert!(service.users.is_empty());
+
+    let booking_slots = admin_client
+        .service
+        .bookingslots(GetSerivceBookingSlotsInput {
+            date: "2020-1-1".to_string(),
+            duration: 1000 * 60 * 30,
+            iana_tz: Some("UTC".to_string()),
+            interval: 1000 * 60 * 15,
+            service_id: service.id.clone(),
+        })
+        .await
+        .unwrap()
+        .booking_slots;
+    assert!(booking_slots.is_empty());
+
+    // Delete service
+    assert!(admin_client
+        .service
+        .delete(service.id.to_string())
+        .await
+        .is_ok());
+
+    // Get now returns 404
+    assert!(admin_client
+        .service
+        .get(service.id.to_string())
+        .await
+        .is_err());
 }

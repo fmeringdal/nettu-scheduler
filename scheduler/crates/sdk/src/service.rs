@@ -35,6 +35,14 @@ pub struct RemoveServiceUserInput {
     pub user_id: ID,
 }
 
+pub struct GetSerivceBookingSlotsInput {
+    pub service_id: ID,
+    pub iana_tz: Option<String>,
+    pub duration: i64,
+    pub interval: i64,
+    pub date: String,
+}
+
 #[derive(Serialize)]
 struct Empty {}
 
@@ -51,10 +59,21 @@ impl ServiceClient {
 
     pub async fn bookingslots(
         &self,
-        service_id: String,
+        input: GetSerivceBookingSlotsInput,
     ) -> APIResponse<get_service_bookingslots::APIResponse> {
+        let mut query_string = format!(
+            "duration={}&interval={}&date={}",
+            input.duration, input.interval, input.date
+        );
+        if let Some(timezone) = input.iana_tz {
+            query_string = format!("{}&ianaTz={}", query_string, timezone);
+        }
+
         self.base
-            .get(format!("service/{}/booking", service_id), StatusCode::OK)
+            .get(
+                format!("service/{}/booking?{}", input.service_id, query_string),
+                StatusCode::OK,
+            )
             .await
     }
 

@@ -213,14 +213,17 @@ pub async fn update_resource_values(
                 "Closest booking time cannot be negative.".into(),
             ));
         }
+        user_resource.closest_booking_time = closest_booking_time;
     }
-    if let Some(furthest_booking_time) = update.furthest_booking_time {
-        if furthest_booking_time < 0 {
+
+    if let Some(furthest_booking_time) = &update.furthest_booking_time {
+        if *furthest_booking_time < 0 {
             return Err(UpdateServiceResourceError::InvalidBookingTimespan(
                 "Furthest booking time cannot be negative.".into(),
             ));
         }
     }
+    user_resource.furthest_booking_time = update.furthest_booking_time;
 
     Ok(())
 }

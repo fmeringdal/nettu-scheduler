@@ -9,6 +9,8 @@ pub struct ServiceResourceDTO {
     pub availibility: TimePlan,
     pub busy: Vec<ID>,
     pub buffer: i64,
+    pub closest_booking_time: i64,
+    pub furthest_booking_time: Option<i64>,
 }
 
 impl ServiceResourceDTO {
@@ -19,6 +21,8 @@ impl ServiceResourceDTO {
             availibility: resource.availibility,
             busy: resource.busy.clone(),
             buffer: resource.buffer,
+            closest_booking_time: resource.closest_booking_time,
+            furthest_booking_time: resource.furthest_booking_time,
         }
     }
 }

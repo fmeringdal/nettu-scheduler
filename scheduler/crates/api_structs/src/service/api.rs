@@ -6,7 +6,7 @@ use crate::dtos::ServiceDTO;
 #[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ServiceResponse {
-    service: ServiceDTO,
+    pub service: ServiceDTO,
 }
 
 impl ServiceResponse {
