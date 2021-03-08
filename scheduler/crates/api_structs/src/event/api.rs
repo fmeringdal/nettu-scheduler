@@ -17,22 +17,6 @@ impl CalendarEventResponse {
     }
 }
 
-pub mod create_event_exception {
-    use super::*;
-
-    #[derive(Deserialize)]
-    pub struct PathParams {
-        pub event_id: ID,
-    }
-    #[derive(Deserialize)]
-    #[serde(rename_all = "camelCase")]
-    pub struct RequestBody {
-        pub exception_ts: i64,
-    }
-
-    pub type APIResponse = CalendarEventResponse;
-}
-
 pub mod create_event {
     use super::*;
 
@@ -113,7 +97,7 @@ pub mod get_event {
 pub mod update_event {
     use super::*;
 
-    #[derive(Deserialize)]
+    #[derive(Deserialize, Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
         pub start_ts: Option<i64>,
@@ -121,6 +105,8 @@ pub mod update_event {
         pub busy: Option<bool>,
         pub rrule_options: Option<RRuleOptions>,
         pub services: Option<Vec<String>>,
+        pub exdates: Option<Vec<i64>>,
+        pub reminder: Option<CalendarEventReminder>,
     }
 
     #[derive(Deserialize)]

@@ -4,7 +4,9 @@
 - Path naming for admin and user routes
   - Admin routes maybe just need an additional userid in path params
   - Complete SDK
+- validate minutes_before on reminder
 - metadata
+- infra double contexts in tests with docker compose in github actions
 - maybe event exception should be a date?
 - Better telemtry: implement Display for usecase: https://www.lpalmieri.com/posts/2020-09-27-zero-to-production-4-are-we-observable-yet/#5-1-the-tracing-crate
 

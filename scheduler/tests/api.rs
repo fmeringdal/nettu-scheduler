@@ -4,8 +4,8 @@ use helpers::setup::spawn_app;
 use nettu_scheduler_domain::PEMKey;
 use nettu_scheduler_sdk::{
     CreateCalendarInput, CreateEventInput, CreateScheduleInput, DeleteCalendarInput,
-    DeleteEventInput, GetCalendarEventsInput, GetCalendarInput, GetEventInput, NettuSDK,
-    UpdateCalendarSettingsInput,
+    DeleteEventInput, GetCalendarEventsInput, GetCalendarInput, GetEventInput,
+    GetEventsInstancesInput, NettuSDK, UpdateCalendarSettingsInput, UpdateEventInput,
 };
 
 #[actix_web::main]
@@ -306,6 +306,42 @@ async fn test_crud_events() {
         .unwrap()
         .event;
     assert_eq!(event.calendar_id, calendar.id);
+    let event_instances = admin_client
+        .event
+        .get_instances(&GetEventsInstancesInput {
+            event_id: event.id.to_string(),
+            start_ts: 0,
+            end_ts: 1000 * 60 * 60 * 24,
+        })
+        .await
+        .unwrap()
+        .instances;
+    assert_eq!(event_instances.len(), 1);
+    assert!(admin_client
+        .event
+        .update(UpdateEventInput {
+            event_id: event.id.to_string(),
+            exdates: Some(vec![0]),
+            busy: None,
+            duration: None,
+            reminder: None,
+            rrule_options: None,
+            services: None,
+            start_ts: None
+        })
+        .await
+        .is_ok());
+    let event_instances = admin_client
+        .event
+        .get_instances(&GetEventsInstancesInput {
+            event_id: event.id.to_string(),
+            start_ts: 0,
+            end_ts: 1000 * 60 * 60 * 24,
+        })
+        .await
+        .unwrap()
+        .instances;
+    assert_eq!(event_instances.len(), 0);
 
     let event = admin_client
         .event

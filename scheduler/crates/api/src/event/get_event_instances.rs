@@ -107,6 +107,7 @@ impl UseCase for GetEventInstancesUseCase {
                 if timespan.greater_than(ctx.config.event_instances_query_duration_limit) {
                     return Err(UseCaseErrors::InvalidTimespan);
                 }
+
                 let instances = event.expand(Some(&timespan), &calendar.settings);
                 Ok(UseCaseResponse { event, instances })
             }

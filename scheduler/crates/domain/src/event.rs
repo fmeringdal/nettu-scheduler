@@ -127,11 +127,15 @@ impl CalendarEvent {
                     .collect()
             }
             None => {
-                vec![EventInstance {
-                    start_ts: self.start_ts,
-                    end_ts: self.start_ts + self.duration,
-                    busy: self.busy,
-                }]
+                if self.exdates.contains(&self.start_ts) {
+                    vec![]
+                } else {
+                    vec![EventInstance {
+                        start_ts: self.start_ts,
+                        end_ts: self.start_ts + self.duration,
+                        busy: self.busy,
+                    }]
+                }
             }
         }
     }

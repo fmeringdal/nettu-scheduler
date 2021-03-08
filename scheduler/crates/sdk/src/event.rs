@@ -1,5 +1,6 @@
 use crate::{APIResponse, BaseClient};
 use nettu_scheduler_api_structs::*;
+use nettu_scheduler_domain::{CalendarEventReminder, RRuleOptions};
 use reqwest::StatusCode;
 use std::sync::Arc;
 
@@ -22,6 +23,17 @@ pub struct GetEventsInstancesInput {
 
 pub struct DeleteEventInput {
     pub event_id: String,
+}
+
+pub struct UpdateEventInput {
+    pub event_id: String,
+    pub start_ts: Option<i64>,
+    pub duration: Option<i64>,
+    pub busy: Option<bool>,
+    pub reminder: Option<CalendarEventReminder>,
+    pub rrule_options: Option<RRuleOptions>,
+    pub services: Option<Vec<String>>,
+    pub exdates: Option<Vec<i64>>,
 }
 
 impl CalendarEventClient {
@@ -48,7 +60,7 @@ impl CalendarEventClient {
         self.base
             .get(
                 format!(
-                    "user/events/{}?startTs={}&endTs={}",
+                    "user/events/{}/instances?startTs={}&endTs={}",
                     input.event_id, input.start_ts, input.end_ts
                 ),
                 StatusCode::OK,
@@ -67,6 +79,22 @@ impl CalendarEventClient {
                 format!("user/{}/events", user_id),
                 StatusCode::CREATED,
             )
+            .await
+    }
+
+    pub async fn update(&self, input: UpdateEventInput) -> APIResponse<update_event::APIResponse> {
+        let event_id = input.event_id.clone();
+        let body = update_event::RequestBody {
+            busy: input.busy,
+            duration: input.duration,
+            exdates: input.exdates,
+            rrule_options: input.rrule_options,
+            reminder: input.reminder,
+            services: input.services,
+            start_ts: input.start_ts,
+        };
+        self.base
+            .put(body, format!("user/events/{}", event_id), StatusCode::OK)
             .await
     }
 }

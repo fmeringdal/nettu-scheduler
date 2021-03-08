@@ -14,7 +14,7 @@ use event::sync_event_reminders::{
     EventOperation, SyncEventRemindersTrigger, SyncEventRemindersUseCase,
 };
 use nettu_scheduler_api_structs::update_event::*;
-use nettu_scheduler_domain::{CalendarEvent, RRuleOptions, ID};
+use nettu_scheduler_domain::{CalendarEvent, CalendarEventReminder, RRuleOptions, ID};
 use nettu_scheduler_infra::NettuContext;
 
 fn handle_error(e: UseCaseErrors) -> NettuError {
@@ -39,14 +39,17 @@ pub async fn update_event_admin_controller(
     let account = protect_account_route(&http_req, &ctx).await?;
     let e = account_can_modify_event(&account, &path_params.event_id, &ctx).await?;
 
+    let body = body.0;
     let usecase = UpdateEventUseCase {
         user_id: e.user_id,
         event_id: e.id,
         duration: body.duration,
         start_ts: body.start_ts,
-        rrule_options: body.rrule_options.clone(),
+        reminder: body.reminder,
+        rrule_options: body.rrule_options,
         busy: body.busy,
-        services: body.services.clone(),
+        services: body.services,
+        exdates: body.exdates,
     };
 
     execute(usecase, &ctx)
@@ -63,14 +66,17 @@ pub async fn update_event_controller(
 ) -> Result<HttpResponse, NettuError> {
     let (user, policy) = protect_route(&http_req, &ctx).await?;
 
+    let body = body.0;
     let usecase = UpdateEventUseCase {
         user_id: user.id.clone(),
         event_id: path_params.event_id.clone(),
         duration: body.duration,
         start_ts: body.start_ts,
-        rrule_options: body.rrule_options.clone(),
+        reminder: body.reminder,
+        rrule_options: body.rrule_options,
         busy: body.busy,
-        services: body.services.clone(),
+        services: body.services,
+        exdates: body.exdates,
     };
 
     execute_with_policy(usecase, &policy, &ctx)
@@ -89,8 +95,10 @@ pub struct UpdateEventUseCase {
     pub start_ts: Option<i64>,
     pub busy: Option<bool>,
     pub duration: Option<i64>,
+    pub reminder: Option<CalendarEventReminder>,
     pub rrule_options: Option<RRuleOptions>,
     pub services: Option<Vec<String>>,
+    pub exdates: Option<Vec<i64>>,
 }
 
 #[derive(Debug)]
@@ -114,6 +122,8 @@ impl UseCase for UpdateEventUseCase {
             busy,
             duration,
             rrule_options: _,
+            exdates,
+            reminder,
             services,
         } = self;
 
@@ -130,6 +140,12 @@ impl UseCase for UpdateEventUseCase {
         if let Some(services) = services {
             e.services = services.clone();
         }
+
+        if let Some(exdates) = exdates {
+            e.exdates = exdates.clone();
+        }
+
+        e.reminder = reminder.clone();
 
         let calendar = match ctx.repos.calendar_repo.find(&e.calendar_id).await {
             Some(cal) => cal,
@@ -211,10 +227,12 @@ mod test {
             event_id: Default::default(),
             start_ts: Some(500),
             duration: Some(800),
+            reminder: None,
             rrule_options: None,
             busy: Some(false),
             user_id: Default::default(),
             services: None,
+            exdates: None,
         };
         let ctx = setup_context().await;
         let res = usecase.execute(&ctx).await;
