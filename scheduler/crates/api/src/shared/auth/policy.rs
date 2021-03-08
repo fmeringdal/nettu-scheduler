@@ -132,6 +132,12 @@ mod test {
         ]));
 
         let policy = Policy {
+            allow: Some(vec![Permission::UpdateCalendar]),
+            reject: None,
+        };
+        assert!(!policy.authorize(&vec![Permission::CreateCalendar]));
+
+        let policy = Policy {
             allow: Some(vec![Permission::CreateCalendar, Permission::UpdateCalendar]),
             reject: Some(vec![Permission::UpdateCalendar]),
         };

@@ -5,6 +5,7 @@
   - Admin routes maybe just need an additional userid in path params
   - Complete SDK
 - validate minutes_before on reminder
+- event reminders execution time
 - metadata
 - infra double contexts in tests with docker compose in github actions
 - maybe event exception should be a date?
