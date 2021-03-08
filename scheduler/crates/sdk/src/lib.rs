@@ -3,6 +3,7 @@ mod base;
 mod calendar;
 mod event;
 mod schedule;
+mod service;
 mod status;
 mod user;
 
@@ -10,6 +11,7 @@ use account::AccountClient;
 use calendar::CalendarClient;
 use event::CalendarEventClient;
 use schedule::ScheduleClient;
+use service::ServiceClient;
 use status::StatusClient;
 use std::sync::Arc;
 use user::UserClient;
@@ -35,6 +37,7 @@ pub struct NettuSDK {
     pub calendar: CalendarClient,
     pub event: CalendarEventClient,
     pub schedule: ScheduleClient,
+    pub service: ServiceClient,
     pub status: StatusClient,
     pub user: UserClient,
 }
@@ -48,6 +51,7 @@ impl NettuSDK {
         let calendar = CalendarClient::new(base.clone());
         let event = CalendarEventClient::new(base.clone());
         let schedule = ScheduleClient::new(base.clone());
+        let service = ServiceClient::new(base.clone());
         let status = StatusClient::new(base.clone());
         let user = UserClient::new(base.clone());
 
@@ -56,6 +60,7 @@ impl NettuSDK {
             calendar,
             event,
             schedule,
+            service,
             status,
             user,
         }

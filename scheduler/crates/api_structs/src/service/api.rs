@@ -25,7 +25,7 @@ pub mod add_user_to_service {
         pub service_id: ID,
     }
 
-    #[derive(Deserialize)]
+    #[derive(Deserialize, Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
         pub user_id: ID,
@@ -63,7 +63,7 @@ pub mod get_service_bookingslots {
         pub date: String,
     }
 
-    #[derive(Serialize)]
+    #[derive(Deserialize, Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct ServiceBookingSlotDTO {
         pub start: i64,
@@ -81,7 +81,7 @@ pub mod get_service_bookingslots {
         }
     }
 
-    #[derive(Serialize)]
+    #[derive(Deserialize, Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct APIResponse {
         pub booking_slots: Vec<ServiceBookingSlotDTO>,
@@ -100,6 +100,17 @@ pub mod get_service_bookingslots {
 }
 
 pub mod get_service {
+    use super::*;
+
+    #[derive(Deserialize)]
+    pub struct PathParams {
+        pub service_id: ID,
+    }
+
+    pub type APIResponse = ServiceResponse;
+}
+
+pub mod delete_service {
     use super::*;
 
     #[derive(Deserialize)]
@@ -131,7 +142,7 @@ pub mod update_service_user {
         pub user_id: ID,
     }
 
-    #[derive(Deserialize)]
+    #[derive(Deserialize, Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
         pub availibility: Option<TimePlan>,

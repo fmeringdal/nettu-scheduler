@@ -1,5 +1,6 @@
 mod add_user_to_service;
 mod create_service;
+mod delete_service;
 mod get_service;
 mod get_service_bookingslots;
 mod remove_user_from_service;
@@ -8,6 +9,7 @@ mod update_service_user;
 use actix_web::web;
 use add_user_to_service::add_user_to_service_controller;
 use create_service::create_service_controller;
+use delete_service::delete_service_controller;
 use get_service::get_service_controller;
 use get_service_bookingslots::get_service_bookingslots_controller;
 use remove_user_from_service::remove_user_from_service_controller;
@@ -18,6 +20,10 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
     cfg.route(
         "/service/{service_id}",
         web::get().to(get_service_controller),
+    );
+    cfg.route(
+        "/service/{service_id}",
+        web::delete().to(delete_service_controller),
     );
     cfg.route(
         "/service/{service_id}/users",
