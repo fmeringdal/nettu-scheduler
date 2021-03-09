@@ -1,6 +1,5 @@
-use crate::{APIResponse, BaseClient};
+use crate::{APIResponse, BaseClient, ScheduleRule, ID};
 use nettu_scheduler_api_structs::*;
-use nettu_scheduler_domain::{ScheduleRule, ID};
 use reqwest::StatusCode;
 use std::sync::Arc;
 
@@ -26,13 +25,13 @@ impl ScheduleClient {
         Self { base }
     }
 
-    pub async fn get(&self, schedule_id: String) -> APIResponse<get_schedule::APIResponse> {
+    pub async fn get(&self, schedule_id: ID) -> APIResponse<get_schedule::APIResponse> {
         self.base
             .get(format!("user/schedule/{}", schedule_id), StatusCode::OK)
             .await
     }
 
-    pub async fn delete(&self, schedule_id: String) -> APIResponse<delete_schedule::APIResponse> {
+    pub async fn delete(&self, schedule_id: ID) -> APIResponse<delete_schedule::APIResponse> {
         self.base
             .delete(format!("user/schedule/{}", schedule_id), StatusCode::OK)
             .await

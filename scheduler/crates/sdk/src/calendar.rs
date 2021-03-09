@@ -1,4 +1,4 @@
-use crate::{APIResponse, BaseClient};
+use crate::{APIResponse, BaseClient, ID};
 use nettu_scheduler_api_structs::*;
 use reqwest::StatusCode;
 use std::sync::Arc;
@@ -9,27 +9,27 @@ pub struct CalendarClient {
 }
 
 pub struct CreateCalendarInput {
-    pub user_id: String,
+    pub user_id: ID,
     pub timezone: String,
     pub week_start: isize,
 }
 
 pub struct GetCalendarInput {
-    pub calendar_id: String,
+    pub calendar_id: ID,
 }
 
 pub struct GetCalendarEventsInput {
-    pub calendar_id: String,
+    pub calendar_id: ID,
     pub start_ts: i64,
     pub end_ts: i64,
 }
 
 pub struct DeleteCalendarInput {
-    pub calendar_id: String,
+    pub calendar_id: ID,
 }
 
 pub struct UpdateCalendarSettingsInput {
-    pub calendar_id: String,
+    pub calendar_id: ID,
     pub week_start: Option<isize>,
     pub timezone: Option<String>,
 }
@@ -41,7 +41,7 @@ impl CalendarClient {
 
     pub async fn update_settings(
         &self,
-        input: &UpdateCalendarSettingsInput,
+        input: UpdateCalendarSettingsInput,
     ) -> APIResponse<update_calendar_settings::APIResponse> {
         let body = update_calendar_settings::RequestBody {
             timezone: input.timezone.clone(),
@@ -58,7 +58,7 @@ impl CalendarClient {
 
     pub async fn delete(
         &self,
-        input: &DeleteCalendarInput,
+        input: DeleteCalendarInput,
     ) -> APIResponse<delete_calendar::APIResponse> {
         self.base
             .delete(
@@ -68,7 +68,7 @@ impl CalendarClient {
             .await
     }
 
-    pub async fn get(&self, input: &GetCalendarInput) -> APIResponse<get_calendar::APIResponse> {
+    pub async fn get(&self, input: GetCalendarInput) -> APIResponse<get_calendar::APIResponse> {
         self.base
             .get(
                 format!("user/calendar/{}", input.calendar_id),
@@ -79,7 +79,7 @@ impl CalendarClient {
 
     pub async fn get_events(
         &self,
-        input: &GetCalendarEventsInput,
+        input: GetCalendarEventsInput,
     ) -> APIResponse<get_calendar_events::APIResponse> {
         self.base
             .get(
@@ -94,7 +94,7 @@ impl CalendarClient {
 
     pub async fn create(
         &self,
-        input: &CreateCalendarInput,
+        input: CreateCalendarInput,
     ) -> APIResponse<create_calendar::APIResponse> {
         let body = create_calendar::RequestBody {
             timezone: input.timezone.clone(),

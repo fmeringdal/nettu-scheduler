@@ -29,6 +29,14 @@ pub struct CalendarEventReminder {
     pub minutes_before: i64,
 }
 
+impl CalendarEventReminder {
+    // This isnt ideal at all, shouldnt be possible to construct
+    // this type of it is not valid, but for now it is good enough
+    pub fn is_valid(&self) -> bool {
+        self.minutes_before >= 0 && self.minutes_before <= 60 * 24
+    }
+}
+
 impl CalendarEvent {
     fn update_endtime(&mut self, calendar_settings: &CalendarSettings) -> bool {
         match self.recurrence.clone() {

@@ -1,6 +1,5 @@
-use crate::{APIResponse, BaseClient};
+use crate::{APIResponse, BaseClient, TimePlan, ID};
 use nettu_scheduler_api_structs::*;
-use nettu_scheduler_domain::{TimePlan, ID};
 use reqwest::StatusCode;
 use serde::Serialize;
 use std::sync::Arc;
@@ -51,7 +50,7 @@ impl ServiceClient {
         Self { base }
     }
 
-    pub async fn get(&self, service_id: String) -> APIResponse<get_service::APIResponse> {
+    pub async fn get(&self, service_id: ID) -> APIResponse<get_service::APIResponse> {
         self.base
             .get(format!("service/{}", service_id), StatusCode::OK)
             .await
@@ -77,7 +76,7 @@ impl ServiceClient {
             .await
     }
 
-    pub async fn delete(&self, service_id: String) -> APIResponse<delete_service::APIResponse> {
+    pub async fn delete(&self, service_id: ID) -> APIResponse<delete_service::APIResponse> {
         self.base
             .delete(format!("service/{}", service_id), StatusCode::OK)
             .await

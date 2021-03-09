@@ -1,11 +1,9 @@
 
 ## Todos
 
-- validate minutes_before on reminder
-- use id in sdk params and remember to expose it, api_tests should only import from nettu_scheduler_sdk and not domain
 - event reminders execution time
-- metadata
-- infra double contexts in tests with docker compose in github actions
+- deserialize structs, date, timezone ? 
+- metadata -> maybe just a hashmap of string to string
 - maybe event exception should be a date?
 - Better telemtry: implement Display for usecase: https://www.lpalmieri.com/posts/2020-09-27-zero-to-production-4-are-we-observable-yet/#5-1-the-tracing-crate
 

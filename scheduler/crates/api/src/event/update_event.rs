@@ -26,6 +26,9 @@ fn handle_error(e: UseCaseErrors) -> NettuError {
         UseCaseErrors::InvalidRecurrenceRule => {
             NettuError::BadClientData("Invalid recurrence rule specified for the event".into())
         }
+        UseCaseErrors::InvalidReminder => {
+            NettuError::BadClientData("Invalid reminder specified for the event".into())
+        }
         UseCaseErrors::StorageError => NettuError::InternalError,
     }
 }
@@ -104,6 +107,7 @@ pub struct UpdateEventUseCase {
 #[derive(Debug)]
 pub enum UseCaseErrors {
     NotFound(String, ID),
+    InvalidReminder,
     StorageError,
     InvalidRecurrenceRule,
 }
@@ -145,6 +149,11 @@ impl UseCase for UpdateEventUseCase {
             e.exdates = exdates.clone();
         }
 
+        if let Some(reminder) = &e.reminder {
+            if !reminder.is_valid() {
+                return Err(UseCaseErrors::InvalidReminder);
+            }
+        }
         e.reminder = reminder.clone();
 
         let calendar = match ctx.repos.calendar_repo.find(&e.calendar_id).await {

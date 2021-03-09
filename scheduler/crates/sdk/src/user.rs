@@ -1,6 +1,5 @@
-use crate::{APIResponse, BaseClient};
+use crate::{APIResponse, BaseClient, ID};
 use nettu_scheduler_api_structs::*;
-use nettu_scheduler_domain::ID;
 use reqwest::StatusCode;
 use std::{collections::HashMap, sync::Arc};
 

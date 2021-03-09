@@ -20,6 +20,9 @@ fn handle_error(e: UseCaseErrors) -> NettuError {
         UseCaseErrors::InvalidRecurrenceRule => {
             NettuError::BadClientData("Invalid recurrence rule specified for the event".into())
         }
+        UseCaseErrors::InvalidReminder => {
+            NettuError::BadClientData("Invalid reminder specified for the event".into())
+        }
         UseCaseErrors::StorageError => NettuError::InternalError,
     }
 }
@@ -27,22 +30,23 @@ fn handle_error(e: UseCaseErrors) -> NettuError {
 pub async fn create_event_admin_controller(
     http_req: web::HttpRequest,
     path_params: web::Path<PathParams>,
-    req: web::Json<RequestBody>,
+    body: web::Json<RequestBody>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
     let user = account_can_modify_user(&account, &path_params.user_id, &ctx).await?;
 
+    let body = body.0;
     let usecase = CreateEventUseCase {
-        busy: req.busy.unwrap_or(false),
-        start_ts: req.start_ts,
-        duration: req.duration,
+        busy: body.busy.unwrap_or(false),
+        start_ts: body.start_ts,
+        duration: body.duration,
         user_id: user.id,
-        calendar_id: req.calendar_id.clone(),
-        rrule_options: req.rrule_options.clone(),
+        calendar_id: body.calendar_id,
+        rrule_options: body.rrule_options,
         account_id: account.id,
-        reminder: req.reminder.clone(),
-        services: req.services.clone().unwrap_or(vec![]),
+        reminder: body.reminder,
+        services: body.services.unwrap_or(vec![]),
     };
 
     execute(usecase, &ctx)
@@ -95,6 +99,7 @@ pub struct CreateEventUseCase {
 #[derive(Debug, PartialEq)]
 pub enum UseCaseErrors {
     InvalidRecurrenceRule,
+    InvalidReminder,
     NotFound(ID),
     StorageError,
 }
@@ -129,6 +134,12 @@ impl UseCase for CreateEventUseCase {
             if !e.set_recurrence(rrule_opts, &calendar.settings, true) {
                 return Err(UseCaseErrors::InvalidRecurrenceRule);
             };
+        }
+
+        if let Some(reminder) = &e.reminder {
+            if !reminder.is_valid() {
+                return Err(UseCaseErrors::InvalidReminder);
+            }
         }
 
         let repo_res = ctx.repos.event_repo.insert(&e).await;

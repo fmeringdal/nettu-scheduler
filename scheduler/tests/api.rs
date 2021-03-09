@@ -106,7 +106,7 @@ async fn test_crud_schedule() {
 
     let get_schedule = admin_client
         .schedule
-        .get(schedule.id.to_string())
+        .get(schedule.id.clone())
         .await
         .unwrap()
         .schedule;
@@ -116,13 +116,13 @@ async fn test_crud_schedule() {
 
     assert!(admin_client
         .schedule
-        .delete(schedule.id.to_string())
+        .delete(schedule.id.clone())
         .await
         .is_ok());
 
     assert!(admin_client
         .schedule
-        .get(schedule.id.to_string())
+        .get(schedule.id.clone())
         .await
         .is_err());
 }
@@ -229,8 +229,8 @@ async fn test_crud_calendars() {
 
     let calendar = admin_client
         .calendar
-        .create(&CreateCalendarInput {
-            user_id: user.id.to_string(),
+        .create(CreateCalendarInput {
+            user_id: user.id.clone(),
             timezone: "UTC".into(),
             week_start: 0,
         })
@@ -240,8 +240,8 @@ async fn test_crud_calendars() {
 
     let calendar_get_res = admin_client
         .calendar
-        .get(&GetCalendarInput {
-            calendar_id: calendar.id.to_string(),
+        .get(GetCalendarInput {
+            calendar_id: calendar.id.clone(),
         })
         .await
         .unwrap()
@@ -251,8 +251,8 @@ async fn test_crud_calendars() {
 
     let events = admin_client
         .calendar
-        .get_events(&GetCalendarEventsInput {
-            calendar_id: calendar.id.to_string(),
+        .get_events(GetCalendarEventsInput {
+            calendar_id: calendar.id.clone(),
             start_ts: 0,
             end_ts: 1000 * 60 * 60 * 24,
         })
@@ -264,8 +264,8 @@ async fn test_crud_calendars() {
     let week_start = 2;
     let calendar_with_new_settings = admin_client
         .calendar
-        .update_settings(&UpdateCalendarSettingsInput {
-            calendar_id: calendar.id.to_string(),
+        .update_settings(UpdateCalendarSettingsInput {
+            calendar_id: calendar.id.clone(),
             timezone: None,
             week_start: Some(week_start.clone()),
         })
@@ -277,8 +277,8 @@ async fn test_crud_calendars() {
     // Delete calendar
     assert!(admin_client
         .calendar
-        .delete(&DeleteCalendarInput {
-            calendar_id: calendar.id.to_string(),
+        .delete(DeleteCalendarInput {
+            calendar_id: calendar.id.clone(),
         })
         .await
         .is_ok());
@@ -286,8 +286,8 @@ async fn test_crud_calendars() {
     // Get now returns 404
     assert!(admin_client
         .calendar
-        .get(&GetCalendarInput {
-            calendar_id: calendar.id.to_string(),
+        .get(GetCalendarInput {
+            calendar_id: calendar.id.clone(),
         })
         .await
         .is_err());
@@ -307,8 +307,8 @@ async fn test_crud_events() {
 
     let calendar = admin_client
         .calendar
-        .create(&CreateCalendarInput {
-            user_id: user.id.to_string(),
+        .create(CreateCalendarInput {
+            user_id: user.id.clone(),
             timezone: "UTC".into(),
             week_start: 0,
         })
@@ -319,8 +319,8 @@ async fn test_crud_events() {
     let event = admin_client
         .event
         .create(
-            user.id.to_string(),
-            &CreateEventInput {
+            user.id.clone(),
+            CreateEventInput {
                 calendar_id: calendar.id.clone(),
                 busy: None,
                 duration: 1000 * 60 * 60,
@@ -337,8 +337,8 @@ async fn test_crud_events() {
 
     let event = admin_client
         .event
-        .get(&GetEventInput {
-            event_id: event.id.to_string(),
+        .get(GetEventInput {
+            event_id: event.id.clone(),
         })
         .await
         .unwrap()
@@ -346,8 +346,8 @@ async fn test_crud_events() {
     assert_eq!(event.calendar_id, calendar.id);
     let event_instances = admin_client
         .event
-        .get_instances(&GetEventsInstancesInput {
-            event_id: event.id.to_string(),
+        .get_instances(GetEventsInstancesInput {
+            event_id: event.id.clone(),
             start_ts: 0,
             end_ts: 1000 * 60 * 60 * 24,
         })
@@ -358,7 +358,7 @@ async fn test_crud_events() {
     assert!(admin_client
         .event
         .update(UpdateEventInput {
-            event_id: event.id.to_string(),
+            event_id: event.id.clone(),
             exdates: Some(vec![0]),
             busy: None,
             duration: None,
@@ -371,8 +371,8 @@ async fn test_crud_events() {
         .is_ok());
     let event_instances = admin_client
         .event
-        .get_instances(&GetEventsInstancesInput {
-            event_id: event.id.to_string(),
+        .get_instances(GetEventsInstancesInput {
+            event_id: event.id.clone(),
             start_ts: 0,
             end_ts: 1000 * 60 * 60 * 24,
         })
@@ -383,8 +383,8 @@ async fn test_crud_events() {
 
     let event = admin_client
         .event
-        .delete(&DeleteEventInput {
-            event_id: event.id.to_string(),
+        .delete(DeleteEventInput {
+            event_id: event.id.clone(),
         })
         .await
         .unwrap()
@@ -393,8 +393,8 @@ async fn test_crud_events() {
 
     assert!(admin_client
         .event
-        .get(&GetEventInput {
-            event_id: event.id.to_string(),
+        .get(GetEventInput {
+            event_id: event.id.clone(),
         })
         .await
         .is_err())
@@ -478,14 +478,10 @@ async fn test_crud_service() {
     // Delete service
     assert!(admin_client
         .service
-        .delete(service.id.to_string())
+        .delete(service.id.clone())
         .await
         .is_ok());
 
     // Get now returns 404
-    assert!(admin_client
-        .service
-        .get(service.id.to_string())
-        .await
-        .is_err());
+    assert!(admin_client.service.get(service.id.clone()).await.is_err());
 }
