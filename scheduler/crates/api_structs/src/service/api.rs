@@ -137,6 +137,31 @@ pub mod get_service {
     pub type APIResponse = ServiceResponse;
 }
 
+pub mod get_services_by_meta {
+    use super::*;
+
+    #[derive(Deserialize)]
+    pub struct QueryParams {
+        pub key: String,
+        pub value: String,
+        pub skip: Option<usize>,
+        pub limit: Option<usize>,
+    }
+
+    #[derive(Serialize)]
+    pub struct APIResponse {
+        pub services: Vec<ServiceDTO>,
+    }
+
+    impl APIResponse {
+        pub fn new(services: Vec<Service>) -> Self {
+            Self {
+                services: services.into_iter().map(|s| ServiceDTO::new(s)).collect(),
+            }
+        }
+    }
+}
+
 pub mod delete_service {
     use super::*;
 

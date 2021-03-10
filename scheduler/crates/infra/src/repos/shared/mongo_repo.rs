@@ -174,29 +174,3 @@ pub async fn find_by_metadata<E, D: MongoDocument<E>>(
         Err(_) => vec![],
     }
 }
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct MongoMetadata {
-    pub key: String,
-    pub value: String,
-}
-
-impl MongoMetadata {
-    pub fn new(meta: Metadata) -> Vec<Self> {
-        let mut mongo_meta = Vec::with_capacity(meta.len());
-        for (key, value) in meta {
-            mongo_meta.push(Self { key, value });
-        }
-        mongo_meta
-    }
-
-    pub fn to_metadata(mongo_metas: Vec<Self>) -> Metadata {
-        let mut metadata = Metadata::with_capacity(mongo_metas.len());
-
-        for mongo_meta in mongo_metas {
-            metadata.insert(mongo_meta.key, mongo_meta.value);
-        }
-
-        metadata
-    }
-}

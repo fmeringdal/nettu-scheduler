@@ -97,6 +97,34 @@ pub mod get_event {
     pub type APIResponse = CalendarEventResponse;
 }
 
+pub mod get_events_by_meta {
+    use super::*;
+
+    #[derive(Deserialize)]
+    pub struct QueryParams {
+        pub key: String,
+        pub value: String,
+        pub skip: Option<usize>,
+        pub limit: Option<usize>,
+    }
+
+    #[derive(Serialize)]
+    pub struct APIResponse {
+        pub events: Vec<CalendarEventDTO>,
+    }
+
+    impl APIResponse {
+        pub fn new(events: Vec<CalendarEvent>) -> Self {
+            Self {
+                events: events
+                    .into_iter()
+                    .map(|e| CalendarEventDTO::new(e))
+                    .collect(),
+            }
+        }
+    }
+}
+
 pub mod update_event {
     use nettu_scheduler_domain::Metadata;
 

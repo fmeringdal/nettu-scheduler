@@ -101,6 +101,31 @@ pub mod get_calendar {
     pub type APIResponse = CalendarResponse;
 }
 
+pub mod get_calendars_by_meta {
+    use super::*;
+
+    #[derive(Deserialize)]
+    pub struct QueryParams {
+        pub key: String,
+        pub value: String,
+        pub skip: Option<usize>,
+        pub limit: Option<usize>,
+    }
+
+    #[derive(Serialize)]
+    pub struct APIResponse {
+        pub calendars: Vec<CalendarDTO>,
+    }
+
+    impl APIResponse {
+        pub fn new(calendars: Vec<Calendar>) -> Self {
+            Self {
+                calendars: calendars.into_iter().map(|c| CalendarDTO::new(c)).collect(),
+            }
+        }
+    }
+}
+
 pub mod get_user_freebusy {
     use super::*;
     use std::collections::VecDeque;

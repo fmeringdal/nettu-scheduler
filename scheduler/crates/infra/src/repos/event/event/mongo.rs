@@ -1,9 +1,8 @@
 use super::IEventRepo;
+use crate::repos::shared::mongo_repo;
+use crate::repos::shared::query_structs::MetadataFindQuery;
 use crate::repos::shared::repo::DeleteResult;
-use crate::repos::shared::{
-    mongo_repo::{self, MongoMetadata},
-    query_structs::MetadataFindQuery,
-};
+use crate::KVMetadata;
 use mongo_repo::MongoDocument;
 use mongodb::{
     bson::doc,
@@ -125,7 +124,7 @@ struct CalendarEventMongo {
     recurrence: Option<RRuleOptions>,
     reminder: Option<CalendarEventReminder>,
     services: Vec<String>,
-    metadata: Vec<MongoMetadata>,
+    metadata: Vec<KVMetadata>,
 }
 
 impl MongoDocument<CalendarEvent> for CalendarEventMongo {
@@ -143,7 +142,7 @@ impl MongoDocument<CalendarEvent> for CalendarEventMongo {
             recurrence: self.recurrence,
             reminder: self.reminder,
             services: self.services,
-            metadata: MongoMetadata::to_metadata(self.metadata),
+            metadata: KVMetadata::to_metadata(self.metadata),
         }
     }
 
@@ -161,7 +160,7 @@ impl MongoDocument<CalendarEvent> for CalendarEventMongo {
             recurrence: event.recurrence.clone(),
             reminder: event.reminder.clone(),
             services: event.services.clone(),
-            metadata: MongoMetadata::new(event.metadata.clone()),
+            metadata: KVMetadata::new(event.metadata.clone()),
         }
     }
 

@@ -4,12 +4,14 @@ mod create_calendar;
 mod delete_calendar;
 mod get_calendar;
 mod get_calendar_events;
+mod get_calendars_by_meta;
 mod update_calendar;
 
 use create_calendar::{create_calendar_admin_controller, create_calendar_controller};
 use delete_calendar::{delete_calendar_admin_controller, delete_calendar_controller};
 use get_calendar::{get_calendar_admin_controller, get_calendar_controller};
 use get_calendar_events::{get_calendar_events_admin_controller, get_calendar_events_controller};
+use get_calendars_by_meta::get_calendars_by_meta_controller;
 use update_calendar::{update_calendar_admin_controller, update_calendar_controller};
 
 pub fn configure_routes(cfg: &mut web::ServiceConfig) {
@@ -26,6 +28,10 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
     cfg.route(
         "/user/calendar/{calendar_id}",
         web::get().to(get_calendar_admin_controller),
+    );
+    cfg.route(
+        "/calendar/meta",
+        web::get().to(get_calendars_by_meta_controller),
     );
 
     cfg.route(

@@ -1,14 +1,17 @@
 use super::IServiceRepo;
-use crate::repos::shared::{
-    mongo_repo::{self},
-    query_structs::MetadataFindQuery,
+use crate::{
+    repos::shared::{
+        mongo_repo::{self},
+        query_structs::MetadataFindQuery,
+    },
+    KVMetadata,
 };
-use mongo_repo::{MongoDocument, MongoMetadata};
+use mongo_repo::MongoDocument;
 use mongodb::{
     bson::{doc, oid::ObjectId, Document},
     Collection, Database,
 };
-use nettu_scheduler_domain::{Metadata, Service, ServiceResource, TimePlan, ID};
+use nettu_scheduler_domain::{Service, ServiceResource, TimePlan, ID};
 use serde::{Deserialize, Serialize};
 
 pub struct MongoServiceRepo {
@@ -124,7 +127,7 @@ struct ServiceMongo {
     pub account_id: ObjectId,
     pub users: Vec<ServiceResourceMongo>,
     pub attributes: Vec<DocumentAttribute>,
-    pub metadata: Vec<MongoMetadata>,
+    pub metadata: Vec<KVMetadata>,
 }
 
 impl MongoDocument<Service> for ServiceMongo {
@@ -145,7 +148,7 @@ impl MongoDocument<Service> for ServiceMongo {
                     furthest_booking_time: user.furthest_booking_time,
                 })
                 .collect(),
-            metadata: MongoMetadata::to_metadata(self.metadata),
+            metadata: KVMetadata::to_metadata(self.metadata),
         }
     }
 
@@ -166,7 +169,7 @@ impl MongoDocument<Service> for ServiceMongo {
                     furthest_booking_time: user.furthest_booking_time,
                 })
                 .collect(),
-            metadata: MongoMetadata::new(service.metadata.clone()),
+            metadata: KVMetadata::new(service.metadata.clone()),
             attributes: vec![
                 DocumentAttribute {
                     key: "calendars".into(),

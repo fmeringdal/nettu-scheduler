@@ -21,7 +21,7 @@ pub trait IUserRepo: Send + Sync {
 mod tests {
     use nettu_scheduler_domain::Metadata;
 
-    use crate::{repos::shared::mongo_repo::MongoMetadata, setup_context, NettuContext};
+    use crate::{repos::shared::query_structs::KVMetadata, setup_context, NettuContext};
 
     use super::*;
 
@@ -47,7 +47,7 @@ mod tests {
             let mut query = MetadataFindQuery {
                 account_id,
                 limit: 100,
-                metadata: MongoMetadata {
+                metadata: KVMetadata {
                     key: "group_id".into(),
                     value: "123".into(),
                 },

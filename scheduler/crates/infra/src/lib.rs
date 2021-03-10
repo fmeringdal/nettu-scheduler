@@ -5,6 +5,7 @@ mod system;
 pub use config::Config;
 pub use mongodb::bson::oid::ObjectId;
 use repos::Repos;
+pub use repos::{KVMetadata, MetadataFindQuery};
 use std::sync::Arc;
 pub use system::ISys;
 use system::RealSys;

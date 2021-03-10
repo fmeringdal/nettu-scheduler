@@ -1,15 +1,12 @@
 use super::ICalendarRepo;
-use crate::repos::shared::{
-    mongo_repo::{self, MongoMetadata},
-    query_structs::MetadataFindQuery,
-    repo::DeleteResult,
-};
+use crate::repos::shared::{mongo_repo, query_structs::MetadataFindQuery, repo::DeleteResult};
+use crate::KVMetadata;
 use mongo_repo::MongoDocument;
 use mongodb::{
     bson::{doc, oid::ObjectId, Document},
     Collection, Database,
 };
-use nettu_scheduler_domain::{Calendar, CalendarSettings, Metadata, ID};
+use nettu_scheduler_domain::{Calendar, CalendarSettings, ID};
 use serde::{Deserialize, Serialize};
 
 pub struct MongoCalendarRepo {
@@ -72,7 +69,7 @@ struct CalendarMongo {
     user_id: ObjectId,
     account_id: ObjectId,
     settings: CalendarSettingsMongo,
-    metadata: Vec<MongoMetadata>,
+    metadata: Vec<KVMetadata>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -91,7 +88,7 @@ impl MongoDocument<Calendar> for CalendarMongo {
                 week_start: self.settings.week_start,
                 timezone: self.settings.timezone.parse().unwrap(),
             },
-            metadata: MongoMetadata::to_metadata(self.metadata),
+            metadata: KVMetadata::to_metadata(self.metadata),
         }
     }
 
@@ -104,7 +101,7 @@ impl MongoDocument<Calendar> for CalendarMongo {
                 week_start: calendar.settings.week_start,
                 timezone: calendar.settings.timezone.to_string(),
             },
-            metadata: MongoMetadata::new(calendar.metadata.clone()),
+            metadata: KVMetadata::new(calendar.metadata.clone()),
         }
     }
 

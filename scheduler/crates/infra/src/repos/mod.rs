@@ -21,6 +21,7 @@ use tracing::info;
 use user::{IUserRepo, InMemoryUserRepo, MongoUserRepo};
 
 pub use mongodb::bson::oid::ObjectId;
+pub use shared::query_structs::*;
 
 #[derive(Clone)]
 pub struct Repos {

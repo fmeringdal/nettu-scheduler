@@ -1,7 +1,7 @@
 use super::IUserRepo;
 use crate::repos::shared::mongo_repo::MongoDocument;
 use crate::repos::shared::{mongo_repo, query_structs::MetadataFindQuery};
-use mongo_repo::MongoMetadata;
+use crate::KVMetadata;
 use mongodb::{
     bson::{doc, oid::ObjectId, Document},
     Collection, Database,
@@ -58,7 +58,7 @@ impl IUserRepo for MongoUserRepo {
 struct UserMongo {
     _id: ObjectId,
     account_id: ObjectId,
-    metadata: Vec<MongoMetadata>,
+    metadata: Vec<KVMetadata>,
 }
 
 impl MongoDocument<User> for UserMongo {
@@ -66,7 +66,7 @@ impl MongoDocument<User> for UserMongo {
         User {
             id: ID::from(self._id),
             account_id: ID::from(self.account_id),
-            metadata: MongoMetadata::to_metadata(self.metadata),
+            metadata: KVMetadata::to_metadata(self.metadata),
         }
     }
 
@@ -74,7 +74,7 @@ impl MongoDocument<User> for UserMongo {
         Self {
             _id: user.id.inner_ref().clone(),
             account_id: user.account_id.inner_ref().clone(),
-            metadata: MongoMetadata::new(user.metadata.clone()),
+            metadata: KVMetadata::new(user.metadata.clone()),
         }
     }
 

@@ -70,3 +70,28 @@ pub mod get_user {
 
     pub type APIResponse = UserResponse;
 }
+
+pub mod get_users_by_meta {
+    use super::*;
+
+    #[derive(Deserialize)]
+    pub struct QueryParams {
+        pub key: String,
+        pub value: String,
+        pub skip: Option<usize>,
+        pub limit: Option<usize>,
+    }
+
+    #[derive(Serialize)]
+    pub struct APIResponse {
+        pub users: Vec<UserDTO>,
+    }
+
+    impl APIResponse {
+        pub fn new(users: Vec<User>) -> Self {
+            Self {
+                users: users.into_iter().map(|u| UserDTO::new(u)).collect(),
+            }
+        }
+    }
+}
