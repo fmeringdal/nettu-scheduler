@@ -1,5 +1,6 @@
 use crate::{APIResponse, BaseClient, ID};
 use nettu_scheduler_api_structs::*;
+use nettu_scheduler_domain::Metadata;
 use reqwest::StatusCode;
 use std::sync::Arc;
 
@@ -12,6 +13,7 @@ pub struct CreateCalendarInput {
     pub user_id: ID,
     pub timezone: String,
     pub week_start: isize,
+    pub metadata: Option<Metadata>,
 }
 
 pub struct GetCalendarInput {
@@ -32,6 +34,7 @@ pub struct UpdateCalendarSettingsInput {
     pub calendar_id: ID,
     pub week_start: Option<isize>,
     pub timezone: Option<String>,
+    pub metadata: Option<Metadata>,
 }
 
 impl CalendarClient {
@@ -42,15 +45,19 @@ impl CalendarClient {
     pub async fn update_settings(
         &self,
         input: UpdateCalendarSettingsInput,
-    ) -> APIResponse<update_calendar_settings::APIResponse> {
-        let body = update_calendar_settings::RequestBody {
+    ) -> APIResponse<update_calendar::APIResponse> {
+        let settings = update_calendar::CalendarSettings {
             timezone: input.timezone.clone(),
             week_start: input.week_start,
+        };
+        let body = update_calendar::RequestBody {
+            settings,
+            metadata: input.metadata,
         };
         self.base
             .put(
                 body,
-                format!("user/calendar/{}/settings", input.calendar_id),
+                format!("user/calendar/{}", input.calendar_id),
                 StatusCode::OK,
             )
             .await
@@ -99,6 +106,7 @@ impl CalendarClient {
         let body = create_calendar::RequestBody {
             timezone: input.timezone.clone(),
             week_start: input.week_start,
+            metadata: input.metadata,
         };
         self.base
             .post(

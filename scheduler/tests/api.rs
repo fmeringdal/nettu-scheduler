@@ -233,6 +233,7 @@ async fn test_crud_calendars() {
             user_id: user.id.clone(),
             timezone: "UTC".into(),
             week_start: 0,
+            metadata: None,
         })
         .await
         .unwrap()
@@ -268,6 +269,7 @@ async fn test_crud_calendars() {
             calendar_id: calendar.id.clone(),
             timezone: None,
             week_start: Some(week_start.clone()),
+            metadata: None,
         })
         .await
         .unwrap()
@@ -311,6 +313,7 @@ async fn test_crud_events() {
             user_id: user.id.clone(),
             timezone: "UTC".into(),
             week_start: 0,
+            metadata: None,
         })
         .await
         .unwrap()
@@ -328,6 +331,7 @@ async fn test_crud_events() {
                 rrule_options: None,
                 services: None,
                 start_ts: 0,
+                metadata: None,
             },
         )
         .await
@@ -365,7 +369,8 @@ async fn test_crud_events() {
             reminder: None,
             rrule_options: None,
             services: None,
-            start_ts: None
+            start_ts: None,
+            metadata: None,
         })
         .await
         .is_ok());

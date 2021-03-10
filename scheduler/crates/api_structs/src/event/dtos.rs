@@ -1,5 +1,5 @@
 use nettu_scheduler_domain::{
-    CalendarEvent, CalendarEventReminder, EventInstance, RRuleOptions, ID,
+    CalendarEvent, CalendarEventReminder, EventInstance, Metadata, RRuleOptions, ID,
 };
 use serde::{Deserialize, Serialize};
 
@@ -16,6 +16,7 @@ pub struct CalendarEventDTO {
     pub calendar_id: ID,
     pub user_id: ID,
     pub reminder: Option<CalendarEventReminder>,
+    pub metadata: Metadata,
 }
 
 impl CalendarEventDTO {
@@ -31,6 +32,7 @@ impl CalendarEventDTO {
             calendar_id: event.calendar_id.clone(),
             user_id: event.user_id.clone(),
             reminder: event.reminder,
+            metadata: event.metadata,
         }
     }
 }

@@ -1,5 +1,7 @@
 use crate::{
-    calendar::CalendarSettings, shared::entity::Entity, shared::recurrence::RRuleOptions,
+    calendar::CalendarSettings,
+    shared::entity::Entity,
+    shared::{metadata::Metadata, recurrence::RRuleOptions},
     timespan::TimeSpan,
 };
 use crate::{event_instance::EventInstance, shared::entity::ID};
@@ -21,6 +23,7 @@ pub struct CalendarEvent {
     pub account_id: ID,
     pub reminder: Option<CalendarEventReminder>,
     pub services: Vec<String>,
+    pub metadata: Metadata,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -185,6 +188,7 @@ mod test {
             account_id: Default::default(),
             reminder: None,
             services: vec![],
+            metadata: Default::default(),
         };
 
         let oc = event.expand(None, &settings);
@@ -210,6 +214,7 @@ mod test {
             account_id: Default::default(),
             reminder: None,
             services: vec![],
+            metadata: Default::default(),
         };
 
         let oc = event.expand(None, &settings);
@@ -256,6 +261,7 @@ mod test {
                 recurrence: None,
                 reminder: None,
                 services: vec![],
+                metadata: Default::default(),
             };
 
             assert!(!event.set_recurrence(rrule, &settings, true));
@@ -302,6 +308,7 @@ mod test {
                 recurrence: None,
                 reminder: None,
                 services: vec![],
+                metadata: Default::default(),
             };
 
             assert!(event.set_recurrence(rrule, &settings, true));

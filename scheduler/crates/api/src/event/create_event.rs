@@ -8,7 +8,7 @@ use crate::shared::{
 use crate::{error::NettuError, shared::auth::protect_account_route};
 use actix_web::{web, HttpResponse};
 use nettu_scheduler_api_structs::create_event::*;
-use nettu_scheduler_domain::{CalendarEvent, CalendarEventReminder, RRuleOptions, ID};
+use nettu_scheduler_domain::{CalendarEvent, CalendarEventReminder, Metadata, RRuleOptions, ID};
 use nettu_scheduler_infra::NettuContext;
 
 fn handle_error(e: UseCaseErrors) -> NettuError {
@@ -46,7 +46,8 @@ pub async fn create_event_admin_controller(
         rrule_options: body.rrule_options,
         account_id: account.id,
         reminder: body.reminder,
-        services: body.services.unwrap_or(vec![]),
+        services: body.services.unwrap_or_default(),
+        metadata: body.metadata.unwrap_or_default(),
     };
 
     execute(usecase, &ctx)
@@ -57,21 +58,23 @@ pub async fn create_event_admin_controller(
 
 pub async fn create_event_controller(
     http_req: web::HttpRequest,
-    req: web::Json<RequestBody>,
+    body: web::Json<RequestBody>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let (user, policy) = protect_route(&http_req, &ctx).await?;
 
+    let body = body.0;
     let usecase = CreateEventUseCase {
-        busy: req.busy.unwrap_or(false),
-        start_ts: req.start_ts,
-        duration: req.duration,
-        calendar_id: req.calendar_id.clone(),
-        rrule_options: req.rrule_options.clone(),
+        busy: body.busy.unwrap_or(false),
+        start_ts: body.start_ts,
+        duration: body.duration,
+        calendar_id: body.calendar_id,
+        rrule_options: body.rrule_options,
         user_id: user.id,
         account_id: user.account_id,
-        reminder: req.reminder.clone(),
-        services: req.services.clone().unwrap_or(vec![]),
+        reminder: body.reminder,
+        services: body.services.unwrap_or_default(),
+        metadata: body.metadata.unwrap_or_default(),
     };
 
     execute_with_policy(usecase, &policy, &ctx)
@@ -94,6 +97,7 @@ pub struct CreateEventUseCase {
     pub rrule_options: Option<RRuleOptions>,
     pub reminder: Option<CalendarEventReminder>,
     pub services: Vec<String>,
+    pub metadata: Metadata,
 }
 
 #[derive(Debug, PartialEq)]
@@ -129,6 +133,7 @@ impl UseCase for CreateEventUseCase {
             account_id: self.account_id.clone(),
             reminder: self.reminder.clone(),
             services: self.services.clone(),
+            metadata: self.metadata.clone(),
         };
         if let Some(rrule_opts) = self.rrule_options.clone() {
             if !e.set_recurrence(rrule_opts, &calendar.settings, true) {
@@ -215,6 +220,7 @@ mod test {
             account_id: user.account_id,
             reminder: None,
             services: vec![],
+            metadata: Default::default(),
         };
 
         let res = usecase.execute(&ctx).await;
@@ -241,6 +247,7 @@ mod test {
             account_id: user.account_id,
             reminder: None,
             services: vec![],
+            metadata: Default::default(),
         };
 
         let res = usecase.execute(&ctx).await;
@@ -267,6 +274,7 @@ mod test {
             account_id: user.account_id,
             reminder: None,
             services: vec![],
+            metadata: Default::default(),
         };
 
         let res = usecase.execute(&ctx).await;
@@ -306,6 +314,7 @@ mod test {
                 account_id: user.account_id.to_owned(),
                 reminder: None,
                 services: vec![],
+                metadata: Default::default(),
             };
 
             let res = usecase.execute(&ctx).await;

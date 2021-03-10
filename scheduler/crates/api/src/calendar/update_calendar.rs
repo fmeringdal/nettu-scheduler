@@ -4,8 +4,8 @@ use crate::shared::{
 };
 use crate::{error::NettuError, shared::auth::protect_route};
 use actix_web::{web, HttpResponse};
-use nettu_scheduler_api_structs::update_calendar_settings::{APIResponse, PathParams, RequestBody};
-use nettu_scheduler_domain::{Calendar, ID};
+use nettu_scheduler_api_structs::update_calendar::{APIResponse, PathParams, RequestBody};
+use nettu_scheduler_domain::{Calendar, Metadata, ID};
 use nettu_scheduler_infra::NettuContext;
 
 fn handle_errors(e: UseCaseErrors) -> NettuError {
@@ -21,7 +21,7 @@ fn handle_errors(e: UseCaseErrors) -> NettuError {
     }
 }
 
-pub async fn update_calendar_settings_admin_controller(
+pub async fn update_calendar_admin_controller(
     http_req: web::HttpRequest,
     ctx: web::Data<NettuContext>,
     path: web::Path<PathParams>,
@@ -30,11 +30,12 @@ pub async fn update_calendar_settings_admin_controller(
     let account = protect_account_route(&http_req, &ctx).await?;
     let cal = account_can_modify_calendar(&account, &path.calendar_id, &ctx).await?;
 
-    let usecase = UpdateCalendarSettingsUseCase {
+    let usecase = UpdateCalendarUseCase {
         user_id: cal.user_id,
         calendar_id: cal.id,
-        week_start: body.week_start.clone(),
-        timezone: body.timezone.clone(),
+        week_start: body.0.settings.week_start,
+        timezone: body.0.settings.timezone,
+        metadata: body.0.metadata,
     };
 
     execute(usecase, &ctx)
@@ -43,7 +44,7 @@ pub async fn update_calendar_settings_admin_controller(
         .map_err(handle_errors)
 }
 
-pub async fn update_calendar_settings_controller(
+pub async fn update_calendar_controller(
     http_req: web::HttpRequest,
     ctx: web::Data<NettuContext>,
     path: web::Path<PathParams>,
@@ -51,11 +52,12 @@ pub async fn update_calendar_settings_controller(
 ) -> Result<HttpResponse, NettuError> {
     let (user, policy) = protect_route(&http_req, &ctx).await?;
 
-    let usecase = UpdateCalendarSettingsUseCase {
+    let usecase = UpdateCalendarUseCase {
         user_id: user.id,
-        calendar_id: path.calendar_id.clone(),
-        week_start: body.week_start.clone(),
-        timezone: body.timezone.clone(),
+        calendar_id: path.0.calendar_id,
+        week_start: body.0.settings.week_start,
+        timezone: body.0.settings.timezone,
+        metadata: body.0.metadata,
     };
 
     execute_with_policy(usecase, &policy, &ctx)
@@ -68,11 +70,12 @@ pub async fn update_calendar_settings_controller(
 }
 
 #[derive(Debug)]
-struct UpdateCalendarSettingsUseCase {
+struct UpdateCalendarUseCase {
     pub user_id: ID,
     pub calendar_id: ID,
     pub week_start: Option<isize>,
     pub timezone: Option<String>,
+    pub metadata: Option<Metadata>,
 }
 
 #[derive(Debug)]
@@ -83,7 +86,7 @@ enum UseCaseErrors {
 }
 
 #[async_trait::async_trait(?Send)]
-impl UseCase for UpdateCalendarSettingsUseCase {
+impl UseCase for UpdateCalendarUseCase {
     type Response = Calendar;
 
     type Errors = UseCaseErrors;
@@ -112,6 +115,10 @@ impl UseCase for UpdateCalendarSettingsUseCase {
             }
         }
 
+        if let Some(metadata) = &self.metadata {
+            calendar.metadata = metadata.clone();
+        }
+
         let repo_res = ctx.repos.calendar_repo.save(&calendar).await;
         match repo_res {
             Ok(_) => Ok(calendar),
@@ -120,7 +127,7 @@ impl UseCase for UpdateCalendarSettingsUseCase {
     }
 }
 
-impl PermissionBoundary for UpdateCalendarSettingsUseCase {
+impl PermissionBoundary for UpdateCalendarUseCase {
     fn permissions(&self) -> Vec<Permission> {
         vec![Permission::UpdateCalendar]
     }
@@ -128,6 +135,8 @@ impl PermissionBoundary for UpdateCalendarSettingsUseCase {
 
 #[cfg(test)]
 mod test {
+    use std::collections::HashMap;
+
     use nettu_scheduler_domain::Calendar;
     use nettu_scheduler_infra::setup_context;
 
@@ -142,11 +151,12 @@ mod test {
         let calendar = Calendar::new(&user_id, &account_id);
         ctx.repos.calendar_repo.insert(&calendar).await.unwrap();
 
-        let mut usecase = UpdateCalendarSettingsUseCase {
+        let mut usecase = UpdateCalendarUseCase {
             calendar_id: calendar.id.into(),
             user_id: user_id.into(),
             week_start: Some(20),
             timezone: None,
+            metadata: None,
         };
         let res = usecase.execute(&ctx).await;
         assert!(res.is_err());
@@ -163,11 +173,12 @@ mod test {
 
         assert_eq!(calendar.settings.week_start, 0);
         let new_wkst = 3;
-        let mut usecase = UpdateCalendarSettingsUseCase {
+        let mut usecase = UpdateCalendarUseCase {
             calendar_id: calendar.id.clone(),
             user_id,
             week_start: Some(new_wkst),
             timezone: None,
+            metadata: Some(HashMap::new()),
         };
         let res = usecase.execute(&ctx).await;
         assert!(res.is_ok());

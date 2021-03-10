@@ -195,6 +195,7 @@ mod test {
             recurrence: None,
             reminder: None,
             services: vec![],
+            metadata: Default::default(),
         };
         let e1rr = RRuleOptions {
             count: Some(100),
@@ -215,6 +216,7 @@ mod test {
             recurrence: None,
             reminder: None,
             services: vec![],
+            metadata: Default::default(),
         };
         let e2rr = RRuleOptions {
             count: Some(100),
@@ -235,6 +237,7 @@ mod test {
             recurrence: None,
             reminder: None,
             services: vec![],
+            metadata: Default::default(),
         };
         let e3rr = RRuleOptions {
             count: Some(100),

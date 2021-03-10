@@ -1,5 +1,5 @@
 <div align="center">
-<img width="400" src="logo.png" alt="logo">
+<img width="400" src="docs/logo.png" alt="logo">
 </div>
 
 # Nettu scheduler

@@ -18,6 +18,8 @@ impl CalendarEventResponse {
 }
 
 pub mod create_event {
+    use nettu_scheduler_domain::Metadata;
+
     use super::*;
 
     #[derive(Serialize, Deserialize)]
@@ -35,6 +37,7 @@ pub mod create_event {
         pub rrule_options: Option<RRuleOptions>,
         pub reminder: Option<CalendarEventReminder>,
         pub services: Option<Vec<String>>,
+        pub metadata: Option<Metadata>,
     }
 
     pub type APIResponse = CalendarEventResponse;
@@ -95,6 +98,8 @@ pub mod get_event {
 }
 
 pub mod update_event {
+    use nettu_scheduler_domain::Metadata;
+
     use super::*;
 
     #[derive(Deserialize, Serialize)]
@@ -107,6 +112,7 @@ pub mod update_event {
         pub services: Option<Vec<String>>,
         pub exdates: Option<Vec<i64>>,
         pub reminder: Option<CalendarEventReminder>,
+        pub metadata: Option<Metadata>,
     }
 
     #[derive(Deserialize)]

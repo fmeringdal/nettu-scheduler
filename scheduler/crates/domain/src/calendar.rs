@@ -1,4 +1,7 @@
-use crate::shared::entity::{Entity, ID};
+use crate::shared::{
+    entity::{Entity, ID},
+    metadata::Metadata,
+};
 use chrono_tz::{Tz, UTC};
 
 #[derive(Debug, Clone)]
@@ -7,6 +10,7 @@ pub struct Calendar {
     pub user_id: ID,
     pub account_id: ID,
     pub settings: CalendarSettings,
+    pub metadata: Metadata,
 }
 
 #[derive(Debug, Clone)]
@@ -52,6 +56,7 @@ impl Calendar {
             user_id: user_id.clone(),
             account_id: account_id.clone(),
             settings: Default::default(),
+            metadata: Default::default(),
         }
     }
 }

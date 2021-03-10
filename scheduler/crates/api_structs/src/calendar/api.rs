@@ -19,6 +19,7 @@ impl CalendarResponse {
 
 pub mod create_calendar {
     use super::*;
+    use nettu_scheduler_domain::Metadata;
 
     #[derive(Deserialize)]
     pub struct PathParams {
@@ -30,6 +31,7 @@ pub mod create_calendar {
     pub struct RequestBody {
         pub timezone: String,
         pub week_start: isize,
+        pub metadata: Option<Metadata>,
     }
 
     pub type APIResponse = CalendarResponse;
@@ -124,8 +126,9 @@ pub mod get_user_freebusy {
     }
 }
 
-pub mod update_calendar_settings {
+pub mod update_calendar {
     use super::*;
+    use nettu_scheduler_domain::Metadata;
 
     #[derive(Deserialize)]
     pub struct PathParams {
@@ -134,9 +137,16 @@ pub mod update_calendar_settings {
 
     #[derive(Deserialize, Serialize)]
     #[serde(rename_all = "camelCase")]
-    pub struct RequestBody {
+    pub struct CalendarSettings {
         pub week_start: Option<isize>,
         pub timezone: Option<String>,
+    }
+
+    #[derive(Deserialize, Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct RequestBody {
+        pub settings: CalendarSettings,
+        pub metadata: Option<Metadata>,
     }
 
     pub type APIResponse = CalendarResponse;

@@ -9,7 +9,7 @@ use crate::{
 };
 use actix_web::{web, HttpResponse};
 use nettu_scheduler_api_structs::create_calendar::{APIResponse, PathParams, RequestBody};
-use nettu_scheduler_domain::{Calendar, CalendarSettings, ID};
+use nettu_scheduler_domain::{Calendar, CalendarSettings, Metadata, ID};
 use nettu_scheduler_infra::NettuContext;
 
 fn error_handler(e: UseCaseErrors) -> NettuError {
@@ -36,6 +36,7 @@ pub async fn create_calendar_admin_controller(
         account_id: account.id,
         week_start: body.0.week_start,
         timezone: body.0.timezone,
+        metadata: body.0.metadata.unwrap_or_default(),
     };
 
     execute(usecase, &ctx)
@@ -56,6 +57,7 @@ pub async fn create_calendar_controller(
         account_id: user.account_id,
         week_start: body.0.week_start,
         timezone: body.0.timezone,
+        metadata: body.0.metadata.unwrap_or_default(),
     };
 
     execute_with_policy(usecase, &policy, &ctx)
@@ -73,6 +75,7 @@ struct CreateCalendarUseCase {
     pub account_id: ID,
     pub week_start: isize,
     pub timezone: String,
+    pub metadata: Metadata,
 }
 
 #[derive(Debug)]
@@ -110,6 +113,7 @@ impl UseCase for CreateCalendarUseCase {
 
         let mut calendar = Calendar::new(&self.user_id, &user.account_id);
         calendar.settings = settings;
+        calendar.metadata = self.metadata.clone();
 
         let res = ctx.repos.calendar_repo.insert(&calendar).await;
         match res {

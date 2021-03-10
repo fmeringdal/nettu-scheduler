@@ -380,6 +380,7 @@ mod test {
             user_id: resource1.user_id.to_owned(),
             reminder: None,
             services: vec![],
+            metadata: Default::default(),
         };
         let availibility_event2 = CalendarEvent {
             id: ID::default(),
@@ -394,6 +395,7 @@ mod test {
             user_id: resource2.user_id.to_owned(),
             reminder: None,
             services: vec![],
+            metadata: Default::default(),
         };
         let mut availibility_event3 = CalendarEvent {
             id: ID::default(),
@@ -408,6 +410,7 @@ mod test {
             user_id: resource1.user_id.to_owned(),
             reminder: None,
             services: vec![],
+            metadata: Default::default(),
         };
         let recurrence = RRuleOptions {
             ..Default::default()

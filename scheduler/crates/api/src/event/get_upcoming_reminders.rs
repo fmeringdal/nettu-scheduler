@@ -7,20 +7,9 @@ use std::time::Duration;
 
 /// Creates EventReminders for a calendar event
 #[derive(Debug)]
-pub struct GetUpcomingRemindersUseCase {}
-
-struct SendEventRemindersConfig {
-    send_interval: i64,
-    computation_time: i64,
-}
-
-impl GetUpcomingRemindersUseCase {
-    fn get_config() -> SendEventRemindersConfig {
-        SendEventRemindersConfig {
-            send_interval: 60 * 1000,        // every minute
-            computation_time: 3 * 60 * 1000, // Expect to be able to get all reminders in 3 minutes
-        }
-    }
+pub struct GetUpcomingRemindersUseCase {
+    /// Will fetch reminders for this interval
+    pub reminders_interval: i64,
 }
 
 #[derive(Debug)]
@@ -143,8 +132,7 @@ impl UseCase for GetUpcomingRemindersUseCase {
     /// This will run every minute
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         // Find all occurences for the next interval and delete them
-        let conf = Self::get_config();
-        let ts = ctx.sys.get_timestamp_millis() + conf.send_interval + conf.computation_time;
+        let ts = ctx.sys.get_timestamp_millis() + self.reminders_interval;
 
         // Get all reminders and filter out invalid / expired reminders
         let mut reminders = ctx.repos.reminder_repo.delete_all_before(ts).await;
@@ -305,6 +293,7 @@ mod tests {
             rrule_options: Some(Default::default()),
             reminder: Some(CalendarEventReminder { minutes_before: 10 }),
             services: vec![],
+            metadata: Default::default(),
         };
 
         usecase.execute(ctx).await.unwrap();
@@ -320,6 +309,7 @@ mod tests {
             rrule_options: None,
             reminder: Some(CalendarEventReminder { minutes_before: 10 }),
             services: vec![],
+            metadata: Default::default(),
         };
 
         usecase.execute(ctx).await.unwrap();
@@ -333,7 +323,9 @@ mod tests {
 
         insert_events(&ctx).await;
 
-        let mut usecase = GetUpcomingRemindersUseCase {};
+        let mut usecase = GetUpcomingRemindersUseCase {
+            reminders_interval: 1000 * 60,
+        };
         let res = usecase.execute(&ctx).await;
         println!("1. Reminders got: {:?}", res);
         assert!(res.is_ok());
@@ -342,7 +334,9 @@ mod tests {
         assert_eq!(res[0].1.events.len(), 1);
 
         ctx.sys = Arc::new(StaticTimeSys2 {});
-        let mut usecase = GetUpcomingRemindersUseCase {};
+        let mut usecase = GetUpcomingRemindersUseCase {
+            reminders_interval: 1000 * 60,
+        };
         let res = usecase.execute(&ctx).await;
         println!("2. Reminders got: {:?}", res);
         assert!(res.is_ok());
@@ -350,7 +344,9 @@ mod tests {
         assert_eq!(res.len(), 0);
 
         ctx.sys = Arc::new(StaticTimeSys3 {});
-        let mut usecase = GetUpcomingRemindersUseCase {};
+        let mut usecase = GetUpcomingRemindersUseCase {
+            reminders_interval: 1000 * 60,
+        };
         let res = usecase.execute(&ctx).await;
         println!("3. Reminders got: {:?}", res);
         assert!(res.is_ok());

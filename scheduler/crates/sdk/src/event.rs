@@ -1,6 +1,7 @@
 use crate::{APIResponse, BaseClient};
 use crate::{CalendarEventReminder, RRuleOptions, ID};
 use nettu_scheduler_api_structs::*;
+use nettu_scheduler_domain::Metadata;
 use reqwest::StatusCode;
 use std::sync::Arc;
 
@@ -34,6 +35,7 @@ pub struct UpdateEventInput {
     pub rrule_options: Option<RRuleOptions>,
     pub services: Option<Vec<String>>,
     pub exdates: Option<Vec<i64>>,
+    pub metadata: Option<Metadata>,
 }
 
 impl CalendarEventClient {
@@ -92,6 +94,7 @@ impl CalendarEventClient {
             reminder: input.reminder,
             services: input.services,
             start_ts: input.start_ts,
+            metadata: input.metadata,
         };
         self.base
             .put(body, format!("user/events/{}", event_id), StatusCode::OK)

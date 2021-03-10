@@ -8,7 +8,7 @@ use mongodb::{
     bson::{doc, oid::ObjectId, Document},
     Collection, Database,
 };
-use nettu_scheduler_domain::{Calendar, CalendarSettings, ID};
+use nettu_scheduler_domain::{Calendar, CalendarSettings, Metadata, ID};
 use serde::{Deserialize, Serialize};
 
 pub struct MongoCalendarRepo {
@@ -67,6 +67,7 @@ struct CalendarMongo {
     user_id: ObjectId,
     account_id: ObjectId,
     settings: CalendarSettingsMongo,
+    metadata: Metadata,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -85,6 +86,7 @@ impl MongoDocument<Calendar> for CalendarMongo {
                 week_start: self.settings.week_start,
                 timezone: self.settings.timezone.parse().unwrap(),
             },
+            metadata: self.metadata.clone(),
         }
     }
 
@@ -97,6 +99,7 @@ impl MongoDocument<Calendar> for CalendarMongo {
                 week_start: calendar.settings.week_start,
                 timezone: calendar.settings.timezone.to_string(),
             },
+            metadata: calendar.metadata.clone(),
         }
     }
 

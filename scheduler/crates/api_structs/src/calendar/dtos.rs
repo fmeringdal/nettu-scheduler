@@ -1,4 +1,4 @@
-use nettu_scheduler_domain::{Calendar, CalendarSettings, ID};
+use nettu_scheduler_domain::{Calendar, CalendarSettings, Metadata, ID};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -7,6 +7,7 @@ pub struct CalendarDTO {
     pub id: ID,
     pub user_id: ID,
     pub settings: CalendarSettingsDTO,
+    pub metadata: Metadata,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -22,6 +23,7 @@ impl CalendarDTO {
             id: calendar.id.clone(),
             user_id: calendar.user_id.clone(),
             settings: CalendarSettingsDTO::new(&calendar.settings),
+            metadata: calendar.metadata,
         }
     }
 }

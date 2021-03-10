@@ -54,7 +54,9 @@ pub fn start_send_reminders_job(ctx: NettuContext) {
 async fn send_reminders(context: NettuContext) {
     let client = Client::new();
 
-    let usecase = GetUpcomingRemindersUseCase {};
+    let usecase = GetUpcomingRemindersUseCase {
+        reminders_interval: 1000 * 60,
+    };
     let account_reminders = match execute(usecase, &context).await {
         Ok(res) => res,
         Err(_) => return,
@@ -62,7 +64,11 @@ async fn send_reminders(context: NettuContext) {
 
     let send_instant = account_reminders.1;
     delay_until(send_instant).await;
-    // println!("Reminders to send: {:?}", account_reminders);
+    println!(
+        "Reminders to send at {} : {:?}",
+        context.sys.get_timestamp_millis(),
+        account_reminders
+    );
 
     for (acc, reminders) in account_reminders.0 {
         match acc.settings.webhook {

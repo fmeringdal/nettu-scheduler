@@ -14,7 +14,7 @@ use event::sync_event_reminders::{
     EventOperation, SyncEventRemindersTrigger, SyncEventRemindersUseCase,
 };
 use nettu_scheduler_api_structs::update_event::*;
-use nettu_scheduler_domain::{CalendarEvent, CalendarEventReminder, RRuleOptions, ID};
+use nettu_scheduler_domain::{CalendarEvent, CalendarEventReminder, Metadata, RRuleOptions, ID};
 use nettu_scheduler_infra::NettuContext;
 
 fn handle_error(e: UseCaseErrors) -> NettuError {
@@ -53,6 +53,7 @@ pub async fn update_event_admin_controller(
         busy: body.busy,
         services: body.services,
         exdates: body.exdates,
+        metadata: body.metadata,
     };
 
     execute(usecase, &ctx)
@@ -80,6 +81,7 @@ pub async fn update_event_controller(
         busy: body.busy,
         services: body.services,
         exdates: body.exdates,
+        metadata: body.metadata,
     };
 
     execute_with_policy(usecase, &policy, &ctx)
@@ -102,6 +104,7 @@ pub struct UpdateEventUseCase {
     pub rrule_options: Option<RRuleOptions>,
     pub services: Option<Vec<String>>,
     pub exdates: Option<Vec<i64>>,
+    pub metadata: Option<Metadata>,
 }
 
 #[derive(Debug)]
@@ -129,6 +132,7 @@ impl UseCase for UpdateEventUseCase {
             exdates,
             reminder,
             services,
+            metadata,
         } = self;
 
         let mut e = match ctx.repos.event_repo.find(&event_id).await {
@@ -147,6 +151,9 @@ impl UseCase for UpdateEventUseCase {
 
         if let Some(exdates) = exdates {
             e.exdates = exdates.clone();
+        }
+        if let Some(metadata) = metadata {
+            e.metadata = metadata.clone();
         }
 
         if let Some(reminder) = &e.reminder {
@@ -242,6 +249,7 @@ mod test {
             user_id: Default::default(),
             services: None,
             exdates: None,
+            metadata: None,
         };
         let ctx = setup_context().await;
         let res = usecase.execute(&ctx).await;
