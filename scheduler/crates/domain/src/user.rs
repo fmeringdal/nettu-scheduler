@@ -1,6 +1,6 @@
 use crate::{
     shared::entity::{Entity, ID},
-    Metadata,
+    Meta, Metadata,
 };
 
 #[derive(Debug, Clone)]
@@ -23,5 +23,14 @@ impl User {
 impl Entity for User {
     fn id(&self) -> &ID {
         &self.id
+    }
+}
+
+impl Meta for User {
+    fn metadata(&self) -> &Metadata {
+        &self.metadata
+    }
+    fn account_id(&self) -> &ID {
+        &self.account_id
     }
 }

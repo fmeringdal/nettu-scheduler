@@ -1,6 +1,9 @@
 use super::IEventRepo;
-use crate::repos::shared::mongo_repo::{self};
 use crate::repos::shared::repo::DeleteResult;
+use crate::repos::shared::{
+    mongo_repo::{self, MongoMetadata},
+    query_structs::MetadataFindQuery,
+};
 use mongo_repo::MongoDocument;
 use mongodb::{
     bson::doc,
@@ -102,6 +105,10 @@ impl IEventRepo for MongoEventRepo {
         };
         mongo_repo::delete_many_by::<_, CalendarEventMongo>(&self.collection, filter).await
     }
+
+    async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<CalendarEvent> {
+        mongo_repo::find_by_metadata::<_, CalendarEventMongo>(&self.collection, query).await
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -118,25 +125,25 @@ struct CalendarEventMongo {
     recurrence: Option<RRuleOptions>,
     reminder: Option<CalendarEventReminder>,
     services: Vec<String>,
-    metadata: Metadata,
+    metadata: Vec<MongoMetadata>,
 }
 
 impl MongoDocument<CalendarEvent> for CalendarEventMongo {
-    fn to_domain(&self) -> CalendarEvent {
+    fn to_domain(self) -> CalendarEvent {
         CalendarEvent {
-            id: ID::from(self._id.clone()),
+            id: ID::from(self._id),
             start_ts: self.start_ts,
             duration: self.duration,
             end_ts: self.end_ts,
             busy: self.busy,
-            user_id: ID::from(self.user_id.clone()),
-            account_id: ID::from(self.account_id.clone()),
-            calendar_id: ID::from(self.calendar_id.clone()),
-            exdates: self.exdates.clone(),
-            recurrence: self.recurrence.clone(),
-            reminder: self.reminder.clone(),
-            services: self.services.clone(),
-            metadata: self.metadata.clone(),
+            user_id: ID::from(self.user_id),
+            account_id: ID::from(self.account_id),
+            calendar_id: ID::from(self.calendar_id),
+            exdates: self.exdates,
+            recurrence: self.recurrence,
+            reminder: self.reminder,
+            services: self.services,
+            metadata: MongoMetadata::to_metadata(self.metadata),
         }
     }
 
@@ -154,13 +161,13 @@ impl MongoDocument<CalendarEvent> for CalendarEventMongo {
             recurrence: event.recurrence.clone(),
             reminder: event.reminder.clone(),
             services: event.services.clone(),
-            metadata: event.metadata.clone(),
+            metadata: MongoMetadata::new(event.metadata.clone()),
         }
     }
 
     fn get_id_filter(&self) -> Document {
         doc! {
-            "_id": self._id.clone()
+            "_id": &self._id
         }
     }
 }

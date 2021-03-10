@@ -91,12 +91,12 @@ struct ReminderMongo {
 }
 
 impl MongoDocument<Reminder> for ReminderMongo {
-    fn to_domain(&self) -> Reminder {
+    fn to_domain(self) -> Reminder {
         Reminder {
-            id: ID::from(self._id.clone()),
+            id: ID::from(self._id),
             remind_at: self.remind_at,
-            event_id: ID::from(self.event_id.clone()),
-            account_id: ID::from(self.account_id.clone()),
+            event_id: ID::from(self.event_id),
+            account_id: ID::from(self.account_id),
             priority: self.priority,
         }
     }
@@ -113,7 +113,7 @@ impl MongoDocument<Reminder> for ReminderMongo {
 
     fn get_id_filter(&self) -> Document {
         doc! {
-            "_id": self._id.clone()
+            "_id": &self._id
         }
     }
 }

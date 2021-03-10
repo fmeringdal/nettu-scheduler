@@ -1,15 +1,19 @@
-use super::repo::DeleteResult;
+use std::cmp::max;
+
+use super::{query_structs::MetadataFindQuery, repo::DeleteResult};
 use anyhow::Result;
 use futures::stream::StreamExt;
 use mongodb::{
     bson::{self, doc, oid::ObjectId, to_bson, Document},
-    Collection,
+    options::FindOptions,
+    Collection, Cursor,
 };
-use serde::{de::DeserializeOwned, Serialize};
+use nettu_scheduler_domain::Metadata;
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use tracing::error;
 
 pub trait MongoDocument<E>: Serialize + DeserializeOwned {
-    fn to_domain(&self) -> E;
+    fn to_domain(self) -> E;
     fn from_domain(entity: &E) -> Self;
     fn get_id_filter(&self) -> Document;
 }
@@ -101,21 +105,7 @@ pub async fn find_many_by<E, D: MongoDocument<E>>(
     let res = coll.find(filter, None).await;
 
     match res {
-        Ok(mut cursor) => {
-            let mut documents = vec![];
-            while let Some(result) = cursor.next().await {
-                match result {
-                    Ok(document) => {
-                        documents.push(persistence_to_entity::<E, D>(document));
-                    }
-                    Err(e) => {
-                        error!("Error getting cursor for calendar event repo: {:?}", e);
-                    }
-                }
-            }
-
-            Ok(documents)
-        }
+        Ok(cursor) => Ok(consume_cursor::<E, D>(cursor).await),
         Err(err) => Err(anyhow::Error::new(err)),
     }
 }
@@ -140,4 +130,73 @@ pub async fn delete_many_by<E, D: MongoDocument<E>>(
     Ok(DeleteResult {
         deleted_count: res.deleted_count,
     })
+}
+
+async fn consume_cursor<E, D: MongoDocument<E>>(mut cursor: Cursor) -> Vec<E> {
+    let mut documents = vec![];
+    while let Some(result) = cursor.next().await {
+        match result {
+            Ok(document) => {
+                documents.push(persistence_to_entity::<E, D>(document));
+            }
+            Err(e) => {
+                error!("Error getting cursor for calendar event repo: {:?}", e);
+            }
+        }
+    }
+
+    documents
+}
+
+pub async fn find_by_metadata<E, D: MongoDocument<E>>(
+    collection: &Collection,
+    query: MetadataFindQuery,
+) -> Vec<E> {
+    let limit = max(query.limit, 100);
+
+    let filter = doc! {
+        "metadata": {
+            "$elemMatch": {
+                "key": query.metadata.key,
+                "value": query.metadata.value
+            }
+        },
+        "account_id": query.account_id.inner()
+    };
+
+    let mut find_options = FindOptions::builder().build();
+    find_options.skip = Some(query.skip as i64);
+    find_options.limit = Some(limit as i64);
+
+    // find_options.
+    match collection.find(filter, find_options).await {
+        Ok(cursor) => consume_cursor::<E, D>(cursor).await,
+        Err(_) => vec![],
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct MongoMetadata {
+    pub key: String,
+    pub value: String,
+}
+
+impl MongoMetadata {
+    pub fn new(meta: Metadata) -> Vec<Self> {
+        let mut mongo_meta = Vec::with_capacity(meta.len());
+        for (key, value) in meta {
+            mongo_meta.push(Self { key, value });
+        }
+        mongo_meta
+    }
+
+    pub fn to_metadata(mongo_metas: Vec<Self>) -> Metadata {
+        let mut metadata = Metadata::with_capacity(mongo_metas.len());
+
+        for mongo_meta in mongo_metas {
+            metadata.insert(mongo_meta.key, mongo_meta.value);
+        }
+
+        metadata
+    }
 }

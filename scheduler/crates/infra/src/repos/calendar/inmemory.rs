@@ -1,5 +1,7 @@
 use super::ICalendarRepo;
-use crate::repos::shared::{inmemory_repo::*, repo::DeleteResult};
+use crate::repos::shared::{
+    inmemory_repo::*, query_structs::MetadataFindQuery, repo::DeleteResult,
+};
 use nettu_scheduler_domain::{Calendar, ID};
 
 pub struct InMemoryCalendarRepo {
@@ -41,5 +43,9 @@ impl ICalendarRepo for InMemoryCalendarRepo {
     async fn delete_by_user(&self, user_id: &ID) -> anyhow::Result<DeleteResult> {
         let res = delete_by(&self.calendars, |cal| cal.user_id == *user_id);
         Ok(res)
+    }
+
+    async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<Calendar> {
+        find_by_metadata(&self.calendars, query)
     }
 }

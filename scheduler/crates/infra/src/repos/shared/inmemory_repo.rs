@@ -1,6 +1,8 @@
 use crate::repos::shared::repo::DeleteResult;
-use nettu_scheduler_domain::{Entity, ID};
+use nettu_scheduler_domain::{Entity, Meta, ID};
 use std::sync::Mutex;
+
+use super::query_structs::MetadataFindQuery;
 
 /// Useful functions for creating inmemory repositories
 
@@ -93,4 +95,21 @@ pub fn update_many<T: Clone + Entity, F: Fn(&T) -> bool, U: Fn(&mut T)>(
             update(&mut collection[index]);
         }
     }
+}
+
+/// Ignores skip and limit as this is just used for testing
+pub fn find_by_metadata<T: Clone + Entity + Meta>(
+    collection: &Mutex<Vec<T>>,
+    query: MetadataFindQuery,
+) -> Vec<T> {
+    find_by(collection, |e| {
+        match e.metadata().get(&query.metadata.key) {
+            Some(value)
+                if *value == query.metadata.value && *e.account_id() == query.account_id =>
+            {
+                true
+            }
+            _ => false,
+        }
+    })
 }

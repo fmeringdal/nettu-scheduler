@@ -1,6 +1,7 @@
 use super::IUserRepo;
-use crate::repos::shared::mongo_repo;
 use crate::repos::shared::mongo_repo::MongoDocument;
+use crate::repos::shared::{mongo_repo, query_structs::MetadataFindQuery};
+use mongo_repo::MongoMetadata;
 use mongodb::{
     bson::{doc, oid::ObjectId, Document},
     Collection, Database,
@@ -30,6 +31,10 @@ impl IUserRepo for MongoUserRepo {
         mongo_repo::save::<_, UserMongo>(&self.collection, user).await
     }
 
+    async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<User> {
+        mongo_repo::find_by_metadata::<_, UserMongo>(&self.collection, query).await
+    }
+
     async fn find(&self, user_id: &ID) -> Option<User> {
         let oid = user_id.inner_ref();
         mongo_repo::find::<_, UserMongo>(&self.collection, &oid).await
@@ -53,15 +58,15 @@ impl IUserRepo for MongoUserRepo {
 struct UserMongo {
     _id: ObjectId,
     account_id: ObjectId,
-    metadata: Metadata,
+    metadata: Vec<MongoMetadata>,
 }
 
 impl MongoDocument<User> for UserMongo {
-    fn to_domain(&self) -> User {
+    fn to_domain(self) -> User {
         User {
-            id: ID::from(self._id.clone()),
-            account_id: ID::from(self.account_id.clone()),
-            metadata: self.metadata.clone(),
+            id: ID::from(self._id),
+            account_id: ID::from(self.account_id),
+            metadata: MongoMetadata::to_metadata(self.metadata),
         }
     }
 
@@ -69,13 +74,13 @@ impl MongoDocument<User> for UserMongo {
         Self {
             _id: user.id.inner_ref().clone(),
             account_id: user.account_id.inner_ref().clone(),
-            metadata: user.metadata.clone(),
+            metadata: MongoMetadata::new(user.metadata.clone()),
         }
     }
 
     fn get_id_filter(&self) -> Document {
         doc! {
-            "_id": self._id.clone()
+            "_id": &self._id
         }
     }
 }

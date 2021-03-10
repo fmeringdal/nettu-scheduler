@@ -1,6 +1,9 @@
 use super::IServiceRepo;
-use crate::repos::shared::mongo_repo::{self};
-use mongo_repo::MongoDocument;
+use crate::repos::shared::{
+    mongo_repo::{self},
+    query_structs::MetadataFindQuery,
+};
+use mongo_repo::{MongoDocument, MongoMetadata};
 use mongodb::{
     bson::{doc, oid::ObjectId, Document},
     Collection, Database,
@@ -92,6 +95,10 @@ impl IServiceRepo for MongoServiceRepo {
         };
         mongo_repo::update_many::<_, ServiceMongo>(&self.collection, filter, update).await
     }
+
+    async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<Service> {
+        mongo_repo::find_by_metadata::<_, ServiceMongo>(&self.collection, query).await
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -117,28 +124,28 @@ struct ServiceMongo {
     pub account_id: ObjectId,
     pub users: Vec<ServiceResourceMongo>,
     pub attributes: Vec<DocumentAttribute>,
-    pub metadata: Metadata,
+    pub metadata: Vec<MongoMetadata>,
 }
 
 impl MongoDocument<Service> for ServiceMongo {
-    fn to_domain(&self) -> Service {
+    fn to_domain(self) -> Service {
         Service {
-            id: ID::from(self._id.clone()),
-            account_id: ID::from(self.account_id.clone()),
+            id: ID::from(self._id),
+            account_id: ID::from(self.account_id),
             users: self
                 .users
-                .iter()
+                .into_iter()
                 .map(|user| ServiceResource {
-                    id: ID::from(user._id.clone()),
-                    user_id: ID::from(user.user_id.clone()),
-                    availibility: user.availibility.clone(),
-                    busy: user.busy.iter().map(|id| ID::from(id.clone())).collect(),
+                    id: ID::from(user._id),
+                    user_id: ID::from(user.user_id),
+                    availibility: user.availibility,
+                    busy: user.busy.into_iter().map(|id| ID::from(id)).collect(),
                     buffer: user.buffer,
                     closest_booking_time: user.closest_booking_time,
                     furthest_booking_time: user.furthest_booking_time,
                 })
                 .collect(),
-            metadata: self.metadata.clone(),
+            metadata: MongoMetadata::to_metadata(self.metadata),
         }
     }
 
@@ -159,7 +166,7 @@ impl MongoDocument<Service> for ServiceMongo {
                     furthest_booking_time: user.furthest_booking_time,
                 })
                 .collect(),
-            metadata: service.metadata.clone(),
+            metadata: MongoMetadata::new(service.metadata.clone()),
             attributes: vec![
                 DocumentAttribute {
                     key: "calendars".into(),
@@ -191,7 +198,7 @@ impl MongoDocument<Service> for ServiceMongo {
 
     fn get_id_filter(&self) -> Document {
         doc! {
-            "_id": self._id.clone()
+            "_id": &self._id
         }
     }
 }

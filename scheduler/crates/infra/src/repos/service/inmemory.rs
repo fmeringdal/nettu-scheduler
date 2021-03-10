@@ -1,5 +1,5 @@
 use super::IServiceRepo;
-use crate::repos::shared::inmemory_repo::*;
+use crate::repos::shared::{inmemory_repo::*, query_structs::MetadataFindQuery};
 use nettu_scheduler_domain::{Service, ID};
 
 pub struct InMemoryServiceRepo {
@@ -89,5 +89,9 @@ impl IServiceRepo for InMemoryServiceRepo {
             },
         );
         Ok(())
+    }
+
+    async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<Service> {
+        find_by_metadata(&self.services, query)
     }
 }

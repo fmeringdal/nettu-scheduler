@@ -83,12 +83,12 @@ struct ScheduleMongo {
 }
 
 impl MongoDocument<Schedule> for ScheduleMongo {
-    fn to_domain(&self) -> Schedule {
+    fn to_domain(self) -> Schedule {
         Schedule {
-            id: ID::from(self._id.clone()),
-            user_id: ID::from(self.user_id.clone()),
-            account_id: ID::from(self.account_id.clone()),
-            rules: self.rules.to_owned(),
+            id: ID::from(self._id),
+            user_id: ID::from(self.user_id),
+            account_id: ID::from(self.account_id),
+            rules: self.rules,
             timezone: self.timezone.parse().unwrap(),
         }
     }
@@ -105,7 +105,7 @@ impl MongoDocument<Schedule> for ScheduleMongo {
 
     fn get_id_filter(&self) -> Document {
         doc! {
-            "_id": self._id.clone()
+            "_id": &self._id
         }
     }
 }

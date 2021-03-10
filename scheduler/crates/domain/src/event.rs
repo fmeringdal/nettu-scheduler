@@ -3,6 +3,7 @@ use crate::{
     shared::entity::Entity,
     shared::{metadata::Metadata, recurrence::RRuleOptions},
     timespan::TimeSpan,
+    Meta,
 };
 use crate::{event_instance::EventInstance, shared::entity::ID};
 use chrono::{prelude::*, Duration};
@@ -24,6 +25,21 @@ pub struct CalendarEvent {
     pub reminder: Option<CalendarEventReminder>,
     pub services: Vec<String>,
     pub metadata: Metadata,
+}
+
+impl Entity for CalendarEvent {
+    fn id(&self) -> &ID {
+        &self.id
+    }
+}
+
+impl Meta for CalendarEvent {
+    fn metadata(&self) -> &Metadata {
+        &self.metadata
+    }
+    fn account_id(&self) -> &ID {
+        &self.account_id
+    }
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -149,12 +165,6 @@ impl CalendarEvent {
                 }
             }
         }
-    }
-}
-
-impl Entity for CalendarEvent {
-    fn id(&self) -> &ID {
-        &self.id
     }
 }
 

@@ -1,6 +1,6 @@
 use crate::{
     shared::entity::{Entity, ID},
-    Metadata,
+    Meta, Metadata,
 };
 use serde::{Deserialize, Serialize};
 
@@ -152,6 +152,15 @@ pub struct Service {
 impl Entity for Service {
     fn id(&self) -> &ID {
         &self.id
+    }
+}
+
+impl Meta for Service {
+    fn metadata(&self) -> &Metadata {
+        &self.metadata
+    }
+    fn account_id(&self) -> &ID {
+        &self.account_id
     }
 }
 

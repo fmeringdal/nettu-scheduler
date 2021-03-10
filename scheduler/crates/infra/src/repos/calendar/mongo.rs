@@ -1,6 +1,7 @@
 use super::ICalendarRepo;
 use crate::repos::shared::{
-    mongo_repo::{self},
+    mongo_repo::{self, MongoMetadata},
+    query_structs::MetadataFindQuery,
     repo::DeleteResult,
 };
 use mongo_repo::MongoDocument;
@@ -59,6 +60,10 @@ impl ICalendarRepo for MongoCalendarRepo {
         };
         mongo_repo::delete_many_by::<_, CalendarMongo>(&self.collection, filter).await
     }
+
+    async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<Calendar> {
+        mongo_repo::find_by_metadata::<_, CalendarMongo>(&self.collection, query).await
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -67,7 +72,7 @@ struct CalendarMongo {
     user_id: ObjectId,
     account_id: ObjectId,
     settings: CalendarSettingsMongo,
-    metadata: Metadata,
+    metadata: Vec<MongoMetadata>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -77,16 +82,16 @@ struct CalendarSettingsMongo {
 }
 
 impl MongoDocument<Calendar> for CalendarMongo {
-    fn to_domain(&self) -> Calendar {
+    fn to_domain(self) -> Calendar {
         Calendar {
-            id: ID::from(self._id.clone()),
-            user_id: ID::from(self.user_id.clone()),
-            account_id: ID::from(self.account_id.clone()),
+            id: ID::from(self._id),
+            user_id: ID::from(self.user_id),
+            account_id: ID::from(self.account_id),
             settings: CalendarSettings {
                 week_start: self.settings.week_start,
                 timezone: self.settings.timezone.parse().unwrap(),
             },
-            metadata: self.metadata.clone(),
+            metadata: MongoMetadata::to_metadata(self.metadata),
         }
     }
 
@@ -99,13 +104,13 @@ impl MongoDocument<Calendar> for CalendarMongo {
                 week_start: calendar.settings.week_start,
                 timezone: calendar.settings.timezone.to_string(),
             },
-            metadata: calendar.metadata.clone(),
+            metadata: MongoMetadata::new(calendar.metadata.clone()),
         }
     }
 
     fn get_id_filter(&self) -> Document {
         doc! {
-            "_id": self._id.clone()
+            "_id": &self._id
         }
     }
 }

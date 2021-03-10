@@ -6,6 +6,8 @@ pub use inmemory::InMemoryCalendarRepo;
 pub use mongo::MongoCalendarRepo;
 use nettu_scheduler_domain::{Calendar, ID};
 
+use super::shared::query_structs::MetadataFindQuery;
+
 #[async_trait::async_trait]
 pub trait ICalendarRepo: Send + Sync {
     async fn insert(&self, calendar: &Calendar) -> anyhow::Result<()>;
@@ -14,6 +16,7 @@ pub trait ICalendarRepo: Send + Sync {
     async fn find_by_user(&self, user_id: &ID) -> Vec<Calendar>;
     async fn delete(&self, calendar_id: &ID) -> Option<Calendar>;
     async fn delete_by_user(&self, user_id: &ID) -> anyhow::Result<DeleteResult>;
+    async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<Calendar>;
 }
 
 #[cfg(test)]

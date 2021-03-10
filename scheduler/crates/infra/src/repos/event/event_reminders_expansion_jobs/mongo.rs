@@ -80,10 +80,10 @@ struct EventRemindersExpansionJobMongo {
 }
 
 impl MongoDocument<EventRemindersExpansionJob> for EventRemindersExpansionJobMongo {
-    fn to_domain(&self) -> EventRemindersExpansionJob {
+    fn to_domain(self) -> EventRemindersExpansionJob {
         EventRemindersExpansionJob {
-            id: ID::from(self._id.clone()),
-            event_id: ID::from(self.event_id.clone()),
+            id: ID::from(self._id),
+            event_id: ID::from(self.event_id),
             timestamp: self.timestamp,
         }
     }
@@ -98,7 +98,7 @@ impl MongoDocument<EventRemindersExpansionJob> for EventRemindersExpansionJobMon
 
     fn get_id_filter(&self) -> Document {
         doc! {
-            "_id": self._id.clone()
+            "_id": &self._id
         }
     }
 }

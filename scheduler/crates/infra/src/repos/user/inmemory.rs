@@ -1,6 +1,6 @@
 use super::IUserRepo;
-use crate::repos::shared::inmemory_repo::*;
-use nettu_scheduler_domain::{User, ID};
+use crate::repos::shared::{inmemory_repo::*, query_structs::MetadataFindQuery};
+use nettu_scheduler_domain::{Metadata, User, ID};
 
 pub struct InMemoryUserRepo {
     users: std::sync::Mutex<Vec<User>>,
@@ -32,6 +32,11 @@ impl IUserRepo for InMemoryUserRepo {
 
     async fn find(&self, user_id: &ID) -> Option<User> {
         find(user_id, &self.users)
+    }
+
+    /// Ignores skip and limit as this is just used for testing
+    async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<User> {
+        find_by_metadata(&self.users, query)
     }
 
     async fn find_by_account_id(&self, user_id: &ID, account_id: &ID) -> Option<User> {

@@ -85,7 +85,7 @@ struct AccountWebhookSettingsMongo {
 }
 
 impl<'de> MongoDocument<Account> for AccountMongo {
-    fn to_domain(&self) -> Account {
+    fn to_domain(self) -> Account {
         let mut settings = AccountSettings { webhook: None };
         if let Some(webhook_settings) = self.settings.webhook.as_ref() {
             settings.webhook = Some(AccountWebhookSettings {
@@ -95,9 +95,9 @@ impl<'de> MongoDocument<Account> for AccountMongo {
         }
 
         Account {
-            id: ID::from(self._id.clone()),
-            public_jwt_key: self.public_jwt_key.clone(),
-            secret_api_key: self.secret_api_key.clone(),
+            id: ID::from(self._id),
+            public_jwt_key: self.public_jwt_key,
+            secret_api_key: self.secret_api_key,
             settings,
         }
     }
@@ -121,7 +121,7 @@ impl<'de> MongoDocument<Account> for AccountMongo {
 
     fn get_id_filter(&self) -> Document {
         doc! {
-            "_id": self._id.clone()
+            "_id": &self._id
         }
     }
 }
