@@ -4,6 +4,7 @@ mod calendar;
 mod event;
 mod schedule;
 mod service;
+mod shared;
 mod status;
 mod user;
 
@@ -20,7 +21,7 @@ pub(crate) use base::{APIResponse, BaseClient};
 
 pub use calendar::{
     CreateCalendarInput, DeleteCalendarInput, GetCalendarEventsInput, GetCalendarInput,
-    UpdateCalendarSettingsInput,
+    UpdateCalendarInput,
 };
 pub use event::{
     CreateEventInput, DeleteEventInput, GetEventInput, GetEventsInstancesInput, UpdateEventInput,

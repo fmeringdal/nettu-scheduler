@@ -141,6 +141,7 @@ pub mod get_services_by_meta {
     use super::*;
 
     #[derive(Deserialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct QueryParams {
         pub key: String,
         pub value: String,
@@ -148,7 +149,7 @@ pub mod get_services_by_meta {
         pub limit: Option<usize>,
     }
 
-    #[derive(Serialize)]
+    #[derive(Deserialize, Serialize)]
     pub struct APIResponse {
         pub services: Vec<ServiceDTO>,
     }

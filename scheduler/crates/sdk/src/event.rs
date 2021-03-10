@@ -1,4 +1,4 @@
-use crate::{APIResponse, BaseClient};
+use crate::{shared::MetadataFindInput, APIResponse, BaseClient};
 use crate::{CalendarEventReminder, RRuleOptions, ID};
 use nettu_scheduler_api_structs::*;
 use nettu_scheduler_domain::Metadata;
@@ -80,6 +80,18 @@ impl CalendarEventClient {
                 input,
                 format!("user/{}/events", user_id),
                 StatusCode::CREATED,
+            )
+            .await
+    }
+
+    pub async fn get_by_meta(
+        &self,
+        input: MetadataFindInput,
+    ) -> APIResponse<get_events_by_meta::APIResponse> {
+        self.base
+            .get(
+                format!("events/meta?{}", input.to_query_string()),
+                StatusCode::OK,
             )
             .await
     }

@@ -1,5 +1,6 @@
-use crate::{APIResponse, BaseClient, TimePlan, ID};
+use crate::{shared::MetadataFindInput, APIResponse, BaseClient, TimePlan, ID};
 use nettu_scheduler_api_structs::*;
+use nettu_scheduler_domain::Metadata;
 use reqwest::StatusCode;
 use serde::Serialize;
 use std::sync::Arc;
@@ -40,6 +41,11 @@ pub struct GetSerivceBookingSlotsInput {
     pub duration: i64,
     pub interval: i64,
     pub date: String,
+}
+
+pub struct UpdateServiceInput {
+    pub service_id: ID,
+    pub metadata: Option<Metadata>,
 }
 
 #[derive(Serialize)]
@@ -86,6 +92,34 @@ impl ServiceClient {
         let body = Empty {};
         self.base
             .post(body, "service".into(), StatusCode::CREATED)
+            .await
+    }
+
+    pub async fn update(
+        &self,
+        input: UpdateServiceInput,
+    ) -> APIResponse<update_service::APIResponse> {
+        let body = update_service::RequestBody {
+            metadata: input.metadata,
+        };
+        self.base
+            .put(
+                body,
+                format!("service/{}", input.service_id),
+                StatusCode::OK,
+            )
+            .await
+    }
+
+    pub async fn get_by_meta(
+        &self,
+        input: MetadataFindInput,
+    ) -> APIResponse<get_services_by_meta::APIResponse> {
+        self.base
+            .get(
+                format!("service/meta?{}", input.to_query_string()),
+                StatusCode::OK,
+            )
             .await
     }
 

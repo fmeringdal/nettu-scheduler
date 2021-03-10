@@ -1,8 +1,12 @@
-use crate::{APIResponse, BaseClient, ID};
 use nettu_scheduler_api_structs::*;
-use nettu_scheduler_domain::Metadata;
+use nettu_scheduler_domain::{Metadata, ID};
 use reqwest::StatusCode;
 use std::sync::Arc;
+
+use crate::{
+    base::{APIResponse, BaseClient},
+    shared::MetadataFindInput,
+};
 
 #[derive(Clone)]
 pub struct CalendarClient {
@@ -30,7 +34,7 @@ pub struct DeleteCalendarInput {
     pub calendar_id: ID,
 }
 
-pub struct UpdateCalendarSettingsInput {
+pub struct UpdateCalendarInput {
     pub calendar_id: ID,
     pub week_start: Option<isize>,
     pub timezone: Option<String>,
@@ -42,9 +46,9 @@ impl CalendarClient {
         Self { base }
     }
 
-    pub async fn update_settings(
+    pub async fn update(
         &self,
-        input: UpdateCalendarSettingsInput,
+        input: UpdateCalendarInput,
     ) -> APIResponse<update_calendar::APIResponse> {
         let settings = update_calendar::CalendarSettings {
             timezone: input.timezone.clone(),
@@ -94,6 +98,18 @@ impl CalendarClient {
                     "user/calendar/{}/events?startTs={}&endTs={}",
                     input.calendar_id, input.start_ts, input.end_ts
                 ),
+                StatusCode::OK,
+            )
+            .await
+    }
+
+    pub async fn get_by_meta(
+        &self,
+        input: MetadataFindInput,
+    ) -> APIResponse<get_calendars_by_meta::APIResponse> {
+        self.base
+            .get(
+                format!("calendar/meta?{}", input.to_query_string()),
                 StatusCode::OK,
             )
             .await

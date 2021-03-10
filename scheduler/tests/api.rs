@@ -6,7 +6,7 @@ use nettu_scheduler_sdk::{
     AddServiceUserInput, CreateCalendarInput, CreateEventInput, CreateScheduleInput,
     DeleteCalendarInput, DeleteEventInput, GetCalendarEventsInput, GetCalendarInput, GetEventInput,
     GetEventsInstancesInput, GetSerivceBookingSlotsInput, NettuSDK, RemoveServiceUserInput,
-    UpdateCalendarSettingsInput, UpdateEventInput, UpdateScheduleInput, UpdateServiceUserInput,
+    UpdateCalendarInput, UpdateEventInput, UpdateScheduleInput, UpdateServiceUserInput,
 };
 
 #[actix_web::main]
@@ -265,7 +265,7 @@ async fn test_crud_calendars() {
     let week_start = 2;
     let calendar_with_new_settings = admin_client
         .calendar
-        .update_settings(UpdateCalendarSettingsInput {
+        .update(UpdateCalendarInput {
             calendar_id: calendar.id.clone(),
             timezone: None,
             week_start: Some(week_start.clone()),
