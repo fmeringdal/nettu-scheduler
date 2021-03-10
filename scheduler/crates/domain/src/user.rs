@@ -1,9 +1,13 @@
-use crate::shared::entity::{Entity, ID};
+use crate::{
+    shared::entity::{Entity, ID},
+    Metadata,
+};
 
 #[derive(Debug, Clone)]
 pub struct User {
     pub id: ID,
     pub account_id: ID,
+    pub metadata: Metadata,
 }
 
 impl User {
@@ -11,6 +15,7 @@ impl User {
         Self {
             id: Default::default(),
             account_id,
+            metadata: Default::default(),
         }
     }
 }

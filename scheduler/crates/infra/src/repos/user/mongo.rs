@@ -5,7 +5,7 @@ use mongodb::{
     bson::{doc, oid::ObjectId, Document},
     Collection, Database,
 };
-use nettu_scheduler_domain::{User, ID};
+use nettu_scheduler_domain::{Metadata, User, ID};
 use serde::{Deserialize, Serialize};
 
 pub struct MongoUserRepo {
@@ -53,6 +53,7 @@ impl IUserRepo for MongoUserRepo {
 struct UserMongo {
     _id: ObjectId,
     account_id: ObjectId,
+    metadata: Metadata,
 }
 
 impl MongoDocument<User> for UserMongo {
@@ -60,6 +61,7 @@ impl MongoDocument<User> for UserMongo {
         User {
             id: ID::from(self._id.clone()),
             account_id: ID::from(self.account_id.clone()),
+            metadata: self.metadata.clone(),
         }
     }
 
@@ -67,6 +69,7 @@ impl MongoDocument<User> for UserMongo {
         Self {
             _id: user.id.inner_ref().clone(),
             account_id: user.account_id.inner_ref().clone(),
+            metadata: user.metadata.clone(),
         }
     }
 

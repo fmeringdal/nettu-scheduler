@@ -18,7 +18,33 @@ impl UserResponse {
 }
 
 pub mod create_user {
+    use nettu_scheduler_domain::Metadata;
+
     use super::*;
+
+    #[derive(Debug, Deserialize, Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct RequestBody {
+        pub metadata: Option<Metadata>,
+    }
+
+    pub type APIResponse = UserResponse;
+}
+
+pub mod update_user {
+    use super::*;
+    use nettu_scheduler_domain::Metadata;
+
+    #[derive(Debug, Deserialize, Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct RequestBody {
+        pub metadata: Option<Metadata>,
+    }
+
+    #[derive(Debug, Deserialize)]
+    pub struct PathParams {
+        pub user_id: ID,
+    }
 
     pub type APIResponse = UserResponse;
 }

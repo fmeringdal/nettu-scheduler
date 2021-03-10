@@ -1,4 +1,4 @@
-use nettu_scheduler_domain::{Service, ServiceResource, TimePlan, ID};
+use nettu_scheduler_domain::{Metadata, Service, ServiceResource, TimePlan, ID};
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize)]
@@ -33,6 +33,7 @@ pub struct ServiceDTO {
     pub id: ID,
     pub account_id: ID,
     pub users: Vec<ServiceResourceDTO>,
+    pub metadata: Metadata,
 }
 
 impl ServiceDTO {
@@ -45,6 +46,7 @@ impl ServiceDTO {
                 .into_iter()
                 .map(|u| ServiceResourceDTO::new(u))
                 .collect(),
+            metadata: service.metadata,
         }
     }
 }

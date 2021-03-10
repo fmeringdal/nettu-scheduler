@@ -5,7 +5,7 @@ use mongodb::{
     bson::{doc, oid::ObjectId, Document},
     Collection, Database,
 };
-use nettu_scheduler_domain::{Service, ServiceResource, TimePlan, ID};
+use nettu_scheduler_domain::{Metadata, Service, ServiceResource, TimePlan, ID};
 use serde::{Deserialize, Serialize};
 
 pub struct MongoServiceRepo {
@@ -117,6 +117,7 @@ struct ServiceMongo {
     pub account_id: ObjectId,
     pub users: Vec<ServiceResourceMongo>,
     pub attributes: Vec<DocumentAttribute>,
+    pub metadata: Metadata,
 }
 
 impl MongoDocument<Service> for ServiceMongo {
@@ -137,6 +138,7 @@ impl MongoDocument<Service> for ServiceMongo {
                     furthest_booking_time: user.furthest_booking_time,
                 })
                 .collect(),
+            metadata: self.metadata.clone(),
         }
     }
 
@@ -157,6 +159,7 @@ impl MongoDocument<Service> for ServiceMongo {
                     furthest_booking_time: user.furthest_booking_time,
                 })
                 .collect(),
+            metadata: service.metadata.clone(),
             attributes: vec![
                 DocumentAttribute {
                     key: "calendars".into(),

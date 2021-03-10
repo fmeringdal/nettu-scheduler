@@ -1,4 +1,7 @@
-use crate::shared::entity::{Entity, ID};
+use crate::{
+    shared::entity::{Entity, ID},
+    Metadata,
+};
 use serde::{Deserialize, Serialize};
 
 /// A type that describes a time plan and is either a `Calendar` og a `Schedule`
@@ -143,7 +146,7 @@ pub struct Service {
     // interval: usize,
     // allow_more_booking_requests_in_queue_than_resources
     pub users: Vec<ServiceResource>,
-    // metadata ?
+    pub metadata: Metadata,
 }
 
 impl Entity for Service {
@@ -157,7 +160,8 @@ impl Service {
         Self {
             id: Default::default(),
             account_id,
-            users: vec![],
+            users: Default::default(),
+            metadata: Default::default(),
         }
     }
 

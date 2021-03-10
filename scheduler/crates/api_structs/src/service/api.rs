@@ -40,7 +40,34 @@ pub mod add_user_to_service {
 }
 
 pub mod create_service {
+    use nettu_scheduler_domain::Metadata;
+
     use super::*;
+
+    #[derive(Debug, Deserialize, Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct RequestBody {
+        pub metadata: Option<Metadata>,
+    }
+
+    pub type APIResponse = ServiceResponse;
+}
+
+pub mod update_service {
+    use nettu_scheduler_domain::Metadata;
+
+    use super::*;
+
+    #[derive(Debug, Deserialize, Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct RequestBody {
+        pub metadata: Option<Metadata>,
+    }
+
+    #[derive(Debug, Deserialize)]
+    pub struct PathParams {
+        pub service_id: ID,
+    }
 
     pub type APIResponse = ServiceResponse;
 }
