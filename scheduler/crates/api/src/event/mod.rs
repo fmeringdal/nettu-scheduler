@@ -23,12 +23,13 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
         web::post().to(create_event_admin_controller),
     );
 
+    cfg.route("/events/meta", web::get().to(get_events_by_meta_controller));
+
     cfg.route("/events/{event_id}", web::get().to(get_event_controller));
     cfg.route(
         "/user/events/{event_id}",
         web::get().to(get_event_admin_controller),
     );
-    cfg.route("/events/meta", web::get().to(get_events_by_meta_controller));
 
     cfg.route(
         "/events/{event_id}",

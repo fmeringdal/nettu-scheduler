@@ -22,16 +22,17 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
     );
 
     cfg.route(
+        "/calendar/meta",
+        web::get().to(get_calendars_by_meta_controller),
+    );
+
+    cfg.route(
         "/calendar/{calendar_id}",
         web::get().to(get_calendar_controller),
     );
     cfg.route(
         "/user/calendar/{calendar_id}",
         web::get().to(get_calendar_admin_controller),
-    );
-    cfg.route(
-        "/calendar/meta",
-        web::get().to(get_calendars_by_meta_controller),
     );
 
     cfg.route(

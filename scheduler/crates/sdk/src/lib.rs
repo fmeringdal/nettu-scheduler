@@ -32,6 +32,8 @@ pub use service::{
     AddServiceUserInput, GetSerivceBookingSlotsInput, RemoveServiceUserInput,
     UpdateServiceUserInput,
 };
+pub use shared::{KVMetadata, MetadataFindInput};
+pub use user::CreateUserInput;
 
 /// Nettu Scheduler Server SDK
 ///

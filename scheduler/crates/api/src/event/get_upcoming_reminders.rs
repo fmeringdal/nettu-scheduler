@@ -255,21 +255,21 @@ mod tests {
         assert_eq!(reminders.len(), 1);
     }
 
-    pub struct StaticTimeSys1 {}
+    pub struct StaticTimeSys1;
     impl ISys for StaticTimeSys1 {
         fn get_timestamp_millis(&self) -> i64 {
             1613862000000 // Sun Feb 21 2021 00:00:00 GMT+0100 (Central European Standard Time) {}
         }
     }
 
-    pub struct StaticTimeSys2 {}
+    pub struct StaticTimeSys2;
     impl ISys for StaticTimeSys2 {
         fn get_timestamp_millis(&self) -> i64 {
             1613862000000 + 1000 * 60 * 49 // Sun Feb 21 2021 00:49:00 GMT+0100 (Central European Standard Time) {}
         }
     }
 
-    pub struct StaticTimeSys3 {}
+    pub struct StaticTimeSys3;
     impl ISys for StaticTimeSys3 {
         fn get_timestamp_millis(&self) -> i64 {
             1613862000000 + 1000 * 60 * 60 * 24 // Sun Feb 22 2021 00:00:00 GMT+0100 (Central European Standard Time) {}

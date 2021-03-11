@@ -13,15 +13,16 @@ pub struct UpdateUserInput {
     pub metadata: Option<Metadata>,
 }
 
+pub type CreateUserInput = create_user::RequestBody;
+
 impl UserClient {
     pub(crate) fn new(base: Arc<BaseClient>) -> Self {
         Self { base }
     }
 
-    pub async fn create(&self) -> APIResponse<create_user::APIResponse> {
-        let empty = HashMap::<String, String>::new();
+    pub async fn create(&self, input: CreateUserInput) -> APIResponse<create_user::APIResponse> {
         self.base
-            .post(empty, "user".into(), StatusCode::CREATED)
+            .post(input, "user".into(), StatusCode::CREATED)
             .await
     }
 

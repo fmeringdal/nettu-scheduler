@@ -1,12 +1,15 @@
 mod helpers;
 
+use std::collections::HashMap;
+
 use helpers::setup::spawn_app;
 use nettu_scheduler_domain::PEMKey;
 use nettu_scheduler_sdk::{
     AddServiceUserInput, CreateCalendarInput, CreateEventInput, CreateScheduleInput,
-    DeleteCalendarInput, DeleteEventInput, GetCalendarEventsInput, GetCalendarInput, GetEventInput,
-    GetEventsInstancesInput, GetSerivceBookingSlotsInput, NettuSDK, RemoveServiceUserInput,
-    UpdateCalendarInput, UpdateEventInput, UpdateScheduleInput, UpdateServiceUserInput,
+    CreateUserInput, DeleteCalendarInput, DeleteEventInput, GetCalendarEventsInput,
+    GetCalendarInput, GetEventInput, GetEventsInstancesInput, GetSerivceBookingSlotsInput,
+    KVMetadata, MetadataFindInput, NettuSDK, RemoveServiceUserInput, UpdateCalendarInput,
+    UpdateEventInput, UpdateScheduleInput, UpdateServiceUserInput,
 };
 
 #[actix_web::main]
@@ -44,7 +47,7 @@ async fn test_get_account() {
 
 #[actix_web::main]
 #[test]
-async fn test_create_user() {
+async fn test_crud_user() {
     let (app, sdk, address) = spawn_app().await;
     let res = sdk
         .account
@@ -54,12 +57,55 @@ async fn test_create_user() {
 
     let account = res.account;
     let admin_client = NettuSDK::new(address, res.secret_api_key);
+
+    let mut metadata = HashMap::new();
+    metadata.insert("group_id".to_string(), "123".to_string());
+
     let res = admin_client
         .user
-        .create()
+        .create(CreateUserInput {
+            metadata: Some(metadata.clone()),
+        })
         .await
         .expect("Expected to create user");
     assert_eq!(res.user.account_id, account.id);
+
+    let metadata = KVMetadata {
+        key: "group_id".to_string(),
+        value: "123".to_string(),
+    };
+    let meta_query = MetadataFindInput {
+        limit: 100,
+        skip: 10,
+        metadata,
+    };
+
+    let users_by_meta = admin_client
+        .user
+        .get_by_meta(meta_query)
+        .await
+        .expect("To get users by meta");
+    assert_eq!(users_by_meta.users.len(), 1);
+    assert_eq!(users_by_meta.users[0].id, res.user.id);
+
+    let get_user = admin_client
+        .user
+        .get(res.user.id.clone())
+        .await
+        .expect("To get user")
+        .user;
+    assert_eq!(get_user.id, res.user.id);
+
+    let delete_user_res = admin_client
+        .user
+        .delete(res.user.id.clone())
+        .await
+        .expect("To delet euser")
+        .user;
+    assert_eq!(delete_user_res.id, res.user.id);
+
+    // Now that user is deleted, get query should return 404 error
+    assert!(admin_client.user.get(res.user.id.clone()).await.is_err());
 }
 
 #[actix_web::main]
@@ -75,7 +121,7 @@ async fn test_crud_schedule() {
     let admin_client = NettuSDK::new(address, res.secret_api_key);
     let create_user_res = admin_client
         .user
-        .create()
+        .create(CreateUserInput { metadata: None })
         .await
         .expect("Expected to create user");
 
@@ -129,7 +175,7 @@ async fn test_crud_schedule() {
 
 #[actix_web::main]
 #[test]
-async fn test_crud_user() {
+async fn test_create_user() {
     let (app, sdk, address) = spawn_app().await;
     let res = sdk
         .account
@@ -139,7 +185,7 @@ async fn test_crud_user() {
     let admin_client = NettuSDK::new(address, res.secret_api_key);
     let create_user_res = admin_client
         .user
-        .create()
+        .create(CreateUserInput { metadata: None })
         .await
         .expect("Expected to create user");
     let get_user_res = admin_client
@@ -225,7 +271,12 @@ async fn test_crud_calendars() {
         .await
         .expect("Expected to create account");
     let admin_client = NettuSDK::new(address, res.secret_api_key);
-    let user = admin_client.user.create().await.unwrap().user;
+    let user = admin_client
+        .user
+        .create(CreateUserInput { metadata: None })
+        .await
+        .unwrap()
+        .user;
 
     let calendar = admin_client
         .calendar
@@ -305,7 +356,12 @@ async fn test_crud_events() {
         .await
         .expect("Expected to create account");
     let admin_client = NettuSDK::new(address, res.secret_api_key);
-    let user = admin_client.user.create().await.unwrap().user;
+    let user = admin_client
+        .user
+        .create(CreateUserInput { metadata: None })
+        .await
+        .unwrap()
+        .user;
 
     let calendar = admin_client
         .calendar
@@ -415,7 +471,12 @@ async fn test_crud_service() {
         .await
         .expect("Expected to create account");
     let admin_client = NettuSDK::new(address, res.secret_api_key);
-    let user = admin_client.user.create().await.unwrap().user;
+    let user = admin_client
+        .user
+        .create(CreateUserInput { metadata: None })
+        .await
+        .unwrap()
+        .user;
 
     let service = admin_client.service.create().await.unwrap().service;
 

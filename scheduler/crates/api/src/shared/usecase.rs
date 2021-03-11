@@ -4,6 +4,10 @@ use nettu_scheduler_infra::NettuContext;
 use std::fmt::Debug;
 use tracing::error;
 
+/// Subscriber is a side effect to a `UseCase`
+///
+/// It is going to act upon the response of the execution
+/// of the `UseCase` if the execution was a success.
 #[async_trait::async_trait(?Send)]
 pub trait Subscriber<U: UseCase> {
     async fn notify(&self, e: &U::Response, ctx: &NettuContext);
@@ -21,6 +25,8 @@ pub trait UseCase: Debug {
     }
 }
 
+/// Restrict what `Permission`s are needed for a `User`
+/// to be able to execute the `UseCase`
 pub trait PermissionBoundary: UseCase {
     fn permissions(&self) -> Vec<Permission>;
 }

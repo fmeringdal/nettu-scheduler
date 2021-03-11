@@ -22,6 +22,10 @@ use update_service_user::update_service_user_controller;
 pub fn configure_routes(cfg: &mut web::ServiceConfig) {
     cfg.route("/service", web::post().to(create_service_controller));
     cfg.route(
+        "/service/meta",
+        web::get().to(get_services_by_meta_controller),
+    );
+    cfg.route(
         "/service/{service_id}",
         web::get().to(get_service_controller),
     );
@@ -32,10 +36,6 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
     cfg.route(
         "/service/{service_id}",
         web::delete().to(delete_service_controller),
-    );
-    cfg.route(
-        "/service/meta",
-        web::get().to(get_services_by_meta_controller),
     );
     cfg.route(
         "/service/{service_id}/users",
