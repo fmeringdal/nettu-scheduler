@@ -205,6 +205,8 @@ impl UseCase for UpdateEventUseCase {
             return Err(UseCaseErrors::InvalidRecurrenceRule);
         };
 
+        e.updated = ctx.sys.get_timestamp_millis();
+
         let repo_res = ctx.repos.event_repo.save(&e).await;
         if repo_res.is_err() {
             return Err(UseCaseErrors::StorageError);

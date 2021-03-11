@@ -125,6 +125,8 @@ impl UseCase for CreateEventUseCase {
             busy: self.busy,
             start_ts: self.start_ts,
             duration: self.duration,
+            created: ctx.sys.get_timestamp_millis(),
+            updated: ctx.sys.get_timestamp_millis(),
             recurrence: None,
             end_ts: self.start_ts + self.duration, // default, if recurrence changes, this will be updated
             exdates: vec![],

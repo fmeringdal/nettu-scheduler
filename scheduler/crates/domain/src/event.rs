@@ -17,6 +17,8 @@ pub struct CalendarEvent {
     pub duration: i64,
     pub busy: bool,
     pub end_ts: i64,
+    pub created: i64,
+    pub updated: i64,
     pub recurrence: Option<RRuleOptions>,
     pub exdates: Vec<i64>,
     pub calendar_id: ID,
@@ -199,6 +201,8 @@ mod test {
             reminder: None,
             services: vec![],
             metadata: Default::default(),
+            created: Default::default(),
+            updated: Default::default(),
         };
 
         let oc = event.expand(None, &settings);
@@ -225,6 +229,8 @@ mod test {
             reminder: None,
             services: vec![],
             metadata: Default::default(),
+            created: Default::default(),
+            updated: Default::default(),
         };
 
         let oc = event.expand(None, &settings);
@@ -272,6 +278,8 @@ mod test {
                 reminder: None,
                 services: vec![],
                 metadata: Default::default(),
+                created: Default::default(),
+                updated: Default::default(),
             };
 
             assert!(!event.set_recurrence(rrule, &settings, true));
@@ -319,6 +327,8 @@ mod test {
                 reminder: None,
                 services: vec![],
                 metadata: Default::default(),
+                created: Default::default(),
+                updated: Default::default(),
             };
 
             assert!(event.set_recurrence(rrule, &settings, true));

@@ -381,6 +381,8 @@ mod test {
             reminder: None,
             services: vec![],
             metadata: Default::default(),
+            updated: Default::default(),
+            created: Default::default(),
         };
         let availibility_event2 = CalendarEvent {
             id: ID::default(),
@@ -396,6 +398,8 @@ mod test {
             reminder: None,
             services: vec![],
             metadata: Default::default(),
+            updated: Default::default(),
+            created: Default::default(),
         };
         let mut availibility_event3 = CalendarEvent {
             id: ID::default(),
@@ -411,6 +415,8 @@ mod test {
             reminder: None,
             services: vec![],
             metadata: Default::default(),
+            updated: Default::default(),
+            created: Default::default(),
         };
         let recurrence = RRuleOptions {
             ..Default::default()
