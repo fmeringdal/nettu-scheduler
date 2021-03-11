@@ -7,9 +7,9 @@ use std::iter::Iterator;
 use tracing::error;
 
 #[derive(Debug)]
-pub enum EventOperation<'a> {
-    Created(&'a Calendar),
-    Updated(&'a Calendar),
+pub enum EventOperation {
+    Created,
+    Updated,
     Deleted,
 }
 
@@ -22,7 +22,7 @@ pub struct SyncEventRemindersUseCase<'a> {
 #[derive(Debug)]
 pub enum SyncEventRemindersTrigger<'a> {
     /// A `CalendarEvent` has been modified, e.g. deleted, updated og created.
-    EventModified(&'a CalendarEvent, EventOperation<'a>),
+    EventModified(&'a CalendarEvent, EventOperation),
     /// Periodic Job Scheduler that triggers this use case to perform
     /// `EventRemindersExpansionJob`s.
     JobScheduler,
@@ -31,6 +31,7 @@ pub enum SyncEventRemindersTrigger<'a> {
 #[derive(Debug)]
 pub enum UseCaseErrors {
     StorageError,
+    CalendarNotFound,
 }
 
 async fn create_event_reminders(
@@ -133,7 +134,7 @@ impl<'a> UseCase for SyncEventRemindersUseCase<'a> {
                 // Delete existing reminders
                 match op {
                     // There are no remidners if `CalendarEvent` was just created
-                    EventOperation::Created(_) => (),
+                    EventOperation::Created => (),
                     _ => {
                         let delete_result = ctx
                             .repos
@@ -149,11 +150,20 @@ impl<'a> UseCase for SyncEventRemindersUseCase<'a> {
                 // Create new ones if op != delete
                 let calendar = match op {
                     EventOperation::Deleted => return Ok(()),
-                    EventOperation::Created(cal) => cal,
-                    EventOperation::Updated(cal) => cal,
+                    EventOperation::Created | EventOperation::Updated => {
+                        let calendar = ctx
+                            .repos
+                            .calendar_repo
+                            .find(&calendar_event.calendar_id)
+                            .await;
+                        match calendar {
+                            Some(calendar) => calendar,
+                            None => return Err(UseCaseErrors::CalendarNotFound),
+                        }
+                    }
                 };
 
-                create_event_reminders(calendar_event, calendar, 1, ctx).await
+                create_event_reminders(calendar_event, &calendar, 1, ctx).await
             }
             SyncEventRemindersTrigger::JobScheduler => {
                 let jobs = ctx

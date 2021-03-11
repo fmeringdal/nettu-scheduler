@@ -1,8 +1,13 @@
-use nettu_scheduler_infra::NettuContext;
-
 use super::auth::{Permission, Policy};
+use futures::future::join_all;
+use nettu_scheduler_infra::NettuContext;
 use std::fmt::Debug;
 use tracing::error;
+
+#[async_trait::async_trait(?Send)]
+pub trait Subscriber<U: UseCase> {
+    async fn notify(&self, e: &U::Response, ctx: &NettuContext);
+}
 
 #[async_trait::async_trait(?Send)]
 pub trait UseCase: Debug {
@@ -10,6 +15,10 @@ pub trait UseCase: Debug {
     type Errors;
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors>;
+
+    fn subscribers() -> Vec<Box<dyn Subscriber<Self>>> {
+        Default::default()
+    }
 }
 
 pub trait PermissionBoundary: UseCase {
@@ -55,8 +64,18 @@ where
 {
     let res = usecase.execute(ctx).await;
 
-    if let Err(e) = &res {
-        error!("Use case error: {:?}", e);
+    match &res {
+        Ok(res) => {
+            let subscribers = U::subscribers();
+            let mut subscriber_promises = Vec::with_capacity(subscribers.len());
+            for subscriber in &subscribers {
+                subscriber_promises.push(subscriber.notify(res, ctx));
+            }
+            join_all(subscriber_promises).await;
+        }
+        Err(e) => {
+            error!("Use case error: {:?}", e);
+        }
     }
 
     res

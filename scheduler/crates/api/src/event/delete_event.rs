@@ -1,6 +1,6 @@
 use crate::shared::{
     auth::{account_can_modify_event, protect_account_route, protect_route, Permission},
-    usecase::{execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
+    usecase::{execute_with_policy, PermissionBoundary, Subscriber, UseCaseErrorContainer},
 };
 use crate::{
     error::NettuError,
@@ -11,9 +11,7 @@ use nettu_scheduler_api_structs::delete_event::*;
 use nettu_scheduler_domain::{CalendarEvent, ID};
 use nettu_scheduler_infra::NettuContext;
 
-use super::sync_event_reminders::{
-    EventOperation, SyncEventRemindersTrigger, SyncEventRemindersUseCase,
-};
+use super::subscribers::DeleteRemindersOnEventDeleted;
 
 fn handle_error(e: UseCaseErrors) -> NettuError {
     match e {
@@ -88,20 +86,14 @@ impl UseCase for DeleteEventUseCase {
             Some(event) if event.user_id == self.user_id => {
                 ctx.repos.event_repo.delete(&event.id).await;
 
-                let sync_event_reminders = SyncEventRemindersUseCase {
-                    request: SyncEventRemindersTrigger::EventModified(
-                        &event,
-                        EventOperation::Deleted,
-                    ),
-                };
-
-                // Sideeffect, ignore result
-                let _ = execute(sync_event_reminders, ctx).await;
-
                 Ok(event)
             }
             _ => Err(UseCaseErrors::NotFound(self.event_id.clone())),
         }
+    }
+
+    fn subscribers() -> Vec<Box<dyn Subscriber<Self>>> {
+        vec![Box::new(DeleteRemindersOnEventDeleted)]
     }
 }
 

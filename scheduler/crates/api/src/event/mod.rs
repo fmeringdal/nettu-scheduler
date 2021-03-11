@@ -4,6 +4,7 @@ mod get_event;
 mod get_event_instances;
 mod get_events_by_meta;
 pub mod get_upcoming_reminders;
+mod subscribers;
 pub mod sync_event_reminders;
 mod update_event;
 

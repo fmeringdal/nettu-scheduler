@@ -169,6 +169,8 @@ impl UseCase for GetUpcomingRemindersUseCase {
 
 #[cfg(test)]
 mod tests {
+    use crate::shared::usecase::execute;
+
     use super::super::create_event::CreateEventUseCase;
     use super::*;
     use nettu_scheduler_domain::{Calendar, CalendarEventReminder, ID};
@@ -283,7 +285,7 @@ mod tests {
         calendar.settings.timezone = chrono_tz::Europe::Oslo;
         ctx.repos.calendar_repo.insert(&calendar).await.unwrap();
 
-        let mut usecase = CreateEventUseCase {
+        let usecase = CreateEventUseCase {
             account_id: account.id.clone(),
             calendar_id: calendar.id.clone(),
             user_id: user_id.clone(),
@@ -296,10 +298,10 @@ mod tests {
             metadata: Default::default(),
         };
 
-        usecase.execute(ctx).await.unwrap();
+        execute(usecase, ctx).await.unwrap();
 
         let sys3 = StaticTimeSys3 {};
-        let mut usecase = CreateEventUseCase {
+        let usecase = CreateEventUseCase {
             account_id: account.id.clone(),
             calendar_id: calendar.id.clone(),
             user_id,
@@ -312,7 +314,7 @@ mod tests {
             metadata: Default::default(),
         };
 
-        usecase.execute(ctx).await.unwrap();
+        execute(usecase, ctx).await.unwrap();
     }
 
     #[actix_web::main]
@@ -323,39 +325,38 @@ mod tests {
 
         insert_events(&ctx).await;
 
-        let mut usecase = GetUpcomingRemindersUseCase {
+        let usecase = GetUpcomingRemindersUseCase {
             reminders_interval: 1000 * 60,
         };
-        let res = usecase.execute(&ctx).await;
-        println!("1. Reminders got: {:?}", res);
+        let res = execute(usecase, &ctx).await;
         assert!(res.is_ok());
         let res = res.unwrap().0;
         assert_eq!(res.len(), 1);
         assert_eq!(res[0].1.events.len(), 1);
 
         ctx.sys = Arc::new(StaticTimeSys2 {});
-        let mut usecase = GetUpcomingRemindersUseCase {
+        let usecase = GetUpcomingRemindersUseCase {
             reminders_interval: 1000 * 60,
         };
-        let res = usecase.execute(&ctx).await;
-        println!("2. Reminders got: {:?}", res);
+        let res = execute(usecase, &ctx).await;
         assert!(res.is_ok());
         let res = res.unwrap().0;
         assert_eq!(res.len(), 0);
 
         ctx.sys = Arc::new(StaticTimeSys3 {});
-        let mut usecase = GetUpcomingRemindersUseCase {
+        let usecase = GetUpcomingRemindersUseCase {
             reminders_interval: 1000 * 60,
         };
-        let res = usecase.execute(&ctx).await;
-        println!("3. Reminders got: {:?}", res);
+        let res = execute(usecase, &ctx).await;
         assert!(res.is_ok());
         let res = res.unwrap().0;
         assert_eq!(res.len(), 1);
         assert_eq!(res[0].1.events.len(), 2);
 
-        let res = usecase.execute(&ctx).await;
-        println!("4. Reminders got: {:?}", res);
+        let usecase = GetUpcomingRemindersUseCase {
+            reminders_interval: 1000 * 60,
+        };
+        let res = execute(usecase, &ctx).await;
         assert!(res.is_ok());
         let res = res.unwrap().0;
         assert_eq!(res.len(), 0);

@@ -5,14 +5,13 @@ use crate::{
     shared::{
         auth::{account_can_modify_event, protect_account_route, Permission},
         usecase::{
-            execute, execute_with_policy, PermissionBoundary, UseCase, UseCaseErrorContainer,
+            execute, execute_with_policy, PermissionBoundary, Subscriber, UseCase,
+            UseCaseErrorContainer,
         },
     },
 };
 use actix_web::{web, HttpRequest, HttpResponse};
-use event::sync_event_reminders::{
-    EventOperation, SyncEventRemindersTrigger, SyncEventRemindersUseCase,
-};
+use event::subscribers::SyncRemindersOnEventUpdated;
 use nettu_scheduler_api_structs::update_event::*;
 use nettu_scheduler_domain::{CalendarEvent, CalendarEventReminder, Metadata, RRuleOptions, ID};
 use nettu_scheduler_infra::NettuContext;
@@ -212,17 +211,11 @@ impl UseCase for UpdateEventUseCase {
             return Err(UseCaseErrors::StorageError);
         }
 
-        let sync_event_reminders = SyncEventRemindersUseCase {
-            request: SyncEventRemindersTrigger::EventModified(
-                &e,
-                EventOperation::Updated(&calendar),
-            ),
-        };
-
-        // Sideeffect, ignore result
-        let _ = execute(sync_event_reminders, ctx).await;
-
         Ok(e)
+    }
+
+    fn subscribers() -> Vec<Box<dyn Subscriber<Self>>> {
+        vec![Box::new(SyncRemindersOnEventUpdated)]
     }
 }
 

@@ -1,9 +1,10 @@
-use super::sync_event_reminders::{
-    EventOperation, SyncEventRemindersTrigger, SyncEventRemindersUseCase,
-};
+use super::subscribers::CreateRemindersOnEventCreated;
 use crate::shared::{
     auth::{account_can_modify_user, protect_route, Permission},
-    usecase::{execute, execute_with_policy, PermissionBoundary, UseCase, UseCaseErrorContainer},
+    usecase::{
+        execute, execute_with_policy, PermissionBoundary, Subscriber, UseCase,
+        UseCaseErrorContainer,
+    },
 };
 use crate::{error::NettuError, shared::auth::protect_account_route};
 use actix_web::{web, HttpResponse};
@@ -154,17 +155,11 @@ impl UseCase for CreateEventUseCase {
             return Err(UseCaseErrors::StorageError);
         }
 
-        let sync_event_reminders = SyncEventRemindersUseCase {
-            request: SyncEventRemindersTrigger::EventModified(
-                &e,
-                EventOperation::Created(&calendar),
-            ),
-        };
-
-        // Sideeffect, ignore result
-        let _ = execute(sync_event_reminders, ctx).await;
-
         Ok(e)
+    }
+
+    fn subscribers() -> Vec<Box<dyn Subscriber<Self>>> {
+        vec![Box::new(CreateRemindersOnEventCreated)]
     }
 }
 
