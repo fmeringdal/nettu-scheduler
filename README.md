@@ -9,7 +9,7 @@
 
 ## Overview
 
-`Nettu scheduler` is a self-hosted calendar and scheduler server that aims to provide the building blocks for building calendar / booking / appointments apps with ease. It has a simple REST API and also a [JavaScript SDK](https://github.com/fmeringdal/nettu-scheduler-js-client) and [Rust SDK](https://crates.io/crates/nettu_scheduler_sdk). 
+`Nettu scheduler` is a self-hosted calendar and scheduler server that aims to provide the building blocks for building calendar / booking / appointments apps with ease. It has a simple REST API and also a [JavaScript SDK](https://www.npmjs.com/package/@nettu/sdk-scheduler) and [Rust SDK](https://crates.io/crates/nettu_scheduler_sdk). 
 
 ## Features
 - **Authentication**: JWT tokens signed by your server for browser clients and api-keys for server to server communication. 
@@ -17,6 +17,7 @@
 - **Booking**: Create a `Service` and register `User`s on it to make them bookable.
 - **Calendar Events**: Supports recurrence rules, flexible querying and reminders.
 - **Calendars**: For grouping `Calendar Event`s.
+- **Metadata queries**: Add key-value metadata to your resources and then query on that metadata 
 - **Freebusy**: Find out when `User`s are free and when they are busy.
 - **Webhooks**: Notifying your server about `Calendar Event` reminders.
 
