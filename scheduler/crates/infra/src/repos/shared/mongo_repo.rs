@@ -13,7 +13,9 @@ use serde::{de::DeserializeOwned, Serialize};
 use tracing::error;
 
 pub trait MongoDocument<E>: Serialize + DeserializeOwned {
+    // Maybe require `Into` trait impl instead of this method
     fn to_domain(self) -> E;
+    // Maybe require `From` trait impl instead of this method
     fn from_domain(entity: &E) -> Self;
     fn get_id_filter(&self) -> Document;
 }
