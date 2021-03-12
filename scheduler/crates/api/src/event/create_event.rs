@@ -47,7 +47,7 @@ pub async fn create_event_admin_controller(
         rrule_options: body.rrule_options,
         account_id: account.id,
         reminder: body.reminder,
-        services: body.services.unwrap_or_default(),
+        is_service: body.is_service.unwrap_or(false),
         metadata: body.metadata.unwrap_or_default(),
     };
 
@@ -74,7 +74,7 @@ pub async fn create_event_controller(
         user_id: user.id,
         account_id: user.account_id,
         reminder: body.reminder,
-        services: body.services.unwrap_or_default(),
+        is_service: body.is_service.unwrap_or(false),
         metadata: body.metadata.unwrap_or_default(),
     };
 
@@ -97,7 +97,7 @@ pub struct CreateEventUseCase {
     pub busy: bool,
     pub rrule_options: Option<RRuleOptions>,
     pub reminder: Option<CalendarEventReminder>,
-    pub services: Vec<String>,
+    pub is_service: bool,
     pub metadata: Metadata,
 }
 
@@ -137,7 +137,7 @@ impl UseCase for CreateEventUseCase {
             user_id: self.user_id.clone(),
             account_id: self.account_id.clone(),
             reminder: self.reminder.clone(),
-            services: self.services.clone(),
+            is_service: self.is_service,
             metadata: self.metadata.clone(),
         };
         if let Some(rrule_opts) = self.rrule_options.clone() {
@@ -218,7 +218,7 @@ mod test {
             user_id: user.id.clone(),
             account_id: user.account_id,
             reminder: None,
-            services: vec![],
+            is_service: false,
             metadata: Default::default(),
         };
 
@@ -245,7 +245,7 @@ mod test {
             user_id: user.id.clone(),
             account_id: user.account_id,
             reminder: None,
-            services: vec![],
+            is_service: false,
             metadata: Default::default(),
         };
 
@@ -272,7 +272,7 @@ mod test {
             user_id: user.id.clone(),
             account_id: user.account_id,
             reminder: None,
-            services: vec![],
+            is_service: false,
             metadata: Default::default(),
         };
 
@@ -312,7 +312,7 @@ mod test {
                 user_id: user.id.clone(),
                 account_id: user.account_id.to_owned(),
                 reminder: None,
-                services: vec![],
+                is_service: false,
                 metadata: Default::default(),
             };
 

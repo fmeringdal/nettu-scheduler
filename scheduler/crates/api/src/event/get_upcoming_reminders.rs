@@ -304,7 +304,7 @@ mod tests {
             busy: false,
             rrule_options: Some(Default::default()),
             reminder: Some(CalendarEventReminder { minutes_before: 10 }),
-            services: vec![],
+            is_service: false,
             metadata: Default::default(),
         };
 
@@ -320,7 +320,7 @@ mod tests {
             busy: false,
             rrule_options: None,
             reminder: Some(CalendarEventReminder { minutes_before: 10 }),
-            services: vec![],
+            is_service: false,
             metadata: Default::default(),
         };
 
@@ -390,7 +390,7 @@ mod tests {
             busy: false,
             rrule_options: Some(Default::default()),
             reminder: Some(CalendarEventReminder { minutes_before: 10 }),
-            services: vec![],
+            is_service: false,
             metadata: Default::default(),
         };
 
@@ -411,7 +411,7 @@ mod tests {
             metadata: None,
             reminder: Some(CalendarEventReminder { minutes_before: 10 }),
             rrule_options: Some(Default::default()),
-            services: None,
+            is_service: None,
             start_ts: Some(calendar_event.start_ts - start_ts_diff),
             user_id: calendar_event.user_id,
         };
@@ -444,7 +444,7 @@ mod tests {
             busy: false,
             rrule_options: Some(Default::default()),
             reminder: Some(CalendarEventReminder { minutes_before: 10 }),
-            services: vec![],
+            is_service: false,
             metadata: Default::default(),
         };
 
@@ -464,7 +464,7 @@ mod tests {
             metadata: None,
             reminder: None,
             rrule_options: Some(Default::default()),
-            services: None,
+            is_service: None,
             start_ts: None,
             user_id: calendar_event.user_id,
         };
@@ -491,7 +491,7 @@ mod tests {
             busy: false,
             rrule_options: Some(Default::default()),
             reminder: Some(CalendarEventReminder { minutes_before: 10 }),
-            services: vec![],
+            is_service: false,
             metadata: Default::default(),
         };
 

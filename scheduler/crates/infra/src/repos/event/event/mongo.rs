@@ -125,7 +125,7 @@ struct CalendarEventMongo {
     account_id: ObjectId,
     recurrence: Option<RRuleOptions>,
     reminder: Option<CalendarEventReminder>,
-    services: Vec<String>,
+    is_service: bool,
     metadata: Vec<KVMetadata>,
 }
 
@@ -145,7 +145,7 @@ impl MongoDocument<CalendarEvent> for CalendarEventMongo {
             exdates: self.exdates,
             recurrence: self.recurrence,
             reminder: self.reminder,
-            services: self.services,
+            is_service: self.is_service,
             metadata: KVMetadata::to_metadata(self.metadata),
         }
     }
@@ -165,7 +165,7 @@ impl MongoDocument<CalendarEvent> for CalendarEventMongo {
             exdates: event.exdates.clone(),
             recurrence: event.recurrence.clone(),
             reminder: event.reminder.clone(),
-            services: event.services.clone(),
+            is_service: event.is_service.clone(),
             metadata: KVMetadata::new(event.metadata.clone()),
         }
     }

@@ -36,7 +36,7 @@ pub mod create_event {
         pub busy: Option<bool>,
         pub rrule_options: Option<RRuleOptions>,
         pub reminder: Option<CalendarEventReminder>,
-        pub services: Option<Vec<String>>,
+        pub is_service: Option<bool>,
         pub metadata: Option<Metadata>,
     }
 
@@ -138,7 +138,7 @@ pub mod update_event {
         pub duration: Option<i64>,
         pub busy: Option<bool>,
         pub rrule_options: Option<RRuleOptions>,
-        pub services: Option<Vec<String>>,
+        pub is_service: Option<bool>,
         pub exdates: Option<Vec<i64>>,
         pub reminder: Option<CalendarEventReminder>,
         pub metadata: Option<Metadata>,

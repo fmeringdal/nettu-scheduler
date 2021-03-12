@@ -205,11 +205,9 @@ impl GetServiceBookingSlotsUseCase {
                         .filter(|e| e.busy)
                         .map(|e| {
                             let mut instances = e.expand(Some(&timespan), &cal.settings);
-                            let is_service_event = e.services.contains(&String::from("*"))
-                                || e.services.contains(&self.service_id.as_string());
 
                             // Add buffer to instances if event is a service event
-                            if user.buffer > 0 && is_service_event {
+                            if user.buffer > 0 && e.is_service {
                                 let buffer_in_millis = user.buffer * 60 * 1000;
                                 for instance in instances.iter_mut() {
                                     instance.end_ts += buffer_in_millis;
@@ -382,7 +380,7 @@ mod test {
             start_ts: 1000 * 60 * 60,
             user_id: resource1.user_id.to_owned(),
             reminder: None,
-            services: vec![],
+            is_service: false,
             metadata: Default::default(),
             updated: Default::default(),
             created: Default::default(),
@@ -399,7 +397,7 @@ mod test {
             start_ts: 1000 * 60 * 60,
             user_id: resource2.user_id.to_owned(),
             reminder: None,
-            services: vec![],
+            is_service: false,
             metadata: Default::default(),
             updated: Default::default(),
             created: Default::default(),
@@ -416,7 +414,7 @@ mod test {
             start_ts: 1000 * 60 * 60 * 4,
             user_id: resource1.user_id.to_owned(),
             reminder: None,
-            services: vec![],
+            is_service: false,
             metadata: Default::default(),
             updated: Default::default(),
             created: Default::default(),

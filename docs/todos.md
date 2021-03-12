@@ -1,10 +1,9 @@
 
 ## Todos
 
-- fix docs typos
 - more recurrence validation in rrule.rs crate
-- look into this attribute: event.services
-- mongodb:
+- fix docs typos
+- mongodb docs:
     - schema
     - indexes
 - javascript sdk

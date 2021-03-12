@@ -33,7 +33,7 @@ pub struct UpdateEventInput {
     pub busy: Option<bool>,
     pub reminder: Option<CalendarEventReminder>,
     pub rrule_options: Option<RRuleOptions>,
-    pub services: Option<Vec<String>>,
+    pub is_service: Option<bool>,
     pub exdates: Option<Vec<i64>>,
     pub metadata: Option<Metadata>,
 }
@@ -104,7 +104,7 @@ impl CalendarEventClient {
             exdates: input.exdates,
             rrule_options: input.rrule_options,
             reminder: input.reminder,
-            services: input.services,
+            is_service: input.is_service,
             start_ts: input.start_ts,
             metadata: input.metadata,
         };
