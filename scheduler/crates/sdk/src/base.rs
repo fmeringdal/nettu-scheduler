@@ -147,8 +147,13 @@ impl BaseClient {
     ) -> APIResponse<T> {
         let res = match self.get_client(Method::POST, path).json(&body).send().await {
             Ok(res) => res,
-            Err(_) => return Err(self.network_error()),
+            Err(e) => {
+                println!("Woooooooooooooooooo");
+                println!("{:?}", e);
+                return Err(self.network_error());
+            }
         };
+
         self.handle_api_response(res, expected_status_code).await
     }
 }
