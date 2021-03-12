@@ -45,7 +45,7 @@ impl IEventRepo for InMemoryEventRepo {
                     return true;
                 }
             }
-            return false;
+            false
         });
         Ok(res)
     }

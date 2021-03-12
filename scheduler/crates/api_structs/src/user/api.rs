@@ -91,7 +91,7 @@ pub mod get_users_by_meta {
     impl APIResponse {
         pub fn new(users: Vec<User>) -> Self {
             Self {
-                users: users.into_iter().map(|u| UserDTO::new(u)).collect(),
+                users: users.into_iter().map(UserDTO::new).collect(),
             }
         }
     }

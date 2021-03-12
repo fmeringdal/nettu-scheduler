@@ -69,7 +69,7 @@ pub enum ScheduleRuleVariant {
     Date(String),
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Ord)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 struct Time {
     pub hours: u32,
     pub minutes: u32,
@@ -292,7 +292,7 @@ impl Schedule {
                 }
             };
             if let Some(intervals) = intervals {
-                for interval in intervals.into_iter() {
+                for interval in intervals.iter() {
                     let event = interval.to_event(&day_cursor, &self.timezone);
                     free_instances.push_back(event);
                 }

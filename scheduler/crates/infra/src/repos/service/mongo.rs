@@ -142,7 +142,7 @@ impl MongoDocument<Service> for ServiceMongo {
                     id: ID::from(user._id),
                     user_id: ID::from(user.user_id),
                     availibility: user.availibility,
-                    busy: user.busy.into_iter().map(|id| ID::from(id)).collect(),
+                    busy: user.busy.into_iter().map(ID::from).collect(),
                     buffer: user.buffer,
                     closest_booking_time: user.closest_booking_time,
                     furthest_booking_time: user.furthest_booking_time,

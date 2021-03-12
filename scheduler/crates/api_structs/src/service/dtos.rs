@@ -44,7 +44,7 @@ impl ServiceDTO {
             users: service
                 .users
                 .into_iter()
-                .map(|u| ServiceResourceDTO::new(u))
+                .map(ServiceResourceDTO::new)
                 .collect(),
             metadata: service.metadata,
         }

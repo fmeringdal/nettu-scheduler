@@ -132,7 +132,7 @@ impl GetFreeBusyUseCase {
                 .find_by_calendar(&calendar.id, Some(&timespan))
         });
 
-        let all_events_instances = join_all(all_events_futures)
+        join_all(all_events_futures)
             .await
             .into_iter()
             .map(|events_res| events_res.unwrap_or_default())
@@ -150,9 +150,7 @@ impl GetFreeBusyUseCase {
             })
             .flatten()
             .flatten()
-            .collect::<Vec<_>>();
-
-        all_events_instances
+            .collect::<Vec<_>>()
     }
 }
 

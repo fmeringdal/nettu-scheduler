@@ -117,10 +117,7 @@ pub mod get_events_by_meta {
     impl APIResponse {
         pub fn new(events: Vec<CalendarEvent>) -> Self {
             Self {
-                events: events
-                    .into_iter()
-                    .map(|e| CalendarEventDTO::new(e))
-                    .collect(),
+                events: events.into_iter().map(CalendarEventDTO::new).collect(),
             }
         }
     }
@@ -164,10 +161,7 @@ pub mod send_account_event_reminders {
     impl AccountEventRemindersDTO {
         pub fn new(events: Vec<CalendarEvent>) -> Self {
             Self {
-                events: events
-                    .into_iter()
-                    .map(|e| CalendarEventDTO::new(e))
-                    .collect(),
+                events: events.into_iter().map(CalendarEventDTO::new).collect(),
             }
         }
     }

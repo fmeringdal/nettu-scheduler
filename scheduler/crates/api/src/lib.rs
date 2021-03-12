@@ -44,7 +44,7 @@ impl Application {
 
     fn start_job_schedulers(context: NettuContext) {
         start_send_reminders_job(context.clone());
-        start_reminders_expansion_job_scheduler(context.clone());
+        start_reminders_expansion_job_scheduler(context);
     }
 
     async fn configure_server(context: NettuContext) -> Result<(Server, u16), std::io::Error> {

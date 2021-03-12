@@ -77,13 +77,7 @@ impl IServiceRepo for InMemoryServiceRepo {
     async fn remove_user_from_services(&self, user_id: &ID) -> anyhow::Result<()> {
         update_many(
             &self.services,
-            |service| {
-                service
-                    .users
-                    .iter()
-                    .find(|u| u.user_id == *user_id)
-                    .is_some()
-            },
+            |service| service.users.iter().any(|u| u.user_id == *user_id),
             |service| {
                 service.users.retain(|u| u.user_id != *user_id);
             },

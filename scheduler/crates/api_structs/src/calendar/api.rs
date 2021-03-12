@@ -121,7 +121,7 @@ pub mod get_calendars_by_meta {
     impl APIResponse {
         pub fn new(calendars: Vec<Calendar>) -> Self {
             Self {
-                calendars: calendars.into_iter().map(|c| CalendarDTO::new(c)).collect(),
+                calendars: calendars.into_iter().map(CalendarDTO::new).collect(),
             }
         }
     }

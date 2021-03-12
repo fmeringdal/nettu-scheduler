@@ -86,10 +86,6 @@ impl CompatibleInstances {
         }
     }
 
-    pub fn as_ref(&self) -> &VecDeque<EventInstance> {
-        &self.events
-    }
-
     pub fn inner(self) -> VecDeque<EventInstance> {
         self.events
     }
@@ -100,6 +96,16 @@ impl CompatibleInstances {
 
     pub fn get(&self, index: usize) -> Option<&EventInstance> {
         self.events.get(index)
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.events.is_empty()
+    }
+}
+
+impl AsRef<VecDeque<EventInstance>> for CompatibleInstances {
+    fn as_ref(&self) -> &VecDeque<EventInstance> {
+        &self.events
     }
 }
 

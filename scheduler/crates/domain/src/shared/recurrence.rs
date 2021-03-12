@@ -59,29 +59,18 @@ impl RRuleOptions {
             }
         }
 
-        let valid_by_set_pos = if let Some(bysetpos) = &self.bysetpos {
+        if let Some(bysetpos) = &self.bysetpos {
             // Check that bysetpos is used with some other by* rule
-            if bysetpos.is_empty() {
-                true
-            } else if !is_none_or_empty(&self.byweekday) {
-                true
-            } else if !is_none_or_empty(&self.byweekno) {
-                true
-            } else if !is_none_or_empty(&self.bymonth) {
-                true
-            } else if !is_none_or_empty(&self.bymonthday) {
-                true
-            } else if !is_none_or_empty(&self.byyearday) {
-                true
-            } else {
+            if !bysetpos.is_empty()
+                && is_none_or_empty(&self.byweekday)
+                && is_none_or_empty(&self.byweekno)
+                && is_none_or_empty(&self.bymonth)
+                && is_none_or_empty(&self.bymonthday)
+                && is_none_or_empty(&self.byyearday)
+            {
                 // No other by* rule was specified
-                false
+                return false;
             }
-        } else {
-            true
-        };
-        if !valid_by_set_pos {
-            return false;
         }
 
         true
@@ -92,7 +81,7 @@ impl RRuleOptions {
         start_ts: i64,
         calendar_settings: &CalendarSettings,
     ) -> ParsedOptions {
-        let timezone = calendar_settings.timezone.clone();
+        let timezone = calendar_settings.timezone;
 
         let until = self.until.map(|ts| timezone.timestamp(ts as i64 / 1000, 0));
 
@@ -259,19 +248,20 @@ impl FromStr for WeekDay {
 
     fn from_str(day: &str) -> Result<Self, Self::Err> {
         let e = InvalidWeekDayError::Malformed(day.to_string());
-        if day.len() < 2 {
-            return Err(e);
-        } else if day.len() == 2 {
-            // MO, TU, ...
-            let wday = str_to_weekday(day)?;
-            WeekDay::new(wday).map_err(|_| e)
-        } else {
-            let wday = str_to_weekday(&day[day.len() - 2..])?;
-            let n = match day[0..day.len() - 2].parse::<isize>() {
-                Ok(n) => n,
-                Err(_) => return Err(e),
-            };
-            WeekDay::new_nth(wday, n).map_err(|_| e)
+        match day.len() {
+            d if d < 2 => Err(e),
+            2 => {
+                let wday = str_to_weekday(day)?;
+                WeekDay::new(wday).map_err(|_| e)
+            }
+            _ => {
+                let wday = str_to_weekday(&day[day.len() - 2..])?;
+                let n = match day[0..day.len() - 2].parse::<isize>() {
+                    Ok(n) => n,
+                    Err(_) => return Err(e),
+                };
+                WeekDay::new_nth(wday, n).map_err(|_| e)
+            }
         }
     }
 }

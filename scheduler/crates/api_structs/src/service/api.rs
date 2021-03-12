@@ -119,7 +119,7 @@ pub mod get_service_bookingslots {
             Self {
                 booking_slots: booking_slots
                     .into_iter()
-                    .map(|slot| ServiceBookingSlotDTO::new(slot))
+                    .map(ServiceBookingSlotDTO::new)
                     .collect(),
             }
         }
@@ -157,7 +157,7 @@ pub mod get_services_by_meta {
     impl APIResponse {
         pub fn new(services: Vec<Service>) -> Self {
             Self {
-                services: services.into_iter().map(|s| ServiceDTO::new(s)).collect(),
+                services: services.into_iter().map(ServiceDTO::new).collect(),
             }
         }
     }

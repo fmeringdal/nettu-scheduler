@@ -41,7 +41,7 @@ impl CalendarSettings {
         }
     }
 
-    pub fn set_timezone(&mut self, timezone: &String) -> bool {
+    pub fn set_timezone(&mut self, timezone: &str) -> bool {
         match timezone.parse::<Tz>() {
             Ok(tzid) => {
                 self.timezone = tzid;
