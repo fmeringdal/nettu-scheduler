@@ -129,6 +129,8 @@ impl UseCase for GetUpcomingRemindersUseCase {
 
     type Errors = UseCaseErrors;
 
+    const NAME: &'static str = "GetUpcomingReminders";
+
     /// This will run every minute
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         // Find all occurences for the next interval and delete them
@@ -169,7 +171,10 @@ impl UseCase for GetUpcomingRemindersUseCase {
 
 #[cfg(test)]
 mod tests {
-    use crate::{event::update_event::UpdateEventUseCase, shared::usecase::execute};
+    use crate::{
+        event::{delete_event::DeleteEventUseCase, update_event::UpdateEventUseCase},
+        shared::usecase::execute,
+    };
 
     use super::super::create_event::CreateEventUseCase;
     use super::*;
@@ -419,5 +424,91 @@ mod tests {
             new_reminders[0].remind_at + start_ts_diff,
             old_reminders[0].remind_at
         );
+    }
+
+    #[actix_web::main]
+    #[test]
+    async fn deleting_event_reminder_setting_also_deletes_reminders() {
+        let mut ctx = setup_context().await;
+        ctx.sys = Arc::new(StaticTimeSys1 {});
+
+        let now = ctx.sys.get_timestamp_millis();
+
+        let (account, user_id, calendar) = insert_common_data(&ctx).await;
+        let usecase = CreateEventUseCase {
+            account_id: account.id.clone(),
+            calendar_id: calendar.id.clone(),
+            user_id: user_id.clone(),
+            start_ts: now,
+            duration: 1000 * 60 * 60 * 2,
+            busy: false,
+            rrule_options: Some(Default::default()),
+            reminder: Some(CalendarEventReminder { minutes_before: 10 }),
+            services: vec![],
+            metadata: Default::default(),
+        };
+
+        let calendar_event = execute(usecase, &ctx).await.unwrap();
+        let old_reminders = ctx.repos.reminder_repo.delete_all_before(now).await;
+        ctx.repos
+            .reminder_repo
+            .bulk_insert(&old_reminders)
+            .await
+            .unwrap();
+
+        let update_event_usecase = UpdateEventUseCase {
+            event_id: calendar_event.id,
+            busy: None,
+            duration: None,
+            exdates: None,
+            metadata: None,
+            reminder: None,
+            rrule_options: Some(Default::default()),
+            services: None,
+            start_ts: None,
+            user_id: calendar_event.user_id,
+        };
+        execute(update_event_usecase, &ctx).await.unwrap();
+        let new_reminders = ctx.repos.reminder_repo.delete_all_before(now).await;
+        assert!(new_reminders.is_empty());
+    }
+
+    #[actix_web::main]
+    #[test]
+    async fn deleting_event_also_deletes_reminders() {
+        let mut ctx = setup_context().await;
+        ctx.sys = Arc::new(StaticTimeSys1 {});
+
+        let now = ctx.sys.get_timestamp_millis();
+
+        let (account, user_id, calendar) = insert_common_data(&ctx).await;
+        let usecase = CreateEventUseCase {
+            account_id: account.id.clone(),
+            calendar_id: calendar.id.clone(),
+            user_id: user_id.clone(),
+            start_ts: now,
+            duration: 1000 * 60 * 60 * 2,
+            busy: false,
+            rrule_options: Some(Default::default()),
+            reminder: Some(CalendarEventReminder { minutes_before: 10 }),
+            services: vec![],
+            metadata: Default::default(),
+        };
+
+        let calendar_event = execute(usecase, &ctx).await.unwrap();
+        let old_reminders = ctx.repos.reminder_repo.delete_all_before(now).await;
+        ctx.repos
+            .reminder_repo
+            .bulk_insert(&old_reminders)
+            .await
+            .unwrap();
+
+        let update_event_usecase = DeleteEventUseCase {
+            event_id: calendar_event.id,
+            user_id: calendar_event.user_id,
+        };
+        execute(update_event_usecase, &ctx).await.unwrap();
+        let new_reminders = ctx.repos.reminder_repo.delete_all_before(now).await;
+        assert!(new_reminders.is_empty());
     }
 }

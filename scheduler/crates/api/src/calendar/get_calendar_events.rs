@@ -73,6 +73,7 @@ pub struct GetCalendarEventsUseCase {
     pub end_ts: i64,
 }
 
+#[derive(Debug)]
 pub struct UseCaseResponse {
     calendar: Calendar,
     events: Vec<EventWithInstances>,
@@ -89,6 +90,8 @@ impl UseCase for GetCalendarEventsUseCase {
     type Response = UseCaseResponse;
 
     type Errors = UseCaseErrors;
+
+    const NAME: &'static str = "GetCalendarEvents";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         let calendar = ctx.repos.calendar_repo.find(&self.calendar_id).await;

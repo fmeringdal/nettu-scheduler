@@ -30,6 +30,7 @@ struct CreateServiceUseCase {
     account: Account,
     metadata: Metadata,
 }
+#[derive(Debug)]
 struct UseCaseRes {
     pub service: Service,
 }
@@ -44,6 +45,8 @@ impl UseCase for CreateServiceUseCase {
     type Response = UseCaseRes;
 
     type Errors = UseCaseErrors;
+
+    const NAME: &'static str = "CreateService";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         let mut service = Service::new(self.account.id.clone());

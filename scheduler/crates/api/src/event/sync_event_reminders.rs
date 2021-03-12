@@ -113,6 +113,8 @@ impl<'a> UseCase for SyncEventRemindersUseCase<'a> {
 
     type Errors = UseCaseErrors;
 
+    const NAME: &'static str = "SyncEventReminders";
+
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         match &self.request {
             SyncEventRemindersTrigger::EventModified(calendar_event, op) => {

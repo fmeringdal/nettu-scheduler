@@ -38,6 +38,7 @@ struct GetUserUseCase {
     user_id: ID,
 }
 
+#[derive(Debug)]
 struct UseCaseRes {
     pub user: User,
 }
@@ -52,6 +53,8 @@ impl UseCase for GetUserUseCase {
     type Response = UseCaseRes;
 
     type Errors = UseCaseErrors;
+
+    const NAME: &'static str = "GetUser";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         let user = match ctx.repos.user_repo.find(&self.user_id).await {

@@ -50,6 +50,8 @@ impl UseCase for SetAccountWebhookUseCase {
 
     type Errors = UseCaseErrors;
 
+    const NAME: &'static str = "SetAccountWebhook";
+
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         let success = self
             .account

@@ -36,6 +36,7 @@ struct UpdateServiceUseCase {
     service_id: ID,
     metadata: Option<Metadata>,
 }
+#[derive(Debug)]
 struct UseCaseRes {
     pub service: Service,
 }
@@ -51,6 +52,8 @@ impl UseCase for UpdateServiceUseCase {
     type Response = UseCaseRes;
 
     type Errors = UseCaseErrors;
+
+    const NAME: &'static str = "UpdateService";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         let mut service = match ctx.repos.service_repo.find(&self.service_id).await {

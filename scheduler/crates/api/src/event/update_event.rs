@@ -120,6 +120,8 @@ impl UseCase for UpdateEventUseCase {
 
     type Errors = UseCaseErrors;
 
+    const NAME: &'static str = "UpdateEvent";
+
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         let UpdateEventUseCase {
             user_id,

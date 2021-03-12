@@ -76,6 +76,8 @@ impl UseCase for DeleteCalendarUseCase {
 
     type Errors = UseCaseErrors;
 
+    const NAME: &'static str = "DeleteCalendar";
+
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         let calendar = ctx.repos.calendar_repo.find(&self.calendar_id).await;
         match calendar {

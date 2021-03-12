@@ -59,6 +59,7 @@ struct UpdateServiceUserUseCase {
     pub furthest_booking_time: Option<i64>,
 }
 
+#[derive(Debug)]
 struct UseCaseRes {
     pub service: Service,
 }
@@ -76,6 +77,8 @@ impl UseCase for UpdateServiceUserUseCase {
     type Response = UseCaseRes;
 
     type Errors = UseCaseErrors;
+
+    const NAME: &'static str = "UpdateServiceUser";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         let mut service = match ctx.repos.service_repo.find(&self.service_id).await {

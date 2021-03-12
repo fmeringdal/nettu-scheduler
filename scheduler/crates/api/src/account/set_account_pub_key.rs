@@ -46,6 +46,8 @@ impl UseCase for SetAccountPubKeyUseCase {
 
     type Errors = UseCaseErrors;
 
+    const NAME: &'static str = "SetAccountPublicKey";
+
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         let key = if let Some(key) = &self.public_jwt_key {
             match PEMKey::new(key.clone()) {

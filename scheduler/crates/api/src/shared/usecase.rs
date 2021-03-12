@@ -2,7 +2,7 @@ use super::auth::{Permission, Policy};
 use futures::future::join_all;
 use nettu_scheduler_infra::NettuContext;
 use std::fmt::Debug;
-use tracing::error;
+use tracing::{info, warn};
 
 /// Subscriber is a side effect to a `UseCase`
 ///
@@ -15,8 +15,11 @@ pub trait Subscriber<U: UseCase> {
 
 #[async_trait::async_trait(?Send)]
 pub trait UseCase: Debug {
-    type Response;
+    type Response: Debug;
     type Errors;
+
+    /// UseCase name identifier
+    const NAME: &'static str;
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors>;
 
@@ -37,8 +40,7 @@ pub enum UseCaseErrorContainer<T: Debug> {
     UseCase(T),
 }
 
-// TODO: How to able better tracing context ? Usecase: Debug
-#[tracing::instrument(name = "Executing usecase with policy", skip(usecase, ctx))]
+#[tracing::instrument(name = "UseCase executed by User", skip(usecase, policy, ctx), fields(usecase = %U::NAME))]
 pub async fn execute_with_policy<U>(
     usecase: U,
     policy: &Policy,
@@ -50,24 +52,34 @@ where
 {
     let required_permissions = usecase.permissions();
     if !policy.authorize(&required_permissions) {
-        return Err(UseCaseErrorContainer::Unauthorized(format!(
+        let err = format!(
             "Client is not permitted to perform some or all of these actions: {:?}",
             required_permissions
-        )));
+        );
+        warn!("{}", err);
+        return Err(UseCaseErrorContainer::Unauthorized(err));
     }
 
-    execute(usecase, ctx)
+    _execute(usecase, ctx)
         .await
         .map_err(UseCaseErrorContainer::UseCase)
 }
 
-// TODO: Better †racing context
-#[tracing::instrument(name = "Executing usecase", skip(usecase, ctx))]
-pub async fn execute<U>(mut usecase: U, ctx: &NettuContext) -> Result<U::Response, U::Errors>
+#[tracing::instrument(name = "UseCase executed by Account", skip(usecase, ctx), fields(usecase = %U::NAME))]
+pub async fn execute<U>(usecase: U, ctx: &NettuContext) -> Result<U::Response, U::Errors>
 where
     U: UseCase,
     U::Errors: Debug,
 {
+    _execute(usecase, ctx).await
+}
+
+async fn _execute<U>(mut usecase: U, ctx: &NettuContext) -> Result<U::Response, U::Errors>
+where
+    U: UseCase,
+    U::Errors: Debug,
+{
+    info!("{:?}", usecase);
     let res = usecase.execute(ctx).await;
 
     match &res {
@@ -78,9 +90,10 @@ where
                 subscriber_promises.push(subscriber.notify(res, ctx));
             }
             join_all(subscriber_promises).await;
+            info!("Response: {:?}", res);
         }
         Err(e) => {
-            error!("Use case error: {:?}", e);
+            warn!("Error: {:?}", e);
         }
     }
 

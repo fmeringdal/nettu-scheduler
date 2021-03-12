@@ -50,6 +50,7 @@ struct AddUserToServiceUseCase {
     pub furthest_booking_time: Option<i64>,
 }
 
+#[derive(Debug)]
 struct UseCaseRes {
     pub service: Service,
 }
@@ -68,6 +69,8 @@ impl UseCase for AddUserToServiceUseCase {
     type Response = UseCaseRes;
 
     type Errors = UseCaseErrors;
+
+    const NAME: &'static str = "AddUserToService";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         if ctx

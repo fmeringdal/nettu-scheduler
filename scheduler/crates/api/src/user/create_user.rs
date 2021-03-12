@@ -34,6 +34,7 @@ pub struct CreateUserUseCase {
     pub metadata: Metadata,
 }
 
+#[derive(Debug)]
 pub struct UseCaseRes {
     pub user: User,
 }
@@ -48,6 +49,8 @@ pub enum UseCaseErrors {
 impl UseCase for CreateUserUseCase {
     type Response = UseCaseRes;
     type Errors = UseCaseErrors;
+
+    const NAME: &'static str = "CreateUser";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         let mut user = User::new(self.account_id.clone());

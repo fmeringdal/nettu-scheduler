@@ -91,6 +91,7 @@ enum UseCaseErrors {
     StorageError,
     InvalidSettings(String),
 }
+#[derive(Debug)]
 struct UseCaseRes {
     pub schedule: Schedule,
 }
@@ -100,6 +101,8 @@ impl UseCase for UpdateScheduleUseCase {
     type Response = UseCaseRes;
 
     type Errors = UseCaseErrors;
+
+    const NAME: &'static str = "UpdateSchedule";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         let mut schedule = match ctx.repos.schedule_repo.find(&self.schedule_id).await {

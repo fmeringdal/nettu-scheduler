@@ -39,6 +39,7 @@ struct GetServiceUseCase {
     service_id: ID,
 }
 
+#[derive(Debug)]
 struct UseCaseRes {
     pub service: Service,
 }
@@ -53,6 +54,7 @@ impl UseCase for GetServiceUseCase {
     type Response = UseCaseRes;
 
     type Errors = UseCaseErrors;
+    const NAME: &'static str = "GetService";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         let res = ctx.repos.service_repo.find(&self.service_id).await;

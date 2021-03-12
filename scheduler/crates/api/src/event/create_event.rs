@@ -115,6 +115,8 @@ impl UseCase for CreateEventUseCase {
 
     type Errors = UseCaseErrors;
 
+    const NAME: &'static str = "CreateEvent";
+
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         let calendar = match ctx.repos.calendar_repo.find(&self.calendar_id).await {
             Some(calendar) if calendar.user_id == self.user_id => calendar,

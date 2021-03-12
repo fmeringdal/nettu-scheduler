@@ -79,6 +79,8 @@ impl UseCase for DeleteEventUseCase {
 
     type Errors = UseCaseErrors;
 
+    const NAME: &'static str = "DeleteEvent";
+
     // TODO: use only one db call
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         let e = ctx.repos.event_repo.find(&self.event_id).await;

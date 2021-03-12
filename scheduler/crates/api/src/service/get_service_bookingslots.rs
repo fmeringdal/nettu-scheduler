@@ -66,6 +66,7 @@ struct GetServiceBookingSlotsUseCase {
     pub interval: i64,
 }
 
+#[derive(Debug)]
 struct UseCaseRes {
     booking_slots: Vec<ServiceBookingSlot>,
 }
@@ -84,6 +85,8 @@ impl UseCase for GetServiceBookingSlotsUseCase {
     type Response = UseCaseRes;
 
     type Errors = UseCaseErrors;
+
+    const NAME: &'static str = "GetServiceBookingSlots";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         if !validate_slots_interval(self.interval) {

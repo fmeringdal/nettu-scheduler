@@ -37,6 +37,7 @@ pub struct UpdateUserUseCase {
     pub metadata: Option<Metadata>,
 }
 
+#[derive(Debug)]
 pub struct UseCaseRes {
     pub user: User,
 }
@@ -51,6 +52,8 @@ pub enum UseCaseErrors {
 impl UseCase for UpdateUserUseCase {
     type Response = UseCaseRes;
     type Errors = UseCaseErrors;
+
+    const NAME: &'static str = "UpdateUser";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         let mut user = match ctx

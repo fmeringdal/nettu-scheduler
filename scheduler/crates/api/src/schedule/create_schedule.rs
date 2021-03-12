@@ -88,6 +88,7 @@ enum UseCaseErrors {
     Storage,
 }
 
+#[derive(Debug)]
 struct UseCaseRes {
     pub schedule: Schedule,
 }
@@ -97,6 +98,8 @@ impl UseCase for CreateScheduleUseCase {
     type Response = UseCaseRes;
 
     type Errors = UseCaseErrors;
+
+    const NAME: &'static str = "CreateSchedule";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         let tz: Tz = match self.tzid.parse() {

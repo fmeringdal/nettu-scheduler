@@ -91,6 +91,8 @@ impl UseCase for UpdateCalendarUseCase {
 
     type Errors = UseCaseErrors;
 
+    const NAME: &'static str = "UpdateCalendar";
+
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         let mut calendar = match ctx.repos.calendar_repo.find(&self.calendar_id).await {
             Some(cal) if cal.user_id == self.user_id => cal,

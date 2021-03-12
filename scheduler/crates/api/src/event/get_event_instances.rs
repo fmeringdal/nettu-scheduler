@@ -78,6 +78,7 @@ pub enum UseCaseErrors {
     InvalidTimespan,
 }
 
+#[derive(Debug)]
 pub struct UseCaseResponse {
     pub event: CalendarEvent,
     pub instances: Vec<EventInstance>,
@@ -88,6 +89,8 @@ impl UseCase for GetEventInstancesUseCase {
     type Response = UseCaseResponse;
 
     type Errors = UseCaseErrors;
+
+    const NAME: &'static str = "GetEventInstances";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         let e = ctx.repos.event_repo.find(&self.event_id).await;

@@ -35,6 +35,7 @@ struct DeleteUserUseCase {
     user_id: ID,
 }
 
+#[derive(Debug)]
 struct UseCaseRes {
     pub user: User,
 }
@@ -50,6 +51,8 @@ impl UseCase for DeleteUserUseCase {
     type Response = UseCaseRes;
 
     type Errors = UseCaseErrors;
+
+    const NAME: &'static str = "DeleteUser";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         let user = match ctx.repos.user_repo.find(&self.user_id).await {
