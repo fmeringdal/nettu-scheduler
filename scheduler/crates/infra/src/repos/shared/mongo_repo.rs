@@ -8,8 +8,8 @@ use mongodb::{
     options::FindOptions,
     Collection, Cursor,
 };
-use nettu_scheduler_domain::Metadata;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+
+use serde::{de::DeserializeOwned, Serialize};
 use tracing::error;
 
 pub trait MongoDocument<E>: Serialize + DeserializeOwned {

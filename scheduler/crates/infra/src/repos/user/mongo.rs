@@ -6,7 +6,7 @@ use mongodb::{
     bson::{doc, oid::ObjectId, Document},
     Collection, Database,
 };
-use nettu_scheduler_domain::{Metadata, User, ID};
+use nettu_scheduler_domain::{User, ID};
 use serde::{Deserialize, Serialize};
 
 pub struct MongoUserRepo {

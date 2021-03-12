@@ -10,7 +10,7 @@ use mongodb::{
     Collection, Database,
 };
 use nettu_scheduler_domain::{
-    CalendarEvent, CalendarEventReminder, Metadata, RRuleOptions, TimeSpan, ID,
+    CalendarEvent, CalendarEventReminder, RRuleOptions, TimeSpan, ID,
 };
 use serde::{Deserialize, Serialize};
 
