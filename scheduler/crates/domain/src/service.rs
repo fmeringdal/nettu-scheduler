@@ -83,12 +83,9 @@ impl ServiceResource {
     pub fn get_calendar_ids(&self) -> Vec<ID> {
         let mut calendar_ids = self.busy.clone();
 
-        match &self.availibility {
-            TimePlan::Calendar(id) => {
-                calendar_ids.push(id.clone());
-            }
-            _ => (),
-        };
+        if let TimePlan::Calendar(id) = &self.availibility {
+            calendar_ids.push(id.clone());
+        }
 
         calendar_ids
     }
@@ -123,10 +120,7 @@ impl ServiceResource {
     }
 
     pub fn contains_schedule(&self, schedule_id: &ID) -> bool {
-        match &self.availibility {
-            TimePlan::Schedule(id) if id == schedule_id => true,
-            _ => false,
-        }
+        matches!(&self.availibility, TimePlan::Schedule(id) if id == schedule_id)
     }
 
     pub fn remove_schedule(&mut self, schedule_id: &ID) {

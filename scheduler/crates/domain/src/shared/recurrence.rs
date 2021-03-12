@@ -39,10 +39,7 @@ fn freq_convert(freq: &RRuleFrequenzy) -> Frequenzy {
 }
 
 fn is_none_or_empty<T>(v: &Option<Vec<T>>) -> bool {
-    match v {
-        Some(v) if !v.is_empty() => false,
-        _ => true,
-    }
+    !matches!(v, Some(v) if !v.is_empty())
 }
 
 impl RRuleOptions {

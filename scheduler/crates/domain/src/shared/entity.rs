@@ -57,7 +57,7 @@ impl FromStr for ID {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         ObjectId::with_string(s)
-            .map(|oid| Self(oid))
+            .map(Self)
             .map_err(|_| InvalidIDError::Malformed(s.to_string()))
     }
 }

@@ -2,8 +2,8 @@ use crate::shared::usecase::UseCase;
 use actix_web::rt::time::Instant;
 use nettu_scheduler_domain::{Account, CalendarEvent, Reminder};
 use nettu_scheduler_infra::NettuContext;
-use std::collections::HashMap;
 use std::time::Duration;
+use std::{cmp::Ordering, collections::HashMap};
 
 /// Creates EventReminders for a calendar event
 #[derive(Debug)]
@@ -78,21 +78,25 @@ async fn create_reminders_for_accounts(
 // Remove possible duplicate reminders created by the two triggers
 // of sync event reminders
 fn dedup_reminders(reminders: &mut Vec<Reminder>) {
-    reminders.sort_by_key(|r1| r1.priority);
-    let mut reminders_count = reminders.len();
-    let mut index = 0;
-    while index < reminders_count {
-        for j in index + 1..reminders_count {
-            if reminders[index].event_id == reminders[j].event_id {
-                reminders.remove(j);
-                reminders_count -= 1;
-                // There will always just be maximum two reminders duplicated
-                // so it is okay to break once the duplicate is found
-                break;
-            }
+    reminders.sort_by(|r1, r2| {
+        match r2
+            .event_id
+            .to_string()
+            .partial_cmp(&r1.event_id.to_string())
+            .unwrap()
+        {
+            // Highest priority first
+            Ordering::Equal => r2.priority.partial_cmp(&r1.priority).unwrap(),
+            val => val,
         }
+    });
 
-        index += 1;
+    for i in 1..reminders.len() {
+        // Two reminders for the same event_id, remove the one
+        // with the lowest priority (e.g. the last one because of the sorting)
+        if reminders[i].event_id == reminders[i - 1].event_id {
+            reminders.remove(i);
+        }
     }
 }
 
