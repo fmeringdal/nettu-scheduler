@@ -13,6 +13,7 @@ use nettu_scheduler_domain::{
     TimeSpan, ID,
 };
 use nettu_scheduler_infra::NettuContext;
+use tracing::warn;
 
 pub async fn get_service_bookingslots_controller(
     _http_req: HttpRequest,
@@ -147,7 +148,7 @@ impl GetServiceBookingSlotsUseCase {
     async fn get_user_availibility(
         &self,
         user: &ServiceResource,
-        user_calendars: &Vec<Calendar>,
+        user_calendars: &[Calendar],
         timespan: &TimeSpan,
         ctx: &NettuContext,
     ) -> CompatibleInstances {
@@ -165,7 +166,7 @@ impl GetServiceBookingSlotsUseCase {
                     .event_repo
                     .find_by_calendar(&id, Some(&timespan))
                     .await
-                    .unwrap_or(vec![]);
+                    .unwrap_or_default();
 
                 let all_event_instances = all_calendar_events
                     .iter()
@@ -186,7 +187,7 @@ impl GetServiceBookingSlotsUseCase {
     async fn get_user_busy(
         &self,
         user: &ServiceResource,
-        busy_calendars: &Vec<&Calendar>,
+        busy_calendars: &[&Calendar],
         timespan: &TimeSpan,
         ctx: &NettuContext,
     ) -> CompatibleInstances {
@@ -221,7 +222,9 @@ impl GetServiceBookingSlotsUseCase {
 
                     busy_events.append(&mut calendar_busy_events);
                 }
-                Err(_) => {}
+                Err(e) => {
+                    warn!("Unable to fetch user calendars: {}", e);
+                }
             }
         }
 

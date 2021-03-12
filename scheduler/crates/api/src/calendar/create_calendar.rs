@@ -17,7 +17,7 @@ fn error_handler(e: UseCaseErrors) -> NettuError {
         UseCaseErrors::StorageError => NettuError::InternalError,
         UseCaseErrors::InvalidCalendarSetting(e) => NettuError::BadClientData(e),
         UseCaseErrors::UserNotFound => {
-            NettuError::NotFound(format!("The requested user was not found."))
+            NettuError::NotFound("The requested user was not found.".to_string())
         }
     }
 }

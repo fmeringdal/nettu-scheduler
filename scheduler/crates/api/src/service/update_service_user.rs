@@ -95,15 +95,15 @@ impl UseCase for UpdateServiceUserUseCase {
             &mut user_resource,
             &ServiceResourceUpdate {
                 availibility: self.availibility.clone(),
-                buffer: self.buffer.clone(),
                 busy: self.busy.clone(),
+                buffer: self.buffer,
                 closest_booking_time: self.closest_booking_time,
                 furthest_booking_time: self.furthest_booking_time,
             },
             ctx,
         )
         .await
-        .map_err(|e| UseCaseErrors::InvalidValue(e))?;
+        .map_err(UseCaseErrors::InvalidValue)?;
 
         let res = ctx.repos.service_repo.save(&service).await;
         match res {

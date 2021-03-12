@@ -98,15 +98,15 @@ impl UseCase for AddUserToServiceUseCase {
             &mut user_resource,
             &ServiceResourceUpdate {
                 availibility: self.availibility.clone(),
-                buffer: self.buffer.clone(),
                 busy: self.busy.clone(),
+                buffer: self.buffer,
                 closest_booking_time: self.closest_booking_time,
                 furthest_booking_time: self.furthest_booking_time,
             },
             ctx,
         )
         .await
-        .map_err(|e| UseCaseErrors::InvalidValue(e))?;
+        .map_err(UseCaseErrors::InvalidValue)?;
 
         service.add_user(user_resource);
 
@@ -135,7 +135,7 @@ pub enum UpdateServiceResourceError {
 }
 
 impl UpdateServiceResourceError {
-    pub fn to_nettu_error(self) -> NettuError {
+    pub fn to_nettu_error(&self) -> NettuError {
         match self {
             Self::InvalidBuffer => {
                 NettuError::BadClientData("The provided buffer was invalid, it should be netween 0 and 12 hours specified in minutes.".into())
@@ -148,7 +148,7 @@ impl UpdateServiceResourceError {
                 ))
             }
             Self::InvalidBookingTimespan(e) => {
-                NettuError::BadClientData(e)
+                NettuError::BadClientData(e.to_string())
             }
         }
     }

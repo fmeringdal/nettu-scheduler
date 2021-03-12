@@ -132,7 +132,7 @@ impl UseCase for UpdateEventUseCase {
             rrule_options: _,
             exdates,
             reminder,
-            is_service: services,
+            is_service,
             metadata,
         } = self;
 
@@ -146,8 +146,8 @@ impl UseCase for UpdateEventUseCase {
             }
         };
 
-        if let Some(services) = services {
-            e.is_service = services.clone();
+        if let Some(is_service) = is_service {
+            e.is_service = *is_service;
         }
 
         if let Some(exdates) = exdates {
