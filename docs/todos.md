@@ -1,7 +1,6 @@
 
 ## Todos
 
-- some repos needs more tests
 - javascript sdk
 - docs
     - typos

@@ -18,3 +18,7 @@ anyhow = "1.0.0"
 tokio = { version = "1", features = ["rt", "macros"] }
 tracing = "0.1.25"
 tracing-futures = "0.2.5"
+
+
+[dev-dependencies]
+chrono-tz = "0.5.3"
