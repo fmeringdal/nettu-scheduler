@@ -21,6 +21,7 @@ jobs:
       - name:                   Generate code coverage
         run: |
           cd scheduler
+          cargo install cargo-tarpaulin
           cargo tarpaulin --verbose --all-features --workspace --timeout 120 --out Xml
 
       - name:                   Upload to codecov.io
