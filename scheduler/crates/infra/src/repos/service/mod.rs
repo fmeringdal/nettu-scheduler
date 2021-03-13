@@ -123,6 +123,14 @@ mod tests {
                 .await
                 .expect("To get service");
             assert!(service.users.is_empty());
+
+            ctx.repos
+                .service_repo
+                .delete(&service.id)
+                .await
+                .expect("To delete service");
+
+            assert!(ctx.repos.service_repo.find(&service.id).await.is_none());
         }
     }
 }

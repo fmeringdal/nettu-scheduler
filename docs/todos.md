@@ -1,7 +1,12 @@
 
 ## Todos
 
-- more recurrence validation in rrule.rs crate
-- fix docs typos
-- services repo needs tests
+- some repos needs more tests
 - javascript sdk
+- docs
+    - typos
+    - examples
+
+
+## Backlog
+- more recurrence validation in rrule.rs crate

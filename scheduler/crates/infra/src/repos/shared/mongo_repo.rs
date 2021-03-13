@@ -134,7 +134,7 @@ pub async fn delete_many_by<E, D: MongoDocument<E>>(
     })
 }
 
-pub(crate) async fn consume_cursor<E, D: MongoDocument<E>>(mut cursor: Cursor) -> Vec<E> {
+async fn consume_cursor<E, D: MongoDocument<E>>(mut cursor: Cursor) -> Vec<E> {
     let mut documents = vec![];
     while let Some(result) = cursor.next().await {
         match result {
