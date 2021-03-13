@@ -21,7 +21,7 @@ pub trait IServiceRepo: Send + Sync {
 
 #[cfg(test)]
 mod tests {
-    use crate::setup_context;
+    use crate::{repos::calendar, setup_context};
     use nettu_scheduler_domain::{Entity, Service, ServiceResource, TimePlan, ID};
 
     #[tokio::test]
@@ -45,7 +45,7 @@ mod tests {
         let user_id = ID::default();
         let calendar_id = ID::default();
         let timeplan = TimePlan::Empty;
-        let resource = ServiceResource::new(user_id, timeplan, vec![calendar_id.clone()]);
+        let resource = ServiceResource::new(user_id.clone(), timeplan, vec![calendar_id.clone()]);
         service.add_user(resource);
 
         ctx.repos
@@ -78,11 +78,14 @@ mod tests {
         assert_eq!(service.users.len(), 1);
         assert!(service.users[0].busy.is_empty());
 
-        let user_id = ID::default();
-        let calendar_id = ID::default();
-        let timeplan = TimePlan::Calendar(calendar_id.clone());
-        let resource = ServiceResource::new(user_id.clone(), timeplan, vec![calendar_id.clone()]);
-        service.add_user(resource);
+        let mut user = service.find_user_mut(&user_id).expect("To find user");
+        user.availibility = TimePlan::Calendar(calendar_id.clone());
+
+        ctx.repos
+            .service_repo
+            .save(&service)
+            .await
+            .expect("To save service");
 
         ctx.repos
             .service_repo

@@ -112,22 +112,22 @@ impl IServiceRepo for MongoServiceRepo {
                 }
             }
         };
-        println!("ooooooooooooooooooooooooooooooooooooooooooooooooooook");
-        println!("Filter: {:?}", filter);
-        println!("Update: {:?}", update);
-        let d = doc! {};
-        let mut cursor = self.collection.find(d, None).await.unwrap();
-        let mut all = vec![];
-        while let Some(result) = cursor.next().await {
-            match result {
-                Ok(document) => {
-                    all.push(document);
-                }
-                Err(e) => {}
-            }
-        }
-        println!("Alll: {:?}", all);
-        println!("ooooooooooooooooooooooooooooooooooooooooooooooooooook done");
+        // println!("ooooooooooooooooooooooooooooooooooooooooooooooooooook");
+        // println!("Filter: {:?}", filter);
+        // println!("Update: {:?}", update);
+        // let d = doc! {};
+        // let mut cursor = self.collection.find(d, None).await.unwrap();
+        // let mut all = vec![];
+        // while let Some(result) = cursor.next().await {
+        //     match result {
+        //         Ok(document) => {
+        //             all.push(document);
+        //         }
+        //         Err(e) => {}
+        //     }
+        // }
+        // println!("Alll: {:?}", all);
+        // println!("ooooooooooooooooooooooooooooooooooooooooooooooooooook done");
 
         mongo_repo::update_many::<_, ServiceMongo>(&self.collection, filter, update).await
     }
