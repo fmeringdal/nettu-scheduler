@@ -60,7 +60,10 @@ impl IServiceRepo for MongoServiceRepo {
                     "value": &calendar_id
                 },
                 "users": {
-                    "calendar_ids": &calendar_id
+                    "availibility": {
+                        "id": &calendar_id
+                    },
+                    "busy": &calendar_id
                 }
             }
         };
@@ -81,7 +84,9 @@ impl IServiceRepo for MongoServiceRepo {
                     "value": &schedule_id
                 },
                 "users": {
-                    "schedule_ids": &schedule_id
+                    "availibility": {
+                        "id": schedule_id
+                    }
                 }
             }
         };

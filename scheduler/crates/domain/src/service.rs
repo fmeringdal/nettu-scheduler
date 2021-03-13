@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 /// A type that describes a time plan and is either a `Calendar` og a `Schedule`
 // Maybe rename this TimePlan ?
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "variant", content = "id")]
 pub enum TimePlan {
     /// Calendar id

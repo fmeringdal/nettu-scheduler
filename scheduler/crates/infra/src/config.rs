@@ -1,5 +1,5 @@
 use nettu_scheduler_utils::create_random_secret;
-use tracing::{info, log::warn};
+use tracing::{info, warn};
 
 #[derive(Debug, Clone)]
 pub struct Config {
