@@ -45,7 +45,7 @@ fn is_none_or_empty<T>(v: &Option<Vec<T>>) -> bool {
 impl RRuleOptions {
     pub fn is_valid(&self, start_ts: i64) -> bool {
         if let Some(count) = self.count {
-            if count > 740 || count < 1 {
+            if !(1..740).contains(&count) {
                 return false;
             }
         }

@@ -1,6 +1,3 @@
-
-
-
 use nettu_scheduler_api::Application;
 use nettu_scheduler_infra::{setup_context, Config};
 use nettu_scheduler_sdk::NettuSDK;

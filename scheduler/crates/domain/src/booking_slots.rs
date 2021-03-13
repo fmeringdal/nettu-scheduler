@@ -147,7 +147,7 @@ pub fn validate_bookingslots_query(
         return Err(BookingQueryError::InvalidInterval);
     }
 
-    let iana_tz = query.iana_tz.clone().unwrap_or(String::from("UTC"));
+    let iana_tz = query.iana_tz.clone().unwrap_or_else(|| "UTC".into());
     let tz: Tz = match iana_tz.parse() {
         Ok(tz) => tz,
         Err(_) => return Err(BookingQueryError::InvalidTimezone(iana_tz)),

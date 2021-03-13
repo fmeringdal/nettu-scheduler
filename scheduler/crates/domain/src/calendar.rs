@@ -33,7 +33,7 @@ pub struct CalendarSettings {
 
 impl CalendarSettings {
     pub fn set_week_start(&mut self, wkst: isize) -> bool {
-        if wkst >= 0 && wkst <= 6 {
+        if (0..=6).contains(&wkst) {
             self.week_start = wkst;
             true
         } else {

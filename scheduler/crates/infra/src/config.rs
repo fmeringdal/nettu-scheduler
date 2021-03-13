@@ -34,7 +34,7 @@ impl Config {
             }
         };
         let default_port = "5000";
-        let port = std::env::var("PORT").unwrap_or(default_port.into());
+        let port = std::env::var("PORT").unwrap_or_else(|_| default_port.into());
         let port = match port.parse::<usize>() {
             Ok(port) => port,
             Err(_) => {
