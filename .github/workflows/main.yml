@@ -1,16 +1,22 @@
-name:                           Build
+name:                           Docker tests
 
 on:                             [push]
 jobs:
   test:
     name:                       test
     runs-on:                    ubuntu-latest
-    container:
-      image:                    xd009642/tarpaulin
-      options:                  --security-opt seccomp=unconfined
+    env:
+      PORT:                    5000
+      MONGODB_CONNECTION_STRING: mongodb://root:rootpassword@localhost:27017
+      MONGODB_NAME: nettuscheduler
     steps:
       - name:                   Checkout repository
         uses:                   actions/checkout@v2
+
+      - name:                   Build docker compose stack
+        run: |
+          cd scheduler
+          docker-compose -f ./integrations/docker-compose.yml up
 
       - name:                   Generate code coverage
         run: |
@@ -20,5 +26,5 @@ jobs:
       - name:                   Upload to codecov.io
         uses:                   codecov/codecov-action@v1
         with:
-          # token:                ${{secrets.CODECOV_TOKEN}} # not required for public repos
           fail_ci_if_error:     true
+
