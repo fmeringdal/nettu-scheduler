@@ -13,7 +13,7 @@ db.calendar-event-reminder-expansion-jobs.createIndex({ "event_id": 1 })
 db.calendar-event-reminders.createIndex({ "remind_at": 1 })
 db.calendar-event-reminders.createIndex({ "event_id": 1 })
 db.schedules.createIndex({ "user_id": 1 })
-db.services.createIndex({ "attributes.key": 1, "attributes.value": 1 })
+db.services.createIndex({ "ids": 1 })
 db.services.createIndex({ "metadata.key": 1, "metadata.value": 1 })
 db.users.createIndex({ "metadata.key": 1, "metadata.value": 1 })
 ```

@@ -76,7 +76,7 @@ async fn test_crud_user() {
     };
     let meta_query = MetadataFindInput {
         limit: 100,
-        skip: 10,
+        skip: 0,
         metadata,
     };
 

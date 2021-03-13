@@ -4,6 +4,7 @@ use nettu_scheduler_domain::{Account, CalendarEvent, Reminder};
 use nettu_scheduler_infra::NettuContext;
 use std::time::Duration;
 use std::{cmp::Ordering, collections::HashMap};
+use tracing::error;
 
 /// Creates EventReminders for a calendar event
 #[derive(Debug)]
@@ -166,7 +167,7 @@ impl UseCase for GetUpcomingRemindersUseCase {
         let instant = if millis_to_send > 0 {
             Instant::now() + Duration::from_millis(millis_to_send as u64)
         } else {
-            println!("Important: Increase computation time for get reminders usecase");
+            error!("Important: Increase computation time for get reminders usecase");
             Instant::now()
         };
         Ok((grouped_reminders, instant))
@@ -183,8 +184,18 @@ mod tests {
     use super::super::create_event::CreateEventUseCase;
     use super::*;
     use nettu_scheduler_domain::{Calendar, CalendarEventReminder, ID};
-    use nettu_scheduler_infra::{setup_context, ISys};
+    use nettu_scheduler_infra::{setup_context as _setup_ctx, ISys};
     use std::sync::Arc;
+
+    async fn setup_context() -> NettuContext {
+        let ctx = _setup_ctx().await;
+        ctx.repos
+            .reminder_repo
+            .delete_all_before(CalendarEvent::get_max_timestamp())
+            .await;
+
+        ctx
+    }
 
     fn get_account_id() -> ID {
         "507f1f77bcf86cd799439011".parse().expect("Valid ID")
@@ -231,6 +242,7 @@ mod tests {
     }
 
     #[actix_web::main]
+    #[serial_test::serial]
     #[test]
     async fn removes_old_priorites() {
         let ctx = setup_context().await;
@@ -332,6 +344,7 @@ mod tests {
     }
 
     #[actix_web::main]
+    #[serial_test::serial]
     #[test]
     async fn get_upcoming_reminders() {
         let mut ctx = setup_context().await;
@@ -377,6 +390,7 @@ mod tests {
     }
 
     #[actix_web::main]
+    #[serial_test::serial]
     #[test]
     async fn updating_event_also_updates_reminders() {
         let mut ctx = setup_context().await;
@@ -431,6 +445,7 @@ mod tests {
     }
 
     #[actix_web::main]
+    #[serial_test::serial]
     #[test]
     async fn deleting_event_reminder_setting_also_deletes_reminders() {
         let mut ctx = setup_context().await;
@@ -478,6 +493,7 @@ mod tests {
     }
 
     #[actix_web::main]
+    #[serial_test::serial]
     #[test]
     async fn deleting_event_also_deletes_reminders() {
         let mut ctx = setup_context().await;

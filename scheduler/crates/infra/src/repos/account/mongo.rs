@@ -37,7 +37,7 @@ impl IAccountRepo for MongoAccountRepo {
 
     async fn find_many(&self, accounts_ids: &[ID]) -> anyhow::Result<Vec<Account>> {
         let filter = doc! {
-            "event_id": {
+            "_id": {
                 "$in": accounts_ids.iter().map(|id| id.inner_ref()).collect::<Vec<_>>()
             }
         };

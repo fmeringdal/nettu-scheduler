@@ -6,7 +6,6 @@ use crate::{
     },
     KVMetadata,
 };
-use futures::StreamExt;
 use mongo_repo::MongoDocument;
 use mongodb::{
     bson::{doc, oid::ObjectId, Document},
@@ -48,65 +47,54 @@ impl IServiceRepo for MongoServiceRepo {
     }
 
     async fn remove_calendar_from_services(&self, calendar_id: &ID) -> anyhow::Result<()> {
-        let calendar_id = calendar_id.as_string();
         let filter = doc! {
-            "attributes": {
-                "key": "calendars",
-                "value": &calendar_id
-            }
+            "ids": &calendar_id.inner_ref()
         };
-        let update = doc! {
-            "$pull": {
-                "attributes": {
-                    "value": &calendar_id
-                },
-                "users": {
-                    "availibility": {
-                        "id": &calendar_id
-                    },
-                    "busy": &calendar_id
+
+        let mut services =
+            mongo_repo::find_many_by::<_, ServiceMongo>(&self.collection, filter).await?;
+        for service in &mut services {
+            for user in &mut service.users {
+                if let TimePlan::Calendar(id) = &user.availibility {
+                    if id == calendar_id {
+                        user.availibility = TimePlan::Empty;
+                    }
                 }
+                user.busy
+                    .retain(|busy_calendar_id| busy_calendar_id != calendar_id);
             }
-        };
-        mongo_repo::update_many::<_, ServiceMongo>(&self.collection, filter, update).await
+            mongo_repo::save::<_, ServiceMongo>(&self.collection, service).await?;
+        }
+        Ok(())
     }
 
     async fn remove_schedule_from_services(&self, schedule_id: &ID) -> anyhow::Result<()> {
-        let schedule_id = schedule_id.as_string();
         let filter = doc! {
-            "attributes": {
-                "key": "schedules",
-                "value": &schedule_id
-            }
+            "ids": &schedule_id.inner_ref()
         };
-        let update = doc! {
-            "$pull": {
-                "attributes": {
-                    "value": &schedule_id
-                },
-                "users": {
-                    "availibility": {
-                        "id": schedule_id
+        let mut services =
+            mongo_repo::find_many_by::<_, ServiceMongo>(&self.collection, filter).await?;
+        for service in &mut services {
+            for user in &mut service.users {
+                if let TimePlan::Schedule(id) = &user.availibility {
+                    if id == schedule_id {
+                        user.availibility = TimePlan::Empty;
                     }
                 }
             }
-        };
-        mongo_repo::update_many::<_, ServiceMongo>(&self.collection, filter, update).await
+            mongo_repo::save::<_, ServiceMongo>(&self.collection, service).await?;
+        }
+        Ok(())
     }
 
     async fn remove_user_from_services(&self, user_id: &ID) -> anyhow::Result<()> {
-        let user_id = user_id.as_string();
+        let user_id = user_id.inner_ref();
         let filter = doc! {
-            "attributes": {
-                "key": "users",
-                "value": &user_id
-            }
+            "ids": user_id
         };
         let update = doc! {
             "$pull": {
-                "attributes": {
-                    "value": &user_id
-                },
+                "ids": user_id,
                 "users": {
                     "user_id": &user_id
                 }
@@ -133,17 +121,11 @@ struct ServiceResourceMongo {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct DocumentAttribute {
-    pub key: String,
-    pub value: Vec<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
 struct ServiceMongo {
     pub _id: ObjectId,
     pub account_id: ObjectId,
     pub users: Vec<ServiceResourceMongo>,
-    pub attributes: Vec<DocumentAttribute>,
+    pub ids: Vec<ObjectId>,
     pub metadata: Vec<KVMetadata>,
 }
 
@@ -187,40 +169,26 @@ impl MongoDocument<Service> for ServiceMongo {
                 })
                 .collect(),
             metadata: KVMetadata::new(service.metadata.clone()),
-            attributes: vec![
-                DocumentAttribute {
-                    key: "calendars".into(),
-                    value: service
-                        .users
+            ids: service
+                .users
+                .iter()
+                .map(|u| {
+                    let mut ids = u
+                        .busy
                         .iter()
-                        .map(|u| {
-                            u.get_calendar_ids()
-                                .iter()
-                                .map(|id| id.as_string())
-                                .collect::<Vec<_>>()
-                        })
-                        .flatten()
-                        .collect(),
-                },
-                DocumentAttribute {
-                    key: "schedules".into(),
-                    value: service
-                        .users
-                        .iter()
-                        .map(|u| u.get_schedule_id().map(|id| id.as_string()))
-                        .filter(|schedule| schedule.is_some())
-                        .map(|schedule| schedule.unwrap())
-                        .collect(),
-                },
-                DocumentAttribute {
-                    key: "users".into(),
-                    value: service
-                        .users
-                        .iter()
-                        .map(|u| u.user_id.as_string())
-                        .collect(),
-                },
-            ],
+                        .map(|id| id.inner_ref().clone())
+                        .collect::<Vec<_>>();
+                    ids.push(u.user_id.inner_ref().clone());
+                    match &u.availibility {
+                        TimePlan::Calendar(id) | TimePlan::Schedule(id) => {
+                            ids.push(id.inner_ref().clone());
+                        }
+                        _ => (),
+                    };
+                    ids
+                })
+                .flatten()
+                .collect(),
         }
     }
 

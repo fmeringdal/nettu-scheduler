@@ -71,8 +71,8 @@ pub enum ScheduleRuleVariant {
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 struct Time {
-    pub hours: u32,
-    pub minutes: u32,
+    pub hours: i64,
+    pub minutes: i64,
 }
 
 impl std::cmp::PartialOrd for Time {
@@ -99,11 +99,11 @@ impl ScheduleRuleInterval {
             busy: false,
             start_ts: tzid
                 .ymd(day.year, day.month, day.day)
-                .and_hms(self.start.hours, self.start.minutes, 0)
+                .and_hms(self.start.hours as u32, self.start.minutes as u32, 0)
                 .timestamp_millis(),
             end_ts: tzid
                 .ymd(day.year, day.month, day.day)
-                .and_hms(self.end.hours, self.end.minutes, 0)
+                .and_hms(self.end.hours as u32, self.end.minutes as u32, 0)
                 .timestamp_millis(),
         }
     }

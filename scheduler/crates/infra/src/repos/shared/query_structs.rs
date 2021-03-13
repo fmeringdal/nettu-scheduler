@@ -2,7 +2,7 @@ use nettu_scheduler_domain::Metadata;
 use nettu_scheduler_domain::ID;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct MetadataFindQuery {
     pub metadata: KVMetadata,
     pub skip: usize,

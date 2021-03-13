@@ -70,7 +70,7 @@ impl IEventRepo for MongoEventRepo {
 
     async fn find_many(&self, event_ids: &[ID]) -> anyhow::Result<Vec<CalendarEvent>> {
         let filter = doc! {
-            "event_id": {
+            "_id": {
                 "$in": event_ids.iter().map(|id| id.inner_ref()).collect::<Vec<_>>()
             }
         };
