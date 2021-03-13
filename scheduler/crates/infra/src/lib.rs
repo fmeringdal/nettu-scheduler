@@ -46,7 +46,7 @@ impl NettuContext {
 
 /// Will setup the correct Infra Context given the environment
 pub async fn setup_context() -> NettuContext {
-    const MONGODB_CONNECTION_STRING: &str = "MONGODB_CONNECTION_STRNG";
+    const MONGODB_CONNECTION_STRING: &str = "MONGODB_CONNECTION_STRING";
     const MONGODB_NAME: &str = "MONGODB_NAME";
 
     let mongodb_conncetion_string = std::env::var(MONGODB_CONNECTION_STRING);
