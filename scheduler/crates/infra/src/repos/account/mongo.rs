@@ -47,14 +47,24 @@ impl IAccountRepo for MongoAccountRepo {
 
     async fn find_by_apikey(&self, api_key: &str) -> Option<Account> {
         let filter = doc! {
-            "secret_api_key": api_key
+            "attributes": {
+                "$elemMatch": {
+                    "key": "secret_api_key",
+                    "value": api_key
+                }
+            },
         };
         mongo_repo::find_one_by::<_, AccountMongo>(&self.collection, filter).await
     }
 
     async fn find_by_webhook_url(&self, url: &str) -> Option<Account> {
         let filter = doc! {
-            "settings.webhook.url": url
+            "attributes": {
+                "$elemMatch": {
+                    "key": "webhook_url",
+                    "value": url
+                }
+            },
         };
         mongo_repo::find_one_by::<_, AccountMongo>(&self.collection, filter).await
     }
@@ -71,6 +81,13 @@ struct AccountMongo {
     pub secret_api_key: String,
     pub public_jwt_key: Option<PEMKey>,
     pub settings: AccountSettingsMongo,
+    pub attributes: Vec<AccountAttributeMongo>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct AccountAttributeMongo {
+    key: String,
+    value: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -104,10 +121,18 @@ impl<'de> MongoDocument<Account> for AccountMongo {
 
     fn from_domain(account: &Account) -> Self {
         let mut settings = AccountSettingsMongo { webhook: None };
+        let mut attributes = vec![AccountAttributeMongo {
+            key: "secret_api_key".to_string(),
+            value: account.secret_api_key.clone(),
+        }];
         if let Some(webhook_settings) = account.settings.webhook.as_ref() {
             settings.webhook = Some(AccountWebhookSettingsMongo {
                 url: webhook_settings.url.to_owned(),
                 key: webhook_settings.key.to_owned(),
+            });
+            attributes.push(AccountAttributeMongo {
+                key: "webhook_url".to_string(),
+                value: webhook_settings.url.to_string(),
             });
         }
 
@@ -116,6 +141,7 @@ impl<'de> MongoDocument<Account> for AccountMongo {
             public_jwt_key: account.public_jwt_key.clone(),
             secret_api_key: account.secret_api_key.clone(),
             settings,
+            attributes,
         }
     }
 

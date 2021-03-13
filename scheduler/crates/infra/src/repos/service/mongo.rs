@@ -55,11 +55,13 @@ impl IServiceRepo for MongoServiceRepo {
             }
         };
         let update = doc! {
-            "attributes.value": {
-                "$pull": &calendar_id
-            },
-            "users.calendar_ids": {
-                "$pull": &calendar_id
+            "$pull": {
+                "attributes": {
+                    "value": &calendar_id
+                },
+                "users": {
+                    "calendar_ids": &calendar_id
+                }
             }
         };
         mongo_repo::update_many::<_, ServiceMongo>(&self.collection, filter, update).await
@@ -74,11 +76,13 @@ impl IServiceRepo for MongoServiceRepo {
             }
         };
         let update = doc! {
-            "attributes.value": {
-                "$pull": &schedule_id
-            },
-            "users.schedule_ids": {
-                "$pull": &schedule_id
+            "$pull": {
+                "attributes": {
+                    "value": &schedule_id
+                },
+                "users": {
+                    "schedule_ids": &schedule_id
+                }
             }
         };
         mongo_repo::update_many::<_, ServiceMongo>(&self.collection, filter, update).await
@@ -87,10 +91,16 @@ impl IServiceRepo for MongoServiceRepo {
     async fn remove_user_from_services(&self, user_id: &ID) -> anyhow::Result<()> {
         let user_id = user_id.as_string();
         let filter = doc! {
-            "users.user_id": &user_id
+            "attributes": {
+                "key": "users",
+                "value": &user_id
+            }
         };
         let update = doc! {
             "$pull": {
+                "attributes": {
+                    "value": &user_id
+                },
                 "users": {
                     "user_id": &user_id
                 }
@@ -193,6 +203,14 @@ impl MongoDocument<Service> for ServiceMongo {
                         .map(|u| u.get_schedule_id().map(|id| id.as_string()))
                         .filter(|schedule| schedule.is_some())
                         .map(|schedule| schedule.unwrap())
+                        .collect(),
+                },
+                DocumentAttribute {
+                    key: "users".into(),
+                    value: service
+                        .users
+                        .iter()
+                        .map(|u| u.user_id.as_string())
                         .collect(),
                 },
             ],

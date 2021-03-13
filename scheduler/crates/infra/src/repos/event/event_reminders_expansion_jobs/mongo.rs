@@ -31,7 +31,7 @@ impl IEventRemindersExpansionJobsRepo for MongoEventRemindersExpansionsJobRepo {
 
     async fn delete_all_before(&self, before_inc: i64) -> Vec<EventRemindersExpansionJob> {
         let filter = doc! {
-            "remind_at": {
+            "timestamp": {
                 "$lte": before_inc
             }
         };

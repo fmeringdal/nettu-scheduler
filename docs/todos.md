@@ -3,7 +3,5 @@
 
 - more recurrence validation in rrule.rs crate
 - fix docs typos
-- mongodb docs:
-    - schema
-    - indexes
+- services repo needs tests
 - javascript sdk
