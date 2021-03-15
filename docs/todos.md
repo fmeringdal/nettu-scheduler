@@ -2,6 +2,7 @@
 ## Todos
 
 - javascript sdk
+- actix web beta v4
 - docs
     - typos
     - examples
