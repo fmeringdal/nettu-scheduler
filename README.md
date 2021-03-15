@@ -78,15 +78,15 @@ Please see below for links to more examples.
 
 ## Examples
 
-* [Calendars and Events](#examples/calendar-events.md)
+* [Calendars and Events](examples/calendar-events.md)
 
-* [Booking](#example-2-for-every-4-paragraphs-of-text-include-2-images)
+* [Booking](examples/booking.md)
 
-* [Scheduling](#example-3-in-a-group-of-8-related-links-reserve-positions-5-and-6-for-sponsored-links)
+* [Scheduling](examples/scheduling.md)
 
-* [Reminders](#example-4-display-a-list-of-songs-including-the-most-successful-songs-for-every-10-songs)
+* [Reminders](examples/reminders.md)
 
-* [Creating JWT for end-users](#example-4-display-a-list-of-songs-including-the-most-successful-songs-for-every-10-songs)
+* [Creating JWT for end-users](examples/jwt.md)
 
 
 ## Contributing
