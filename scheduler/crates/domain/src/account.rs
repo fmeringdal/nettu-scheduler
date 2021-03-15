@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 const API_KEY_LEN: usize = 30;
 
-/// An `Account` acts as a kind of namespace and lets multiple different
+/// An `Account` acts as a namespace for all other resources and lets multiple different
 /// applications use the same instance of this server without interfering
 /// with each other.
 #[derive(Debug, Clone)]

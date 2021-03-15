@@ -1,11 +1,9 @@
 
 ## Todos
 
+- docs and examples
+- find meeting times between people
 - javascript sdk
-- actix web beta v4
-- docs
-    - typos
-    - examples
 
 
 ## Backlog

@@ -32,13 +32,6 @@
 
   * [Quick start](#quick-start)
   * [Examples](#examples)
-     * [Example 1) For every 7 photos display an ad:](#example-1-for-every-7-photos-display-an-ad)
-     * [Example 2) For every 4 paragraphs of text include 2 images:](#example-2-for-every-4-paragraphs-of-text-include-2-images)
-     * [Example 3) In a group of 8 related links reserve positions 5 and 6 for sponsored links:](#example-3-in-a-group-of-8-related-links-reserve-positions-5-and-6-for-sponsored-links)
-     * [Example 4) Display a list of songs including the most successful songs for every 10 songs:](#example-4-display-a-list-of-songs-including-the-most-successful-songs-for-every-10-songs)
-     * [Example 5) You can also use larger aliases and the ES6 object shorthand:](#example-5-you-can-also-use-larger-aliases-and-the-es6-object-shorthand)
-     * [Example 6) View photos of puppies, kittens and penguins in sequence:](#example-6-view-photos-of-puppies-kittens-and-penguins-in-sequence)
-     * [Example 7) Include 1 large photo for every 2 medium size photos followed by 3 small photos:](#example-7-include-1-large-photo-for-every-2-medium-size-photos-followed-by-3-small-photos)
   * [Contributing](#contributing)
   * [License](#license)
   * [Special thanks](#special-thanks)
@@ -128,26 +121,21 @@ executable using the `tracing` crate's macros.
 [`set_global_default()`]: https://docs.rs/tracing/latest/tracing/subscriber/fn.set_global_default.html
 
 ## Examples
-* **Authentication**: It supports authentication through JWT tokens signed by your server and api-key for server to server communication. 
 
-* **Calendar**: Grouping of `Calendar Event`s
+* [Calendars and Events](#example-1-for-every-7-photos-display-an-ad)
 
-* **Calendar Events**: Supports recurrence rules and reminders
+* [Booking](#example-2-for-every-4-paragraphs-of-text-include-2-images)
 
-* **Booking**: Create a `Service` and add bookable `User`s to it with their own preffered availibility `TimePlan`. Then easily query the `Service` for bookingslots
+* [Scheduling](#example-3-in-a-group-of-8-related-links-reserve-positions-5-and-6-for-sponsored-links)
 
-* **Schedule**: An alternative to `Calendar Event` for describing weekly availibility
+* [Reminders](#example-4-display-a-list-of-songs-including-the-most-successful-songs-for-every-10-songs)
 
-* **Webhook**: For notifying your server about `CalendarEvent` reminders.
+* [Creating JWT for end-users](#example-4-display-a-list-of-songs-including-the-most-successful-songs-for-every-10-songs)
 
 
 ## Contributing
 
-:balloon: Thanks for your help improving the project! We are so happy to have
-you! We have a [contributing guide][guide] to help you get involved in the Tracing
-project.
-
-[guide]: CONTRIBUTING.md
+Any contribution or help to this project are always welcome!
 
 ## License
 

@@ -1,7 +1,7 @@
 use crate::shared::entity::{Entity, ID};
 
 /// A `Reminder` represents a specific time before the occurence a
-/// `CalendarEvent` when the corresponding `Account` should be notified.
+/// `CalendarEvent` at which the owner `Account` should be notified.
 #[derive(Debug, Clone)]
 pub struct Reminder {
     pub id: ID,

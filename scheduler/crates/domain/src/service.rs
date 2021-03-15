@@ -4,8 +4,7 @@ use crate::{
 };
 use serde::{Deserialize, Serialize};
 
-/// A type that describes a time plan and is either a `Calendar` og a `Schedule`
-// Maybe rename this TimePlan ?
+/// A type that describes a time plan and is either a `Calendar` or a `Schedule`
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "variant", content = "id")]
 pub enum TimePlan {
