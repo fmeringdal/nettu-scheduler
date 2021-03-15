@@ -39,18 +39,18 @@
 
 ## Quick start
 
-First of we need a running instance of the server. The quickest way to start one
-is with docker:
+First of all we will need a running instance of the server. The quickest way to start one
+is with `docker`:
 ```bash
 docker run -p 5000:5000 fmeringdal/nettu-scheduler
 ```
-or with cargo:
+or if you want to build it yourself with `cargo`:
 ```bash
 cd scheduler
 cargo run inmemory
 ```
-Both of these methods will start the server with an inmemory data storage which should never
-be used in production, but is good enough for exploring what can be done.
+Both of these methods will start the server with an inmemory data store which should never
+be used in production, but is good enough while just playing around.
 For information about setting up this server for deployment, read here.
 
 Now when we have the server running we will need an `Account`. To create an `Account`
@@ -62,6 +62,7 @@ curl -X POST -H "Content-Type: application/json" -d '{"code": "REPLACE_ME"}' htt
 The previous command will create an `Account` and the associated `secret_api_key` which is all you need when
 your application is going to communicate with the Nettu Scheduler server.
 
+Quick example of how to create and query a user
 ```bash
 export SECRET_API_KEY="REPLACE_ME"
 
@@ -77,7 +78,7 @@ Please see below for links to more examples.
 
 ## Examples
 
-* [Calendars and Events](#example-1-for-every-7-photos-display-an-ad)
+* [Calendars and Events](#examples/calendar-events.md)
 
 * [Booking](#example-2-for-every-4-paragraphs-of-text-include-2-images)
 
@@ -90,7 +91,7 @@ Please see below for links to more examples.
 
 ## Contributing
 
-Any contribution or help to this project are always welcome!
+Any contribution to this project is always welcome!
 
 ## License
 
