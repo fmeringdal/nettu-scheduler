@@ -39,86 +39,41 @@
 
 ## Quick start
 
-In order to record trace events, executables have to use a collector
-implementation compatible with `tracing`. A collector implements a way of
-collecting trace data, such as by logging it to standard output.
-[`tracing-subscriber`][tracing-subscriber-docs]'s [`fmt` module][fmt] provides
-a collector for logging traces with reasonable defaults. Additionally,
-`tracing-subscriber` is able to consume messages emitted by `log`-instrumented
-libraries and modules.
+First of we need a running instance of the server. The quickest way to start one
+is with docker:
+```bash
+docker run -p 5000:5000 fmeringdal/nettu-scheduler
+```
+or with cargo:
+```bash
+cd scheduler
+cargo run inmemory
+```
+Both of these methods will start the server with an inmemory data storage which should never
+be used in production, but is good enough for exploring what can be done.
+For information about setting up this server for deployment, read here.
 
-To use `tracing-subscriber`, add the following to your `Cargo.toml`:
+Now when we have the server running we will need an `Account`. To create an `Account`
+we will need the `CREATE_ACCOUNT_SECRET_CODE` which you will find in the server logs
+during startup (it can also be set as an environment variable).
+```bash
+curl -X POST -H "Content-Type: application/json" -d '{"code": "REPLACE_ME"}' http://localhost:5000/accounts
+```
+The previous command will create an `Account` and the associated `secret_api_key` which is all you need when
+your application is going to communicate with the Nettu Scheduler server.
 
-```toml
-[dependencies]
-nettu_scheduler_sdk = "0.1"
+```bash
+export SECRET_API_KEY="REPLACE_ME"
+
+# Create a user with metadata
+curl -X POST -H "Content-Type: application/json" -H "x-api-key: $SECRET_API_KEY" -d '{"metadata": { "groupId": "123" }}' http://localhost:5000/users
+
+# Get user by metadata
+curl -X GET -H "Content-Type: application/json" -H "x-api-key: $SECRET_API_KEY" -d '{"metadata": { "groupId": "123" }}' http://localhost:5000/users/meta
 ```
 
-Then create and install a collector, for example using [`init()`]:
+Please see below for links to more examples.
 
-```rust
-use tracing::info;
-use tracing_subscriber;
-
-fn main() {
-    // install global collector configured based on RUST_LOG env var.
-    tracing_subscriber::fmt::init();
-
-    let number_of_yaks = 3;
-    // this creates a new event, outside of any spans.
-    info!(number_of_yaks, "preparing to shave yaks");
-
-    let number_shaved = yak_shave::shave_all(number_of_yaks);
-    info!(
-        all_yaks_shaved = number_shaved == number_of_yaks,
-        "yak shaving completed."
-    );
-}
-```
-
-Using `init()` calls [`set_global_default()`] so this collector will be used
-as the default in all threads for the remainder of the duration of the
-program, similar to how loggers work in the `log` crate.
-
-[tracing-subscriber-docs]: https://docs.rs/tracing-subscriber/
-[fmt]: https://docs.rs/tracing-subscriber/latest/tracing_subscriber/fmt/index.html
-[`set_global_default`]: https://docs.rs/tracing/latest/tracing/subscriber/fn.set_global_default.html
-
-
-For more control, a collector can be built in stages and not set globally,
-but instead used to locally override the default collector. For example:
-
-```rust
-use tracing::{info, Level};
-use tracing_subscriber;
-
-fn main() {
-    let collector = tracing_subscriber::fmt()
-        // filter spans/events with level TRACE or higher.
-        .with_max_level(Level::TRACE)
-        // build but do not install the subscriber.
-        .finish();
-
-    tracing::collector::with_default(collector, || {
-        info!("This will be logged to stdout");
-    });
-    info!("This will _not_ be logged to stdout");
-}
-```
-
-Any trace events generated outside the context of a collector will not be collected.
-
-This approach allows trace data to be collected by multiple collectors
-within different contexts in the program. Note that the override only applies to the
-currently executing thread; other threads will not see the change from with_default.
-
-Once a collector has been set, instrumentation points may be added to the
-executable using the `tracing` crate's macros.
-
-[`tracing-subscriber`]: https://docs.rs/tracing-subscriber/
-[fmt]: https://docs.rs/tracing-subscriber/latest/tracing_subscriber/fmt/index.html
-[`init()`]: https://docs.rs/tracing-subscriber/latest/tracing_subscriber/fmt/fn.init.html
-[`set_global_default()`]: https://docs.rs/tracing/latest/tracing/subscriber/fn.set_global_default.html
 
 ## Examples
 
