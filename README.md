@@ -82,8 +82,6 @@ Please see below for links to more examples.
 
 * [Booking](examples/booking.md)
 
-* [Scheduling](examples/scheduling.md)
-
 * [Reminders](examples/reminders.md)
 
 * [Creating JWT for end-users](examples/jwt.md)

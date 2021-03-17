@@ -102,7 +102,7 @@ impl CalendarEventClient {
             busy: input.busy,
             duration: input.duration,
             exdates: input.exdates,
-            rrule_options: input.rrule_options,
+            recurrence: input.rrule_options,
             reminder: input.reminder,
             is_service: input.is_service,
             start_ts: input.start_ts,

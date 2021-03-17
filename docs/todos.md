@@ -1,9 +1,11 @@
 
 ## Todos
 
-- docs and examples
-- find meeting times between people
+- reminders should just create future reminders
 - javascript sdk
+- docs and examples
+- needs list methods for calendars, schedules and services
+- deploy sdks
 
 
 ## Backlog

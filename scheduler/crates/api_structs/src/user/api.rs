@@ -17,6 +17,12 @@ impl UserResponse {
     }
 }
 
+pub mod get_me {
+    use super::*;
+
+    pub type APIResponse = UserResponse;
+}
+
 pub mod create_user {
     use nettu_scheduler_domain::Metadata;
 

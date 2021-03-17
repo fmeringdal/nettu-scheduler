@@ -1,22 +1,39 @@
 ## Booking
 
-Booking
+`Nettu scheduler` provides a `Service` type that makes it really easy to build a booking application. The `Service` type represents a bookable service that your app provides to your users.
+
+It works by adding the `User`s to the `Service` that is going to be bookable. Each `User`
+on the `Service` can have a bunch of different settings for when they can be booked (timeplan, closest booking time, buffers etc.).
+Then you can easily query the `Service` for the available bookingslots. When
+a booking is made you can register it as a `CalendarEvent` with the booked `User`
+as the owner of the `CalendarEvent` and the `User` will no longer be bookable
+in that timeperiod.
+
+An important point is to not store the booking resource itself in `Nettu scheduler`, but in your own application as your application is the one that contains all the information about the participants and metadata of the booking. It is reccomended that `Nettu scheduler` is just going to be used for calculating bookingslots, and not to try to fit your booking data model into the `CalendarEvent` resource type (unnless it is a really simple one). 
+
 
 ```js
-import { AdminClient } from "@nettu/scheduler-sdk";
+import { NettuClient, config } from "@nettu/scheduler-sdk";
 
-const address = "https://localhost:5000";
-const client = new AdminClient(address);
+config.baseUrl = "https://localhost:5000";
+const client = new NettuClient({ apiKey: "REPLACE_ME" });
 
-const user = await client.users.create();
-const service = await client.services.create();
-const schedule = await client.schedule.create();
+// Create a Service
+const { service } = await client.services.create();
+// Create a User
+const { user } = await client.users.create();
+// Create a Schedule for the User
+const { schedule } = await client.schedule.create(user.id, { timezone: "Europe/Oslo" });
+// Register the User on the Service with the specified Schedule as availibility and
+// also a buffer time after every service event 
 await client.services.addUser({
     userId: user.id,
     serviceId: service.id,
-    scheduleId: schedule.id
-})
+    scheduleId: schedule.id,
+    buffer: 10
+});
 
+// Now query for the available bookingslots
 const bookingSlots = await client.services.bookingslots({
     date: "2020-10-10",
     timezone: "UTC",
@@ -25,17 +42,17 @@ const bookingSlots = await client.services.bookingslots({
 });
 console.log(bookingSlots);
 
-await client.events.insert({
-    services: service.id,
-    remindAt: 1000*60*30
+// Insert a CalendarEvent that represents the booking selected
+// by the end user, the User will no longer be bookable in this timeperiod
+await client.events.create(user.id, {
+    startTs: bookingSlots[0].startTs,
+    duration: 1000*60*30, // 30 minutes in millis
+    isService: true, // Flagging this event as a service event so that possible service buffers will be created correctly
+    busy: true, // The user will be busy during this time and not bookable
+    // Optional if you want to receive a webhook notification 15 minutes before
+    // the booking
+    reminder: {
+        minutesBefore: 15
+    }
 });
-
-const bookingSlots = await client.services.bookingslots({
-    date: "2020-10-10",
-    timezone: "UTC",
-    interval: 1000*60*10,
-    duration: 1000*60*30
-});
-console.log(bookingSlots);
-
 ```

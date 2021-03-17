@@ -1,12 +1,12 @@
 use super::subscribers::CreateRemindersOnEventCreated;
+use crate::error::NettuError;
 use crate::shared::{
-    auth::{account_can_modify_user, protect_route, Permission},
+    auth::{account_can_modify_user, protect_account_route, protect_route, Permission},
     usecase::{
         execute, execute_with_policy, PermissionBoundary, Subscriber, UseCase,
         UseCaseErrorContainer,
     },
 };
-use crate::{error::NettuError, shared::auth::protect_account_route};
 use actix_web::{web, HttpResponse};
 use nettu_scheduler_api_structs::create_event::*;
 use nettu_scheduler_domain::{CalendarEvent, CalendarEventReminder, Metadata, RRuleOptions, ID};
@@ -44,7 +44,7 @@ pub async fn create_event_admin_controller(
         duration: body.duration,
         user_id: user.id,
         calendar_id: body.calendar_id,
-        rrule_options: body.rrule_options,
+        recurrence: body.recurrence,
         account_id: account.id,
         reminder: body.reminder,
         is_service: body.is_service.unwrap_or(false),
@@ -70,7 +70,7 @@ pub async fn create_event_controller(
         start_ts: body.start_ts,
         duration: body.duration,
         calendar_id: body.calendar_id,
-        rrule_options: body.rrule_options,
+        recurrence: body.recurrence,
         user_id: user.id,
         account_id: user.account_id,
         reminder: body.reminder,
@@ -95,7 +95,7 @@ pub struct CreateEventUseCase {
     pub start_ts: i64,
     pub duration: i64,
     pub busy: bool,
-    pub rrule_options: Option<RRuleOptions>,
+    pub recurrence: Option<RRuleOptions>,
     pub reminder: Option<CalendarEventReminder>,
     pub is_service: bool,
     pub metadata: Metadata,
@@ -140,7 +140,7 @@ impl UseCase for CreateEventUseCase {
             is_service: self.is_service,
             metadata: self.metadata.clone(),
         };
-        if let Some(rrule_opts) = self.rrule_options.clone() {
+        if let Some(rrule_opts) = self.recurrence.clone() {
             if !e.set_recurrence(rrule_opts, &calendar.settings, true) {
                 return Err(UseCaseErrors::InvalidRecurrenceRule);
             };
@@ -212,7 +212,7 @@ mod test {
         let mut usecase = CreateEventUseCase {
             start_ts: 500,
             duration: 800,
-            rrule_options: None,
+            recurrence: None,
             busy: false,
             calendar_id: calendar.id.clone(),
             user_id: user.id.clone(),
@@ -239,7 +239,7 @@ mod test {
         let mut usecase = CreateEventUseCase {
             start_ts: 500,
             duration: 800,
-            rrule_options: Some(Default::default()),
+            recurrence: Some(Default::default()),
             busy: false,
             calendar_id: calendar.id.clone(),
             user_id: user.id.clone(),
@@ -266,7 +266,7 @@ mod test {
         let mut usecase = CreateEventUseCase {
             start_ts: 500,
             duration: 800,
-            rrule_options: Some(Default::default()),
+            recurrence: Some(Default::default()),
             busy: false,
             calendar_id: ID::default(),
             user_id: user.id.clone(),
@@ -306,7 +306,7 @@ mod test {
             let mut usecase = CreateEventUseCase {
                 start_ts: 500,
                 duration: 800,
-                rrule_options: Some(rrule),
+                recurrence: Some(rrule),
                 busy: false,
                 calendar_id: calendar.id.clone(),
                 user_id: user.id.clone(),

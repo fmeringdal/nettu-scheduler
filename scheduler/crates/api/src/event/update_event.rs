@@ -48,7 +48,7 @@ pub async fn update_event_admin_controller(
         duration: body.duration,
         start_ts: body.start_ts,
         reminder: body.reminder,
-        rrule_options: body.rrule_options,
+        recurrence: body.recurrence,
         busy: body.busy,
         is_service: body.is_service,
         exdates: body.exdates,
@@ -76,7 +76,7 @@ pub async fn update_event_controller(
         duration: body.duration,
         start_ts: body.start_ts,
         reminder: body.reminder,
-        rrule_options: body.rrule_options,
+        recurrence: body.recurrence,
         busy: body.busy,
         is_service: body.is_service,
         exdates: body.exdates,
@@ -100,7 +100,7 @@ pub struct UpdateEventUseCase {
     pub busy: Option<bool>,
     pub duration: Option<i64>,
     pub reminder: Option<CalendarEventReminder>,
-    pub rrule_options: Option<RRuleOptions>,
+    pub recurrence: Option<RRuleOptions>,
     pub is_service: Option<bool>,
     pub exdates: Option<Vec<i64>>,
     pub metadata: Option<Metadata>,
@@ -129,7 +129,7 @@ impl UseCase for UpdateEventUseCase {
             start_ts,
             busy,
             duration,
-            rrule_options: _,
+            recurrence,
             exdates,
             reminder,
             is_service,
@@ -193,7 +193,7 @@ impl UseCase for UpdateEventUseCase {
             e.busy = *busy;
         }
 
-        let valid_recurrence = if let Some(rrule_opts) = self.rrule_options.clone() {
+        let valid_recurrence = if let Some(rrule_opts) = recurrence.clone() {
             // ? should exdates be deleted when rrules are updated
             e.set_recurrence(rrule_opts, &calendar.settings, true)
         } else if start_or_duration_change && e.recurrence.is_some() {
@@ -241,7 +241,7 @@ mod test {
             start_ts: Some(500),
             duration: Some(800),
             reminder: None,
-            rrule_options: None,
+            recurrence: None,
             busy: Some(false),
             user_id: Default::default(),
             is_service: None,

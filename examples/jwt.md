@@ -1,61 +1,75 @@
 ## Json Web Token 
 
-If you want your end-users to interact with the nettu scheduler API you can give them
-a Json Web Token signed with your private RSA key.
+Json Web Tokens are useful if you want your end-users to interact with the nettu scheduler API from the browser. Just upload your public RSA key (only RS256 algorithm is supported) to the `nettu scheduler` and then create jwt by signing the data with your private RSA key.
 
-:w
-
-This is what your code might look like on your server side
+This is how your server side code might look like
 
 ```js
 import jwt from "jsonwebtoken"; 
-import { AdminClient, Permissions } from "@nettu/scheduler-sdk";
+import { NettuClient, config, Permissions } from "@nettu/scheduler-sdk";
 
-const address = "https://localhost:5000";
-const token = "YOUR_TOKEN";
-const client = new AdminClient(address);
-const user = await client.users.create();
+config.baseUrl = "https://localhost:5000";
+const client = new NettuClient({ apiKey: "REPLACE_ME" });
 
-await client.account.setPublicJWTKey("YOUR_PUBLIC_JWT_KEY");
+// Upload your public rsa signing key
+await client.account.setPublicJWTKey("YOUR_PUBLIC_KEY");
 
-
+// A handler in your server that generates JWT for authenticated
+// users 
 const handleJWTRequest = async(user) => {
+    // Check if your user is already associated with a
+    // nettu user. Create one if not.
     if(!user.schedulerUserId) {
-        const { id } = await client.user.create();
-        user.schedulerUserId = id;
+        const { user: nettuUser } = await client.user.create();
+        user.schedulerUserId = nettuUser.id;
     }
 
     const token = jwt.sign({
+        // The nettu scheduler user id (the subject for this token)
         schedulerUserId: user.schedulerUserId,
+        // Policy (a.k.a claims)
         policy: {
             allow: "*",
             deny: "DeleteCalendar"
         }
     }, {
         alg: "RS256",
+        // Update this to your private key
         key: "YOUR_PRIVATE_KEY"
     });
     
+    const { account } = await client.account.me();
 
-    res.send(token);
+    // Return the token back to the frontend
+    return {
+        token,
+        accountId: account.id
+    };
 }
 
 ```
 
 
-This is what your code might look like in the frontend
+This is what your frontend code might look like 
 ```js
-import { UserClient} from "@nettu/scheduler-sdk";
+import { NettuUserClient } from "@nettu/scheduler-sdk";
 
-const address = "https://localhost:5000";
-
-const getJWT = async(): string => {
-    // HERE GOES LOGIC FOR CALLING YOUR OWN SERVERS ENDPOINT WHICH RETURNS A JWT
+const getJWT = async() => {
+    // HERE GOES LOGIC FOR CALLING YOUR SERVER ENDPOINT WHICH RETURNS A JWT AND ACCOUNT ID
 }
 
-const token = await getJWT();
-const client = new UserClient(address, token);
+const { token, accountId } = await getJWT();
+config.baseUrl = "https://localhost:5000";
+// Construct the nettu user client
+const client = new NettuUserClient({
+    token,
+    nettuAccount: accountId
+});
 
-const event = await client.events.update({ eventId, weekly });
+// Create a Calendar
+const { calendar } = await client.calendar.update({
+    weekStart: 0,
+    timezone: "UTC"
+});
 
 ```
