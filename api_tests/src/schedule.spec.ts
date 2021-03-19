@@ -1,54 +1,59 @@
-import { INettuClient, NettuClient, domain } from "@nettu/sdk-scheduler";
+import { INettuClient, INettuUserClient, NettuClient, ScheduleRuleVariant, Weekday } from "@nettu/sdk-scheduler";
 import { setupUserClient } from "./helpers/fixtures";
 
 describe("Schedule API", () => {
-  let client: INettuClient;
+  let client: INettuUserClient;
   const unauthClient = NettuClient();
+  let userId: string;
 
   beforeAll(async () => {
     const data = await setupUserClient();
     client = data.userClient;
+    userId = data.userId;
   });
 
   it("should not create schedule for unauthenticated user", async () => {
-    const res = await unauthClient.schedule.insert({
+    const res = await unauthClient.schedule.create(userId, {
       timezone: "Europe/Berlin",
     });
     expect(res.status).toBe(401);
   });
 
   it("should create schedule for authenticated user", async () => {
-    const res = await client.schedule.insert({
+    const res = await client.schedule.create({
       timezone: "Europe/Berlin",
     });
     expect(res.status).toBe(201);
-    expect(res.data!.id).toBeDefined();
+    expect(res.data!.schedule.id).toBeDefined();
   });
 
   it("should delete schedule for authenticated user and not for unauthenticated user", async () => {
-    let { data: schedule } = await client.schedule.insert({
+    let { data } = await client.schedule.create({
       timezone: "Europe/Berlin",
     });
-    let res = await unauthClient.schedule.remove(schedule!.id);
+    const scheduleId = data!.schedule.id;
+
+    let res = await unauthClient.schedule.remove(scheduleId);
     expect(res.status).toBe(401);
-    res = await client.schedule.remove(schedule!.id);
+    res = await client.schedule.remove(scheduleId);
     expect(res.status).toBe(200);
-    res = await client.schedule.remove(schedule!.id);
+    res = await client.schedule.remove(scheduleId);
     expect(res.status).toBe(404);
   });
 
   it("should update schedule", async () => {
-    const { data: schedule } = await client.schedule.insert({
+    const { data } = await client.schedule.create({
       timezone: "Europe/Berlin",
     });
-    const { data: updatedSchedule } = await client.schedule.update(
-      schedule!.id,
+    const scheduleId = data!.schedule.id;
+    const updatedScheduleRes = await client.schedule.update(
+      scheduleId,
       {
         rules: [
           {
             variant: {
-              type: domain.ScheduleRuleVariant.WDay,
-              value: domain.Weekday.Mon,
+              type: ScheduleRuleVariant.WDay,
+              value: Weekday.Mon,
             },
             intervals: [
               {
@@ -67,8 +72,9 @@ describe("Schedule API", () => {
         timezone: "UTC",
       }
     );
+    const updatedSchedule = updatedScheduleRes.data!.schedule;
 
-    expect(updatedSchedule!.id).toBe(schedule!.id);
+    expect(updatedSchedule!.id).toBe(scheduleId);
     expect(updatedSchedule!.timezone).toBe("UTC");
     expect(updatedSchedule!.rules.length).toBe(1);
   });

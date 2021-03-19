@@ -1,9 +1,9 @@
-import { INettuClient } from "@nettu/sdk-scheduler";
+import { INettuClient, INettuUserClient } from "@nettu/sdk-scheduler";
 import { setupAccount, setupUserClient } from "./helpers/fixtures";
 
 describe("Service API", () => {
   let client: INettuClient;
-  let userClient: INettuClient;
+  let userClient: INettuUserClient;
   let accountId: string;
   let userId: string;
   beforeAll(async () => {
@@ -15,56 +15,44 @@ describe("Service API", () => {
   });
 
   it("should create and find service", async () => {
-    const res = await client.service.insert();
+    const res = await client.service.create();
     expect(res.status).toBe(201);
 
-    const serviceRes = await client.service.find(res.data!.serviceId);
-    expect(serviceRes.data!.id).toBe(res.data!.serviceId);
-    expect(serviceRes.data!.accountId).toBe(accountId);
+    const serviceRes = await client.service.find(res.data!.service.id);
+    expect(serviceRes.data!.service.id).toBe(res.data!.service.id);
   });
 
   it("should add user to service", async () => {
-    const {
-      //@ts-ignore
-      data: { serviceId },
-    } = await client.service.insert();
+    const serviceRes = await client.service.create();
 
-    const user1 = await client.user.create("1");
+    const userRes = await client.user.create();
 
-    await client.service.addUserToService(serviceId, {
-      calendarIds: [],
-      userId: user1.data!.id,
+    await client.service.addUser(serviceRes.data!.service.id, {
+      userId: userRes.data!.user.id,
     });
 
-    const service = await client.service.find(serviceId);
-    expect(service.data!.users.length).toBe(1);
+    const service = await client.service.find(serviceRes.data!.service.id);
+    expect(service.data!.service.users.length).toBe(1);
   });
 
   it("should remove user from service", async () => {
-    const {
-      //@ts-ignore
-      data: { serviceId },
-    } = await client.service.insert();
+    const serviceRes = await client.service.create();
 
-    const user1 = await client.user.create("1");
+    const user = await client.user.create();
 
-    await client.service.addUserToService(serviceId, {
-      calendarIds: [],
-      userId: user1.data!.id,
+    await client.service.addUser(serviceRes.data!.service.id, {
+      userId: user.data!.user.id,
     });
-    await client.service.removeUserFromService(serviceId, user1.data!.id);
+    await client.service.removeUser(serviceRes.data!.service.id, user.data!.user.id);
 
-    const service = await client.service.find(serviceId);
-    expect(service.data!.users.length).toBe(0);
+    const service = await client.service.find(serviceRes.data!.service.id);
+    expect(service.data!.service.users.length).toBe(0);
   });
 
   it("should get service bookingslots with no users", async () => {
-    const {
-      //@ts-ignore
-      data: { serviceId },
-    } = await client.service.insert();
+    const serviceRes = await client.service.create();
 
-    const service = await client.service.getBookingslots(serviceId, {
+    const service = await client.service.getBookingslots(serviceRes.data!.service.id, {
       date: "1980-1-1",
       duration: 60 * 60 * 1000,
       ianaTz: "UTC",
@@ -75,27 +63,38 @@ describe("Service API", () => {
   });
 
   it("should get service bookingslots with one user with a schedule", async () => {
-    const {
-      //@ts-ignore
-      data: { serviceId },
-    } = await client.service.insert();
+    const serviceRes = await client.service.create();
+    const serviceId = serviceRes.data!.service.id;
 
-    const { data: schedule } = await userClient.schedule.insert({
+    const scheduleRes = await userClient.schedule.create({
       timezone: "Europe/Berlin",
     });
-    await client.service.addUserToService(serviceId, {
+    const scheduleId = scheduleRes.data!.schedule.id;
+    await client.service.addUser(serviceId, {
       userId,
-      scheduleIds: [schedule!.id],
+      availibility: {
+        variant: "Schedule",
+        id: scheduleId
+      }
     });
 
-    const service = await client.service.getBookingslots(serviceId, {
+    const { data } = await client.service.getBookingslots(serviceId, {
+      date: "2030-10-10",
+      duration: 60 * 60 * 1000,
+      ianaTz: "UTC",
+      interval: 15 * 60 * 1000,
+    });
+
+    expect(data!.bookingSlots.length).toBe(31);
+
+    // Quqerying for bookingslots in the past should not yield and bookingslots
+    const { data: data2 } = await client.service.getBookingslots(serviceId, {
       date: "1980-1-1",
       duration: 60 * 60 * 1000,
       ianaTz: "UTC",
       interval: 15 * 60 * 1000,
     });
-    console.log(service.data!.bookingSlots);
 
-    expect(service.data!.bookingSlots.length).toBe(31);
+    expect(data2!.bookingSlots.length).toBe(0);
   });
 });

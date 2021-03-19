@@ -1,41 +1,45 @@
-import { NettuClient } from "@nettu/sdk-scheduler";
-import { readPrivateKey, readPublicKeyBase64, toBase64 } from "./utils";
+import { NettuClient, config, NettuUserClient } from "@nettu/sdk-scheduler";
+import { readPrivateKey, readPublicKey } from "./utils";
 import jwt from "jsonwebtoken";
 
-export const CREATE_ACCOUNT_CODE = "FW4KbTC2loN1Ckr8KkIcwE3Av";
+export const CREATE_ACCOUNT_CODE = "MfvvZXR0BaE5Qdez";
+config.baseUrl = "http://localhost:5000/api/v1";
 
 export const setupAccount = async () => {
   const client = NettuClient();
-  const account = await client.account.insert({ code: CREATE_ACCOUNT_CODE });
+  const account = await client.account.create({ code: CREATE_ACCOUNT_CODE });
   return {
     client: NettuClient({ apiKey: account.data!.secretApiKey }),
-    accountId: account.data!.accountId,
+    accountId: account.data!.account.id,
   };
 };
 
 export const setupUserClient = async () => {
   const { client, accountId } = await setupAccount();
-  const publicKeyB64 = await readPublicKeyBase64();
-  const r = await client.account.setPublicSigningKey(publicKeyB64);
+  const publicKey = await readPublicKey();
+  const r = await client.account.setPublicSigningKey(publicKey);
   const privateKey = await readPrivateKey();
-  const { userId, token, client: userClient } = setupUserClientForAccount(
+  const userRes = await client.user.create();
+  const user = userRes.data!.user;
+  const { token, client: userClient } = setupUserClientForAccount(
     privateKey,
+    user.id,
     accountId
   );
 
   return {
     accountClient: client,
     userClient,
-    userId,
+    userId: user.id,
     accountId,
   };
 };
 
 export const setupUserClientForAccount = (
   privateKey: string,
+  userId: string,
   accountId: string
 ) => {
-  const userId = "123";
   const token = jwt.sign(
     {
       nettuSchedulerUserId: userId,
@@ -43,7 +47,7 @@ export const setupUserClientForAccount = (
         allow: ["*"]
       }
     },
-    privateKey as string,
+    privateKey,
     {
       algorithm: "RS256",
       expiresIn: "1h",
@@ -51,14 +55,13 @@ export const setupUserClientForAccount = (
   );
   return {
     token,
-    userId,
-    client: NettuClient({ token, nettuAccount: accountId }),
+    client: NettuUserClient({ token, nettuAccount: accountId }),
   };
 };
 
 export const createAccountAndUser = async () => {
   const data = await setupUserClient();
-  const user = await data.accountClient.user.create("456");
+  const user = await data.accountClient.user.create();
   return {
     ...data,
     user,

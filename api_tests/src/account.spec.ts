@@ -4,56 +4,57 @@ import {
   setupUserClientForAccount,
   CREATE_ACCOUNT_CODE,
 } from "./helpers/fixtures";
-import { readPrivateKey, readPublicKeyBase64 } from "./helpers/utils";
+import { readPrivateKey, readPublicKey } from "./helpers/utils";
 
 describe("Account API", () => {
   const client = NettuClient();
 
   it("should create account", async () => {
-    const { status, data } = await client.account.insert({
+    const { status, data } = await client.account.create({
       code: CREATE_ACCOUNT_CODE,
     });
     expect(status).toBe(201);
-    expect(data!.secretApiKey).toBeDefined();
+    expect(data!).toBeDefined();
   });
 
   it("should find account", async () => {
-    const { status, data } = await client.account.insert({
+    const { status, data } = await client.account.create({
       code: CREATE_ACCOUNT_CODE,
     });
     const accountClient = NettuClient({ apiKey: data!.secretApiKey });
-    const res = await accountClient.account.find();
+    const res = await accountClient.account.me();
     expect(res.status).toBe(200);
-    expect(res.data!.id).toBe(data!.accountId);
+    expect(res.data!.account.id).toBe(data!.account.id);
   });
 
   it("should not find account when not signed in", async () => {
-    await client.account.insert({ code: CREATE_ACCOUNT_CODE });
-    const res = await client.account.find();
+    const res = await client.account.me();
     expect(res.status).toBe(401);
-    expect(res.data!.id).toBeUndefined();
   });
 
   it("should upload account public key and be able to remove it", async () => {
     const { client } = await setupAccount();
-    const publicKeyB64 = await readPublicKeyBase64();
-    await client.account.setPublicSigningKey(publicKeyB64);
-    let res = await client.account.find();
-    expect(res.data!.public_key_b64).toBe(publicKeyB64);
+    const publicKey = await readPublicKey();
+    await client.account.setPublicSigningKey(publicKey);
+    let res = await client.account.me();
+    expect(res.data!.account.publicJwtKey!).toBe(publicKey);
+    const userRes = await client.user.create();
+    const user = userRes.data!.user;
     // validate that a user can now use token to interact with api
     const privateKey = await readPrivateKey();
     const { client: userClient } = setupUserClientForAccount(
       privateKey,
-      res.data!.id
+      user.id,
+      res.data!.account.id
     );
-    const { status } = await userClient.calendar.insert(undefined);
+    const { status } = await userClient.calendar.create({ timezone: "UTC" });
     expect(status).toBe(201);
     // now disable public key and dont allow jwt token anymore
     await client.account.removePublicSigningKey();
-    res = await client.account.find();
-    expect(res.data!.public_key_b64).toBeNull();
+    res = await client.account.me();
+    expect(res.data!.account.publicJwtKey).toBeNull();
 
-    const { status: status2 } = await userClient.calendar.insert(undefined);
+    const { status: status2 } = await userClient.calendar.create({ timezone: "UTC" });
     expect(status2).toBe(401);
   });
 });

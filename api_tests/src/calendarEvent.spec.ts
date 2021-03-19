@@ -1,22 +1,25 @@
-import { INettuClient, NettuClient, domain } from "@nettu/sdk-scheduler";
+import { INettuClient, NettuClient, Frequenzy, INettuUserClient } from "@nettu/sdk-scheduler";
 import { setupUserClient } from "./helpers/fixtures";
 
-const { Frequenzy } = domain;
 
 describe("CalendarEvent API", () => {
   let calendarId: string;
-  let client: INettuClient;
+  let userId: string;
+  let client: INettuUserClient;
   let unauthClient: INettuClient;
   beforeAll(async () => {
     const data = await setupUserClient();
     client = data.userClient;
     unauthClient = NettuClient({ nettuAccount: data.accountId });
-    const calendarRes = await client.calendar.insert(undefined);
-    calendarId = calendarRes.data.calendarId;
+    const calendarRes = await client.calendar.create({
+      timezone: "UTC"
+    });
+    calendarId = calendarRes.data!.calendar.id;
+    userId = data.userId;
   });
 
   it("should not let unauthenticated user create event", async () => {
-    const res = await unauthClient.events.insert({
+    const res = await unauthClient.events.create(userId, {
       calendarId,
       duration: 1000,
       startTs: 1000,
@@ -26,7 +29,7 @@ describe("CalendarEvent API", () => {
   });
 
   it("should let authenticated user create event", async () => {
-    const res = await client.events.insert({
+    const res = await client.events.create({
       calendarId,
       duration: 1000,
       startTs: 1000,
@@ -36,17 +39,17 @@ describe("CalendarEvent API", () => {
 
   it("should create daily event and retrieve instances", async () => {
     const count = 10;
-    let res = await client.events.insert({
+    let res = await client.events.create({
       calendarId,
       duration: 1000,
       startTs: 1000,
-      rruleOptions: {
+      recurrence: {
         freq: Frequenzy.Daily,
         interval: 1,
         count,
       },
     });
-    const { eventId } = res.data;
+    const eventId = res.data!.event.id;
     expect(res.status).toBe(201);
     let res2 = await client.events.getInstances(eventId, {
       startTs: 20,
@@ -66,18 +69,19 @@ describe("CalendarEvent API", () => {
 
   it("should create exception for calendar event", async () => {
     const count = 10;
-    let res = await client.events.insert({
+    let res = await client.events.create({
       calendarId,
       duration: 1000,
       startTs: 1000,
-      rruleOptions: {
+      recurrence: {
         freq: Frequenzy.Daily,
         interval: 1,
         count,
       },
     });
+    const event = res.data!.event;
+    const eventId = event.id;
 
-    const { eventId } = res.data;
     const getInstances = async () => {
       const res = await client.events.getInstances(eventId, {
         startTs: 20,
@@ -88,10 +92,10 @@ describe("CalendarEvent API", () => {
     const instancesBeforeException = await getInstances();
 
     // do create exception
-    const res2 = await client.events.createException(eventId, {
-      exceptionTs: 1000 + 24 * 60 * 60 * 1000,
+    const res2 = await client.events.update(eventId, {
+      exdates: [event.startTs + 24 * 60 * 60 * 1000],
     });
-    expect(res2.status).toBe(201);
+    expect(res2.status).toBe(200);
 
     const instancesAfterException = await getInstances();
     expect(instancesAfterException.length).toBe(
@@ -101,18 +105,19 @@ describe("CalendarEvent API", () => {
 
   it("updating calendar event start time removes exception", async () => {
     const count = 10;
-    let res = await client.events.insert({
+    let res = await client.events.create({
       calendarId,
       duration: 1000,
       startTs: 1000,
-      rruleOptions: {
+      recurrence: {
         freq: Frequenzy.Daily,
         interval: 1,
         count,
       },
     });
+    const event = res.data!.event;
+    const eventId = event.id;
 
-    const { eventId } = res.data;
     const getInstances = async () => {
       const res = await client.events.getInstances(eventId, {
         startTs: 20,
@@ -122,17 +127,17 @@ describe("CalendarEvent API", () => {
     };
     const instancesBeforeException = await getInstances();
     // do create exception
-    const res2 = await client.events.createException(eventId, {
-      exceptionTs: 1000 + 24 * 60 * 60 * 1000,
+    const res2 = await client.events.update(eventId, {
+      exdates: [event.startTs + 24 * 60 * 60 * 1000],
     });
-    expect(res2.status).toBe(201);
+    expect(res2.status).toBe(200);
 
     const instancesAfterException = await getInstances();
     expect(instancesAfterException.length).toBe(
       instancesBeforeException.length - 1
     );
     await client.events.update(eventId, {
-      startTs: 1000 + 24 * 60 * 60 * 1000,
+      startTs: event.startTs + 24 * 60 * 60 * 1000,
     });
     const instancesAfterExceptionDeleted = await getInstances();
     expect(instancesAfterExceptionDeleted.length).toBe(
