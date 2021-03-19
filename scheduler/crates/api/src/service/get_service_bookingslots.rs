@@ -13,7 +13,7 @@ use nettu_scheduler_domain::{
     TimeSpan, ID,
 };
 use nettu_scheduler_infra::NettuContext;
-use tracing::warn;
+use tracing::{info, warn};
 
 pub async fn get_service_bookingslots_controller(
     _http_req: HttpRequest,
@@ -177,7 +177,7 @@ impl GetServiceBookingSlotsUseCase {
                 get_free_busy(all_event_instances).free
             }
             TimePlan::Schedule(id) => match ctx.repos.schedule_repo.find(&id).await {
-                Some(schedule) if schedule.user_id == user.id => schedule.freebusy(&timespan),
+                Some(schedule) if schedule.user_id == user.user_id => schedule.freebusy(&timespan),
                 _ => empty,
             },
             TimePlan::Empty => empty,
@@ -247,6 +247,9 @@ impl GetServiceBookingSlotsUseCase {
         if let Some(furthest_booking_time) = user.furthest_booking_time {
             let last_available = furthest_booking_time * 60 * 1000 + ctx.sys.get_timestamp_millis();
             if last_available < timespan.end() {
+                if last_available <= timespan.start() {
+                    return Err(());
+                }
                 timespan = TimeSpan::new(timespan.start(), last_available);
             }
         }

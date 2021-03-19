@@ -15,38 +15,56 @@ An important point is to not store the booking resource itself in `Nettu schedul
 ```js
 import { NettuClient, config } from "@nettu/scheduler-sdk";
 
-config.baseUrl = "https://localhost:5000";
-const client = new NettuClient({ apiKey: "REPLACE_ME" });
+config.baseUrl = "http://localhost:5000/api/v1";
+const client = NettuClient({ apiKey: "YOUR_API_KEY" });
 
 // Create a Service
-const { service } = await client.service.create();
+const serviceRes = await client.service.create();
+const { service } = serviceRes.data!;
+
 // Create a User
-const { user } = await client.user.create();
+const userRes = await client.user.create();
+const { user } = userRes.data!;
+
 // Create a Schedule for the User
-const { schedule } = await client.schedule.create(user.id, { timezone: "Europe/Oslo" });
+const scheduleRes = await client.schedule.create(user.id, { timezone: "Europe/Oslo" });
+const { schedule } = scheduleRes.data!;
+
+// Calendar that will be used to store bookings
+const calendarRes = await client.calendar.create(user.id, {
+    timezone: "Europe/Oslo",
+    weekStart: 0
+});
+const { calendar } = calendarRes.data!;
+
 // Register the User on the Service with the specified Schedule as availibility and
 // also a buffer time after every service event 
-await client.service.addUser({
+await client.service.addUser(service.id, {
     userId: user.id,
-    serviceId: service.id,
-    scheduleId: schedule.id,
+    availibility: {
+        variant: "Schedule",
+        id: schedule.id
+    },
+    // Calendars that should be used to calculate busy time
+    busy: [calendar.id],
     buffer: 10
 });
 
 // Now query for the available bookingslots
-const bookingSlots = await client.service.bookingslots({
-    date: "2020-10-10",
-    timezone: "UTC",
-    interval: 1000*60*10,
-    duration: 1000*60*30
+const bookingSlotsRes = await client.service.getBookingslots(service.id, {
+    date: "2030-10-10",
+    ianaTz: "Europe/Oslo",
+    interval: 1000 * 60 * 10,
+    duration: 1000 * 60 * 30
 });
-console.log(bookingSlots);
+const { bookingSlots: bookingSlotsBefore } = bookingSlotsRes.data!;
 
 // Insert a CalendarEvent that represents the booking selected
 // by the end user, the User will no longer be bookable in this timeperiod
 await client.events.create(user.id, {
-    startTs: bookingSlots[0].startTs,
-    duration: 1000*60*30, // 30 minutes in millis
+    startTs: bookingSlotsBefore[0].start,
+    calendarId: calendar.id,
+    duration: 1000 * 60 * 30, // 30 minutes in millis
     isService: true, // Flagging this event as a service event so that possible service buffers will be created correctly
     busy: true, // The user will be busy during this time and not bookable
     // Optional if you want to receive a webhook notification 15 minutes before
@@ -55,4 +73,18 @@ await client.events.create(user.id, {
         minutesBefore: 15
     }
 });
+
+const bookingSlotsRes2 = await client.service.getBookingslots(service.id, {
+    date: "2030-10-10",
+    ianaTz: "Europe/Oslo",
+    interval: 1000 * 60 * 10,
+    duration: 1000 * 60 * 15
+});
+const { bookingSlots: bookingSlotsAfter } = bookingSlotsRes2.data!;
+
+// See that user is no longer available during the booked event + buffer time 
+console.log({
+    before: bookingSlotsBefore.length,
+    after: bookingSlotsAfter.length
+})
 ```

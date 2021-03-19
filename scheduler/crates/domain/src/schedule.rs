@@ -526,4 +526,13 @@ mod test {
             ]
         );
     }
+
+    #[test]
+    fn schedule_freebusy() {
+        let schedule = Schedule::new(Default::default(), Default::default(), &chrono_tz::UTC);
+        let timespan = TimeSpan::new(1602108000000, 1602194400000);
+        let free = schedule.freebusy(&timespan);
+        println!("Free: {:?}", free);
+        // assert!(!free.is_empty());
+    }
 }

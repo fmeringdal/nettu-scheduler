@@ -8,11 +8,11 @@ This is how your server side code might look like
 import jwt from "jsonwebtoken"; 
 import { NettuClient, config, Permissions } from "@nettu/scheduler-sdk";
 
-config.baseUrl = "https://localhost:5000";
-const client = new NettuClient({ apiKey: "REPLACE_ME" });
+config.baseUrl = "http://localhost:5000/api/v1";
+const client = NettuClient({ apiKey: "YOUR_API_KEY" });
 
 // Upload your public rsa signing key
-await client.account.setPublicJWTKey("YOUR_PUBLIC_KEY");
+await client.account.setPublicSigningKey("YOUR_PUBLIC_KEY");
 
 // A handler in your server that generates JWT for authenticated
 // users 
@@ -20,25 +20,26 @@ const handleJWTRequest = async(user) => {
     // Check if your user is already associated with a
     // nettu user. Create one if not.
     if(!user.schedulerUserId) {
-        const { user: nettuUser } = await client.user.create();
-        user.schedulerUserId = nettuUser.id;
+        const userRes = await client.user.create();
+        user.schedulerUserId = userRes.data!.user.id;
     }
 
     const token = jwt.sign({
         // The nettu scheduler user id (the subject for this token)
-        schedulerUserId: user.schedulerUserId,
+        nettuSchedulerUserId: user.schedulerUserId,
+        exp: 5609418990073,
+        iat: 19,
         // Policy (a.k.a claims)
-        policy: {
-            allow: "*",
-            deny: "DeleteCalendar"
+        schedulerPolicy: {
+            allow: [Permissions.All],
+            reject: [Permissions.DeleteCalendar]
         }
-    }, {
-        alg: "RS256",
-        // Update this to your private key
-        key: "YOUR_PRIVATE_KEY"
+    }, PRIV_KEY, {
+        algorithm: "RS256"
     });
-    
-    const { account } = await client.account.me();
+
+    const accountRes = await client.account.me();
+    const { account } = accountRes.data!;
 
     // Return the token back to the frontend
     return {
@@ -59,17 +60,20 @@ const getJWT = async() => {
 }
 
 const { token, accountId } = await getJWT();
-config.baseUrl = "https://localhost:5000";
+config.baseUrl = "http://localhost:5000/api/v1";
 // Construct the nettu user client
-const client = new NettuUserClient({
+const client = NettuUserClient({
     token,
     nettuAccount: accountId
 });
 
-// Create a Calendar
-const { calendar } = await client.calendar.update({
-    weekStart: 0,
+// Create calendar as user
+const calendarRes = await userClient.calendar.create({
     timezone: "UTC"
 });
+const { calendar } = calendarRes.data!;
 
+// This action is not allowed by the policy
+const { status } = await userClient.calendar.remove(calendar.id);
+console.log(status === 401);
 ```

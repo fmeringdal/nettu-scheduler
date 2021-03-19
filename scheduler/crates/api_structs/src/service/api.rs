@@ -31,6 +31,7 @@ pub mod add_user_to_service {
         pub user_id: ID,
         pub availibility: Option<TimePlan>,
         pub busy: Option<Vec<ID>>,
+        #[serde(default)]
         pub buffer: Option<i64>,
         pub closest_booking_time: Option<i64>,
         pub furthest_booking_time: Option<i64>,
@@ -47,6 +48,7 @@ pub mod create_service {
     #[derive(Debug, Deserialize, Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
+        #[serde(default)]
         pub metadata: Option<Metadata>,
     }
 
@@ -61,6 +63,7 @@ pub mod update_service {
     #[derive(Debug, Deserialize, Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
+        #[serde(default)]
         pub metadata: Option<Metadata>,
     }
 
@@ -145,6 +148,7 @@ pub mod get_services_by_meta {
     pub struct QueryParams {
         pub key: String,
         pub value: String,
+        #[serde(default)]
         pub skip: Option<usize>,
         pub limit: Option<usize>,
     }

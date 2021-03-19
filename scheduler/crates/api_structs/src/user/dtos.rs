@@ -5,7 +5,6 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "camelCase")]
 pub struct UserDTO {
     pub id: ID,
-    pub account_id: ID,
     pub metadata: Metadata,
 }
 
@@ -13,7 +12,6 @@ impl UserDTO {
     pub fn new(user: User) -> Self {
         Self {
             id: user.id,
-            account_id: user.account_id,
             metadata: user.metadata,
         }
     }

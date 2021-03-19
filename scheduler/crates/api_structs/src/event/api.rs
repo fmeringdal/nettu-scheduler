@@ -36,7 +36,9 @@ pub mod create_event {
         pub busy: Option<bool>,
         pub recurrence: Option<RRuleOptions>,
         pub reminder: Option<CalendarEventReminder>,
+        #[serde(default)]
         pub is_service: Option<bool>,
+        #[serde(default)]
         pub metadata: Option<Metadata>,
     }
 
@@ -105,6 +107,7 @@ pub mod get_events_by_meta {
     pub struct QueryParams {
         pub key: String,
         pub value: String,
+        #[serde(default)]
         pub skip: Option<usize>,
         pub limit: Option<usize>,
     }
@@ -138,6 +141,7 @@ pub mod update_event {
         pub is_service: Option<bool>,
         pub exdates: Option<Vec<i64>>,
         pub reminder: Option<CalendarEventReminder>,
+        #[serde(default)]
         pub metadata: Option<Metadata>,
     }
 

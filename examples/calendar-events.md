@@ -4,46 +4,57 @@
 
 
 ```js
-import { NettuClient, config } from "@nettu/scheduler-sdk";
+import { NettuClient, Frequenzy, config } from "@nettu/scheduler-sdk";
 
-config.baseUrl = "https://localhost:5000";
-const client = new NettuClient({ apiKey: "REPLACE_ME" });
+config.baseUrl = "http://localhost:5000/api/v1";
+const client = NettuClient({ apiKey: "YOUR_API_KEY" });
 
 // Create a User
-const { user } = await client.user.create();
+const userRes = await client.user.create();
+const { user } = userRes.data!;
+
 // Create the Calendar theat the CalendarEvent will belong to
-const { calendar } = await client.calendars.create(user.id, {
+const calendarRes = await client.calendar.create(user.id, {
     // Starts on monday
     weekStart: 0,
     // Timezone for the calendar
     timezone: "UTC"
 });
+const { calendar } = calendarRes.data!;
+
 // Create a CalendarEvent that repeats daily
-const { event } = await client.events.insert({ 
-    userId, 
-    calendarId, 
+const eventRes = await client.events.create(user.id, {
+    calendarId: calendar.id,
     startTs: 0,
-    duration: 1000*60*30, // 30 minutes in millis
+    duration: 1000 * 60 * 30, // 30 minutes in millis
     recurrence: {
-        frequenzy: "daily"
+        freq: Frequenzy.Daily,
+        interval: 1
     },
     metadata: {
         mykey: "myvalue"
     }
 });
+const { event } = eventRes.data!;
 
 // Retrieve event instances in a given Timespan
-const { instances } = await client.events.getInstances(event.id, {
-    startTs: 0,
-    endTs: 1000*60*60*24
+const instancesRes = await client.events.getInstances(event.id, {
+    startTs: 0, // unix timestamp 0 -> 1970.1.1
+    endTs: 1000 * 60 * 60 * 24
 });
+
+const { instances } = instancesRes.data!;
+console.log(instances);
 
 // Retrieve CalendarEvents by metadata
 const skip = 0;
 const limit = 100;
-const { events } = await client.events.findByMeta({
+const eventMetaQuery = await client.events.findByMeta({
     key: "mykey",
     value: "myvalue"
 }, skip, limit);
+
+const { events } = eventMetaQuery.data!;
+console.log(events);
 
 ```

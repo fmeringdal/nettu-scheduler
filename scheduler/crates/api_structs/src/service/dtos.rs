@@ -16,10 +16,10 @@ pub struct ServiceResourceDTO {
 impl ServiceResourceDTO {
     pub fn new(resource: ServiceResource) -> Self {
         Self {
-            id: resource.id.clone(),
-            user_id: resource.user_id.clone(),
+            id: resource.id,
+            user_id: resource.user_id,
             availibility: resource.availibility,
-            busy: resource.busy.clone(),
+            busy: resource.busy,
             buffer: resource.buffer,
             closest_booking_time: resource.closest_booking_time,
             furthest_booking_time: resource.furthest_booking_time,
@@ -31,7 +31,6 @@ impl ServiceResourceDTO {
 #[serde(rename_all = "camelCase")]
 pub struct ServiceDTO {
     pub id: ID,
-    pub account_id: ID,
     pub users: Vec<ServiceResourceDTO>,
     pub metadata: Metadata,
 }
@@ -40,7 +39,6 @@ impl ServiceDTO {
     pub fn new(service: Service) -> Self {
         Self {
             id: service.id.clone(),
-            account_id: service.account_id.clone(),
             users: service
                 .users
                 .into_iter()

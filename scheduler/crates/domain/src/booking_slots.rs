@@ -33,6 +33,7 @@ pub struct BookingSlotsOptions {
     pub interval: i64,
 }
 
+#[derive(Debug)]
 pub struct UserFreeEvents {
     pub free_events: CompatibleInstances,
     pub user_id: ID,
@@ -159,13 +160,10 @@ pub fn validate_bookingslots_query(
     };
 
     let date = tz.ymd(parsed_date.0, parsed_date.1, parsed_date.2);
-    let start_of_day = date.and_hms(0, 0, 0);
-    let end_of_day = (date + Duration::days(1)).and_hms(0, 0, 0);
+    let start_ts = date.and_hms(0, 0, 0).timestamp_millis();
+    let end_ts = start_ts + 1000 * 60 * 60 * 24;
 
-    Ok(BookingTimespan {
-        start_ts: start_of_day.timestamp_millis(),
-        end_ts: end_of_day.timestamp_millis(),
-    })
+    Ok(BookingTimespan { start_ts, end_ts })
 }
 
 #[cfg(test)]

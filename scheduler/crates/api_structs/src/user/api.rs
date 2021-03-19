@@ -31,6 +31,7 @@ pub mod create_user {
     #[derive(Debug, Deserialize, Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
+        #[serde(default)]
         pub metadata: Option<Metadata>,
     }
 
@@ -44,6 +45,7 @@ pub mod update_user {
     #[derive(Debug, Deserialize, Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
+        #[serde(default)]
         pub metadata: Option<Metadata>,
     }
 
@@ -85,6 +87,7 @@ pub mod get_users_by_meta {
     pub struct QueryParams {
         pub key: String,
         pub value: String,
+        #[serde(default)]
         pub skip: Option<usize>,
         pub limit: Option<usize>,
     }

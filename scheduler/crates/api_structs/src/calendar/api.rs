@@ -30,7 +30,9 @@ pub mod create_calendar {
     #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
         pub timezone: String,
+        #[serde(default)]
         pub week_start: isize,
+        #[serde(default)]
         pub metadata: Option<Metadata>,
     }
 
@@ -109,6 +111,7 @@ pub mod get_calendars_by_meta {
     pub struct QueryParams {
         pub key: String,
         pub value: String,
+        #[serde(default)]
         pub skip: Option<usize>,
         pub limit: Option<usize>,
     }
@@ -141,6 +144,7 @@ pub mod get_user_freebusy {
     pub struct QueryParams {
         pub start_ts: i64,
         pub end_ts: i64,
+        #[serde(default)]
         pub calendar_ids: Option<String>,
     }
 
@@ -164,6 +168,7 @@ pub mod update_calendar {
     #[derive(Deserialize, Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct CalendarSettings {
+        #[serde(default)]
         pub week_start: Option<isize>,
         pub timezone: Option<String>,
     }
@@ -172,6 +177,7 @@ pub mod update_calendar {
     #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
         pub settings: CalendarSettings,
+        #[serde(default)]
         pub metadata: Option<Metadata>,
     }
 
