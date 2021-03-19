@@ -50,7 +50,12 @@ async fn create_event_reminders(
     let reminders = match rrule_set {
         Some(rrule_set) => {
             let rrule_set_iter = rrule_set.into_iter();
-            let dates = rrule_set_iter.take(100).collect::<Vec<_>>();
+            let dates = rrule_set_iter
+                // Ignore old dates
+                .skip_while(|d| d.timestamp_millis() < ctx.sys.get_timestamp_millis())
+                // Take the future 100 dates
+                .take(100)
+                .collect::<Vec<_>>();
 
             if dates.len() == 100 {
                 // There are more reminders to generate, store a job to expand them later

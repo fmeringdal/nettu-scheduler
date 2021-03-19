@@ -3,5 +3,5 @@
 - Integration with Google Calendar
 - Integration with Outlook Calendar
 - Shared Calendars / Calendar events
-- Resource inline policies
+- Resource policies
 - Round robin booking

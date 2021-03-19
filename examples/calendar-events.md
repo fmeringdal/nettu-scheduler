@@ -10,7 +10,7 @@ config.baseUrl = "https://localhost:5000";
 const client = new NettuClient({ apiKey: "REPLACE_ME" });
 
 // Create a User
-const { user } = await client.users.create();
+const { user } = await client.user.create();
 // Create the Calendar theat the CalendarEvent will belong to
 const { calendar } = await client.calendars.create(user.id, {
     // Starts on monday

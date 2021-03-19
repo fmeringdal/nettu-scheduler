@@ -397,6 +397,7 @@ mod tests {
         ctx.sys = Arc::new(StaticTimeSys1 {});
 
         let now = ctx.sys.get_timestamp_millis();
+        let minutes_before = 10;
 
         let (account, user_id, calendar) = insert_common_data(&ctx).await;
         let usecase = CreateEventUseCase {
@@ -407,7 +408,7 @@ mod tests {
             duration: 1000 * 60 * 60 * 2,
             busy: false,
             recurrence: Some(Default::default()),
-            reminder: Some(CalendarEventReminder { minutes_before: 10 }),
+            reminder: Some(CalendarEventReminder { minutes_before }),
             is_service: false,
             metadata: Default::default(),
         };
@@ -420,27 +421,32 @@ mod tests {
             .await
             .unwrap();
 
-        let start_ts_diff = 1000 * 60 * 15; // 15 minutes
+        let start_ts_diff = 15 * 60 * 1000; // 15 minutes
+        let new_start = calendar_event.start_ts + start_ts_diff; // Postponed 15 minutes
         let update_event_usecase = UpdateEventUseCase {
             event_id: calendar_event.id,
             busy: None,
             duration: None,
             exdates: None,
             metadata: None,
-            reminder: Some(CalendarEventReminder { minutes_before: 10 }),
+            reminder: Some(CalendarEventReminder { minutes_before }),
             recurrence: Some(Default::default()),
             is_service: None,
-            start_ts: Some(calendar_event.start_ts - start_ts_diff),
+            start_ts: Some(new_start),
             user_id: calendar_event.user_id,
         };
         execute(update_event_usecase, &ctx).await.unwrap();
-        let new_reminders = ctx.repos.reminder_repo.delete_all_before(now).await;
+        let new_reminders = ctx.repos.reminder_repo.delete_all_before(new_start).await;
         assert_eq!(new_reminders.len(), old_reminders.len());
         assert_eq!(new_reminders.len(), 1);
+        assert_eq!(
+            new_reminders[0].remind_at + minutes_before * 60 * 1000,
+            new_start
+        );
         assert_eq!(new_reminders[0].event_id, old_reminders[0].event_id);
         assert_eq!(
-            new_reminders[0].remind_at + start_ts_diff,
-            old_reminders[0].remind_at
+            new_reminders[0].remind_at,
+            old_reminders[0].remind_at + start_ts_diff
         );
     }
 

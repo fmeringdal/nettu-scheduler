@@ -11,9 +11,9 @@
 
 `Nettu scheduler` is a self-hosted calendar and scheduler server that aims to provide the building blocks for building calendar / booking / appointments apps with ease. It has a simple REST API and also a [JavaScript SDK](https://www.npmjs.com/package/@nettu/sdk-scheduler) and [Rust SDK](https://crates.io/crates/nettu_scheduler_sdk). 
 
+It supports authentication through api keys for server - server communication and JSON Web Tokens for browser - server communication.
+
 ## Features
-- **Authentication**: JWT tokens signed by your server for browser clients and api-keys for server to server communication. 
-- **Authorization**: JWT tokens have support for attaching policies which defines what actions the subject can take.
 - **Booking**: Create a `Service` and register `User`s on it to make them bookable.
 - **Calendar Events**: Supports recurrence rules, flexible querying and reminders.
 - **Calendars**: For grouping `Calendar Event`s.
@@ -42,7 +42,7 @@
 First of all we will need a running instance of the server. The quickest way to start one
 is with `docker`:
 ```bash
-docker run -p 5000:5000 fmeringdal/nettu-scheduler
+docker run -p 5000:5000 fmeringdal/nettu-scheduler:latest
 ```
 or if you want to build it yourself with `cargo`:
 ```bash
@@ -59,7 +59,7 @@ during startup (it can also be set as an environment variable).
 ```bash
 curl -X POST -H "Content-Type: application/json" -d '{"code": "REPLACE_ME"}' http://localhost:5000/accounts
 ```
-The previous command will create an `Account` and the associated `secret_api_key` which is all you need when
+The previous command will create an `Account` and the associated `secret api key` which is all you need when
 your application is going to communicate with the Nettu Scheduler server.
 
 Quick example of how to create and query a user
@@ -70,7 +70,7 @@ export SECRET_API_KEY="REPLACE_ME"
 curl -X POST -H "Content-Type: application/json" -H "x-api-key: $SECRET_API_KEY" -d '{"metadata": { "groupId": "123" }}' http://localhost:5000/users
 
 # Get user by metadata
-curl -X GET -H "Content-Type: application/json" -H "x-api-key: $SECRET_API_KEY" -d '{"metadata": { "groupId": "123" }}' http://localhost:5000/users/meta
+curl -H "x-api-key: $SECRET_API_KEY" http://localhost:5000/users/meta?key=groupId&value=123
 ```
 
 Please see below for links to more examples.

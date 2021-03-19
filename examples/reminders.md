@@ -15,8 +15,8 @@ const { account } = await client.account.setWebhook("YOUR_URL");
 const key = account.settings.webhook.key;
 
 
-const user = await client.users.create();
-const event = await client.events.insert({ 
+const { user } = await client.user.create();
+const { event } = await client.events.insert({ 
     userId, 
     calendarId, 
     startTs: 0,
@@ -30,7 +30,7 @@ const event = await client.events.insert({
 });
 
 const webhookReceiverController = (req) => {
-    if(req.headers["nettu-scheduler-webhook-code"] !== code) return;
+    if(req.headers["nettu-scheduler-webhook-key"] !== key) return;
 
     // Handle reminder by sending email to participants or whatever is needed
 }

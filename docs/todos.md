@@ -1,9 +1,9 @@
 
 ## Todos
 
-- reminders should just create future reminders
-- javascript sdk
-- docs and examples
+- fix upcoming reminders test
+- build docker image
+- test examples
 - needs list methods for calendars, schedules and services
 - deploy sdks
 

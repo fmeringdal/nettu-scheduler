@@ -384,7 +384,7 @@ async fn test_crud_events() {
                 busy: None,
                 duration: 1000 * 60 * 60,
                 reminder: None,
-                rrule_options: None,
+                recurrence: None,
                 is_service: None,
                 start_ts: 0,
                 metadata: None,
