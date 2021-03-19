@@ -57,7 +57,7 @@ Now when we have the server running we will need an `Account`. To create an `Acc
 we will need the `CREATE_ACCOUNT_SECRET_CODE` which you will find in the server logs
 during startup (it can also be set as an environment variable).
 ```bash
-curl -X POST -H "Content-Type: application/json" -d '{"code": "REPLACE_ME"}' http://localhost:5000/accounts
+curl -X POST -H "Content-Type: application/json" -d '{"code": "REPLACE_ME"}' -v http://localhost:5000/api/v1/account
 ```
 The previous command will create an `Account` and the associated `secret api key` which is all you need when
 your application is going to communicate with the Nettu Scheduler server.
@@ -67,10 +67,10 @@ Quick example of how to create and query a user
 export SECRET_API_KEY="REPLACE_ME"
 
 # Create a user with metadata
-curl -X POST -H "Content-Type: application/json" -H "x-api-key: $SECRET_API_KEY" -d '{"metadata": { "groupId": "123" }}' http://localhost:5000/users
+curl -X POST -H "Content-Type: application/json" -H "x-api-key: $SECRET_API_KEY" -d '{"metadata": { "groupId": "123" }}' http://localhost:5000/api/v1/user
 
 # Get user by metadata
-curl -H "x-api-key: $SECRET_API_KEY" http://localhost:5000/users/meta?key=groupId&value=123
+curl -H "x-api-key: $SECRET_API_KEY" http://localhost:5000/api/v1/user/meta?key=groupId&value=123
 ```
 
 Please see below for links to more examples.
