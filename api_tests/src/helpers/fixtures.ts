@@ -2,7 +2,7 @@ import { NettuClient, NettuUserClient } from "@nettu/sdk-scheduler";
 import { readPrivateKey, readPublicKey } from "./utils";
 import jwt from "jsonwebtoken";
 
-export const CREATE_ACCOUNT_CODE = "h0E4VC3d1bW1GLeW";
+export const CREATE_ACCOUNT_CODE = "zDb8koSbihYLRovA";
 
 export const setupAccount = async () => {
   const client = NettuClient();
