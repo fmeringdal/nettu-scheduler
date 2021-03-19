@@ -1,9 +1,8 @@
-import { NettuClient, config, NettuUserClient } from "@nettu/sdk-scheduler";
+import { NettuClient, NettuUserClient } from "@nettu/sdk-scheduler";
 import { readPrivateKey, readPublicKey } from "./utils";
 import jwt from "jsonwebtoken";
 
-export const CREATE_ACCOUNT_CODE = "MfvvZXR0BaE5Qdez";
-config.baseUrl = "http://localhost:5000/api/v1";
+export const CREATE_ACCOUNT_CODE = "h0E4VC3d1bW1GLeW";
 
 export const setupAccount = async () => {
   const client = NettuClient();
@@ -17,11 +16,11 @@ export const setupAccount = async () => {
 export const setupUserClient = async () => {
   const { client, accountId } = await setupAccount();
   const publicKey = await readPublicKey();
-  const r = await client.account.setPublicSigningKey(publicKey);
+  await client.account.setPublicSigningKey(publicKey);
   const privateKey = await readPrivateKey();
   const userRes = await client.user.create();
   const user = userRes.data!.user;
-  const { token, client: userClient } = setupUserClientForAccount(
+  const { client: userClient } = setupUserClientForAccount(
     privateKey,
     user.id,
     accountId
