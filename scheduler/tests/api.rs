@@ -55,7 +55,6 @@ async fn test_crud_user() {
         .await
         .expect("Expected to create account");
 
-    let account = res.account;
     let admin_client = NettuSDK::new(address, res.secret_api_key);
 
     let mut metadata = HashMap::new();
@@ -68,7 +67,10 @@ async fn test_crud_user() {
         })
         .await
         .expect("Expected to create user");
-    assert_eq!(res.user.account_id, account.id);
+    assert_eq!(
+        res.user.metadata.get("group_id").unwrap().clone(),
+        "123".to_string()
+    );
 
     let metadata = KVMetadata {
         key: "group_id".to_string(),
