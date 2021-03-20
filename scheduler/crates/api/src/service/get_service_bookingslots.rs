@@ -13,7 +13,7 @@ use nettu_scheduler_domain::{
     TimeSpan, ID,
 };
 use nettu_scheduler_infra::NettuContext;
-use tracing::{info, warn};
+use tracing::warn;
 
 pub async fn get_service_bookingslots_controller(
     _http_req: HttpRequest,

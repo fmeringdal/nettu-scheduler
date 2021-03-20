@@ -1,6 +1,6 @@
 use crate::{date, event_instance::EventInstance, CompatibleInstances, ID};
 use chrono::prelude::*;
-use chrono::Duration;
+
 use chrono_tz::Tz;
 use serde::Serialize;
 use std::collections::HashMap;
