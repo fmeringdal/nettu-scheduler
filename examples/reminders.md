@@ -7,7 +7,6 @@ phone etc. That is supposed to be done by your server (if needed) which owns the
 ```js
 import { NettuClient, Frequenzy } from "@nettu/scheduler-sdk";
 
-config.baseUrl = "http://localhost:5000/api/v1";
 const client = NettuClient({ apiKey: "YOUR_API_KEY" });
 
 // Set webhook url

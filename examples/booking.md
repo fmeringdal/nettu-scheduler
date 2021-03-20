@@ -2,7 +2,7 @@
 
 `Nettu scheduler` provides a `Service` type that makes it really easy to build a booking application. The `Service` type represents a bookable service that your app provides.
 
-It works by adding the `User`s to the `Service` that is going to be bookable. Each `User`
+It works by adding `User`s to the `Service` that are going to be bookable. Each `User`
 on the `Service` can have a bunch of different settings for when they can be booked (availibility schedule, closest booking time, buffers etc.).
 Then you can then easily query the `Service` for the available bookingslots. When
 a booking is made you can represent it as a `CalendarEvent` with the booked `User`
@@ -15,7 +15,6 @@ An important point is to not store the booking resource itself in `Nettu schedul
 ```js
 import { NettuClient, config } from "@nettu/scheduler-sdk";
 
-config.baseUrl = "http://localhost:5000/api/v1";
 const client = NettuClient({ apiKey: "YOUR_API_KEY" });
 
 // Create a Service

@@ -9,7 +9,7 @@
 
 ## Overview
 
-`Nettu scheduler` is a self-hosted calendar and scheduler server that aims to provide the building blocks for building calendar / booking / appointments apps with ease. It has a simple REST API and also a [JavaScript SDK](https://www.npmjs.com/package/@nettu/sdk-scheduler) and [Rust SDK](https://crates.io/crates/nettu_scheduler_sdk). 
+`Nettu scheduler` is a self-hosted calendar and scheduler server that aims to provide the building blocks for building calendar / booking apps with ease. It has a simple REST API and also a [JavaScript SDK](https://www.npmjs.com/package/@nettu/sdk-scheduler) and [Rust SDK](https://crates.io/crates/nettu_scheduler_sdk). 
 
 It supports authentication through api keys for server - server communication and JSON Web Tokens for browser - server communication.
 
@@ -59,7 +59,7 @@ during startup (it can also be set as an environment variable).
 ```bash
 curl -X POST -H "Content-Type: application/json" -d '{"code": "REPLACE_ME"}' -v http://localhost:5000/api/v1/account
 ```
-The previous command will create an `Account` and the associated `secret api key` which is all you need when
+The previous command will create an `Account` and the associated `secretApiKey` which is all you need when
 your application is going to communicate with the Nettu Scheduler server.
 
 Quick example of how to create and query a user
@@ -89,7 +89,7 @@ Please see below for links to more examples.
 
 ## Contributing
 
-Any contribution to this project is always welcome!
+Contributions are welcome and are greatly appreciated!
 
 ## License
 
@@ -97,5 +97,5 @@ Any contribution to this project is always welcome!
 
 ## Special thanks
 
-* [Lemmy](https://github.com/LemmyNet/lemmy) for inspiration on how to use cargo workspace to organize a web app. 
+* [Lemmy](https://github.com/LemmyNet/lemmy) for inspiration on how to use cargo workspace to organize a web app in rust. 
 * [The author of this blog post](https://www.lpalmieri.com/posts/2020-09-27-zero-to-production-4-are-we-observable-yet/) for an excellent introduction on how to do telemetry in rust. 

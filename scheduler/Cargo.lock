@@ -1782,7 +1782,6 @@ dependencies = [
 name = "nettu_scheduler_sdk"
 version = "0.1.0"
 dependencies = [
- "nettu_scheduler_api",
  "nettu_scheduler_api_structs",
  "nettu_scheduler_domain",
  "reqwest",

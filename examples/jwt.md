@@ -8,7 +8,6 @@ This is how your server side code might look like
 import jwt from "jsonwebtoken"; 
 import { NettuClient, config, Permissions } from "@nettu/scheduler-sdk";
 
-config.baseUrl = "http://localhost:5000/api/v1";
 const client = NettuClient({ apiKey: "YOUR_API_KEY" });
 
 // Upload your public rsa signing key

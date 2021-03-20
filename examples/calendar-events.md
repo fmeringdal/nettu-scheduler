@@ -6,7 +6,6 @@
 ```js
 import { NettuClient, Frequenzy, config } from "@nettu/scheduler-sdk";
 
-config.baseUrl = "http://localhost:5000/api/v1";
 const client = NettuClient({ apiKey: "YOUR_API_KEY" });
 
 // Create a User

@@ -45,7 +45,9 @@ impl AccountSettings {
         match webhook_url {
             Some(url) => {
                 if let Ok(parsed_url) = url::Url::parse(&url) {
-                    if parsed_url.scheme() != "https" {
+                    // TODO: in the future, only https endpoints will be allowed
+                    let allowed_schemes = vec!["https", "http"];
+                    if !allowed_schemes.contains(&parsed_url.scheme()) {
                         return false;
                     }
                 } else {
