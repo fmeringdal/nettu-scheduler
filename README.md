@@ -51,7 +51,7 @@ cargo run inmemory
 ```
 Both of these methods will start the server with an inmemory data store which should never
 be used in production, but is good enough while just playing around.
-For information about setting up this server for deployment, read here.
+For information about setting up this server for deployment, read [here](./docs/deployment.md).
 
 Now when we have the server running we will need an `Account`. To create an `Account`
 we will need the `CREATE_ACCOUNT_SECRET_CODE` which you will find in the server logs
@@ -69,8 +69,8 @@ export SECRET_API_KEY="REPLACE_ME"
 # Create a user with metadata
 curl -X POST -H "Content-Type: application/json" -H "x-api-key: $SECRET_API_KEY" -d '{"metadata": { "groupId": "123" }}' http://localhost:5000/api/v1/user
 
-# Get user by metadata
-curl -H "x-api-key: $SECRET_API_KEY" http://localhost:5000/api/v1/user/meta?key=groupId&value=123
+# Get users by metadata
+curl -H "x-api-key: $SECRET_API_KEY" "http://localhost:5000/api/v1/user/meta?key=groupId&value=123"
 ```
 
 Please see below for links to more examples.

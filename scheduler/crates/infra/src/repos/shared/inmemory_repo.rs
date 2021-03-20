@@ -30,9 +30,9 @@ pub fn find<T: Clone + Entity>(val_id: &ID, collection: &Mutex<Vec<T>>) -> Optio
     None
 }
 
-pub fn find_by<T: Clone + Entity, F: Fn(&T) -> bool>(
+pub fn find_by<T: Clone + Entity, F: FnMut(&T) -> bool>(
     collection: &Mutex<Vec<T>>,
-    compare: F,
+    mut compare: F,
 ) -> Vec<T> {
     let collection = collection.lock().unwrap();
     let mut items = vec![];
@@ -102,12 +102,24 @@ pub fn find_by_metadata<T: Clone + Entity + Meta>(
     collection: &Mutex<Vec<T>>,
     query: MetadataFindQuery,
 ) -> Vec<T> {
+    let skip = query.skip;
+    let mut skipped = 0;
+    let limit = query.limit;
+    let mut count = 0;
     find_by(collection, |e| {
         match e.metadata().get(&query.metadata.key) {
             Some(value)
                 if *value == query.metadata.value && *e.account_id() == query.account_id =>
             {
-                true
+                if skip > skipped {
+                    skipped += 1;
+                    false
+                } else if count == limit {
+                    false
+                } else {
+                    count += 1;
+                    true
+                }
             }
             _ => false,
         }
