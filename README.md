@@ -17,8 +17,8 @@ It supports authentication through api keys for server - server communication an
 - **Booking**: Create a `Service` and register `User`s on it to make them bookable.
 - **Calendar Events**: Supports recurrence rules, flexible querying and reminders.
 - **Calendars**: For grouping `Calendar Event`s.
-- **Metadata queries**: Add key-value metadata to your resources and then query on that metadata 
 - **Freebusy**: Find out when `User`s are free and when they are busy.
+- **Metadata queries**: Add key-value metadata to your resources and then query on that metadata 
 - **Webhooks**: Notifying your server about `Calendar Event` reminders.
 
 <br/>
