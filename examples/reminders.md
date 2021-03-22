@@ -35,6 +35,9 @@ await client.events.create(user.id, {
         freq: Frequenzy.Daily,
         interval: 1
     },
+    reminder: {
+        minutesBefore: 15 // Your webhook url will be called with this CalendarEvent 15 minutes before an occurence of this event
+    },
     metadata: {
         mykey: "myvalue"
     }
