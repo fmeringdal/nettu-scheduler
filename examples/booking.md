@@ -46,6 +46,7 @@ await client.service.addUser(service.id, {
     },
     // Calendars that should be used to calculate busy time
     busy: [calendar.id],
+    // Make User unbookable for 10 minutes after a booking 
     buffer: 10
 });
 
