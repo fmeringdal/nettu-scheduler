@@ -9,6 +9,7 @@ mod shared;
 mod status;
 mod user;
 
+use actix_cors::Cors;
 use actix_web::{dev::Server, middleware, web, App, HttpServer};
 use job_schedulers::{start_reminders_expansion_job_scheduler, start_send_reminders_job};
 use nettu_scheduler_infra::NettuContext;
@@ -57,6 +58,7 @@ impl Application {
             let ctx = context.clone();
 
             App::new()
+                .wrap(Cors::permissive())
                 .wrap(middleware::Compress::default())
                 .wrap(TracingLogger)
                 .data(ctx)
