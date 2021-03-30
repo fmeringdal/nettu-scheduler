@@ -12,9 +12,9 @@ const client = NettuClient({ apiKey: "YOUR_API_KEY" });
 const userRes = await client.user.create();
 const { user } = userRes.data!;
 
-// Create the Calendar theat the CalendarEvent will belong to
+// Create the Calendar that the CalendarEvent will belong to
 const calendarRes = await client.calendar.create(user.id, {
-    // Starts on monday
+    // Starts on Monday
     weekStart: 0,
     // Timezone for the calendar
     timezone: "UTC"
