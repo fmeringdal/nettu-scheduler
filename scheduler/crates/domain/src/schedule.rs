@@ -280,6 +280,7 @@ impl Schedule {
             month: end.month(),
             day: end.day(),
         };
+
         while day_cursor <= last_day {
             let day_str = day_cursor.to_string();
 
@@ -300,6 +301,10 @@ impl Schedule {
             day_cursor.inc();
         }
         std::mem::drop(date_lookup);
+
+        // Make sure all generated instances are within the timespan
+        free_instances.remove_all_before(timespan.start());
+        free_instances.remove_all_after(timespan.end());
 
         free_instances
     }

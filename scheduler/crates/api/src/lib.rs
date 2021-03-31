@@ -63,7 +63,6 @@ impl Application {
                 .wrap(TracingLogger)
                 .data(ctx)
                 .service(web::scope("/api/v1").configure(|cfg| configure_server_api(cfg)))
-            // .configure(|cfg| configure_server_api(cfg))
         })
         .listen(listener)?
         .workers(4)

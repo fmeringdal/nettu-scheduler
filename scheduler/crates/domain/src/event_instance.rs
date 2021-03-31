@@ -80,6 +80,35 @@ impl CompatibleInstances {
         true
     }
 
+    pub fn remove_all_before(&mut self, timespan: i64) {
+        while let Some(e) = self.events.get_mut(0) {
+            if e.start_ts >= timespan {
+                break;
+            }
+            if e.end_ts <= timespan {
+                self.events.pop_front();
+            } else {
+                e.start_ts = timespan;
+                break;
+            }
+        }
+    }
+
+    pub fn remove_all_after(&mut self, timespan: i64) {
+        while !self.events.is_empty() {
+            let last = self.events.get_mut(self.events.len() - 1).unwrap();
+            if last.end_ts <= timespan {
+                break;
+            }
+            if last.start_ts >= timespan {
+                self.events.pop_back();
+            } else {
+                last.end_ts = timespan;
+                break;
+            }
+        }
+    }
+
     pub fn extend(&mut self, instances: CompatibleInstances) {
         for instance in instances.inner() {
             self.push_back(instance);
@@ -850,5 +879,113 @@ mod test {
                 }
             ]
         )
+    }
+
+    fn validate_bounds(before: i64, after: i64, len: usize, events: &CompatibleInstances) {
+        if len == 0 {
+            assert!(events.is_empty());
+            return;
+        }
+        assert!(!events.is_empty());
+        let events = events.as_ref();
+        assert!(events[0].start_ts >= before);
+        assert!(events[events.len() - 1].end_ts <= after);
+    }
+
+    #[test]
+    fn removes_all_before() {
+        let inf = 10000;
+
+        // First case
+        let e1 = EventInstance {
+            start_ts: 3,
+            end_ts: 10,
+            busy: false,
+        };
+        let mut all_events = CompatibleInstances::new(vec![e1.clone()]);
+        all_events.remove_all_before(2);
+        validate_bounds(2, inf, 1, &all_events);
+
+        all_events.remove_all_before(5);
+        validate_bounds(5, inf, 1, &all_events);
+        all_events.remove_all_before(e1.end_ts);
+        validate_bounds(5, inf, 0, &all_events);
+
+        // Second case
+        let e1 = EventInstance {
+            start_ts: 3,
+            end_ts: 10,
+            busy: false,
+        };
+        let e2 = EventInstance {
+            start_ts: 12,
+            end_ts: 20,
+            busy: false,
+        };
+        let mut all_events = CompatibleInstances::new(vec![e1.clone(), e2.clone()]);
+        all_events.remove_all_before(5);
+        validate_bounds(5, inf, 2, &all_events);
+
+        let mut all_events = CompatibleInstances::new(vec![e1.clone(), e2.clone()]);
+        all_events.remove_all_before(e2.start_ts + 2);
+        validate_bounds(e2.start_ts + 2, inf, 1, &all_events);
+
+        let mut all_events = CompatibleInstances::new(vec![e1.clone(), e2.clone()]);
+        all_events.remove_all_before(e2.end_ts);
+        validate_bounds(e2.end_ts, inf, 0, &all_events);
+    }
+
+    #[test]
+    fn removes_all_after() {
+        let neg_inf = -10000;
+
+        // First case
+        let e1 = EventInstance {
+            start_ts: 3,
+            end_ts: 10,
+            busy: false,
+        };
+        let mut all_events = CompatibleInstances::new(vec![e1.clone()]);
+        all_events.remove_all_after(e1.end_ts);
+        validate_bounds(neg_inf, e1.end_ts, 1, &all_events);
+
+        let mut all_events = CompatibleInstances::new(vec![e1.clone()]);
+        all_events.remove_all_after(5);
+        validate_bounds(neg_inf, 5, 1, &all_events);
+
+        let mut all_events = CompatibleInstances::new(vec![e1.clone()]);
+        all_events.remove_all_after(e1.start_ts);
+        validate_bounds(neg_inf, e1.start_ts, 0, &all_events);
+
+        // Second case
+        let e1 = EventInstance {
+            start_ts: 3,
+            end_ts: 10,
+            busy: false,
+        };
+        let e2 = EventInstance {
+            start_ts: 12,
+            end_ts: 20,
+            busy: false,
+        };
+        let mut all_events = CompatibleInstances::new(vec![e1.clone(), e2.clone()]);
+        all_events.remove_all_after(e2.end_ts);
+        validate_bounds(neg_inf, e2.end_ts, 2, &all_events);
+
+        let mut all_events = CompatibleInstances::new(vec![e1.clone(), e2.clone()]);
+        all_events.remove_all_after(e2.end_ts - 2);
+        validate_bounds(neg_inf, e2.end_ts - 2, 2, &all_events);
+
+        let mut all_events = CompatibleInstances::new(vec![e1.clone(), e2.clone()]);
+        all_events.remove_all_after(e1.end_ts);
+        validate_bounds(neg_inf, e1.end_ts, 1, &all_events);
+
+        let mut all_events = CompatibleInstances::new(vec![e1.clone(), e2.clone()]);
+        all_events.remove_all_after(e1.end_ts - 2);
+        validate_bounds(neg_inf, e1.end_ts - 2, 1, &all_events);
+
+        let mut all_events = CompatibleInstances::new(vec![e1.clone(), e2.clone()]);
+        all_events.remove_all_after(e1.start_ts - 1);
+        validate_bounds(neg_inf, e1.start_ts - 1, 0, &all_events);
     }
 }

@@ -91,14 +91,7 @@ mod tests {
     #[test]
     async fn it_rejects_invalid_webhook_url() {
         let ctx = setup_context().await;
-        let bad_uris = vec![
-            "1",
-            "",
-            "test.zzcom",
-            "http://google.com",
-            "test.com",
-            "google.com",
-        ];
+        let bad_uris = vec!["1", "", "test.zzcom", "test.com", "google.com"];
         for bad_uri in bad_uris {
             let mut use_case = SetAccountWebhookUseCase {
                 webhook_url: Some(bad_uri.to_string()),
