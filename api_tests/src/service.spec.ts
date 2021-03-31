@@ -1,4 +1,4 @@
-import { INettuClient, INettuUserClient } from "@nettu/sdk-scheduler";
+import { INettuClient, INettuUserClient, ScheduleRuleVariant, Weekday } from "@nettu/sdk-scheduler";
 import { setupAccount, setupUserClient } from "./helpers/fixtures";
 
 describe("Service API", () => {
@@ -66,26 +66,64 @@ describe("Service API", () => {
     const serviceRes = await client.service.create();
     const serviceId = serviceRes.data!.service.id;
 
+    // Available all the time schedule
     const scheduleRes = await userClient.schedule.create({
       timezone: "Europe/Berlin",
+      rules: [Weekday.Mon, Weekday.Tue, Weekday.Wed, Weekday.Thu, Weekday.Fri, Weekday.Sat, Weekday.Sun].map(day => (
+        {
+          variant: {
+            type: ScheduleRuleVariant.WDay,
+            value: day
+          },
+          intervals: [
+            {
+              start: {
+                hours: 0,
+                minutes: 0
+              },
+              end: {
+                hours: 23,
+                minutes: 59
+              }
+            }
+
+          ]
+        }
+      )
+      )
     });
+
     const scheduleId = scheduleRes.data!.schedule.id;
+    const closestBookingTime = 60; // one hour in minutes
     await client.service.addUser(serviceId, {
       userId,
       availibility: {
         variant: "Schedule",
         id: scheduleId
-      }
+      },
+      closestBookingTime
     });
+    const now = new Date();
+    const today = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+    console.log({ today });
 
     const { data } = await client.service.getBookingslots(serviceId, {
-      date: "2030-10-10",
+      date: today,
       duration: 60 * 60 * 1000,
       ianaTz: "UTC",
       interval: 15 * 60 * 1000,
     });
 
-    expect(data!.bookingSlots.length).toBe(31);
+    expect(data!.bookingSlots.length).toBeGreaterThan(0);
+    expect(data!.bookingSlots[0].start).toBeGreaterThanOrEqual(now.valueOf() + closestBookingTime);
+
+    const { data: dataFuture } = await client.service.getBookingslots(serviceId, {
+      date: "2030-10-10",
+      duration: 60 * 60 * 1000,
+      ianaTz: "UTC",
+      interval: 15 * 60 * 1000,
+    });
+    expect(dataFuture!.bookingSlots.length).toBe(89);
 
     // Quqerying for bookingslots in the past should not yield and bookingslots
     const { data: data2 } = await client.service.getBookingslots(serviceId, {

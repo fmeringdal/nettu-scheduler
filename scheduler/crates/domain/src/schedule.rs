@@ -537,7 +537,46 @@ mod test {
         let schedule = Schedule::new(Default::default(), Default::default(), &chrono_tz::UTC);
         let timespan = TimeSpan::new(1602108000000, 1602194400000);
         let free = schedule.freebusy(&timespan);
-        println!("Free: {:?}", free);
-        // assert!(!free.is_empty());
+        assert!(!free.is_empty());
+    }
+
+    #[test]
+    fn schedule_freebusy_2() {
+        let mut schedule = Schedule::new(Default::default(), Default::default(), &chrono_tz::UTC);
+        schedule.rules = vec![
+            Weekday::Mon,
+            Weekday::Tue,
+            Weekday::Wed,
+            Weekday::Thu,
+            Weekday::Fri,
+            Weekday::Sat,
+            Weekday::Sun,
+        ]
+        .into_iter()
+        .map(|wday| ScheduleRule {
+            intervals: vec![ScheduleRuleInterval {
+                start: Time {
+                    hours: 0,
+                    minutes: 0,
+                },
+                end: Time {
+                    hours: 23,
+                    minutes: 59,
+                },
+            }],
+            variant: ScheduleRuleVariant::WDay(wday),
+        })
+        .collect::<Vec<_>>();
+
+        // start -> 2021.4.1 at 00:00 and end -> 2021.5.1 at 00:00 in Europe/Oslo
+        let timespan = TimeSpan::new(1617228000000, 1617314400000);
+        let noon_utc = Utc.ymd(2021, 4, 1).and_hms(0, 0, 0).timestamp_millis();
+
+        let free = schedule.freebusy(&timespan).inner();
+        assert_eq!(free.len(), 2);
+        assert_eq!(free[0].start_ts, timespan.start());
+        assert_eq!(free[0].end_ts, noon_utc - 1000 * 60); // 23:59
+        assert_eq!(free[1].start_ts, noon_utc);
+        assert_eq!(free[1].end_ts, timespan.end());
     }
 }
