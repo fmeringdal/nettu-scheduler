@@ -225,10 +225,6 @@ pub fn validate_bookingslots_query(
     let end_date = tz.ymd(parsed_end_date.0, parsed_end_date.1, parsed_end_date.2);
     let end_ts = end_date.and_hms(0, 0, 0).timestamp_millis() + 1000 * 60 * 60 * 24;
 
-    if start_ts >= end_ts || end_ts > start_ts + 1000 * 60 * 60 * 24 * 200 {
-        return Err(BookingQueryError::InvalidTimespan);
-    }
-
     Ok(BookingTimespan { start_ts, end_ts })
 }
 

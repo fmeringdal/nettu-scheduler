@@ -49,7 +49,7 @@ impl Config {
             create_account_secret_code,
             port,
             event_instances_query_duration_limit: 1000 * 60 * 60 * 24 * 62, // 62 days
-            booking_slots_query_duration_limit: 1000 * 60 * 60 * 24 * 7,    // 7 days
+            booking_slots_query_duration_limit: 1000 * 60 * 60 * 24 * 101,  // 101 days
         }
     }
 }

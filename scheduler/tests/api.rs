@@ -532,8 +532,24 @@ async fn test_crud_service() {
     let booking_slots = admin_client
         .service
         .bookingslots(GetSerivceBookingSlotsInput {
-            start_date: "2020-1-1".to_string(),
-            end_date: "2020-1-2".to_string(),
+            start_date: "2030-1-1".to_string(),
+            end_date: "2030-1-2".to_string(),
+            duration: 1000 * 60 * 30,
+            iana_tz: Some("UTC".to_string()),
+            interval: 1000 * 60 * 15,
+            service_id: service.id.clone(),
+        })
+        .await
+        .unwrap()
+        .dates;
+    assert!(booking_slots.is_empty());
+
+    // About 100 days timespan
+    let booking_slots = admin_client
+        .service
+        .bookingslots(GetSerivceBookingSlotsInput {
+            start_date: "2030-1-1".to_string(),
+            end_date: "2030-4-1".to_string(),
             duration: 1000 * 60 * 30,
             iana_tz: Some("UTC".to_string()),
             interval: 1000 * 60 * 15,
