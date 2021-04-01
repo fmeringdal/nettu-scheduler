@@ -53,13 +53,14 @@ describe("Service API", () => {
     const serviceRes = await client.service.create();
 
     const service = await client.service.getBookingslots(serviceRes.data!.service.id, {
-      date: "1980-1-1",
+      startDate: "2030-1-1",
+      endDate: "2030-1-3",
       duration: 60 * 60 * 1000,
       ianaTz: "UTC",
       interval: 15 * 60 * 1000,
     });
 
-    expect(service.data!.bookingSlots.length).toBe(0);
+    expect(service.data!.dates.length).toBe(0);
   });
 
   it("should get service bookingslots with one user with a schedule", async () => {
@@ -107,31 +108,38 @@ describe("Service API", () => {
     const today = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
 
     const { data } = await client.service.getBookingslots(serviceId, {
-      date: today,
+      startDate: today,
+      endDate: today,
       duration: 60 * 60 * 1000,
       ianaTz: "UTC",
       interval: 15 * 60 * 1000,
     });
 
-    expect(data!.bookingSlots.length).toBeGreaterThan(0);
-    expect(data!.bookingSlots[0].start).toBeGreaterThanOrEqual(now.valueOf() + closestBookingTime);
+    expect(data!.dates.length).toBe(1);
+    let bookingSlots = data!.dates[0].slots;
+    expect(bookingSlots[0].start).toBeGreaterThanOrEqual(now.valueOf() + closestBookingTime);
 
     const { data: dataFuture } = await client.service.getBookingslots(serviceId, {
-      date: "2030-10-10",
+      startDate: "2030-10-10",
+      endDate: "2030-10-10",
       duration: 60 * 60 * 1000,
       ianaTz: "UTC",
       interval: 15 * 60 * 1000,
     });
-    expect(dataFuture!.bookingSlots.length).toBe(89);
+
+    expect(data!.dates.length).toBe(1);
+    bookingSlots = dataFuture!.dates[0].slots;
+    expect(bookingSlots.length).toBe(89);
 
     // Quqerying for bookingslots in the past should not yield and bookingslots
     const { data: data2 } = await client.service.getBookingslots(serviceId, {
-      date: "1980-1-1",
+      startDate: "1980-1-1",
+      endDate: "1980-1-1",
       duration: 60 * 60 * 1000,
       ianaTz: "UTC",
       interval: 15 * 60 * 1000,
     });
 
-    expect(data2!.bookingSlots.length).toBe(0);
+    expect(data2!.dates.length).toBe(0);
   });
 });
