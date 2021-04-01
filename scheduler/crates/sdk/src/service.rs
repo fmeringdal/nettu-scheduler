@@ -40,7 +40,8 @@ pub struct GetSerivceBookingSlotsInput {
     pub iana_tz: Option<String>,
     pub duration: i64,
     pub interval: i64,
-    pub date: String,
+    pub start_date: String,
+    pub end_date: String,
 }
 
 pub struct UpdateServiceInput {
@@ -67,8 +68,8 @@ impl ServiceClient {
         input: GetSerivceBookingSlotsInput,
     ) -> APIResponse<get_service_bookingslots::APIResponse> {
         let mut query_string = format!(
-            "duration={}&interval={}&date={}",
-            input.duration, input.interval, input.date
+            "duration={}&interval={}&startDate={}&endDate={}",
+            input.duration, input.interval, input.start_date, input.end_date
         );
         if let Some(timezone) = input.iana_tz {
             query_string = format!("{}&ianaTz={}", query_string, timezone);

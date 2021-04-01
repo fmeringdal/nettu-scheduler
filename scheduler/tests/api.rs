@@ -532,7 +532,8 @@ async fn test_crud_service() {
     let booking_slots = admin_client
         .service
         .bookingslots(GetSerivceBookingSlotsInput {
-            date: "2020-1-1".to_string(),
+            start_date: "2020-1-1".to_string(),
+            end_date: "2020-1-2".to_string(),
             duration: 1000 * 60 * 30,
             iana_tz: Some("UTC".to_string()),
             interval: 1000 * 60 * 15,
@@ -540,7 +541,7 @@ async fn test_crud_service() {
         })
         .await
         .unwrap()
-        .booking_slots;
+        .dates;
     assert!(booking_slots.is_empty());
 
     // Delete service

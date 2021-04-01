@@ -77,7 +77,9 @@ pub mod update_service {
 
 pub mod get_service_bookingslots {
     use super::*;
-    use nettu_scheduler_domain::booking_slots::ServiceBookingSlot;
+    use nettu_scheduler_domain::booking_slots::{
+        ServiceBookingSlot, ServiceBookingSlots, ServiceBookingSlotsDate,
+    };
 
     #[derive(Debug, Deserialize)]
     pub struct PathParams {
@@ -90,7 +92,8 @@ pub mod get_service_bookingslots {
         pub iana_tz: Option<String>,
         pub duration: i64,
         pub interval: i64,
-        pub date: String,
+        pub start_date: String,
+        pub end_date: String,
     }
 
     #[derive(Deserialize, Serialize)]
@@ -113,16 +116,37 @@ pub mod get_service_bookingslots {
 
     #[derive(Deserialize, Serialize)]
     #[serde(rename_all = "camelCase")]
+    pub struct ServiceBookingSlotsDateDTO {
+        date: String,
+        slots: Vec<ServiceBookingSlotDTO>,
+    }
+
+    impl ServiceBookingSlotsDateDTO {
+        pub fn new(date_slots: ServiceBookingSlotsDate) -> Self {
+            Self {
+                date: date_slots.date,
+                slots: date_slots
+                    .slots
+                    .into_iter()
+                    .map(ServiceBookingSlotDTO::new)
+                    .collect(),
+            }
+        }
+    }
+
+    #[derive(Deserialize, Serialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct APIResponse {
-        pub booking_slots: Vec<ServiceBookingSlotDTO>,
+        pub dates: Vec<ServiceBookingSlotsDateDTO>,
     }
 
     impl APIResponse {
-        pub fn new(booking_slots: Vec<ServiceBookingSlot>) -> Self {
+        pub fn new(booking_slots: ServiceBookingSlots) -> Self {
             Self {
-                booking_slots: booking_slots
+                dates: booking_slots
+                    .dates
                     .into_iter()
-                    .map(ServiceBookingSlotDTO::new)
+                    .map(ServiceBookingSlotsDateDTO::new)
                     .collect(),
             }
         }

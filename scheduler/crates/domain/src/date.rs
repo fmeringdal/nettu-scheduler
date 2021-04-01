@@ -1,3 +1,6 @@
+use chrono::prelude::*;
+use chrono_tz::Tz;
+
 pub fn is_valid_date(datestr: &str) -> anyhow::Result<(i32, u32, u32)> {
     let datestr = String::from(datestr);
     let dates = datestr.split('-').collect::<Vec<_>>();
@@ -55,6 +58,10 @@ pub fn get_month_length(year: i32, month: u32) -> u32 {
         11 => 31,
         _ => panic!("Invalid month"),
     }
+}
+
+pub fn format_date(date: &DateTime<Tz>) -> String {
+    format!("{}-{}-{}", date.year(), date.month(), date.day())
 }
 
 #[cfg(test)]

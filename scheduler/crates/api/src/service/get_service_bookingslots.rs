@@ -7,7 +7,7 @@ use nettu_scheduler_domain::{
     booking_slots::{
         get_service_bookingslots, validate_bookingslots_query, validate_slots_interval,
         BookingQueryError, BookingSlotsOptions, BookingSlotsQuery, ServiceBookingSlot,
-        UserFreeEvents,
+        ServiceBookingSlots, UserFreeEvents,
     },
     get_free_busy, Calendar, CompatibleInstances, EventInstance, ServiceResource, TimePlan,
     TimeSpan, ID,
@@ -21,10 +21,13 @@ pub async fn get_service_bookingslots_controller(
     path_params: web::Path<PathParams>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
+    let query_params = query_params.0;
+    let service_id = path_params.service_id.clone();
     let usecase = GetServiceBookingSlotsUseCase {
-        service_id: path_params.service_id.clone(),
-        iana_tz: query_params.iana_tz.clone(),
-        date: query_params.date.clone(),
+        service_id: path_params.0.service_id,
+        iana_tz: query_params.iana_tz,
+        start_date: query_params.start_date,
+        end_date: query_params.end_date,
         duration: query_params.duration,
         interval: query_params.interval,
     };
@@ -52,16 +55,17 @@ pub async fn get_service_bookingslots_controller(
                 )
             }
             UseCaseErrors::InvalidTimespan => {
-                NettuError::BadClientData("The provided start_ts and end_ts is invalid".into())
+                NettuError::BadClientData("The provided start and end is invalid".into())
             }
-            UseCaseErrors::ServiceNotFound => NettuError::NotFound(format!("Service with id: {}, was not found.", path_params.service_id)),
+            UseCaseErrors::ServiceNotFound => NettuError::NotFound(format!("Service with id: {}, was not found.", service_id)),
         })
 }
 
 #[derive(Debug)]
 struct GetServiceBookingSlotsUseCase {
     pub service_id: ID,
-    pub date: String,
+    pub start_date: String,
+    pub end_date: String,
     pub iana_tz: Option<String>,
     pub duration: i64,
     pub interval: i64,
@@ -69,7 +73,7 @@ struct GetServiceBookingSlotsUseCase {
 
 #[derive(Debug)]
 struct UseCaseRes {
-    booking_slots: Vec<ServiceBookingSlot>,
+    booking_slots: ServiceBookingSlots,
 }
 
 #[derive(Debug)]
@@ -95,7 +99,8 @@ impl UseCase for GetServiceBookingSlotsUseCase {
         }
 
         let query = BookingSlotsQuery {
-            date: self.date.clone(),
+            start_date: self.start_date.clone(),
+            end_date: self.end_date.clone(),
             iana_tz: self.iana_tz.clone(),
             interval: self.interval,
             duration: self.duration,
@@ -104,12 +109,18 @@ impl UseCase for GetServiceBookingSlotsUseCase {
             Ok(t) => t,
             Err(e) => match e {
                 BookingQueryError::InvalidInterval => return Err(UseCaseErrors::InvalidInterval),
+                BookingQueryError::InvalidTimespan => return Err(UseCaseErrors::InvalidTimespan),
                 BookingQueryError::InvalidDate(d) => return Err(UseCaseErrors::InvalidDate(d)),
                 BookingQueryError::InvalidTimezone(d) => {
                     return Err(UseCaseErrors::InvalidTimezone(d))
                 }
             },
         };
+        let timezone: chrono_tz::Tz = query
+            .iana_tz
+            .unwrap_or_else(|| "UTC".into())
+            .parse()
+            .unwrap();
 
         let service = match ctx.repos.service_repo.find(&self.service_id).await {
             Some(s) => s,
@@ -140,7 +151,9 @@ impl UseCase for GetServiceBookingSlotsUseCase {
             },
         );
 
-        Ok(UseCaseRes { booking_slots })
+        Ok(UseCaseRes {
+            booking_slots: ServiceBookingSlots::new(booking_slots, timezone),
+        })
     }
 }
 
@@ -457,7 +470,8 @@ mod test {
         let TestContext { ctx, service } = setup().await;
 
         let mut usecase = GetServiceBookingSlotsUseCase {
-            date: "2010-1-1".into(),
+            start_date: "2010-1-1".into(),
+            end_date: "2010-1-1".into(),
             duration: 1000 * 60 * 60,
             iana_tz: Utc.to_string().into(),
             interval: 1000 * 60 * 15,
@@ -466,7 +480,7 @@ mod test {
 
         let res = usecase.execute(&ctx).await;
         assert!(res.is_ok());
-        assert!(res.unwrap().booking_slots.is_empty());
+        assert!(res.unwrap().booking_slots.dates.is_empty());
     }
 
     #[actix_web::main]
@@ -476,7 +490,8 @@ mod test {
         setup_service_users(&ctx, &mut service).await;
 
         let mut usecase = GetServiceBookingSlotsUseCase {
-            date: "2010-1-1".into(),
+            start_date: "2010-1-1".into(),
+            end_date: "2010-1-1".into(),
             duration: 1000 * 60 * 60,
             iana_tz: Utc.to_string().into(),
             interval: 1000 * 60 * 15,
@@ -485,7 +500,10 @@ mod test {
 
         let res = usecase.execute(&ctx).await;
         assert!(res.is_ok());
-        let booking_slots = res.unwrap().booking_slots;
+        let mut booking_slots = res.unwrap().booking_slots;
+        assert_eq!(booking_slots.dates.len(), 1);
+        let booking_slots = booking_slots.dates.remove(0).slots;
+
         assert_eq!(booking_slots.len(), 4);
         for i in 0..4 {
             assert_eq!(booking_slots[i].duration, usecase.duration);
@@ -499,7 +517,8 @@ mod test {
         }
 
         let mut usecase = GetServiceBookingSlotsUseCase {
-            date: "1970-1-1".into(),
+            start_date: "1970-1-1".into(),
+            end_date: "1970-1-1".into(),
             duration: 1000 * 60 * 60,
             iana_tz: Utc.to_string().into(),
             interval: 1000 * 60 * 15,
@@ -508,7 +527,10 @@ mod test {
 
         let res = usecase.execute(&ctx).await;
         assert!(res.is_ok());
-        let booking_slots = res.unwrap().booking_slots;
+        let mut booking_slots = res.unwrap().booking_slots;
+        assert_eq!(booking_slots.dates.len(), 1);
+        let booking_slots = booking_slots.dates.remove(0).slots;
+
         assert_eq!(booking_slots.len(), 5);
         assert_eq!(booking_slots[0].user_ids.len(), 2);
         for i in 0..5 {
