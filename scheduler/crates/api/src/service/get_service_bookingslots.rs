@@ -6,8 +6,8 @@ use nettu_scheduler_api_structs::get_service_bookingslots::*;
 use nettu_scheduler_domain::{
     booking_slots::{
         get_service_bookingslots, validate_bookingslots_query, validate_slots_interval,
-        BookingQueryError, BookingSlotsOptions, BookingSlotsQuery, ServiceBookingSlot,
-        ServiceBookingSlots, UserFreeEvents,
+        BookingQueryError, BookingSlotsOptions, BookingSlotsQuery, ServiceBookingSlots,
+        UserFreeEvents,
     },
     get_free_busy, Calendar, CompatibleInstances, EventInstance, ServiceResource, TimePlan,
     TimeSpan, ID,
