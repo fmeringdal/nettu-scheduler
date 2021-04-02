@@ -13,7 +13,7 @@ An important point is to not store the booking resource itself in `Nettu schedul
 
 
 ```js
-import { NettuClient, config } from "@nettu/scheduler-sdk";
+import { NettuClient } from "@nettu/scheduler-sdk";
 
 const client = NettuClient({ apiKey: "YOUR_API_KEY" });
 
@@ -58,7 +58,7 @@ const bookingSlotsRes = await client.service.getBookingslots(service.id, {
     interval: 1000 * 60 * 10,
     duration: 1000 * 60 * 30
 });
-const { bookingSlots: bookingSlotsBefore } = bookingSlotsRes.data!.dates[0].slots;
+const bookingSlotsBefore = bookingSlotsRes.data!.dates[0].slots;
 
 // Insert a CalendarEvent that represents the booking selected
 // by the end user, the User will no longer be bookable in this timeperiod
@@ -82,7 +82,7 @@ const bookingSlotsRes2 = await client.service.getBookingslots(service.id, {
     interval: 1000 * 60 * 10,
     duration: 1000 * 60 * 15
 });
-const { bookingSlots: bookingSlotsAfter } = bookingSlotsRes2.data!.dates[0].slots;
+const bookingSlotsAfter = bookingSlotsRes2.data!.dates[0].slots;
 
 // See that user is no longer available during the booked event + buffer time 
 console.log({
