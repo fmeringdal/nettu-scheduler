@@ -42,29 +42,23 @@ It supports authentication through api keys for server - server communication an
 First of all we will need a running instance of the server. The quickest way to start one
 is with `docker`:
 ```bash
-docker run -p 5000:5000 fmeringdal/nettu-scheduler:latest
+docker run -p 5000:5000 --env ACCOUNT_API_KEY="REPLACE_ME" fmeringdal/nettu-scheduler:latest 
 ```
 or if you want to build it yourself with `cargo`:
 ```bash
 cd scheduler
+export ACCOUNT_API_KEY="REPLACE_ME"
 cargo run inmemory
 ```
-Both of these methods will start the server with an inmemory data store which should never
+Both of these methods will start the server with an in-memory data store which should never
 be used in production, but is good enough while just playing around.
 For information about setting up this server for deployment, read [here](./docs/deployment.md).
-
-Now when we have the server running we will need an `Account`. To create an `Account`
-we will need the `CREATE_ACCOUNT_SECRET_CODE` which you will find in the server logs
-during startup (it can also be set as an environment variable).
-```bash
-curl -X POST -H "Content-Type: application/json" -d '{"code": "REPLACE_ME"}' -v http://localhost:5000/api/v1/account
-```
-The previous command will create an `Account` and the associated `secretApiKey` which is all you need when
-your application is going to communicate with the Nettu Scheduler server.
+The `ACCOUNT_API_KEY` environment variable is going to create an `Account` (if it does not already exist) during
+server startup with the given key. `Account`s act as tenants in the server and it is possible to create multiple `Account`s by using the `CREATE_ACCOUNT_SECRET_CODE` which you can provide as an environment variable.
 
 Quick example of how to create and query a user
 ```bash
-export SECRET_API_KEY="REPLACE_ME"
+export SECRET_API_KEY="REPLACE ME WITH YOUR API KEY"
 
 # Create a user with metadata
 curl -X POST -H "Content-Type: application/json" -H "x-api-key: $SECRET_API_KEY" -d '{"metadata": { "groupId": "123" }}' http://localhost:5000/api/v1/user

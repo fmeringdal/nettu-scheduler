@@ -84,7 +84,7 @@ impl Application {
     }
 
     async fn init_default_account(&self) {
-        let secret_api_key = match std::env::var("DEFAULT_ACCOUNT_API_KEY") {
+        let secret_api_key = match std::env::var("ACCOUNT_API_KEY") {
             Ok(key) => key,
             Err(_) => Account::generate_secret_api_key(),
         };
