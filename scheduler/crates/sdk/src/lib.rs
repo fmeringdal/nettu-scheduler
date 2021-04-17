@@ -35,6 +35,19 @@ pub use service::{
 pub use shared::{KVMetadata, MetadataFindInput};
 pub use user::CreateUserInput;
 
+// Domain
+pub use nettu_scheduler_api_structs::dtos::AccountDTO as Account;
+pub use nettu_scheduler_api_structs::dtos::AccountSettingsDTO as AccountSettings;
+pub use nettu_scheduler_api_structs::dtos::AccountWebhookSettingsDTO as AccountWebhookSettings;
+pub use nettu_scheduler_api_structs::dtos::CalendarDTO as Calendar;
+pub use nettu_scheduler_api_structs::dtos::CalendarEventDTO as CalendarEvent;
+pub use nettu_scheduler_api_structs::dtos::CalendarSettingsDTO as CalendarSettings;
+pub use nettu_scheduler_api_structs::dtos::EventWithInstancesDTO as EventWithINstances;
+pub use nettu_scheduler_api_structs::dtos::ScheduleDTO as Schedule;
+pub use nettu_scheduler_api_structs::dtos::ServiceDTO as Service;
+pub use nettu_scheduler_api_structs::dtos::ServiceResourceDTO as ServiceResource;
+pub use nettu_scheduler_api_structs::dtos::UserDTO as User;
+
 /// Nettu Scheduler Server SDK
 ///
 /// The SDK contains methods for interacting with the Nettu Scheduler server

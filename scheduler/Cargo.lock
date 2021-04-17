@@ -1795,7 +1795,7 @@ dependencies = [
 
 [[package]]
 name = "nettu_scheduler_sdk"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "nettu_scheduler_api_structs",
  "nettu_scheduler_domain",
