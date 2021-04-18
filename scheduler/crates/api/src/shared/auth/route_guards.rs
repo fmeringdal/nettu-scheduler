@@ -3,6 +3,7 @@ use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use nettu_scheduler_domain::{Account, Calendar, CalendarEvent, Schedule, User, ID};
 use nettu_scheduler_infra::NettuContext;
 use serde::{Deserialize, Serialize};
+use tracing::log::warn;
 
 use crate::{error::NettuError, shared::Guard};
 
@@ -53,7 +54,10 @@ pub async fn auth_user_req(
                     .find_by_account_id(&claims.nettu_scheduler_user_id, &account.id)
                     .await
                     .map(|user| (user, claims.scheduler_policy.unwrap_or_default())),
-                Err(_e) => None,
+                Err(e) => {
+                    warn!("Decode token error: {:?}", e);
+                    None
+                }
             }
         }
         None => None,
