@@ -1,5 +1,8 @@
 use super::IScheduleRepo;
-use crate::repos::shared::{inmemory_repo::*, repo::DeleteResult};
+use crate::{
+    repos::shared::{inmemory_repo::*, repo::DeleteResult},
+    MetadataFindQuery,
+};
 use nettu_scheduler_domain::{Schedule, ID};
 
 pub struct InMemoryScheduleRepo {
@@ -47,5 +50,9 @@ impl IScheduleRepo for InMemoryScheduleRepo {
     async fn delete_by_user(&self, user_id: &ID) -> anyhow::Result<DeleteResult> {
         let res = delete_by(&self.schedules, |schedule| schedule.user_id == *user_id);
         Ok(res)
+    }
+
+    async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<Schedule> {
+        find_by_metadata(&self.schedules, query)
     }
 }

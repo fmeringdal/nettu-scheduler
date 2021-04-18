@@ -133,6 +133,7 @@ async fn test_crud_schedule() {
             user_id: create_user_res.user.id.clone(),
             rules: None,
             timezone: "UTC".into(),
+            metadata: None,
         })
         .await
         .expect("Expected to create schedule")
@@ -147,6 +148,7 @@ async fn test_crud_schedule() {
             rules: Some(vec![]),
             timezone: Some("Europe/Oslo".into()),
             schedule_id: schedule.id.clone(),
+            metadata: None,
         })
         .await
         .unwrap()

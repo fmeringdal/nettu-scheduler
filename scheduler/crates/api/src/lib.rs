@@ -12,10 +12,10 @@ mod user;
 use actix_cors::Cors;
 use actix_web::{dev::Server, middleware, web, App, HttpServer};
 use job_schedulers::{start_reminders_expansion_job_scheduler, start_send_reminders_job};
-use nettu_scheduler_domain::Account;
+use nettu_scheduler_domain::{Account, PEMKey};
 use nettu_scheduler_infra::NettuContext;
 use std::net::TcpListener;
-use tracing::info;
+use tracing::warn;
 use tracing_actix_web::TracingLogger;
 
 pub fn configure_server_api(cfg: &mut web::ServiceConfig) {
@@ -98,6 +98,13 @@ impl Application {
         {
             let mut account = Account::default();
             account.secret_api_key = secret_api_key;
+            if let Ok(mut verification_key) = std::env::var("ACCOUNT_PUB_KEY") {
+                verification_key = verification_key.replacen("\\n", "\n", 100);
+                match PEMKey::new(verification_key) {
+                    Ok(k) => account.set_public_jwt_key(Some(k)),
+                    Err(e) => warn!("Invalid ACCOUNT_PUB_KEY provided: {:?}", e),
+                };
+            }
 
             self.context
                 .repos

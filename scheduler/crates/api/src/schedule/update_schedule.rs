@@ -12,7 +12,7 @@ use crate::{
 use actix_web::{web, HttpResponse};
 use chrono_tz::Tz;
 use nettu_scheduler_api_structs::update_schedule::*;
-use nettu_scheduler_domain::{Schedule, ScheduleRule, ID};
+use nettu_scheduler_domain::{Metadata, Schedule, ScheduleRule, ID};
 use nettu_scheduler_infra::NettuContext;
 
 fn handle_error(e: UseCaseErrors) -> NettuError {
@@ -44,6 +44,7 @@ pub async fn update_schedule_admin_controller(
         schedule_id: schedule.id,
         timezone: body.timezone,
         rules: body.rules,
+        metadata: body.metadata,
     };
 
     execute(usecase, &ctx)
@@ -66,6 +67,7 @@ pub async fn update_schedule_controller(
         schedule_id: path.0.schedule_id,
         timezone: body.timezone,
         rules: body.rules,
+        metadata: body.metadata,
     };
 
     execute_with_policy(usecase, &policy, &ctx)
@@ -83,6 +85,7 @@ struct UpdateScheduleUseCase {
     pub schedule_id: ID,
     pub timezone: Option<String>,
     pub rules: Option<Vec<ScheduleRule>>,
+    pub metadata: Option<Metadata>,
 }
 
 #[derive(Debug)]
@@ -123,6 +126,10 @@ impl UseCase for UpdateScheduleUseCase {
         };
         if let Some(rules) = &self.rules {
             schedule.set_rules(rules);
+        }
+
+        if let Some(metadata) = &self.metadata {
+            schedule.metadata = metadata.clone();
         }
 
         let repo_res = ctx.repos.schedule_repo.save(&schedule).await;
