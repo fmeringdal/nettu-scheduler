@@ -1,7 +1,7 @@
 use nettu_scheduler_domain::{Account, AccountSettings, AccountWebhookSettings, PEMKey, ID};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AccountDTO {
     pub id: ID,
@@ -19,7 +19,7 @@ impl AccountDTO {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AccountSettingsDTO {
     pub webhook: Option<AccountWebhookSettingsDTO>,
@@ -38,7 +38,7 @@ impl AccountSettingsDTO {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AccountWebhookSettingsDTO {
     pub url: String,

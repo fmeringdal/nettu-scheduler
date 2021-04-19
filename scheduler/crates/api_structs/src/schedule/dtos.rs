@@ -1,7 +1,7 @@
 use nettu_scheduler_domain::{Metadata, Schedule, ScheduleRule, ID};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ScheduleDTO {
     pub id: ID,
