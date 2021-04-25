@@ -27,16 +27,6 @@ It supports authentication through api keys for server - server communication an
 <img src="docs/flow.svg" alt="Application flow">
 </div>
 
-
-## Table of contents
-
-  * [Quick start](#quick-start)
-  * [Examples](#examples)
-  * [Contributing](#contributing)
-  * [License](#license)
-  * [Special thanks](#special-thanks)
-
-
 ## Quick start
 
 First of all we will need a running instance of the server. The quickest way to start one
