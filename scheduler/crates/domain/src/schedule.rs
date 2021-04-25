@@ -136,11 +136,13 @@ impl ScheduleRule {
             Weekday::Wed,
             Weekday::Thu,
             Weekday::Fri,
+            Weekday::Sat,
+            Weekday::Sun,
         ];
         for wday in weekdays {
-            weekly_rules.push(ScheduleRule {
-                variant: ScheduleRuleVariant::WDay(wday),
-                intervals: vec![ScheduleRuleInterval {
+            let intervals = match wday {
+                Weekday::Sat | Weekday::Sun => vec![],
+                _ => vec![ScheduleRuleInterval {
                     start: Time {
                         hours: 9,
                         minutes: 0,
@@ -150,6 +152,10 @@ impl ScheduleRule {
                         minutes: 30,
                     },
                 }],
+            };
+            weekly_rules.push(ScheduleRule {
+                variant: ScheduleRuleVariant::WDay(wday),
+                intervals,
             });
         }
         weekly_rules
