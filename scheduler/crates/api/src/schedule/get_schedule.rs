@@ -26,7 +26,6 @@ pub async fn get_schedule_admin_controller(
     let schedule = account_can_modify_schedule(&account, &path.schedule_id, &ctx).await?;
 
     let usecase = GetScheduleUseCase {
-        user_id: schedule.user_id,
         schedule_id: schedule.id,
     };
 
@@ -41,10 +40,9 @@ pub async fn get_schedule_controller(
     req: web::Path<PathParams>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
-    let (user, _policy) = protect_route(&http_req, &ctx).await?;
+    let (_user, _policy) = protect_route(&http_req, &ctx).await?;
 
     let usecase = GetScheduleUseCase {
-        user_id: user.id.clone(),
         schedule_id: req.schedule_id.clone(),
     };
 
@@ -56,7 +54,6 @@ pub async fn get_schedule_controller(
 
 #[derive(Debug)]
 struct GetScheduleUseCase {
-    pub user_id: ID,
     pub schedule_id: ID,
 }
 
@@ -76,7 +73,7 @@ impl UseCase for GetScheduleUseCase {
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         let schedule = ctx.repos.schedule_repo.find(&self.schedule_id).await;
         match schedule {
-            Some(schedule) if schedule.user_id == self.user_id => Ok(schedule),
+            Some(schedule) => Ok(schedule),
             _ => Err(UseCaseErrors::NotFound(self.schedule_id.clone())),
         }
     }
