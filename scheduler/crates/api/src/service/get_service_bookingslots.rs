@@ -283,7 +283,7 @@ impl GetServiceBookingSlotsUseCase {
     ) -> UserFreeEvents {
         let empty = UserFreeEvents {
             free_events: CompatibleInstances::new(vec![]),
-            user_id: user.id.clone(),
+            user_id: user.user_id.clone(),
         };
 
         match Self::parse_calendar_timespan(user, timespan, ctx) {
@@ -309,7 +309,7 @@ impl GetServiceBookingSlotsUseCase {
 
         UserFreeEvents {
             free_events,
-            user_id: user.id.clone(),
+            user_id: user.user_id.clone(),
         }
     }
 }
