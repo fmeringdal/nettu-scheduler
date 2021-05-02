@@ -12,7 +12,7 @@ use crate::{
 use actix_web::{web, HttpResponse};
 use chrono_tz::Tz;
 use nettu_scheduler_api_structs::create_schedule::*;
-use nettu_scheduler_domain::{Schedule, ScheduleRule, ID};
+use nettu_scheduler_domain::{Metadata, Schedule, ScheduleRule, ID};
 use nettu_scheduler_infra::NettuContext;
 
 fn handle_error(e: UseCaseErrors) -> NettuError {
@@ -42,6 +42,7 @@ pub async fn create_schedule_admin_controller(
         account_id: account.id,
         tzid: body_params.0.timezone,
         rules: body_params.0.rules,
+        metadata: body_params.0.metadata,
     };
 
     execute(usecase, &ctx)
@@ -62,6 +63,7 @@ pub async fn create_schedule_controller(
         account_id: user.account_id,
         tzid: body_params.0.timezone,
         rules: body_params.0.rules,
+        metadata: body_params.0.metadata,
     };
 
     execute_with_policy(usecase, &policy, &ctx)
@@ -79,6 +81,7 @@ struct CreateScheduleUseCase {
     pub account_id: ID,
     pub tzid: String,
     pub rules: Option<Vec<ScheduleRule>>,
+    pub metadata: Option<Metadata>,
 }
 
 #[derive(Debug)]
@@ -120,6 +123,9 @@ impl UseCase for CreateScheduleUseCase {
         let mut schedule = Schedule::new(user.id, user.account_id, &tz);
         if let Some(rules) = &self.rules {
             schedule.rules = rules.clone();
+        }
+        if let Some(metadata) = &self.metadata {
+            schedule.metadata = metadata.clone();
         }
 
         let res = ctx.repos.schedule_repo.insert(&schedule).await;

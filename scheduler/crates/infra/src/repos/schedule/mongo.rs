@@ -1,7 +1,10 @@
 use super::IScheduleRepo;
-use crate::repos::shared::{
-    mongo_repo::{self},
-    repo::DeleteResult,
+use crate::{
+    repos::shared::{
+        mongo_repo::{self},
+        repo::DeleteResult,
+    },
+    KVMetadata, MetadataFindQuery,
 };
 use mongo_repo::MongoDocument;
 use mongodb::{
@@ -60,6 +63,10 @@ impl IScheduleRepo for MongoScheduleRepo {
         }
     }
 
+    async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<Schedule> {
+        mongo_repo::find_by_metadata::<_, ScheduleMongo>(&self.collection, query).await
+    }
+
     async fn delete(&self, schedule_id: &ID) -> Option<Schedule> {
         let oid = schedule_id.inner_ref();
         mongo_repo::delete::<_, ScheduleMongo>(&self.collection, &oid).await
@@ -80,6 +87,7 @@ struct ScheduleMongo {
     account_id: ObjectId,
     rules: Vec<ScheduleRule>,
     timezone: String,
+    metadata: Vec<KVMetadata>,
 }
 
 impl MongoDocument<Schedule> for ScheduleMongo {
@@ -90,6 +98,7 @@ impl MongoDocument<Schedule> for ScheduleMongo {
             account_id: ID::from(self.account_id),
             rules: self.rules,
             timezone: self.timezone.parse().unwrap(),
+            metadata: KVMetadata::to_metadata(self.metadata),
         }
     }
 
@@ -100,6 +109,7 @@ impl MongoDocument<Schedule> for ScheduleMongo {
             account_id: schedule.account_id.inner_ref().clone(),
             rules: schedule.rules.to_owned(),
             timezone: schedule.timezone.to_string(),
+            metadata: KVMetadata::new(schedule.metadata.clone()),
         }
     }
 

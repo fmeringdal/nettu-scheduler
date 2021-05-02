@@ -3,7 +3,7 @@ use nettu_scheduler_domain::{
 };
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CalendarEventDTO {
     pub id: ID,
@@ -39,7 +39,7 @@ impl CalendarEventDTO {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct EventWithInstancesDTO {
     pub event: CalendarEventDTO,

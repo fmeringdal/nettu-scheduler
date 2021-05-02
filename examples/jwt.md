@@ -6,7 +6,7 @@ This is how your server side code might look like
 
 ```js
 import jwt from "jsonwebtoken"; 
-import { NettuClient, config, Permissions } from "@nettu/scheduler-sdk";
+import { NettuClient, Permissions } from "@nettu/scheduler-sdk";
 
 const client = NettuClient({ apiKey: "YOUR_API_KEY" });
 
@@ -59,7 +59,7 @@ const getJWT = async() => {
 }
 
 const { token, accountId } = await getJWT();
-config.baseUrl = "http://localhost:5000/api/v1";
+
 // Construct the nettu user client
 const client = NettuUserClient({
     token,

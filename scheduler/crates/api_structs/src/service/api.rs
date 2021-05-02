@@ -117,8 +117,8 @@ pub mod get_service_bookingslots {
     #[derive(Deserialize, Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct ServiceBookingSlotsDateDTO {
-        date: String,
-        slots: Vec<ServiceBookingSlotDTO>,
+        pub date: String,
+        pub slots: Vec<ServiceBookingSlotDTO>,
     }
 
     impl ServiceBookingSlotsDateDTO {

@@ -18,7 +18,7 @@ impl ScheduleResponse {
 }
 
 pub mod create_schedule {
-    use nettu_scheduler_domain::ScheduleRule;
+    use nettu_scheduler_domain::{Metadata, ScheduleRule};
 
     use super::*;
 
@@ -32,6 +32,7 @@ pub mod create_schedule {
     pub struct RequestBody {
         pub timezone: String,
         pub rules: Option<Vec<ScheduleRule>>,
+        pub metadata: Option<Metadata>,
     }
 
     pub type APIResponse = ScheduleResponse;
@@ -60,9 +61,8 @@ pub mod get_schedule {
 }
 
 pub mod update_schedule {
-    use nettu_scheduler_domain::ScheduleRule;
-
     use super::*;
+    use nettu_scheduler_domain::{Metadata, ScheduleRule};
 
     #[derive(Deserialize)]
     pub struct PathParams {
@@ -74,7 +74,35 @@ pub mod update_schedule {
     pub struct RequestBody {
         pub timezone: Option<String>,
         pub rules: Option<Vec<ScheduleRule>>,
+        pub metadata: Option<Metadata>,
     }
 
     pub type APIResponse = ScheduleResponse;
+}
+
+pub mod get_schedules_by_meta {
+    use super::*;
+
+    #[derive(Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct QueryParams {
+        pub key: String,
+        pub value: String,
+        #[serde(default)]
+        pub skip: Option<usize>,
+        pub limit: Option<usize>,
+    }
+
+    #[derive(Deserialize, Serialize)]
+    pub struct APIResponse {
+        pub schedules: Vec<ScheduleDTO>,
+    }
+
+    impl APIResponse {
+        pub fn new(schedules: Vec<Schedule>) -> Self {
+            Self {
+                schedules: schedules.into_iter().map(ScheduleDTO::new).collect(),
+            }
+        }
+    }
 }

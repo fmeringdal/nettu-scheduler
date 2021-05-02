@@ -12,8 +12,10 @@ mod user;
 use actix_cors::Cors;
 use actix_web::{dev::Server, middleware, web, App, HttpServer};
 use job_schedulers::{start_reminders_expansion_job_scheduler, start_send_reminders_job};
+use nettu_scheduler_domain::{Account, PEMKey};
 use nettu_scheduler_infra::NettuContext;
 use std::net::TcpListener;
+use tracing::warn;
 use tracing_actix_web::TracingLogger;
 
 pub fn configure_server_api(cfg: &mut web::ServiceConfig) {
@@ -29,14 +31,19 @@ pub fn configure_server_api(cfg: &mut web::ServiceConfig) {
 pub struct Application {
     server: Server,
     port: u16,
+    context: NettuContext,
 }
 
 impl Application {
     pub async fn new(context: NettuContext) -> Result<Self, std::io::Error> {
         let (server, port) = Application::configure_server(context.clone()).await?;
-        Application::start_job_schedulers(context);
+        Application::start_job_schedulers(context.clone());
 
-        Ok(Self { server, port })
+        Ok(Self {
+            server,
+            port,
+            context,
+        })
     }
 
     pub fn port(&self) -> u16 {
@@ -72,6 +79,39 @@ impl Application {
     }
 
     pub async fn start(self) -> Result<(), std::io::Error> {
+        self.init_default_account().await;
         self.server.await
+    }
+
+    async fn init_default_account(&self) {
+        let secret_api_key = match std::env::var("ACCOUNT_API_KEY") {
+            Ok(key) => key,
+            Err(_) => Account::generate_secret_api_key(),
+        };
+        if self
+            .context
+            .repos
+            .account_repo
+            .find_by_apikey(&secret_api_key)
+            .await
+            .is_none()
+        {
+            let mut account = Account::default();
+            account.secret_api_key = secret_api_key;
+            if let Ok(mut verification_key) = std::env::var("ACCOUNT_PUB_KEY") {
+                verification_key = verification_key.replacen("\\n", "\n", 100);
+                match PEMKey::new(verification_key) {
+                    Ok(k) => account.set_public_jwt_key(Some(k)),
+                    Err(e) => warn!("Invalid ACCOUNT_PUB_KEY provided: {:?}", e),
+                };
+            }
+
+            self.context
+                .repos
+                .account_repo
+                .insert(&account)
+                .await
+                .expect("To create default account");
+        }
     }
 }

@@ -3,7 +3,7 @@ use crate::{
     event_instance::EventInstance,
     shared::entity::{Entity, ID},
     timespan::TimeSpan,
-    CompatibleInstances,
+    CompatibleInstances, Meta, Metadata,
 };
 use chrono::{prelude::*, Duration};
 use chrono_tz::Tz;
@@ -17,6 +17,17 @@ pub struct Schedule {
     pub account_id: ID,
     pub rules: Vec<ScheduleRule>,
     pub timezone: Tz,
+    pub metadata: Metadata,
+}
+
+impl Meta for Schedule {
+    fn metadata(&self) -> &Metadata {
+        &self.metadata
+    }
+
+    fn account_id(&self) -> &ID {
+        &self.account_id
+    }
 }
 
 impl Schedule {
@@ -27,6 +38,7 @@ impl Schedule {
             account_id,
             rules: ScheduleRule::default_rules(),
             timezone: timezone.to_owned(),
+            metadata: Default::default(),
         }
     }
 
@@ -124,11 +136,13 @@ impl ScheduleRule {
             Weekday::Wed,
             Weekday::Thu,
             Weekday::Fri,
+            Weekday::Sat,
+            Weekday::Sun,
         ];
         for wday in weekdays {
-            weekly_rules.push(ScheduleRule {
-                variant: ScheduleRuleVariant::WDay(wday),
-                intervals: vec![ScheduleRuleInterval {
+            let intervals = match wday {
+                Weekday::Sat | Weekday::Sun => vec![],
+                _ => vec![ScheduleRuleInterval {
                     start: Time {
                         hours: 9,
                         minutes: 0,
@@ -138,6 +152,10 @@ impl ScheduleRule {
                         minutes: 30,
                     },
                 }],
+            };
+            weekly_rules.push(ScheduleRule {
+                variant: ScheduleRuleVariant::WDay(wday),
+                intervals,
             });
         }
         weekly_rules
@@ -406,6 +424,7 @@ mod test {
                     }],
                 },
             ],
+            metadata: Default::default(),
         };
 
         let timespan = TimeSpan::new(0, 1000 * 60 * 60 * 24 * 30);

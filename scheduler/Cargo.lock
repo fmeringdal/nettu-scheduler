@@ -1753,7 +1753,7 @@ dependencies = [
 
 [[package]]
 name = "nettu_scheduler_api_structs"
-version = "0.1.0"
+version = "0.1.5"
 dependencies = [
  "nettu_scheduler_domain",
  "serde",
@@ -1761,7 +1761,7 @@ dependencies = [
 
 [[package]]
 name = "nettu_scheduler_domain"
-version = "0.1.0"
+version = "0.1.2"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1795,7 +1795,7 @@ dependencies = [
 
 [[package]]
 name = "nettu_scheduler_sdk"
-version = "0.1.0"
+version = "0.1.6"
 dependencies = [
  "nettu_scheduler_api_structs",
  "nettu_scheduler_domain",
@@ -2365,9 +2365,9 @@ dependencies = [
 
 [[package]]
 name = "rrule"
-version = "0.5.5"
+version = "0.5.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a58554522ed7b1c68de67db91a9f11665f1d86cf0b31995b6129bb1784fd4d51"
+checksum = "72eab04b04cf30f8346d6240cf1b9a9a5e53d59e18959217abe40c8744c05018"
 dependencies = [
  "chrono",
  "chrono-tz",
