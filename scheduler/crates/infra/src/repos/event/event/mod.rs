@@ -51,6 +51,7 @@ mod tests {
             start_ts: Default::default(),
             updated: Default::default(),
             user_id: Default::default(),
+            synced_events: Default::default(),
         }
     }
 

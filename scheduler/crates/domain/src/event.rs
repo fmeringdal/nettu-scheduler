@@ -27,6 +27,19 @@ pub struct CalendarEvent {
     pub reminder: Option<CalendarEventReminder>,
     pub is_service: bool,
     pub metadata: Metadata,
+    pub synced_events: Vec<SyncedCalendarEvent>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum SyncedCalendarProvider {
+    Google,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SyncedCalendarEvent {
+    pub event_id: String,
+    pub calendar_id: String,
+    pub provider: SyncedCalendarProvider,
 }
 
 impl Entity for CalendarEvent {
@@ -203,6 +216,7 @@ mod test {
             metadata: Default::default(),
             created: Default::default(),
             updated: Default::default(),
+            synced_events: Default::default(),
         };
 
         let oc = event.expand(None, &settings);
@@ -231,6 +245,7 @@ mod test {
             metadata: Default::default(),
             created: Default::default(),
             updated: Default::default(),
+            synced_events: Default::default(),
         };
 
         let oc = event.expand(None, &settings);
@@ -280,6 +295,7 @@ mod test {
                 metadata: Default::default(),
                 created: Default::default(),
                 updated: Default::default(),
+                synced_events: Default::default(),
             };
 
             assert!(!event.set_recurrence(rrule, &settings, true));
@@ -329,6 +345,7 @@ mod test {
                 metadata: Default::default(),
                 created: Default::default(),
                 updated: Default::default(),
+                synced_events: Default::default(),
             };
 
             assert!(event.set_recurrence(rrule, &settings, true));

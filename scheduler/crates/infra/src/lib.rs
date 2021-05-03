@@ -1,5 +1,6 @@
 mod config;
 mod repos;
+mod services;
 mod system;
 
 pub use config::Config;

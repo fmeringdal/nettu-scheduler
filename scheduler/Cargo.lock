@@ -1787,6 +1787,7 @@ dependencies = [
  "mongodb",
  "nettu_scheduler_domain",
  "nettu_scheduler_utils",
+ "reqwest",
  "serde",
  "tokio 1.2.0",
  "tracing",

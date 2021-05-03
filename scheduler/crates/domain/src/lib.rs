@@ -13,7 +13,9 @@ mod user;
 
 pub use account::{Account, AccountSettings, AccountWebhookSettings, PEMKey};
 pub use calendar::{Calendar, CalendarSettings};
-pub use event::{CalendarEvent, CalendarEventReminder};
+pub use event::{
+    CalendarEvent, CalendarEventReminder, SyncedCalendarEvent, SyncedCalendarProvider,
+};
 pub use event_instance::{
     get_free_busy, CompatibleInstances, EventInstance, EventWithInstances, FreeBusy,
 };
@@ -24,4 +26,4 @@ pub use shared::entity::{Entity, ID};
 pub use shared::metadata::{Meta, Metadata};
 pub use shared::recurrence::{RRuleFrequenzy, RRuleOptions};
 pub use timespan::TimeSpan;
-pub use user::User;
+pub use user::{User, UserGoogleIntegrationData, UserIntegrationProvider};

@@ -9,7 +9,9 @@ use mongodb::{
     bson::{oid::ObjectId, Document},
     Collection, Database,
 };
-use nettu_scheduler_domain::{CalendarEvent, CalendarEventReminder, RRuleOptions, TimeSpan, ID};
+use nettu_scheduler_domain::{
+    CalendarEvent, CalendarEventReminder, RRuleOptions, SyncedCalendarEvent, TimeSpan, ID,
+};
 use serde::{Deserialize, Serialize};
 
 pub struct MongoEventRepo {
@@ -125,6 +127,7 @@ struct CalendarEventMongo {
     reminder: Option<CalendarEventReminder>,
     is_service: bool,
     metadata: Vec<KVMetadata>,
+    synced_events: Vec<SyncedCalendarEvent>,
 }
 
 impl MongoDocument<CalendarEvent> for CalendarEventMongo {
@@ -145,6 +148,7 @@ impl MongoDocument<CalendarEvent> for CalendarEventMongo {
             reminder: self.reminder,
             is_service: self.is_service,
             metadata: KVMetadata::to_metadata(self.metadata),
+            synced_events: self.synced_events,
         }
     }
 
@@ -165,6 +169,7 @@ impl MongoDocument<CalendarEvent> for CalendarEventMongo {
             reminder: event.reminder.clone(),
             is_service: event.is_service,
             metadata: KVMetadata::new(event.metadata.clone()),
+            synced_events: event.synced_events.clone(),
         }
     }
 

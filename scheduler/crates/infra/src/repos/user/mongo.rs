@@ -6,7 +6,7 @@ use mongodb::{
     bson::{doc, oid::ObjectId, Document},
     Collection, Database,
 };
-use nettu_scheduler_domain::{User, ID};
+use nettu_scheduler_domain::{User, UserIntegrationProvider, ID};
 use serde::{Deserialize, Serialize};
 
 pub struct MongoUserRepo {
@@ -59,6 +59,7 @@ struct UserMongo {
     _id: ObjectId,
     account_id: ObjectId,
     metadata: Vec<KVMetadata>,
+    integrations: Vec<UserIntegrationProvider>,
 }
 
 impl MongoDocument<User> for UserMongo {
@@ -67,6 +68,7 @@ impl MongoDocument<User> for UserMongo {
             id: ID::from(self._id),
             account_id: ID::from(self.account_id),
             metadata: KVMetadata::to_metadata(self.metadata),
+            integrations: self.integrations,
         }
     }
 
@@ -75,6 +77,7 @@ impl MongoDocument<User> for UserMongo {
             _id: user.id.inner_ref().clone(),
             account_id: user.account_id.inner_ref().clone(),
             metadata: KVMetadata::new(user.metadata.clone()),
+            integrations: user.integrations.clone(),
         }
     }
 
