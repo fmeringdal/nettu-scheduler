@@ -6,7 +6,8 @@ use crate::NettuContext;
 
 use super::FreeBusyProviderQuery;
 use calendar_api::{
-    FreeBusyCalendar, FreeBusyRequest, GoogleCalendarEvent, GoogleCalendarRestApi, GoogleDateTime,
+    FreeBusyCalendar, FreeBusyRequest, GoogleCalendarAccessRole, GoogleCalendarEvent,
+    GoogleCalendarRestApi, GoogleDateTime, ListCalendarsResponse,
 };
 use nettu_scheduler_domain::{CalendarEvent, CompatibleInstances, EventInstance, User};
 
@@ -82,7 +83,10 @@ impl GoogleCalendarProvider {
         Ok(())
     }
 
-    async fn list(&self) -> Vec<()> {
-        todo!()
+    async fn list(
+        &self,
+        min_access_role: GoogleCalendarAccessRole,
+    ) -> Result<ListCalendarsResponse, ()> {
+        self.api.list(min_access_role).await
     }
 }

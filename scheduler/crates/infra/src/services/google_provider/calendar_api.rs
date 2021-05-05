@@ -3,6 +3,7 @@ use nettu_scheduler_domain::CalendarEvent;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use tracing::log::warn;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -119,6 +120,42 @@ pub struct FreeBusyRequest {
     pub items: Vec<FreeBusyCalendar>,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ListCalendarsResponse {
+    kind: String,
+    etag: GoogleDateTime,
+    pub items: Vec<GoogleCalendarListEntry>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GoogleCalendarListEntry {
+    id: String,
+    summary: String,
+    description: String,
+    location: String,
+    time_zone: String,
+    summary_override: String,
+    color_id: String,
+    background_color: String,
+    foreground_color: String,
+    hidden: bool,
+    selected: bool,
+    access_role: GoogleCalendarAccessRole,
+    primary: bool,
+    deleted: bool,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum GoogleCalendarAccessRole {
+    Owner,
+    Writer,
+    Reader,
+    FreeBusyReader,
+}
+
 const GOOGLE_API_BASE_URL: &str = "https://www.googleapis.com/calendar/v3";
 
 impl GoogleCalendarRestApi {
@@ -136,7 +173,23 @@ impl GoogleCalendarRestApi {
             .await
         {
             Ok(res) => res.json::<T>().await.map_err(|e| {
-                println!("Error: {:?}", e);
+                warn!("Error: {:?}", e);
+                ()
+            }),
+            Err(_) => Err(()),
+        }
+    }
+
+    async fn get<T: for<'de> Deserialize<'de>>(&self, path: String) -> Result<T, ()> {
+        match self
+            .client
+            .get(&format!("{}/{}", GOOGLE_API_BASE_URL, path))
+            .header("authorization", format!("Bearer: {}", self.access_token))
+            .send()
+            .await
+        {
+            Ok(res) => res.json::<T>().await.map_err(|e| {
+                warn!("Error: {:?}", e);
                 ()
             }),
             Err(_) => Err(()),
@@ -152,7 +205,7 @@ impl GoogleCalendarRestApi {
             .await
         {
             Ok(res) => res.json::<T>().await.map_err(|e| {
-                println!("Error: {:?}", e);
+                warn!("Error: {:?}", e);
                 ()
             }),
             Err(_) => Err(()),
@@ -174,5 +227,16 @@ impl GoogleCalendarRestApi {
     pub async fn remove(&self, calendar_id: String, event_id: String) -> Result<(), ()> {
         self.delete(format!("{}/events/{}", calendar_id, event_id))
             .await
+    }
+
+    pub async fn list(
+        &self,
+        min_access_role: GoogleCalendarAccessRole,
+    ) -> Result<ListCalendarsResponse, ()> {
+        self.get(format!(
+            "users/me/calendarList?minAccessRole={:?}",
+            min_access_role
+        ))
+        .await
     }
 }
