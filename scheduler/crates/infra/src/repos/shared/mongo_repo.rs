@@ -100,10 +100,9 @@ pub async fn find_one_by<E, D: MongoDocument<E>>(
 }
 
 pub async fn find_many_by<E, D: MongoDocument<E>>(
-    collection: &Collection,
+    coll: &Collection,
     filter: Document,
 ) -> Result<Vec<E>> {
-    let coll = collection;
     let res = coll.find(filter, None).await;
 
     match res {

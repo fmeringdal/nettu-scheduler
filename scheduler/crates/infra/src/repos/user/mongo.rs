@@ -40,6 +40,23 @@ impl IUserRepo for MongoUserRepo {
         mongo_repo::find::<_, UserMongo>(&self.collection, &oid).await
     }
 
+    async fn revoke_google_integration(&self, account_id: &ID) -> anyhow::Result<()> {
+        let query = doc! {
+            "account_id": account_id.inner_ref()
+        };
+        let update = doc! {
+            "$pull": {
+                "integrations": {
+                    "$elemMatch": {
+                        "provider": "Google"
+                    }
+                }
+            }
+        };
+        self.collection.update_many(query, update, None).await?;
+        Ok(())
+    }
+
     async fn delete(&self, user_id: &ID) -> Option<User> {
         let oid = user_id.inner_ref();
         mongo_repo::delete::<_, UserMongo>(&self.collection, &oid).await

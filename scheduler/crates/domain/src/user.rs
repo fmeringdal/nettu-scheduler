@@ -39,6 +39,7 @@ impl Meta for User {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "provider")]
 pub enum UserIntegrationProvider {
     Google(UserGoogleIntegrationData),
 }

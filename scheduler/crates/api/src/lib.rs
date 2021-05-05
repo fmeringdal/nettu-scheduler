@@ -12,7 +12,7 @@ mod user;
 use actix_cors::Cors;
 use actix_web::{dev::Server, middleware, web, App, HttpServer};
 use job_schedulers::{start_reminders_expansion_job_scheduler, start_send_reminders_job};
-use nettu_scheduler_domain::{Account, PEMKey};
+use nettu_scheduler_domain::{Account, AccountGoogleIntegration, PEMKey};
 use nettu_scheduler_infra::NettuContext;
 use std::net::TcpListener;
 use tracing::warn;
@@ -104,6 +104,27 @@ impl Application {
                     Ok(k) => account.set_public_jwt_key(Some(k)),
                     Err(e) => warn!("Invalid ACCOUNT_PUB_KEY provided: {:?}", e),
                 };
+            }
+
+            let account_google_client_id_env = "ACCOUNT_GOOGLE_CLIENT_ID";
+            let account_google_client_sercret_env = "ACCOUNT_GOOGLE_CLIENT_SERCRET";
+            let account_google_redirect_uri_env = "ACCOUNT_GOOGLE_REDIRECT_URI";
+            if let Ok(google_client_id) = std::env::var(account_google_client_id_env) {
+                let google_client_secret =
+                    std::env::var(account_google_client_sercret_env).expect(&format!(
+                        "{} should be specified also when {} is specified.",
+                        account_google_client_sercret_env, account_google_client_id_env
+                    ));
+                let google_redirect_uri =
+                    std::env::var(account_google_redirect_uri_env).expect(&format!(
+                        "{} should be specified also when {} is specified.",
+                        account_google_redirect_uri_env, account_google_client_id_env
+                    ));
+                account.settings.google = Some(AccountGoogleIntegration {
+                    client_id: google_client_id,
+                    client_secret: google_client_secret,
+                    redirect_uri: google_redirect_uri,
+                })
             }
 
             self.context

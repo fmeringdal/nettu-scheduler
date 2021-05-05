@@ -1,6 +1,6 @@
 use super::IUserRepo;
 use crate::repos::shared::{inmemory_repo::*, query_structs::MetadataFindQuery};
-use nettu_scheduler_domain::{User, ID};
+use nettu_scheduler_domain::{User, UserIntegrationProvider, ID};
 
 pub struct InMemoryUserRepo {
     users: std::sync::Mutex<Vec<User>>,
@@ -32,6 +32,29 @@ impl IUserRepo for InMemoryUserRepo {
 
     async fn find(&self, user_id: &ID) -> Option<User> {
         find(user_id, &self.users)
+    }
+
+    async fn revoke_google_integration(&self, account_id: &ID) -> anyhow::Result<()> {
+        update_many(
+            &self.users,
+            |user| {
+                if user.account_id != *account_id {
+                    return false;
+                }
+                for i in &user.integrations {
+                    match i {
+                        UserIntegrationProvider::Google(_) => return true,
+                    }
+                }
+                false
+            },
+            |user| {
+                user.integrations.retain(|i| match i {
+                    UserIntegrationProvider::Google(_) => false,
+                })
+            },
+        );
+        Ok(())
     }
 
     /// Ignores skip and limit as this is just used for testing

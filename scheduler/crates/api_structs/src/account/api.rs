@@ -78,3 +78,17 @@ pub mod delete_account_webhook {
 
     pub type APIResponse = AccountResponse;
 }
+
+pub mod set_account_google_integration {
+    use super::*;
+
+    #[derive(Debug, Deserialize, Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct RequestBody {
+        pub client_id: String,
+        pub client_secret: String,
+        pub redirect_uri: String,
+    }
+
+    pub type APIResponse = AccountResponse;
+}

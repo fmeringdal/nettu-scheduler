@@ -13,13 +13,14 @@ pub trait IUserRepo: Send + Sync {
     async fn save(&self, user: &User) -> anyhow::Result<()>;
     async fn delete(&self, user_id: &ID) -> Option<User>;
     async fn find(&self, user_id: &ID) -> Option<User>;
+    async fn revoke_google_integration(&self, account_id: &ID) -> anyhow::Result<()>;
     async fn find_by_account_id(&self, user_id: &ID, account_id: &ID) -> Option<User>;
     async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<User>;
 }
 
 #[cfg(test)]
 mod tests {
-    use nettu_scheduler_domain::Metadata;
+    use nettu_scheduler_domain::{Metadata, UserGoogleIntegrationData, UserIntegrationProvider};
 
     use crate::{repos::shared::query_structs::KVMetadata, setup_context, NettuContext};
 
@@ -75,6 +76,52 @@ mod tests {
             // Different account id should give no results
             query.account_id = Default::default();
             assert!(ctx.repos.user_repo.find_by_metadata(query).await.is_empty());
+        }
+    }
+
+    #[tokio::test]
+    async fn test_google_integration_revoke() {
+        let ctxs = create_contexts().await;
+
+        for ctx in ctxs {
+            let account_id = ID::default();
+            let mut user = User::new(account_id.clone());
+            user.integrations = vec![UserIntegrationProvider::Google(UserGoogleIntegrationData {
+                access_token: "1".into(),
+                refresh_token: "1".into(),
+                access_token_expires_ts: 1,
+            })];
+            ctx.repos
+                .user_repo
+                .insert(&user)
+                .await
+                .expect("To save user");
+
+            let user = ctx
+                .repos
+                .user_repo
+                .find(&user.id)
+                .await
+                .expect("To find user just inserted");
+
+            // Check that integration is there before deleting it
+            assert_eq!(user.integrations.len(), 1);
+
+            assert!(ctx
+                .repos
+                .user_repo
+                .revoke_google_integration(&user.account_id)
+                .await
+                .is_ok());
+
+            let user = ctx
+                .repos
+                .user_repo
+                .find(&user.id)
+                .await
+                .expect("To find user just inserted");
+
+            assert!(user.integrations.is_empty());
         }
     }
 }

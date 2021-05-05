@@ -188,3 +188,10 @@ impl Service {
         self.users.iter_mut().find(|u| u.user_id == *user_id)
     }
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "provider")]
+pub enum BusyCalendar {
+    Google(String),
+    Nettu(ID),
+}
