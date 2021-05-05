@@ -12,6 +12,8 @@ pub use system::ISys;
 use system::RealSys;
 use tracing::{info, warn};
 
+pub use services::*;
+
 #[derive(Clone)]
 pub struct NettuContext {
     pub repos: Repos,

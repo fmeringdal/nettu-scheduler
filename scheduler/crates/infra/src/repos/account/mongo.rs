@@ -5,7 +5,9 @@ use mongodb::{
     bson::{doc, oid::ObjectId, Document},
     Collection, Database,
 };
-use nettu_scheduler_domain::{Account, AccountSettings, AccountWebhookSettings, PEMKey, ID};
+use nettu_scheduler_domain::{
+    Account, AccountGoogleIntegration, AccountSettings, AccountWebhookSettings, PEMKey, ID,
+};
 use serde::{Deserialize, Serialize};
 
 pub struct MongoAccountRepo {
@@ -93,6 +95,7 @@ struct AccountAttributeMongo {
 #[derive(Debug, Serialize, Deserialize)]
 struct AccountSettingsMongo {
     pub webhook: Option<AccountWebhookSettingsMongo>,
+    pub google: Option<AccountGoogleIntegration>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -103,7 +106,10 @@ struct AccountWebhookSettingsMongo {
 
 impl<'de> MongoDocument<Account> for AccountMongo {
     fn to_domain(self) -> Account {
-        let mut settings = AccountSettings { webhook: None };
+        let mut settings = AccountSettings {
+            webhook: None,
+            google: self.settings.google.clone(),
+        };
         if let Some(webhook_settings) = self.settings.webhook.as_ref() {
             settings.webhook = Some(AccountWebhookSettings {
                 url: webhook_settings.url.to_owned(),
@@ -120,7 +126,10 @@ impl<'de> MongoDocument<Account> for AccountMongo {
     }
 
     fn from_domain(account: &Account) -> Self {
-        let mut settings = AccountSettingsMongo { webhook: None };
+        let mut settings = AccountSettingsMongo {
+            webhook: None,
+            google: account.settings.google.clone(),
+        };
         let mut attributes = vec![AccountAttributeMongo {
             key: "secret_api_key".to_string(),
             value: account.secret_api_key.clone(),

@@ -46,4 +46,6 @@ pub enum UserIntegrationProvider {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserGoogleIntegrationData {
     pub refresh_token: String,
+    pub access_token: String,
+    pub access_token_expires_ts: usize,
 }

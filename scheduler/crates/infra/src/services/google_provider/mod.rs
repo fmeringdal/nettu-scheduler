@@ -2,20 +2,32 @@
 mod auth_provider;
 mod calendar_api;
 
+use crate::NettuContext;
+
 use super::FreeBusyProviderQuery;
 use calendar_api::{
-    FreeBusyCalendar, FreeBusyRequest, GoogleCalendarEvent, GoogleCalendarEventDateTime,
-    GoogleCalendarRestApi, GoogleDateTime,
+    FreeBusyCalendar, FreeBusyRequest, GoogleCalendarEvent, GoogleCalendarRestApi, GoogleDateTime,
 };
-use nettu_scheduler_domain::{CalendarEvent, CompatibleInstances, EventInstance};
+use nettu_scheduler_domain::{CalendarEvent, CompatibleInstances, EventInstance, User};
 
 // https://developers.google.com/calendar/v3/reference/events
+// `https://accounts.google.com/o/oauth2/v2/auth?access_type=offline&include_granted_scopes=true&prompt=consent&client_id=${CLIENT_ID}&redirect_uri=${redirect_uri}&response_type=code&scope=https://www.googleapis.com/auth/calendar&state=${state}`;
 
 pub struct GoogleCalendarProvider {
     api: GoogleCalendarRestApi,
 }
 
 impl GoogleCalendarProvider {
+    pub async fn new(user: &mut User, ctx: &NettuContext) -> Result<Self, ()> {
+        let access_token = match auth_provider::get_access_token(user, ctx).await {
+            Some(token) => token,
+            None => return Err(()),
+        };
+        Ok(Self {
+            api: GoogleCalendarRestApi::new(access_token),
+        })
+    }
+
     async fn freebusy(&self, query: FreeBusyProviderQuery) -> CompatibleInstances {
         let body = FreeBusyRequest {
             time_max: GoogleDateTime::from_timestamp_millis(query.start),

@@ -1,6 +1,7 @@
 mod account;
 mod calendar;
 mod event;
+// mod kv;
 mod schedule;
 mod service;
 mod shared;
@@ -13,6 +14,7 @@ use event::{
     InMemoryEventRemindersExpansionJobsRepo, InMemoryEventRepo, InMemoryReminderRepo,
     MongoEventRemindersExpansionsJobRepo, MongoEventRepo, MongoReminderRepo,
 };
+// use kv::{IKVRepo, InMemoryKVRepo, MongoKVRepo};
 use mongodb::{options::ClientOptions, Client};
 use schedule::{IScheduleRepo, InMemoryScheduleRepo, MongoScheduleRepo};
 use service::{IServiceRepo, InMemoryServiceRepo, MongoServiceRepo};
@@ -29,6 +31,7 @@ pub struct Repos {
     pub calendar_repo: Arc<dyn ICalendarRepo>,
     pub account_repo: Arc<dyn IAccountRepo>,
     pub user_repo: Arc<dyn IUserRepo>,
+    // pub key_value_repo: Arc<dyn IKVRepo>,
     pub service_repo: Arc<dyn IServiceRepo>,
     pub schedule_repo: Arc<dyn IScheduleRepo>,
     pub reminder_repo: Arc<dyn IReminderRepo>,
@@ -60,6 +63,7 @@ impl Repos {
             calendar_repo: Arc::new(MongoCalendarRepo::new(&db)),
             account_repo: Arc::new(MongoAccountRepo::new(&db)),
             user_repo: Arc::new(MongoUserRepo::new(&db)),
+            // key_value_repo: Arc::new(MongoKVRepo::new(&db)),
             service_repo: Arc::new(MongoServiceRepo::new(&db)),
             schedule_repo: Arc::new(MongoScheduleRepo::new(&db)),
             reminder_repo: Arc::new(MongoReminderRepo::new(&db)),
@@ -75,6 +79,7 @@ impl Repos {
             calendar_repo: Arc::new(InMemoryCalendarRepo::new()),
             account_repo: Arc::new(InMemoryAccountRepo::new()),
             user_repo: Arc::new(InMemoryUserRepo::new()),
+            // key_value_repo: Arc::new(InMemoryKVRepo::new()),
             service_repo: Arc::new(InMemoryServiceRepo::new()),
             schedule_repo: Arc::new(InMemoryScheduleRepo::new()),
             reminder_repo: Arc::new(InMemoryReminderRepo::new()),
