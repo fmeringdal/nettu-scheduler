@@ -1,5 +1,4 @@
-use nettu_scheduler_domain::{CalendarEvent, CompatibleInstances};
-mod google_provider;
+pub mod google_calendar;
 
 pub struct FreeBusyProviderQuery {
     calendar_ids: Vec<String>,
@@ -17,5 +16,3 @@ pub struct FreeBusyProviderQuery {
 //     async fn delete_event(&self, event: &CalendarEvent) -> Result<Self::CalendarEvent, ()>;
 //     async fn list(&self) -> Vec<Self::Calendar>;
 // }
-
-pub use google_provider::GoogleCalendarProvider;

@@ -4,6 +4,7 @@ mod get_me;
 mod get_user;
 mod get_user_freebusy;
 mod get_users_by_meta;
+mod oauth_google;
 mod update_user;
 
 use actix_web::web;
@@ -13,6 +14,7 @@ use get_me::get_me_controller;
 use get_user::get_user_controller;
 use get_user_freebusy::get_freebusy_controller;
 use get_users_by_meta::get_users_by_meta_controller;
+use oauth_google::*;
 use update_user::update_user_controller;
 
 pub fn configure_routes(cfg: &mut web::ServiceConfig) {
@@ -25,5 +27,12 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
     cfg.route(
         "/user/{user_id}/freebusy",
         web::get().to(get_freebusy_controller),
+    );
+
+    // Oauth google
+    cfg.route("/me/oauth/google", web::post().to(oauth_google_controller));
+    cfg.route(
+        "/user/{user_id}/oauth/google",
+        web::post().to(oauth_google_admin_controller),
     );
 }

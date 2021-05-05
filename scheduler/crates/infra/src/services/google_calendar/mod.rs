@@ -1,5 +1,5 @@
 // CONSIDER USING THIS LIB: https://docs.rs/google-calendar3
-mod auth_provider;
+pub mod auth_provider;
 mod calendar_api;
 
 use crate::NettuContext;

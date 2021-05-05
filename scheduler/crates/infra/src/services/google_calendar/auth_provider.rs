@@ -46,19 +46,19 @@ async fn refresh_access_token(req: RefreshTokenRequest) -> Result<RefreshTokenRe
 
 // Google api actually returns snake case response
 pub struct CodeTokenRequest {
-    client_id: String,
-    client_secret: String,
-    code: String,
-    redirect_uri: String,
+    pub client_id: String,
+    pub client_secret: String,
+    pub code: String,
+    pub redirect_uri: String,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct CodeTokenResponse {
-    access_token: String,
-    scope: String,
-    token_type: String,
-    expires_in: usize,
-    refresh_token: String,
+    pub access_token: String,
+    pub scope: String,
+    pub token_type: String,
+    pub expires_in: usize,
+    pub refresh_token: String,
 }
 
 pub async fn exchange_code_token(req: CodeTokenRequest) -> Result<CodeTokenResponse, ()> {

@@ -28,11 +28,28 @@ pub mod create_user {
 
     use super::*;
 
-    #[derive(Debug, Deserialize, Serialize)]
+    #[derive(Debug, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
         #[serde(default)]
         pub metadata: Option<Metadata>,
+    }
+
+    pub type APIResponse = UserResponse;
+}
+
+pub mod oauth_google {
+    use super::*;
+
+    #[derive(Debug, Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct RequestBody {
+        pub code: String,
+    }
+
+    #[derive(Debug, Deserialize)]
+    pub struct PathParams {
+        pub user_id: ID,
     }
 
     pub type APIResponse = UserResponse;
