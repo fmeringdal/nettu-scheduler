@@ -24,20 +24,32 @@ impl GoogleCalendarEventDateTime {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GoogleCalendarEvent {
-    start: GoogleCalendarEventDateTime,
-    end: GoogleCalendarEventDateTime,
-    summary: String,
-    description: String,
-    recurrence: Vec<String>,
+    pub id: String,
+    pub start: GoogleCalendarEventDateTime,
+    pub end: GoogleCalendarEventDateTime,
+    pub summary: String,
+    pub description: String,
+    pub recurrence: Vec<String>,
 }
 
-impl From<CalendarEvent> for GoogleCalendarEvent {
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GoogleCalendarEventAttributes {
+    pub start: GoogleCalendarEventDateTime,
+    pub end: GoogleCalendarEventDateTime,
+    pub summary: String,
+    pub description: String,
+    pub recurrence: Vec<String>,
+}
+
+impl From<CalendarEvent> for GoogleCalendarEventAttributes {
     fn from(e: CalendarEvent) -> Self {
         Self {
             description: format!(""),
             summary: format!(""),
             start: GoogleCalendarEventDateTime::new(e.start_ts),
-            end: GoogleCalendarEventDateTime::new(e.end_ts),
+            // Recurrence sync not supported yet, so e.end_ts will not be correct if used
+            end: GoogleCalendarEventDateTime::new(e.start_ts + e.duration),
             // Recurrence sync not supported yet
             recurrence: vec![],
         }
@@ -219,7 +231,7 @@ impl GoogleCalendarRestApi {
     pub async fn insert(
         &self,
         calendar_id: String,
-        body: &GoogleCalendarEvent,
+        body: &GoogleCalendarEventAttributes,
     ) -> Result<GoogleCalendarEvent, ()> {
         self.post(body, format!("{}/events", calendar_id)).await
     }

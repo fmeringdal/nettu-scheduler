@@ -6,6 +6,7 @@ use crate::{
     Meta,
 };
 use chrono_tz::{Tz, UTC};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone)]
 pub struct Calendar {
@@ -13,6 +14,7 @@ pub struct Calendar {
     pub user_id: ID,
     pub account_id: ID,
     pub settings: CalendarSettings,
+    pub synced: Vec<SyncedCalendar>,
     pub metadata: Metadata,
 }
 
@@ -23,6 +25,12 @@ impl Meta for Calendar {
     fn account_id(&self) -> &ID {
         &self.account_id
     }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(tag = "provider", content = "id")]
+pub enum SyncedCalendar {
+    Google(String),
 }
 
 #[derive(Debug, Clone)]
@@ -69,6 +77,7 @@ impl Calendar {
             account_id: account_id.clone(),
             settings: Default::default(),
             metadata: Default::default(),
+            synced: Default::default(),
         }
     }
 }

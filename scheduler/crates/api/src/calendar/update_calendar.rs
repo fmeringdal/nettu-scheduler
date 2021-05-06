@@ -1,12 +1,16 @@
 use crate::shared::{
-    auth::{account_can_modify_calendar, protect_account_route, Permission},
+    auth::{
+        account_can_modify_calendar, account_can_modify_user, protect_account_route, Permission,
+    },
     usecase::{execute, execute_with_policy, PermissionBoundary, UseCase, UseCaseErrorContainer},
 };
 use crate::{error::NettuError, shared::auth::protect_route};
 use actix_web::{web, HttpResponse};
 use nettu_scheduler_api_structs::update_calendar::{APIResponse, PathParams, RequestBody};
-use nettu_scheduler_domain::{Calendar, Metadata, ID};
+use nettu_scheduler_domain::{Calendar, Metadata, SyncedCalendar, User, ID};
 use nettu_scheduler_infra::NettuContext;
+
+use super::create_calendar::update_synced_calendars;
 
 fn handle_errors(e: UseCaseErrors) -> NettuError {
     match e {
@@ -29,12 +33,14 @@ pub async fn update_calendar_admin_controller(
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
     let cal = account_can_modify_calendar(&account, &path.calendar_id, &ctx).await?;
+    let user = account_can_modify_user(&account, &cal.user_id, &ctx).await?;
 
     let usecase = UpdateCalendarUseCase {
-        user_id: cal.user_id,
+        user,
         calendar_id: cal.id,
         week_start: body.0.settings.week_start,
         timezone: body.0.settings.timezone,
+        synced: body.0.synced,
         metadata: body.0.metadata,
     };
 
@@ -53,10 +59,11 @@ pub async fn update_calendar_controller(
     let (user, policy) = protect_route(&http_req, &ctx).await?;
 
     let usecase = UpdateCalendarUseCase {
-        user_id: user.id,
+        user,
         calendar_id: path.0.calendar_id,
         week_start: body.0.settings.week_start,
         timezone: body.0.settings.timezone,
+        synced: body.0.synced,
         metadata: body.0.metadata,
     };
 
@@ -71,10 +78,11 @@ pub async fn update_calendar_controller(
 
 #[derive(Debug)]
 struct UpdateCalendarUseCase {
-    pub user_id: ID,
+    pub user: User,
     pub calendar_id: ID,
     pub week_start: Option<isize>,
     pub timezone: Option<String>,
+    pub synced: Option<Vec<SyncedCalendar>>,
     pub metadata: Option<Metadata>,
 }
 
@@ -95,7 +103,7 @@ impl UseCase for UpdateCalendarUseCase {
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         let mut calendar = match ctx.repos.calendar_repo.find(&self.calendar_id).await {
-            Some(cal) if cal.user_id == self.user_id => cal,
+            Some(cal) if cal.user_id == self.user.id => cal,
             _ => return Err(UseCaseErrors::CalendarNotFound),
         };
 
@@ -120,12 +128,16 @@ impl UseCase for UpdateCalendarUseCase {
         if let Some(metadata) = &self.metadata {
             calendar.metadata = metadata.clone();
         }
-
-        let repo_res = ctx.repos.calendar_repo.save(&calendar).await;
-        match repo_res {
-            Ok(_) => Ok(calendar),
-            Err(_) => Err(UseCaseErrors::StorageError),
+        if let Some(synced) = &self.synced {
+            update_synced_calendars(&mut self.user, &mut calendar, synced, ctx).await;
         }
+
+        ctx.repos
+            .calendar_repo
+            .save(&calendar)
+            .await
+            .map(|_| calendar)
+            .map_err(|_| UseCaseErrors::StorageError)
     }
 }
 
@@ -148,16 +160,17 @@ mod test {
     #[test]
     async fn it_rejects_invalid_wkst() {
         let ctx = setup_context().await;
-        let user_id = ID::default();
         let account_id = ID::default();
-        let calendar = Calendar::new(&user_id, &account_id);
+        let user = User::new(account_id.clone());
+        let calendar = Calendar::new(&user.id, &account_id);
         ctx.repos.calendar_repo.insert(&calendar).await.unwrap();
 
         let mut usecase = UpdateCalendarUseCase {
+            user,
             calendar_id: calendar.id.into(),
-            user_id: user_id.into(),
             week_start: Some(20),
             timezone: None,
+            synced: None,
             metadata: None,
         };
         let res = usecase.execute(&ctx).await;
@@ -168,18 +181,19 @@ mod test {
     #[test]
     async fn it_update_settings_with_valid_wkst() {
         let ctx = setup_context().await;
-        let user_id = ID::default();
         let account_id = ID::default();
-        let calendar = Calendar::new(&user_id, &account_id);
+        let user = User::new(account_id.clone());
+        let calendar = Calendar::new(&user.id, &account_id);
         ctx.repos.calendar_repo.insert(&calendar).await.unwrap();
 
         assert_eq!(calendar.settings.week_start, 0);
         let new_wkst = 3;
         let mut usecase = UpdateCalendarUseCase {
+            user,
             calendar_id: calendar.id.clone(),
-            user_id,
             week_start: Some(new_wkst),
             timezone: None,
+            synced: None,
             metadata: Some(HashMap::new()),
         };
         let res = usecase.execute(&ctx).await;

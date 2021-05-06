@@ -7,7 +7,9 @@ mod get_calendar_events;
 mod get_calendars_by_meta;
 mod update_calendar;
 
-use create_calendar::{create_calendar_admin_controller, create_calendar_controller};
+use create_calendar::{
+    create_calendar_admin_controller, create_calendar_controller, update_synced_calendars,
+};
 use delete_calendar::{delete_calendar_admin_controller, delete_calendar_controller};
 use get_calendar::{get_calendar_admin_controller, get_calendar_controller};
 use get_calendar_events::{get_calendar_events_admin_controller, get_calendar_events_controller};

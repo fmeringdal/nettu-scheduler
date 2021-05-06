@@ -254,30 +254,32 @@ impl GetServiceBookingSlotsUseCase {
             .collect::<Vec<_>>();
 
         if !google_busy_calendars.is_empty() {
+            // TODO: no unwrap
             let mut user = ctx
                 .repos
                 .user_repo
                 .find(&service_resource.user_id)
                 .await
                 .expect("User to be found");
-            // TODO: no unwrap
-            let google_calendar_provider = GoogleCalendarProvider::new(&mut user, ctx)
-                .await
-                .expect("To get google provider");
-            let query = FreeBusyProviderQuery {
-                calendar_ids: google_busy_calendars
-                    .iter()
-                    .map(|cal| match cal {
-                        BusyCalendar::Google(id) => id.clone(),
-                        _ => unreachable!("Nettu calendars should be filtered away"),
-                    })
-                    .collect(),
-                end: timespan.end(),
-                start: timespan.start(),
-            };
-            let google_busy = google_calendar_provider.freebusy(query).await;
-            for google_busy_event in google_busy.inner() {
-                busy_events.push(google_busy_event);
+            match GoogleCalendarProvider::new(&mut user, ctx).await {
+                Ok(google_calendar_provider) => {
+                    let query = FreeBusyProviderQuery {
+                        calendar_ids: google_busy_calendars
+                            .iter()
+                            .map(|cal| match cal {
+                                BusyCalendar::Google(id) => id.clone(),
+                                _ => unreachable!("Nettu calendars should be filtered away"),
+                            })
+                            .collect(),
+                        end: timespan.end(),
+                        start: timespan.start(),
+                    };
+                    let google_busy = google_calendar_provider.freebusy(query).await;
+                    for google_busy_event in google_busy.inner() {
+                        busy_events.push(google_busy_event);
+                    }
+                }
+                Err(_) => {}
             }
         }
 

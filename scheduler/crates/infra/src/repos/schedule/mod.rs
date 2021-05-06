@@ -83,7 +83,7 @@ mod tests {
             // Insert
             assert!(ctx.repos.schedule_repo.insert(&schedule).await.is_ok());
 
-            assert_eq!(schedule.rules.len(), 5);
+            assert_eq!(schedule.rules.len(), 7);
             schedule.rules = vec![];
 
             // Save

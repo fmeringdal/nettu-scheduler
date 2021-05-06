@@ -27,7 +27,8 @@ pub use event::{
     CreateEventInput, DeleteEventInput, GetEventInput, GetEventsInstancesInput, UpdateEventInput,
 };
 pub use nettu_scheduler_domain::{
-    BusyCalendar, CalendarEventReminder, RRuleOptions, ScheduleRule, TimePlan, ID,
+    BusyCalendar, CalendarEventReminder, RRuleOptions, ScheduleRule, SyncedCalendar,
+    SyncedCalendarProvider, TimePlan, ID,
 };
 pub use schedule::{CreateScheduleInput, UpdateScheduleInput};
 pub use service::{

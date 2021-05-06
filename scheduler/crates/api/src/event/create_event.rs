@@ -9,8 +9,11 @@ use crate::shared::{
 };
 use actix_web::{web, HttpResponse};
 use nettu_scheduler_api_structs::create_event::*;
-use nettu_scheduler_domain::{CalendarEvent, CalendarEventReminder, Metadata, RRuleOptions, ID};
-use nettu_scheduler_infra::NettuContext;
+use nettu_scheduler_domain::{
+    CalendarEvent, CalendarEventReminder, Metadata, RRuleOptions, SyncedCalendar,
+    SyncedCalendarEvent, SyncedCalendarProvider, User, ID,
+};
+use nettu_scheduler_infra::{google_calendar::GoogleCalendarProvider, NettuContext};
 
 fn handle_error(e: UseCaseErrors) -> NettuError {
     match e {
@@ -42,10 +45,9 @@ pub async fn create_event_admin_controller(
         busy: body.busy.unwrap_or(false),
         start_ts: body.start_ts,
         duration: body.duration,
-        user_id: user.id,
+        user,
         calendar_id: body.calendar_id,
         recurrence: body.recurrence,
-        account_id: account.id,
         reminder: body.reminder,
         is_service: body.is_service.unwrap_or(false),
         metadata: body.metadata.unwrap_or_default(),
@@ -71,8 +73,7 @@ pub async fn create_event_controller(
         duration: body.duration,
         calendar_id: body.calendar_id,
         recurrence: body.recurrence,
-        user_id: user.id,
-        account_id: user.account_id,
+        user,
         reminder: body.reminder,
         is_service: body.is_service.unwrap_or(false),
         metadata: body.metadata.unwrap_or_default(),
@@ -89,9 +90,8 @@ pub async fn create_event_controller(
 
 #[derive(Debug)]
 pub struct CreateEventUseCase {
-    pub account_id: ID,
     pub calendar_id: ID,
-    pub user_id: ID,
+    pub user: User,
     pub start_ts: i64,
     pub duration: i64,
     pub busy: bool,
@@ -119,7 +119,7 @@ impl UseCase for CreateEventUseCase {
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         let calendar = match ctx.repos.calendar_repo.find(&self.calendar_id).await {
-            Some(calendar) if calendar.user_id == self.user_id => calendar,
+            Some(calendar) if calendar.user_id == self.user.id => calendar,
             _ => return Err(UseCaseErrors::NotFound(self.calendar_id.clone())),
         };
 
@@ -134,8 +134,8 @@ impl UseCase for CreateEventUseCase {
             end_ts: self.start_ts + self.duration, // default, if recurrence changes, this will be updated
             exdates: vec![],
             calendar_id: calendar.id.clone(),
-            user_id: self.user_id.clone(),
-            account_id: self.account_id.clone(),
+            user_id: self.user.id.clone(),
+            account_id: self.user.account_id.clone(),
             reminder: self.reminder.clone(),
             is_service: self.is_service,
             metadata: self.metadata.clone(),
@@ -150,6 +150,30 @@ impl UseCase for CreateEventUseCase {
         if let Some(reminder) = &e.reminder {
             if !reminder.is_valid() {
                 return Err(UseCaseErrors::InvalidReminder);
+            }
+        }
+
+        let synced_google_calendar_ids = calendar
+            .synced
+            .iter()
+            .map(|synced| match synced {
+                SyncedCalendar::Google(id) => id.clone(),
+            })
+            .collect::<Vec<_>>();
+        if !synced_google_calendar_ids.is_empty() {
+            if let Ok(provider) = GoogleCalendarProvider::new(&mut self.user, ctx).await {
+                for synced_google_calendar_id in synced_google_calendar_ids {
+                    if let Ok(google_event) = provider
+                        .create_event(synced_google_calendar_id.clone(), e.clone())
+                        .await
+                    {
+                        e.synced_events.push(SyncedCalendarEvent {
+                            calendar_id: synced_google_calendar_id,
+                            event_id: google_event.id,
+                            provider: SyncedCalendarProvider::Google,
+                        })
+                    }
+                }
             }
         }
 
@@ -216,8 +240,7 @@ mod test {
             recurrence: None,
             busy: false,
             calendar_id: calendar.id.clone(),
-            user_id: user.id.clone(),
-            account_id: user.account_id,
+            user,
             reminder: None,
             is_service: false,
             metadata: Default::default(),
@@ -243,8 +266,7 @@ mod test {
             recurrence: Some(Default::default()),
             busy: false,
             calendar_id: calendar.id.clone(),
-            user_id: user.id.clone(),
-            account_id: user.account_id,
+            user,
             reminder: None,
             is_service: false,
             metadata: Default::default(),
@@ -270,8 +292,7 @@ mod test {
             recurrence: Some(Default::default()),
             busy: false,
             calendar_id: ID::default(),
-            user_id: user.id.clone(),
-            account_id: user.account_id,
+            user,
             reminder: None,
             is_service: false,
             metadata: Default::default(),
@@ -310,8 +331,7 @@ mod test {
                 recurrence: Some(rrule),
                 busy: false,
                 calendar_id: calendar.id.clone(),
-                user_id: user.id.clone(),
-                account_id: user.account_id.to_owned(),
+                user: user.clone(),
                 reminder: None,
                 is_service: false,
                 metadata: Default::default(),

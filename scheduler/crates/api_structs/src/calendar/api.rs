@@ -19,7 +19,7 @@ impl CalendarResponse {
 
 pub mod create_calendar {
     use super::*;
-    use nettu_scheduler_domain::Metadata;
+    use nettu_scheduler_domain::{Metadata, SyncedCalendar};
 
     #[derive(Deserialize)]
     pub struct PathParams {
@@ -32,6 +32,8 @@ pub mod create_calendar {
         pub timezone: String,
         #[serde(default)]
         pub week_start: isize,
+        #[serde(default)]
+        pub synced: Option<Vec<SyncedCalendar>>,
         #[serde(default)]
         pub metadata: Option<Metadata>,
     }
@@ -158,7 +160,7 @@ pub mod get_user_freebusy {
 
 pub mod update_calendar {
     use super::*;
-    use nettu_scheduler_domain::Metadata;
+    use nettu_scheduler_domain::{Metadata, SyncedCalendar};
 
     #[derive(Deserialize)]
     pub struct PathParams {
@@ -179,6 +181,8 @@ pub mod update_calendar {
         pub settings: CalendarSettings,
         #[serde(default)]
         pub metadata: Option<Metadata>,
+        #[serde(default)]
+        pub synced: Option<Vec<SyncedCalendar>>,
     }
 
     pub type APIResponse = CalendarResponse;

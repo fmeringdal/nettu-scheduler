@@ -1,5 +1,8 @@
 use crate::shared::{
-    auth::{account_can_modify_event, protect_account_route, protect_route, Permission},
+    auth::{
+        account_can_modify_event, account_can_modify_user, protect_account_route, protect_route,
+        Permission,
+    },
     usecase::{execute_with_policy, PermissionBoundary, Subscriber, UseCaseErrorContainer},
 };
 use crate::{
@@ -8,8 +11,8 @@ use crate::{
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::delete_event::*;
-use nettu_scheduler_domain::{CalendarEvent, ID};
-use nettu_scheduler_infra::NettuContext;
+use nettu_scheduler_domain::{CalendarEvent, SyncedCalendarProvider, User, ID};
+use nettu_scheduler_infra::{google_calendar::GoogleCalendarProvider, NettuContext};
 
 use super::subscribers::DeleteRemindersOnEventDeleted;
 
@@ -29,9 +32,10 @@ pub async fn delete_event_admin_controller(
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
     let e = account_can_modify_event(&account, &path_params.event_id, &ctx).await?;
+    let user = account_can_modify_user(&account, &e.user_id, &ctx).await?;
 
     let usecase = DeleteEventUseCase {
-        user_id: e.user_id,
+        user,
         event_id: e.id,
     };
 
@@ -49,7 +53,7 @@ pub async fn delete_event_controller(
     let (user, policy) = protect_route(&http_req, &ctx).await?;
 
     let usecase = DeleteEventUseCase {
-        user_id: user.id.clone(),
+        user,
         event_id: path_params.event_id.clone(),
     };
 
@@ -64,7 +68,7 @@ pub async fn delete_event_controller(
 
 #[derive(Debug)]
 pub struct DeleteEventUseCase {
-    pub user_id: ID,
+    pub user: User,
     pub event_id: ID,
 }
 
@@ -83,15 +87,32 @@ impl UseCase for DeleteEventUseCase {
 
     // TODO: use only one db call
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
-        let e = ctx.repos.event_repo.find(&self.event_id).await;
-        match e {
-            Some(event) if event.user_id == self.user_id => {
-                ctx.repos.event_repo.delete(&event.id).await;
+        let e = match ctx.repos.event_repo.find(&self.event_id).await {
+            Some(e) if e.user_id == self.user.id => e,
+            _ => return Err(UseCaseErrors::NotFound(self.event_id.clone())),
+        };
 
-                Ok(event)
+        let synced_google_events = e
+            .synced_events
+            .iter()
+            .filter(|synced_event| synced_event.provider == SyncedCalendarProvider::Google)
+            .collect::<Vec<_>>();
+        if !synced_google_events.is_empty() {
+            if let Ok(provider) = GoogleCalendarProvider::new(&mut self.user, ctx).await {
+                for synced_google_event in synced_google_events {
+                    let _ = provider
+                        .delete_event(
+                            synced_google_event.calendar_id.clone(),
+                            synced_google_event.event_id.clone(),
+                        )
+                        .await;
+                }
             }
-            _ => Err(UseCaseErrors::NotFound(self.event_id.clone())),
         }
+
+        ctx.repos.event_repo.delete(&e.id).await;
+
+        Ok(e)
     }
 
     fn subscribers() -> Vec<Box<dyn Subscriber<Self>>> {

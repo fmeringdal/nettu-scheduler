@@ -140,7 +140,7 @@ async fn test_crud_schedule() {
         .schedule;
     assert_eq!(schedule.user_id, create_user_res.user.id);
     assert_eq!(schedule.timezone, "UTC");
-    assert_eq!(schedule.rules.len(), 5); // mon-fri
+    assert_eq!(schedule.rules.len(), 7); // mon-sun
 
     let schedule = admin_client
         .schedule
@@ -289,6 +289,7 @@ async fn test_crud_calendars() {
             timezone: "UTC".into(),
             week_start: 0,
             metadata: None,
+            synced: None,
         })
         .await
         .unwrap()
@@ -324,6 +325,7 @@ async fn test_crud_calendars() {
             calendar_id: calendar.id.clone(),
             timezone: None,
             week_start: Some(week_start.clone()),
+            synced: None,
             metadata: None,
         })
         .await
@@ -373,6 +375,7 @@ async fn test_crud_events() {
             user_id: user.id.clone(),
             timezone: "UTC".into(),
             week_start: 0,
+            synced: None,
             metadata: None,
         })
         .await

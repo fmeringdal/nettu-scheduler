@@ -9,8 +9,11 @@ use crate::{
 };
 use actix_web::{web, HttpResponse};
 use nettu_scheduler_api_structs::create_calendar::{APIResponse, PathParams, RequestBody};
-use nettu_scheduler_domain::{Calendar, CalendarSettings, Metadata, ID};
-use nettu_scheduler_infra::NettuContext;
+use nettu_scheduler_domain::{Calendar, CalendarSettings, Metadata, SyncedCalendar, User, ID};
+use nettu_scheduler_infra::{
+    google_calendar::{GoogleCalendarAccessRole, GoogleCalendarProvider},
+    NettuContext,
+};
 
 fn error_handler(e: UseCaseErrors) -> NettuError {
     match e {
@@ -36,6 +39,7 @@ pub async fn create_calendar_admin_controller(
         account_id: account.id,
         week_start: body.0.week_start,
         timezone: body.0.timezone,
+        synced: body.0.synced.unwrap_or_default(),
         metadata: body.0.metadata.unwrap_or_default(),
     };
 
@@ -57,6 +61,7 @@ pub async fn create_calendar_controller(
         account_id: user.account_id,
         week_start: body.0.week_start,
         timezone: body.0.timezone,
+        synced: body.0.synced.unwrap_or_default(),
         metadata: body.0.metadata.unwrap_or_default(),
     };
 
@@ -75,6 +80,7 @@ struct CreateCalendarUseCase {
     pub account_id: ID,
     pub week_start: isize,
     pub timezone: String,
+    pub synced: Vec<SyncedCalendar>,
     pub metadata: Metadata,
 }
 
@@ -94,7 +100,7 @@ impl UseCase for CreateCalendarUseCase {
     const NAME: &'static str = "CreateCalendar";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
-        let user = match ctx.repos.user_repo.find(&self.user_id).await {
+        let mut user = match ctx.repos.user_repo.find(&self.user_id).await {
             Some(user) if user.account_id == self.account_id => user,
             _ => return Err(UseCaseErrors::UserNotFound),
         };
@@ -117,16 +123,52 @@ impl UseCase for CreateCalendarUseCase {
         calendar.settings = settings;
         calendar.metadata = self.metadata.clone();
 
-        let res = ctx.repos.calendar_repo.insert(&calendar).await;
-        match res {
-            Ok(_) => Ok(calendar),
-            Err(_) => Err(UseCaseErrors::StorageError),
-        }
+        update_synced_calendars(&mut user, &mut calendar, &self.synced, ctx).await;
+
+        ctx.repos
+            .calendar_repo
+            .insert(&calendar)
+            .await
+            .map(|_| calendar)
+            .map_err(|_| UseCaseErrors::StorageError)
     }
 }
 
 impl PermissionBoundary for CreateCalendarUseCase {
     fn permissions(&self) -> Vec<Permission> {
         vec![Permission::CreateCalendar]
+    }
+}
+
+pub async fn update_synced_calendars(
+    user: &mut User,
+    calendar: &mut Calendar,
+    synced: &Vec<SyncedCalendar>,
+    ctx: &NettuContext,
+) {
+    let mut google_synced_calendar_ids = synced
+        .iter()
+        .map(|cal| match cal {
+            SyncedCalendar::Google(id) => id.clone(),
+        })
+        .collect::<Vec<_>>();
+    if !google_synced_calendar_ids.is_empty() {
+        if let Ok(provider) = GoogleCalendarProvider::new(user, ctx).await {
+            let google_calendar_ids = provider
+                .list(GoogleCalendarAccessRole::Writer)
+                .await
+                .map(|res| {
+                    res.items
+                        .into_iter()
+                        .map(|cal| cal.id)
+                        .collect::<Vec<String>>()
+                })
+                .unwrap_or_default();
+            google_synced_calendar_ids.retain(|cal_id| google_calendar_ids.contains(cal_id));
+            calendar.synced = google_synced_calendar_ids
+                .into_iter()
+                .map(|cal_id| SyncedCalendar::Google(cal_id))
+                .collect();
+        }
     }
 }

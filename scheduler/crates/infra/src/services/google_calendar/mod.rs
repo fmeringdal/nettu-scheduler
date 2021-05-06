@@ -7,9 +7,10 @@ use crate::NettuContext;
 use super::FreeBusyProviderQuery;
 pub use calendar_api::GoogleCalendarAccessRole;
 use calendar_api::{
-    FreeBusyCalendar, FreeBusyRequest, GoogleCalendarEvent, GoogleCalendarRestApi, GoogleDateTime,
-    ListCalendarsResponse,
+    FreeBusyCalendar, FreeBusyRequest, GoogleCalendarEvent, GoogleCalendarEventAttributes,
+    GoogleCalendarRestApi, GoogleDateTime, ListCalendarsResponse,
 };
+use mongodb::event;
 use nettu_scheduler_domain::{CalendarEvent, CompatibleInstances, EventInstance, User};
 
 // https://developers.google.com/calendar/v3/reference/events
@@ -62,26 +63,12 @@ impl GoogleCalendarProvider {
         calendar_id: String,
         event: CalendarEvent,
     ) -> Result<GoogleCalendarEvent, ()> {
-        let google_calendar_event: GoogleCalendarEvent = event.into();
+        let google_calendar_event: GoogleCalendarEventAttributes = event.into();
         self.api.insert(calendar_id, &google_calendar_event).await
     }
 
-    pub async fn delete_event(&self, event: &CalendarEvent) -> Result<(), ()> {
-        for synced_event in &event.synced_events {
-            match synced_event.provider {
-                nettu_scheduler_domain::SyncedCalendarProvider::Google => {
-                    return self
-                        .api
-                        .remove(
-                            synced_event.calendar_id.clone(),
-                            synced_event.event_id.clone(),
-                        )
-                        .await;
-                }
-                _ => (),
-            }
-        }
-        Ok(())
+    pub async fn delete_event(&self, calendar_id: String, event_id: String) -> Result<(), ()> {
+        self.api.remove(calendar_id, event_id).await
     }
 
     pub async fn list(

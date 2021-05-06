@@ -6,7 +6,7 @@ use mongodb::{
     bson::{doc, oid::ObjectId, Document},
     Collection, Database,
 };
-use nettu_scheduler_domain::{Calendar, CalendarSettings, ID};
+use nettu_scheduler_domain::{Calendar, CalendarSettings, SyncedCalendar, ID};
 use serde::{Deserialize, Serialize};
 
 pub struct MongoCalendarRepo {
@@ -69,6 +69,7 @@ struct CalendarMongo {
     user_id: ObjectId,
     account_id: ObjectId,
     settings: CalendarSettingsMongo,
+    synced: Vec<SyncedCalendar>,
     metadata: Vec<KVMetadata>,
 }
 
@@ -88,6 +89,7 @@ impl MongoDocument<Calendar> for CalendarMongo {
                 week_start: self.settings.week_start,
                 timezone: self.settings.timezone.parse().unwrap(),
             },
+            synced: self.synced,
             metadata: KVMetadata::to_metadata(self.metadata),
         }
     }
@@ -101,6 +103,7 @@ impl MongoDocument<Calendar> for CalendarMongo {
                 week_start: calendar.settings.week_start,
                 timezone: calendar.settings.timezone.to_string(),
             },
+            synced: calendar.synced.clone(),
             metadata: KVMetadata::new(calendar.metadata.clone()),
         }
     }

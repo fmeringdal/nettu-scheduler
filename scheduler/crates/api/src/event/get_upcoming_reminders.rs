@@ -183,7 +183,7 @@ mod tests {
 
     use super::super::create_event::CreateEventUseCase;
     use super::*;
-    use nettu_scheduler_domain::{Calendar, CalendarEventReminder, ID};
+    use nettu_scheduler_domain::{Calendar, CalendarEventReminder, User, ID};
     use nettu_scheduler_infra::{setup_context as _setup_ctx, ISys};
     use std::sync::Arc;
 
@@ -297,24 +297,24 @@ mod tests {
         }
     }
 
-    async fn insert_common_data(ctx: &NettuContext) -> (Account, ID, Calendar) {
+    async fn insert_common_data(ctx: &NettuContext) -> (Account, User, Calendar) {
         let account = Account::default();
         ctx.repos.account_repo.insert(&account).await.unwrap();
 
-        let user_id = ID::default();
-        let mut calendar = Calendar::new(&user_id, &account.id);
+        let user = User::new(account.id.clone());
+
+        let mut calendar = Calendar::new(&user.id, &account.id);
         calendar.settings.timezone = chrono_tz::Europe::Oslo;
         ctx.repos.calendar_repo.insert(&calendar).await.unwrap();
-        (account, user_id, calendar)
+        (account, user, calendar)
     }
 
     async fn insert_events(ctx: &NettuContext) {
-        let (account, user_id, calendar) = insert_common_data(ctx).await;
+        let (account, user, calendar) = insert_common_data(ctx).await;
 
         let usecase = CreateEventUseCase {
-            account_id: account.id.clone(),
+            user: user.clone(),
             calendar_id: calendar.id.clone(),
-            user_id: user_id.clone(),
             start_ts: ctx.sys.get_timestamp_millis(),
             duration: 1000 * 60 * 60 * 2,
             busy: false,
@@ -328,9 +328,8 @@ mod tests {
 
         let sys3 = StaticTimeSys3 {};
         let usecase = CreateEventUseCase {
-            account_id: account.id.clone(),
+            user: user.clone(),
             calendar_id: calendar.id.clone(),
-            user_id,
             start_ts: sys3.get_timestamp_millis() + 1000 * 60 * 5,
             duration: 1000 * 60 * 60 * 2,
             busy: false,
@@ -399,11 +398,10 @@ mod tests {
         let now = ctx.sys.get_timestamp_millis();
         let minutes_before = 10;
 
-        let (account, user_id, calendar) = insert_common_data(&ctx).await;
+        let (account, user, calendar) = insert_common_data(&ctx).await;
         let usecase = CreateEventUseCase {
-            account_id: account.id.clone(),
+            user,
             calendar_id: calendar.id.clone(),
-            user_id: user_id.clone(),
             start_ts: now,
             duration: 1000 * 60 * 60 * 2,
             busy: false,
@@ -459,11 +457,10 @@ mod tests {
 
         let now = ctx.sys.get_timestamp_millis();
 
-        let (account, user_id, calendar) = insert_common_data(&ctx).await;
+        let (account, user, calendar) = insert_common_data(&ctx).await;
         let usecase = CreateEventUseCase {
-            account_id: account.id.clone(),
+            user,
             calendar_id: calendar.id.clone(),
-            user_id: user_id.clone(),
             start_ts: now,
             duration: 1000 * 60 * 60 * 2,
             busy: false,
@@ -507,11 +504,10 @@ mod tests {
 
         let now = ctx.sys.get_timestamp_millis();
 
-        let (account, user_id, calendar) = insert_common_data(&ctx).await;
+        let (account, user, calendar) = insert_common_data(&ctx).await;
         let usecase = CreateEventUseCase {
-            account_id: account.id.clone(),
+            user: user.clone(),
             calendar_id: calendar.id.clone(),
-            user_id: user_id.clone(),
             start_ts: now,
             duration: 1000 * 60 * 60 * 2,
             busy: false,
@@ -530,8 +526,8 @@ mod tests {
             .unwrap();
 
         let update_event_usecase = DeleteEventUseCase {
+            user,
             event_id: calendar_event.id,
-            user_id: calendar_event.user_id,
         };
         execute(update_event_usecase, &ctx).await.unwrap();
         let new_reminders = ctx.repos.reminder_repo.delete_all_before(now).await;

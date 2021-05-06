@@ -30,7 +30,7 @@ pub struct CalendarEvent {
     pub synced_events: Vec<SyncedCalendarEvent>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum SyncedCalendarProvider {
     Google,
 }

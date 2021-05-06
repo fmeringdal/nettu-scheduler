@@ -14,7 +14,7 @@ mod user;
 pub use account::{
     Account, AccountGoogleIntegration, AccountSettings, AccountWebhookSettings, PEMKey,
 };
-pub use calendar::{Calendar, CalendarSettings};
+pub use calendar::{Calendar, CalendarSettings, SyncedCalendar};
 pub use event::{
     CalendarEvent, CalendarEventReminder, SyncedCalendarEvent, SyncedCalendarProvider,
 };
