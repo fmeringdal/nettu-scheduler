@@ -1,6 +1,6 @@
 use crate::{shared::MetadataFindInput, APIResponse, BaseClient, TimePlan, ID};
 use nettu_scheduler_api_structs::*;
-use nettu_scheduler_domain::Metadata;
+use nettu_scheduler_domain::{BusyCalendar, Metadata};
 use reqwest::StatusCode;
 use serde::Serialize;
 use std::sync::Arc;
@@ -14,7 +14,7 @@ pub struct AddServiceUserInput {
     pub service_id: ID,
     pub user_id: ID,
     pub availibility: Option<TimePlan>,
-    pub busy: Option<Vec<ID>>,
+    pub busy: Option<Vec<BusyCalendar>>,
     pub buffer: Option<i64>,
     pub closest_booking_time: Option<i64>,
     pub furthest_booking_time: Option<i64>,
@@ -24,7 +24,7 @@ pub struct UpdateServiceUserInput {
     pub service_id: ID,
     pub user_id: ID,
     pub availibility: Option<TimePlan>,
-    pub busy: Option<Vec<ID>>,
+    pub busy: Option<Vec<BusyCalendar>>,
     pub buffer: Option<i64>,
     pub closest_booking_time: Option<i64>,
     pub furthest_booking_time: Option<i64>,

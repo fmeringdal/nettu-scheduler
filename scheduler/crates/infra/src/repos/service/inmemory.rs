@@ -34,12 +34,12 @@ impl IServiceRepo for InMemoryServiceRepo {
         delete(service_id, &self.services)
     }
 
-    async fn remove_calendar_from_services(&self, calendar_id: &ID) -> anyhow::Result<()> {
+    async fn remove_calendar_from_services(&self, calendar_id: &str) -> anyhow::Result<()> {
         update_many(
             &self.services,
             |service| {
                 for user in &service.users {
-                    if user.contains_calendar(&calendar_id) {
+                    if user.contains_calendar(calendar_id) {
                         return true;
                     }
                 }
@@ -47,7 +47,7 @@ impl IServiceRepo for InMemoryServiceRepo {
             },
             |service| {
                 for user in &mut service.users {
-                    user.remove_calendar(&calendar_id);
+                    user.remove_calendar(calendar_id);
                 }
             },
         );

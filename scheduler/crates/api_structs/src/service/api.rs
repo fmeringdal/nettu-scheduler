@@ -1,4 +1,4 @@
-use nettu_scheduler_domain::{Service, TimePlan, ID};
+use nettu_scheduler_domain::{BusyCalendar, Service, TimePlan, ID};
 use serde::{Deserialize, Serialize};
 
 use crate::dtos::ServiceDTO;
@@ -30,7 +30,7 @@ pub mod add_user_to_service {
     pub struct RequestBody {
         pub user_id: ID,
         pub availibility: Option<TimePlan>,
-        pub busy: Option<Vec<ID>>,
+        pub busy: Option<Vec<BusyCalendar>>,
         #[serde(default)]
         pub buffer: Option<i64>,
         pub closest_booking_time: Option<i64>,
@@ -227,7 +227,7 @@ pub mod update_service_user {
     #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
         pub availibility: Option<TimePlan>,
-        pub busy: Option<Vec<ID>>,
+        pub busy: Option<Vec<BusyCalendar>>,
         pub buffer: Option<i64>,
         pub closest_booking_time: Option<i64>,
         pub furthest_booking_time: Option<i64>,

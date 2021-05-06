@@ -5,8 +5,11 @@ use crate::shared::{
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::add_user_to_service::*;
-use nettu_scheduler_domain::{Account, Service, ServiceResource, TimePlan, ID};
-use nettu_scheduler_infra::NettuContext;
+use nettu_scheduler_domain::{Account, BusyCalendar, Service, ServiceResource, TimePlan, ID};
+use nettu_scheduler_infra::{
+    google_calendar::{GoogleCalendarAccessRole, GoogleCalendarProvider},
+    NettuContext,
+};
 
 pub async fn add_user_to_service_controller(
     http_req: HttpRequest,
@@ -44,7 +47,7 @@ struct AddUserToServiceUseCase {
     pub service_id: ID,
     pub user_id: ID,
     pub availibility: Option<TimePlan>,
-    pub busy: Option<Vec<ID>>,
+    pub busy: Option<Vec<BusyCalendar>>,
     pub buffer: Option<i64>,
     pub closest_booking_time: Option<i64>,
     pub furthest_booking_time: Option<i64>,
@@ -120,7 +123,7 @@ impl UseCase for AddUserToServiceUseCase {
 
 pub struct ServiceResourceUpdate {
     pub availibility: Option<TimePlan>,
-    pub busy: Option<Vec<ID>>,
+    pub busy: Option<Vec<BusyCalendar>>,
     pub buffer: Option<i64>,
     pub closest_booking_time: Option<i64>,
     pub furthest_booking_time: Option<i64>,
@@ -168,12 +171,55 @@ pub async fn update_resource_values(
         .map(|cal| cal.id)
         .collect::<Vec<_>>();
 
+    let busy_google_calendars: Vec<String> = if let Some(busy) = &update.busy {
+        if busy
+            .iter()
+            .find(|busy_cal| match busy_cal {
+                BusyCalendar::Google(_) => true,
+                BusyCalendar::Nettu(_) => false,
+            })
+            .is_some()
+        {
+            let mut user = ctx
+                .repos
+                .user_repo
+                .find(&user_resource.user_id)
+                .await
+                .expect("User to exist");
+
+            match GoogleCalendarProvider::new(&mut user, ctx).await {
+                Ok(provider) => match provider.list(GoogleCalendarAccessRole::Writer).await {
+                    Ok(calendar_list) => {
+                        calendar_list.items.into_iter().map(|cal| cal.id).collect()
+                    }
+                    Err(_) => vec![],
+                },
+                Err(_) => vec![],
+            }
+        } else {
+            vec![]
+        }
+    } else {
+        vec![]
+    };
+
     if let Some(busy) = &update.busy {
-        for calendar_id in busy {
-            if !user_calendars.contains(calendar_id) {
-                return Err(UpdateServiceResourceError::CalendarNotOwnedByUser(
-                    calendar_id.to_string(),
-                ));
+        for busy_cal in busy {
+            match busy_cal {
+                BusyCalendar::Nettu(calendar_id) => {
+                    if !user_calendars.contains(calendar_id) {
+                        return Err(UpdateServiceResourceError::CalendarNotOwnedByUser(
+                            calendar_id.to_string(),
+                        ));
+                    }
+                }
+                BusyCalendar::Google(id) => {
+                    if !busy_google_calendars.contains(id) {
+                        return Err(UpdateServiceResourceError::CalendarNotOwnedByUser(
+                            id.to_string(),
+                        ));
+                    }
+                }
             }
         }
         user_resource.set_busy(busy.clone());

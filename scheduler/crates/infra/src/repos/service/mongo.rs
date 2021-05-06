@@ -11,7 +11,7 @@ use mongodb::{
     bson::{doc, oid::ObjectId, Document},
     Collection, Database,
 };
-use nettu_scheduler_domain::{Service, ServiceResource, TimePlan, ID};
+use nettu_scheduler_domain::{BusyCalendar, Service, ServiceResource, TimePlan, ID};
 use serde::{Deserialize, Serialize};
 
 pub struct MongoServiceRepo {
@@ -46,9 +46,9 @@ impl IServiceRepo for MongoServiceRepo {
         mongo_repo::delete::<_, ServiceMongo>(&self.collection, &oid).await
     }
 
-    async fn remove_calendar_from_services(&self, calendar_id: &ID) -> anyhow::Result<()> {
+    async fn remove_calendar_from_services(&self, calendar_id: &str) -> anyhow::Result<()> {
         let filter = doc! {
-            "ids": &calendar_id.inner_ref()
+            "ids": calendar_id
         };
 
         let mut services =
@@ -56,12 +56,14 @@ impl IServiceRepo for MongoServiceRepo {
         for service in &mut services {
             for user in &mut service.users {
                 if let TimePlan::Calendar(id) = &user.availibility {
-                    if id == calendar_id {
+                    if id.to_string() == calendar_id {
                         user.availibility = TimePlan::Empty;
                     }
                 }
-                user.busy
-                    .retain(|busy_calendar_id| busy_calendar_id != calendar_id);
+                user.busy.retain(|busy_calendar_id| match busy_calendar_id {
+                    BusyCalendar::Google(id) => *id != calendar_id,
+                    BusyCalendar::Nettu(id) => id.to_string() != calendar_id,
+                });
             }
             mongo_repo::save::<_, ServiceMongo>(&self.collection, service).await?;
         }
@@ -114,7 +116,7 @@ struct ServiceResourceMongo {
     pub _id: ObjectId,
     pub user_id: ObjectId,
     pub availibility: TimePlan,
-    pub busy: Vec<ObjectId>,
+    pub busy: Vec<BusyCalendar>,
     pub buffer: i64,
     pub closest_booking_time: i64,
     pub furthest_booking_time: Option<i64>,
@@ -125,7 +127,7 @@ struct ServiceMongo {
     pub _id: ObjectId,
     pub account_id: ObjectId,
     pub users: Vec<ServiceResourceMongo>,
-    pub ids: Vec<ObjectId>,
+    pub ids: Vec<String>,
     pub metadata: Vec<KVMetadata>,
 }
 
@@ -141,7 +143,7 @@ impl MongoDocument<Service> for ServiceMongo {
                     id: ID::from(user._id),
                     user_id: ID::from(user.user_id),
                     availibility: user.availibility,
-                    busy: user.busy.into_iter().map(ID::from).collect(),
+                    busy: user.busy,
                     buffer: user.buffer,
                     closest_booking_time: user.closest_booking_time,
                     furthest_booking_time: user.furthest_booking_time,
@@ -162,7 +164,7 @@ impl MongoDocument<Service> for ServiceMongo {
                     _id: user.id.inner_ref().clone(),
                     user_id: user.user_id.inner_ref().clone(),
                     availibility: user.availibility.clone(),
-                    busy: user.busy.iter().map(|id| id.inner_ref().clone()).collect(),
+                    busy: user.busy.clone(),
                     buffer: user.buffer,
                     closest_booking_time: user.closest_booking_time,
                     furthest_booking_time: user.furthest_booking_time,
@@ -176,12 +178,15 @@ impl MongoDocument<Service> for ServiceMongo {
                     let mut ids = u
                         .busy
                         .iter()
-                        .map(|id| id.inner_ref().clone())
+                        .map(|busy| match busy {
+                            BusyCalendar::Google(id) => id.clone(),
+                            BusyCalendar::Nettu(id) => id.to_string(),
+                        })
                         .collect::<Vec<_>>();
-                    ids.push(u.user_id.inner_ref().clone());
+                    ids.push(u.user_id.to_string());
                     match &u.availibility {
                         TimePlan::Calendar(id) | TimePlan::Schedule(id) => {
-                            ids.push(id.inner_ref().clone());
+                            ids.push(id.to_string());
                         }
                         _ => (),
                     };

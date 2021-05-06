@@ -26,7 +26,9 @@ pub use calendar::{
 pub use event::{
     CreateEventInput, DeleteEventInput, GetEventInput, GetEventsInstancesInput, UpdateEventInput,
 };
-pub use nettu_scheduler_domain::{CalendarEventReminder, RRuleOptions, ScheduleRule, TimePlan, ID};
+pub use nettu_scheduler_domain::{
+    BusyCalendar, CalendarEventReminder, RRuleOptions, ScheduleRule, TimePlan, ID,
+};
 pub use schedule::{CreateScheduleInput, UpdateScheduleInput};
 pub use service::{
     AddServiceUserInput, GetSerivceBookingSlotsInput, RemoveServiceUserInput,

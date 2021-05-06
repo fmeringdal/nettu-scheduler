@@ -10,7 +10,7 @@ use crate::{
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::update_service_user::*;
-use nettu_scheduler_domain::{Account, Service, TimePlan, ID};
+use nettu_scheduler_domain::{Account, BusyCalendar, Service, TimePlan, ID};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn update_service_user_controller(
@@ -53,7 +53,7 @@ struct UpdateServiceUserUseCase {
     pub service_id: ID,
     pub user_id: ID,
     pub availibility: Option<TimePlan>,
-    pub busy: Option<Vec<ID>>,
+    pub busy: Option<Vec<BusyCalendar>>,
     pub buffer: Option<i64>,
     pub closest_booking_time: Option<i64>,
     pub furthest_booking_time: Option<i64>,

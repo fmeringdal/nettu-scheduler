@@ -29,7 +29,7 @@ pub struct ServiceResource {
     pub availibility: TimePlan,
     /// List of `Calendar` ids that should be subtracted from the availibility
     /// time plan.
-    pub busy: Vec<ID>,
+    pub busy: Vec<BusyCalendar>,
     /// This `ServiceResource` will not be bookable this amount of *minutes*
     /// after a meeting. A `CalendarEvent` will be interpreted as a meeting
     /// if the attribute `services` on the `CalendarEvent` includes this
@@ -49,7 +49,7 @@ pub struct ServiceResource {
 }
 
 impl ServiceResource {
-    pub fn new(user_id: ID, availibility: TimePlan, busy: Vec<ID>) -> Self {
+    pub fn new(user_id: ID, availibility: TimePlan, busy: Vec<BusyCalendar>) -> Self {
         Self {
             id: Default::default(),
             user_id,
@@ -65,7 +65,7 @@ impl ServiceResource {
         self.availibility = availibility;
     }
 
-    pub fn set_busy(&mut self, busy: Vec<ID>) {
+    pub fn set_busy(&mut self, busy: Vec<BusyCalendar>) {
         self.busy = busy;
     }
 
@@ -79,15 +79,15 @@ impl ServiceResource {
         true
     }
 
-    pub fn get_calendar_ids(&self) -> Vec<ID> {
-        let mut calendar_ids = self.busy.clone();
+    // pub fn get_calendar_ids(&self) -> Vec<ID> {
+    //     let mut calendar_ids = self.busy.clone();
 
-        if let TimePlan::Calendar(id) = &self.availibility {
-            calendar_ids.push(id.clone());
-        }
+    //     if let TimePlan::Calendar(id) = &self.availibility {
+    //         calendar_ids.push(id.clone());
+    //     }
 
-        calendar_ids
-    }
+    //     calendar_ids
+    // }
 
     pub fn get_schedule_id(&self) -> Option<ID> {
         match &self.availibility {
@@ -96,26 +96,38 @@ impl ServiceResource {
         }
     }
 
-    pub fn contains_calendar(&self, calendar_id: &ID) -> bool {
+    pub fn contains_calendar(&self, calendar_id: &str) -> bool {
         match &self.availibility {
-            TimePlan::Calendar(id) if id == calendar_id => {
+            TimePlan::Calendar(id) if id.to_string() == calendar_id => {
                 return true;
             }
             _ => (),
         }
 
-        self.busy.contains(calendar_id)
+        for busy in &self.busy {
+            match busy {
+                BusyCalendar::Nettu(id) if id.to_string() == calendar_id => return true,
+                BusyCalendar::Google(id) if id == calendar_id => return true,
+                _ => (),
+            }
+        }
+
+        false
     }
 
-    pub fn remove_calendar(&mut self, calendar_id: &ID) {
+    pub fn remove_calendar(&mut self, calendar_id: &str) {
         match &self.availibility {
-            TimePlan::Calendar(id) if id == calendar_id => {
+            TimePlan::Calendar(id) if id.to_string() == calendar_id => {
                 self.availibility = TimePlan::Empty;
             }
             _ => (),
         }
 
-        self.busy.retain(|cal_id| cal_id != calendar_id);
+        self.busy.retain(|busy_cal| match busy_cal {
+            BusyCalendar::Nettu(cal_id) => cal_id.to_string() != calendar_id,
+            BusyCalendar::Google(cal_id) => cal_id != calendar_id,
+            _ => true,
+        });
     }
 
     pub fn contains_schedule(&self, schedule_id: &ID) -> bool {
@@ -189,8 +201,8 @@ impl Service {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "provider")]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(tag = "provider", content = "id")]
 pub enum BusyCalendar {
     Google(String),
     Nettu(ID),

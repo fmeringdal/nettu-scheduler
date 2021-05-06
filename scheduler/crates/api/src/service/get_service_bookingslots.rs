@@ -9,10 +9,13 @@ use nettu_scheduler_domain::{
         BookingQueryError, BookingSlotsOptions, BookingSlotsQuery, ServiceBookingSlots,
         UserFreeEvents,
     },
-    get_free_busy, Calendar, CompatibleInstances, EventInstance, ServiceResource, TimePlan,
-    TimeSpan, ID,
+    get_free_busy, BusyCalendar, Calendar, CompatibleInstances, EventInstance, ServiceResource,
+    TimePlan, TimeSpan, ID,
 };
-use nettu_scheduler_infra::NettuContext;
+use nettu_scheduler_infra::{
+    google_calendar::{GoogleCalendarAccessRole, GoogleCalendarProvider},
+    FreeBusyProviderQuery, NettuContext,
+};
 use tracing::warn;
 
 pub async fn get_service_bookingslots_controller(
@@ -199,7 +202,7 @@ impl GetServiceBookingSlotsUseCase {
 
     async fn get_user_busy(
         &self,
-        user: &ServiceResource,
+        service_resource: &ServiceResource,
         busy_calendars: &[&Calendar],
         timespan: &TimeSpan,
         ctx: &NettuContext,
@@ -221,8 +224,8 @@ impl GetServiceBookingSlotsUseCase {
                             let mut instances = e.expand(Some(&timespan), &cal.settings);
 
                             // Add buffer to instances if event is a service event
-                            if user.buffer > 0 && e.is_service {
-                                let buffer_in_millis = user.buffer * 60 * 1000;
+                            if service_resource.buffer > 0 && e.is_service {
+                                let buffer_in_millis = service_resource.buffer * 60 * 1000;
                                 for instance in instances.iter_mut() {
                                     instance.end_ts += buffer_in_millis;
                                 }
@@ -238,6 +241,43 @@ impl GetServiceBookingSlotsUseCase {
                 Err(e) => {
                     warn!("Unable to fetch user calendars: {}", e);
                 }
+            }
+        }
+
+        let google_busy_calendars = service_resource
+            .busy
+            .iter()
+            .filter(|busy_cal| match busy_cal {
+                BusyCalendar::Google(_) => true,
+                _ => false,
+            })
+            .collect::<Vec<_>>();
+
+        if !google_busy_calendars.is_empty() {
+            let mut user = ctx
+                .repos
+                .user_repo
+                .find(&service_resource.user_id)
+                .await
+                .expect("User to be found");
+            // TODO: no unwrap
+            let google_calendar_provider = GoogleCalendarProvider::new(&mut user, ctx)
+                .await
+                .expect("To get google provider");
+            let query = FreeBusyProviderQuery {
+                calendar_ids: google_busy_calendars
+                    .iter()
+                    .map(|cal| match cal {
+                        BusyCalendar::Google(id) => id.clone(),
+                        _ => unreachable!("Nettu calendars should be filtered away"),
+                    })
+                    .collect(),
+                end: timespan.end(),
+                start: timespan.start(),
+            };
+            let google_busy = google_calendar_provider.freebusy(query).await;
+            for google_busy_event in google_busy.inner() {
+                busy_events.push(google_busy_event);
             }
         }
 
@@ -277,39 +317,52 @@ impl GetServiceBookingSlotsUseCase {
     /// Finds the bookable times for a `User`.
     async fn get_bookable_times(
         &self,
-        user: &ServiceResource,
+        service_resource: &ServiceResource,
         mut timespan: TimeSpan,
         ctx: &NettuContext,
     ) -> UserFreeEvents {
         let empty = UserFreeEvents {
             free_events: CompatibleInstances::new(vec![]),
-            user_id: user.user_id.clone(),
+            user_id: service_resource.user_id.clone(),
         };
 
-        match Self::parse_calendar_timespan(user, timespan, ctx) {
+        match Self::parse_calendar_timespan(service_resource, timespan, ctx) {
             Ok(parsed_timespan) => timespan = parsed_timespan,
             Err(_) => return empty,
         }
 
-        let user_calendars = ctx.repos.calendar_repo.find_by_user(&user.user_id).await;
+        let user_calendars = ctx
+            .repos
+            .calendar_repo
+            .find_by_user(&service_resource.user_id)
+            .await;
         let busy_calendars = user_calendars
             .iter()
-            .filter(|cal| user.busy.contains(&cal.id))
+            .filter(|cal| {
+                service_resource
+                    .busy
+                    .iter()
+                    .find(|busy_calendar| match busy_calendar {
+                        BusyCalendar::Nettu(id) if *id == cal.id => true,
+                        _ => false,
+                    })
+                    .is_some()
+            })
             .collect::<Vec<_>>();
 
         let mut free_events = self
-            .get_user_availibility(user, &user_calendars, &timespan, ctx)
+            .get_user_availibility(service_resource, &user_calendars, &timespan, ctx)
             .await;
 
         let busy_events = self
-            .get_user_busy(user, &busy_calendars, &timespan, ctx)
+            .get_user_busy(service_resource, &busy_calendars, &timespan, ctx)
             .await;
 
         free_events.remove_intances(&busy_events, 0);
 
         UserFreeEvents {
             free_events,
-            user_id: user.user_id.clone(),
+            user_id: service_resource.user_id.clone(),
         }
     }
 }
@@ -403,6 +456,7 @@ mod test {
             metadata: Default::default(),
             updated: Default::default(),
             created: Default::default(),
+            synced_events: Default::default(),
         };
         let availibility_event2 = CalendarEvent {
             id: ID::default(),
@@ -420,6 +474,7 @@ mod test {
             metadata: Default::default(),
             updated: Default::default(),
             created: Default::default(),
+            synced_events: Default::default(),
         };
         let mut availibility_event3 = CalendarEvent {
             id: ID::default(),
@@ -437,6 +492,7 @@ mod test {
             metadata: Default::default(),
             updated: Default::default(),
             created: Default::default(),
+            synced_events: Default::default(),
         };
         let recurrence = RRuleOptions {
             ..Default::default()

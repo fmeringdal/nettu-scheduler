@@ -13,7 +13,7 @@ pub trait IServiceRepo: Send + Sync {
     async fn save(&self, service: &Service) -> anyhow::Result<()>;
     async fn find(&self, service_id: &ID) -> Option<Service>;
     async fn delete(&self, service_id: &ID) -> Option<Service>;
-    async fn remove_calendar_from_services(&self, calendar_id: &ID) -> anyhow::Result<()>;
+    async fn remove_calendar_from_services(&self, calendar_id: &str) -> anyhow::Result<()>;
     async fn remove_schedule_from_services(&self, schedule_id: &ID) -> anyhow::Result<()>;
     async fn remove_user_from_services(&self, user_id: &ID) -> anyhow::Result<()>;
     async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<Service>;
@@ -22,7 +22,7 @@ pub trait IServiceRepo: Send + Sync {
 #[cfg(test)]
 mod tests {
     use crate::{setup_context, NettuContext};
-    use nettu_scheduler_domain::{Service, ServiceResource, TimePlan, ID};
+    use nettu_scheduler_domain::{BusyCalendar, Service, ServiceResource, TimePlan, ID};
 
     /// Creates inmemory and mongo context when mongo is running,
     /// otherwise it will create two inmemory
@@ -50,8 +50,8 @@ mod tests {
             let user_id = ID::default();
             let calendar_id = ID::default();
             let timeplan = TimePlan::Empty;
-            let resource =
-                ServiceResource::new(user_id.clone(), timeplan, vec![calendar_id.clone()]);
+            let busy = BusyCalendar::Nettu(calendar_id.clone());
+            let resource = ServiceResource::new(user_id.clone(), timeplan, vec![busy.clone()]);
             service.add_user(resource);
 
             ctx.repos
@@ -67,11 +67,11 @@ mod tests {
                 .await
                 .expect("To get service");
             assert_eq!(service.users.len(), 1);
-            assert_eq!(service.users[0].busy, vec![calendar_id.clone()]);
+            assert_eq!(service.users[0].busy, vec![busy]);
 
             ctx.repos
                 .service_repo
-                .remove_calendar_from_services(&calendar_id)
+                .remove_calendar_from_services(&calendar_id.to_string())
                 .await
                 .expect("To remove calendar from services");
 
@@ -82,7 +82,6 @@ mod tests {
                 .await
                 .expect("To get service");
             assert_eq!(service.users.len(), 1);
-            println!("Serivce user: {:?}", service.users);
             assert!(service.users[0].busy.is_empty());
 
             let mut user = service.find_user_mut(&user_id).expect("To find user");
@@ -96,7 +95,7 @@ mod tests {
 
             ctx.repos
                 .service_repo
-                .remove_calendar_from_services(&calendar_id)
+                .remove_calendar_from_services(&calendar_id.to_string())
                 .await
                 .expect("To remove calendar from services");
 

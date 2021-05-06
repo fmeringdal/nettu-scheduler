@@ -102,7 +102,7 @@ pub struct FreeBusyResponse {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FreeBusyCalendar {
-    id: String,
+    pub id: String,
 }
 
 impl FreeBusyCalendar {
@@ -131,7 +131,7 @@ pub struct ListCalendarsResponse {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GoogleCalendarListEntry {
-    id: String,
+    pub id: String,
     summary: String,
     description: String,
     location: String,

@@ -139,6 +139,7 @@ impl UseCase for CreateEventUseCase {
             reminder: self.reminder.clone(),
             is_service: self.is_service,
             metadata: self.metadata.clone(),
+            synced_events: Default::default(),
         };
         if let Some(rrule_opts) = self.recurrence.clone() {
             if !e.set_recurrence(rrule_opts, &calendar.settings, true) {

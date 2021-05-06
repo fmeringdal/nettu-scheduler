@@ -1,4 +1,4 @@
-use nettu_scheduler_domain::{Metadata, Service, ServiceResource, TimePlan, ID};
+use nettu_scheduler_domain::{BusyCalendar, Metadata, Service, ServiceResource, TimePlan, ID};
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -7,7 +7,7 @@ pub struct ServiceResourceDTO {
     pub id: ID,
     pub user_id: ID,
     pub availibility: TimePlan,
-    pub busy: Vec<ID>,
+    pub busy: Vec<BusyCalendar>,
     pub buffer: i64,
     pub closest_booking_time: i64,
     pub furthest_booking_time: Option<i64>,

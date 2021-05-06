@@ -1,9 +1,9 @@
 pub mod google_calendar;
 
 pub struct FreeBusyProviderQuery {
-    calendar_ids: Vec<String>,
-    start: i64,
-    end: i64,
+    pub calendar_ids: Vec<String>,
+    pub start: i64,
+    pub end: i64,
 }
 
 // TODOS:

@@ -90,7 +90,7 @@ impl UseCase for DeleteCalendarUseCase {
                 let repo_res = ctx
                     .repos
                     .service_repo
-                    .remove_calendar_from_services(&calendar.id)
+                    .remove_calendar_from_services(&calendar.id.to_string())
                     .await;
                 if repo_res.is_err() {
                     return Err(UseCaseErrors::UnableToDelete);

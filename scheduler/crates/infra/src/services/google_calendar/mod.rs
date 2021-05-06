@@ -5,9 +5,10 @@ mod calendar_api;
 use crate::NettuContext;
 
 use super::FreeBusyProviderQuery;
+pub use calendar_api::GoogleCalendarAccessRole;
 use calendar_api::{
-    FreeBusyCalendar, FreeBusyRequest, GoogleCalendarAccessRole, GoogleCalendarEvent,
-    GoogleCalendarRestApi, GoogleDateTime, ListCalendarsResponse,
+    FreeBusyCalendar, FreeBusyRequest, GoogleCalendarEvent, GoogleCalendarRestApi, GoogleDateTime,
+    ListCalendarsResponse,
 };
 use nettu_scheduler_domain::{CalendarEvent, CompatibleInstances, EventInstance, User};
 
@@ -29,7 +30,7 @@ impl GoogleCalendarProvider {
         })
     }
 
-    async fn freebusy(&self, query: FreeBusyProviderQuery) -> CompatibleInstances {
+    pub async fn freebusy(&self, query: FreeBusyProviderQuery) -> CompatibleInstances {
         let body = FreeBusyRequest {
             time_max: GoogleDateTime::from_timestamp_millis(query.start),
             time_min: GoogleDateTime::from_timestamp_millis(query.end),
@@ -56,7 +57,7 @@ impl GoogleCalendarProvider {
         CompatibleInstances::new(instances)
     }
 
-    async fn create_event(
+    pub async fn create_event(
         &self,
         calendar_id: String,
         event: CalendarEvent,
@@ -65,7 +66,7 @@ impl GoogleCalendarProvider {
         self.api.insert(calendar_id, &google_calendar_event).await
     }
 
-    async fn delete_event(&self, event: &CalendarEvent) -> Result<(), ()> {
+    pub async fn delete_event(&self, event: &CalendarEvent) -> Result<(), ()> {
         for synced_event in &event.synced_events {
             match synced_event.provider {
                 nettu_scheduler_domain::SyncedCalendarProvider::Google => {
@@ -83,7 +84,7 @@ impl GoogleCalendarProvider {
         Ok(())
     }
 
-    async fn list(
+    pub async fn list(
         &self,
         min_access_role: GoogleCalendarAccessRole,
     ) -> Result<ListCalendarsResponse, ()> {
