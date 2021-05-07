@@ -70,7 +70,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
 
     // Calendar providers
     cfg.route(
-        "/calendar/providers/google",
+        "/calendar/provider/google",
         web::get().to(get_google_calendars_controller),
     );
     cfg.route(

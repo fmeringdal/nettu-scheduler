@@ -7,8 +7,8 @@ use nettu_scheduler_infra::NettuContext;
 
 pub async fn set_account_google_integration_controller(
     http_req: web::HttpRequest,
-    ctx: web::Data<NettuContext>,
     body: web::Json<RequestBody>,
+    ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
 
