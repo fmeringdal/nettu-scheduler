@@ -1,4 +1,9 @@
-import { INettuClient, INettuUserClient, NettuClient, ScheduleRuleVariant, Weekday } from "@nettu/sdk-scheduler";
+import {
+  INettuUserClient,
+  NettuClient,
+  ScheduleRuleVariant,
+  Weekday,
+} from "@nettu/sdk-scheduler";
 import { setupUserClient } from "./helpers/fixtures";
 
 describe("Schedule API", () => {
@@ -25,6 +30,7 @@ describe("Schedule API", () => {
     });
     expect(res.status).toBe(201);
     expect(res.data!.schedule.id).toBeDefined();
+    expect(res.data!.schedule.rules.length).toBe(7);
   });
 
   it("should delete schedule for authenticated user and not for unauthenticated user", async () => {
@@ -46,32 +52,29 @@ describe("Schedule API", () => {
       timezone: "Europe/Berlin",
     });
     const scheduleId = data!.schedule.id;
-    const updatedScheduleRes = await client.schedule.update(
-      scheduleId,
-      {
-        rules: [
-          {
-            variant: {
-              type: ScheduleRuleVariant.WDay,
-              value: Weekday.Mon,
-            },
-            intervals: [
-              {
-                start: {
-                  hours: 10,
-                  minutes: 0,
-                },
-                end: {
-                  hours: 12,
-                  minutes: 30,
-                },
-              },
-            ],
+    const updatedScheduleRes = await client.schedule.update(scheduleId, {
+      rules: [
+        {
+          variant: {
+            type: ScheduleRuleVariant.WDay,
+            value: Weekday.Mon,
           },
-        ],
-        timezone: "UTC",
-      }
-    );
+          intervals: [
+            {
+              start: {
+                hours: 10,
+                minutes: 0,
+              },
+              end: {
+                hours: 12,
+                minutes: 30,
+              },
+            },
+          ],
+        },
+      ],
+      timezone: "UTC",
+    });
     const updatedSchedule = updatedScheduleRes.data!.schedule;
 
     expect(updatedSchedule!.id).toBe(scheduleId);
