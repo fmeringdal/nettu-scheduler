@@ -10,7 +10,6 @@ use nettu_scheduler_domain::{
     User,
 };
 use nettu_scheduler_infra::{google_calendar::GoogleCalendarProvider, NettuContext};
-use tracing::info;
 
 fn handle_errors(e: UseCaseErrors) -> NettuError {
     match e {
@@ -84,7 +83,6 @@ impl UseCase for GetGoogleCalendarsUseCase {
             .await
             .map_err(|_| UseCaseErrors::UserNotConnectedToGoogle)?;
 
-        info!("Got here at least !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         provider
             .list(self.min_access_role.clone())
             .await

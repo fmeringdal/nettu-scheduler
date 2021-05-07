@@ -1,5 +1,7 @@
 use nettu_scheduler_api_structs::*;
-use nettu_scheduler_domain::{Metadata, SyncedCalendar, ID};
+use nettu_scheduler_domain::{
+    providers::google::GoogleCalendarAccessRole, Metadata, SyncedCalendar, ID,
+};
 use reqwest::StatusCode;
 use std::sync::Arc;
 
@@ -133,6 +135,22 @@ impl CalendarClient {
                 body,
                 format!("user/{}/calendar", input.user_id),
                 StatusCode::CREATED,
+            )
+            .await
+    }
+
+    pub async fn get_google(
+        &self,
+        user_id: ID,
+        min_access_role: GoogleCalendarAccessRole,
+    ) -> APIResponse<get_google_calendars::APIResponse> {
+        self.base
+            .get(
+                format!(
+                    "user/{:?}/calendar/provider/google?minAccessRole={:?}",
+                    user_id, min_access_role
+                ),
+                StatusCode::OK,
             )
             .await
     }
