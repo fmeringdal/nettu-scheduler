@@ -310,7 +310,7 @@ mod tests {
     }
 
     async fn insert_events(ctx: &NettuContext) {
-        let (account, user, calendar) = insert_common_data(ctx).await;
+        let (_account, user, calendar) = insert_common_data(ctx).await;
 
         let usecase = CreateEventUseCase {
             user: user.clone(),
@@ -398,7 +398,7 @@ mod tests {
         let now = ctx.sys.get_timestamp_millis();
         let minutes_before = 10;
 
-        let (account, user, calendar) = insert_common_data(&ctx).await;
+        let (_account, user, calendar) = insert_common_data(&ctx).await;
         let usecase = CreateEventUseCase {
             user,
             calendar_id: calendar.id.clone(),
@@ -457,7 +457,7 @@ mod tests {
 
         let now = ctx.sys.get_timestamp_millis();
 
-        let (account, user, calendar) = insert_common_data(&ctx).await;
+        let (_account, user, calendar) = insert_common_data(&ctx).await;
         let usecase = CreateEventUseCase {
             user,
             calendar_id: calendar.id.clone(),
@@ -504,7 +504,7 @@ mod tests {
 
         let now = ctx.sys.get_timestamp_millis();
 
-        let (account, user, calendar) = insert_common_data(&ctx).await;
+        let (_account, user, calendar) = insert_common_data(&ctx).await;
         let usecase = CreateEventUseCase {
             user: user.clone(),
             calendar_id: calendar.id.clone(),

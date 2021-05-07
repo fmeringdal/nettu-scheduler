@@ -9,7 +9,7 @@ mod get_google_calendars;
 mod update_calendar;
 
 use create_calendar::{
-    create_calendar_admin_controller, create_calendar_controller, update_synced_calendars,
+    create_calendar_admin_controller, create_calendar_controller,
 };
 use delete_calendar::{delete_calendar_admin_controller, delete_calendar_controller};
 use get_calendar::{get_calendar_admin_controller, get_calendar_controller};
