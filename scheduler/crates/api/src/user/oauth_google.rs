@@ -6,8 +6,9 @@ use crate::{error::NettuError, shared::auth::protect_account_route};
 use actix_web::{web, HttpRequest, HttpResponse};
 use chrono::Utc;
 use nettu_scheduler_api_structs::oauth_google::*;
-use nettu_scheduler_domain::{User, UserIntegrationProvider};
+use nettu_scheduler_domain::{User, UserGoogleIntegrationData, UserIntegrationProvider};
 use nettu_scheduler_infra::{google_calendar::auth_provider, NettuContext};
+use tracing::log::warn;
 
 fn handle_error(e: UseCaseErrors) -> NettuError {
     match e {
@@ -21,7 +22,7 @@ fn handle_error(e: UseCaseErrors) -> NettuError {
 
 pub async fn oauth_google_admin_controller(
     http_req: HttpRequest,
-    path: web::Json<PathParams>,
+    path: web::Path<PathParams>,
     body: web::Json<RequestBody>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
@@ -101,24 +102,40 @@ impl UseCase for OAuthGoogleUseCase {
             Ok(res) => res,
             Err(_) => return Err(UseCaseErrors::OAuthFailed),
         };
-        for integration in &mut self.user.integrations {
-            match integration {
-                UserIntegrationProvider::Google(google_integration) => {
-                    google_integration.access_token = res.access_token;
-                    let now = Utc::now().timestamp_millis() as usize;
-                    let expires_in_millis = res.expires_in * 1000;
-                    google_integration.access_token_expires_ts = now + expires_in_millis;
-                    google_integration.refresh_token = res.refresh_token;
-                    break;
-                }
-            }
-        }
+        let now = Utc::now().timestamp_millis() as usize;
+        let expires_in_millis = res.expires_in * 1000;
+        let user_integration = UserGoogleIntegrationData {
+            access_token: res.access_token,
+            access_token_expires_ts: now + expires_in_millis,
+            refresh_token: res.refresh_token,
+        };
 
-        match ctx.repos.user_repo.save(&self.user).await {
-            Ok(_) => Ok(UseCaseRes {
-                user: self.user.clone(),
-            }),
-            Err(_) => Err(UseCaseErrors::StorageError),
+        if let Some(existing_google_integration) =
+            self.user
+                .integrations
+                .iter_mut()
+                .find_map(|integration| match integration {
+                    UserIntegrationProvider::Google(data) => Some(data),
+                })
+        {
+            existing_google_integration.access_token = user_integration.access_token;
+            existing_google_integration.access_token_expires_ts =
+                user_integration.access_token_expires_ts;
+            existing_google_integration.refresh_token = user_integration.refresh_token;
+        } else {
+            self.user
+                .integrations
+                .push(UserIntegrationProvider::Google(user_integration));
         }
+        warn!("OAUTH user ended with {:?}", self.user);
+
+        ctx.repos
+            .user_repo
+            .save(&self.user)
+            .await
+            .map(|_| UseCaseRes {
+                user: self.user.clone(),
+            })
+            .map_err(|_| UseCaseErrors::StorageError)
     }
 }

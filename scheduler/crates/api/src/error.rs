@@ -7,7 +7,7 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum NettuError {
-    #[error("data store disconnected")]
+    #[error("Internal server error")]
     InternalError,
     #[error("Invalid data provided: Error message: `{0}`")]
     BadClientData(String),

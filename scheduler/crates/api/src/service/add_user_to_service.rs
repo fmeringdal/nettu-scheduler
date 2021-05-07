@@ -5,11 +5,12 @@ use crate::shared::{
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::add_user_to_service::*;
-use nettu_scheduler_domain::{Account, BusyCalendar, Service, ServiceResource, TimePlan, ID};
-use nettu_scheduler_infra::{
-    google_calendar::{GoogleCalendarAccessRole, GoogleCalendarProvider},
-    NettuContext,
+use nettu_scheduler_domain::{
+    providers::google::GoogleCalendarAccessRole, Account, BusyCalendar, Service, ServiceResource,
+    TimePlan, ID,
 };
+use nettu_scheduler_infra::{google_calendar::GoogleCalendarProvider, NettuContext};
+use tracing::info;
 
 pub async fn add_user_to_service_controller(
     http_req: HttpRequest,
@@ -188,7 +189,10 @@ pub async fn update_resource_values(
                 .expect("User to exist");
 
             match GoogleCalendarProvider::new(&mut user, ctx).await {
-                Ok(provider) => match provider.list(GoogleCalendarAccessRole::Writer).await {
+                Ok(provider) => match provider
+                    .list(GoogleCalendarAccessRole::FreeBusyReader)
+                    .await
+                {
                     Ok(calendar_list) => {
                         calendar_list.items.into_iter().map(|cal| cal.id).collect()
                     }

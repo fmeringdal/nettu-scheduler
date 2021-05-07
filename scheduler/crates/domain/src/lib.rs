@@ -4,6 +4,7 @@ mod calendar;
 mod date;
 mod event;
 mod event_instance;
+pub mod providers;
 mod reminder;
 mod schedule;
 mod service;

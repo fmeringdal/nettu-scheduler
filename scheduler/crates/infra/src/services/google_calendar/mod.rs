@@ -5,12 +5,11 @@ mod calendar_api;
 use crate::NettuContext;
 
 use super::FreeBusyProviderQuery;
-pub use calendar_api::GoogleCalendarAccessRole;
 use calendar_api::{
     FreeBusyCalendar, FreeBusyRequest, GoogleCalendarEvent, GoogleCalendarEventAttributes,
     GoogleCalendarRestApi, GoogleDateTime, ListCalendarsResponse,
 };
-use mongodb::event;
+use nettu_scheduler_domain::providers::google::GoogleCalendarAccessRole;
 use nettu_scheduler_domain::{CalendarEvent, CompatibleInstances, EventInstance, User};
 
 // https://developers.google.com/calendar/v3/reference/events
@@ -33,8 +32,8 @@ impl GoogleCalendarProvider {
 
     pub async fn freebusy(&self, query: FreeBusyProviderQuery) -> CompatibleInstances {
         let body = FreeBusyRequest {
-            time_max: GoogleDateTime::from_timestamp_millis(query.start),
-            time_min: GoogleDateTime::from_timestamp_millis(query.end),
+            time_min: GoogleDateTime::from_timestamp_millis(query.start),
+            time_max: GoogleDateTime::from_timestamp_millis(query.end),
             time_zone: "UTC".to_string(),
             items: query
                 .calendar_ids

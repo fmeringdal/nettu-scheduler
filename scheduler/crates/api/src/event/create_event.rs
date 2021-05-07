@@ -14,6 +14,7 @@ use nettu_scheduler_domain::{
     SyncedCalendarEvent, SyncedCalendarProvider, User, ID,
 };
 use nettu_scheduler_infra::{google_calendar::GoogleCalendarProvider, NettuContext};
+use tracing::info;
 
 fn handle_error(e: UseCaseErrors) -> NettuError {
     match e {
@@ -160,6 +161,10 @@ impl UseCase for CreateEventUseCase {
                 SyncedCalendar::Google(id) => id.clone(),
             })
             .collect::<Vec<_>>();
+        info!(
+            "Synced google calendar ids: {:?}",
+            synced_google_calendar_ids
+        );
         if !synced_google_calendar_ids.is_empty() {
             if let Ok(provider) = GoogleCalendarProvider::new(&mut self.user, ctx).await {
                 for synced_google_calendar_id in synced_google_calendar_ids {

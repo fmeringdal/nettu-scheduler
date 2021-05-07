@@ -132,6 +132,36 @@ pub mod get_calendars_by_meta {
     }
 }
 
+pub mod get_google_calendars {
+    use nettu_scheduler_domain::providers::google::{
+        GoogleCalendarAccessRole, GoogleCalendarListEntry,
+    };
+
+    use super::*;
+
+    #[derive(Deserialize)]
+    pub struct PathParams {
+        pub user_id: ID,
+    }
+
+    #[derive(Debug, Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct QueryParams {
+        pub min_access_role: GoogleCalendarAccessRole,
+    }
+
+    #[derive(Deserialize, Serialize)]
+    pub struct APIResponse {
+        pub calendars: Vec<GoogleCalendarListEntry>,
+    }
+
+    impl APIResponse {
+        pub fn new(calendars: Vec<GoogleCalendarListEntry>) -> Self {
+            Self { calendars }
+        }
+    }
+}
+
 pub mod get_user_freebusy {
     use super::*;
     use std::collections::VecDeque;

@@ -9,11 +9,11 @@ use crate::{
 };
 use actix_web::{web, HttpResponse};
 use nettu_scheduler_api_structs::create_calendar::{APIResponse, PathParams, RequestBody};
-use nettu_scheduler_domain::{Calendar, CalendarSettings, Metadata, SyncedCalendar, User, ID};
-use nettu_scheduler_infra::{
-    google_calendar::{GoogleCalendarAccessRole, GoogleCalendarProvider},
-    NettuContext,
+use nettu_scheduler_domain::{
+    providers::google::GoogleCalendarAccessRole, Calendar, CalendarSettings, Metadata,
+    SyncedCalendar, User, ID,
 };
+use nettu_scheduler_infra::{google_calendar::GoogleCalendarProvider, NettuContext};
 
 fn error_handler(e: UseCaseErrors) -> NettuError {
     match e {

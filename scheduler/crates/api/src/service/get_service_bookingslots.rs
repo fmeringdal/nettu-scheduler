@@ -13,10 +13,9 @@ use nettu_scheduler_domain::{
     TimePlan, TimeSpan, ID,
 };
 use nettu_scheduler_infra::{
-    google_calendar::{GoogleCalendarAccessRole, GoogleCalendarProvider},
-    FreeBusyProviderQuery, NettuContext,
+    google_calendar::GoogleCalendarProvider, FreeBusyProviderQuery, NettuContext,
 };
-use tracing::warn;
+use tracing::{info, warn};
 
 pub async fn get_service_bookingslots_controller(
     _http_req: HttpRequest,
@@ -274,6 +273,7 @@ impl GetServiceBookingSlotsUseCase {
                         end: timespan.end(),
                         start: timespan.start(),
                     };
+                    info!("Going to query freebusy: {:?}", query);
                     let google_busy = google_calendar_provider.freebusy(query).await;
                     for google_busy_event in google_busy.inner() {
                         busy_events.push(google_busy_event);

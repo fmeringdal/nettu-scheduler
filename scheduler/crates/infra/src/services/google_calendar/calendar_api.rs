@@ -1,9 +1,10 @@
 use chrono::{DateTime, TimeZone, Utc};
+use nettu_scheduler_domain::providers::google::*;
 use nettu_scheduler_domain::CalendarEvent;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use tracing::log::warn;
+use tracing::warn;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -140,34 +141,6 @@ pub struct ListCalendarsResponse {
     pub items: Vec<GoogleCalendarListEntry>,
 }
 
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct GoogleCalendarListEntry {
-    pub id: String,
-    summary: String,
-    description: String,
-    location: String,
-    time_zone: String,
-    summary_override: String,
-    color_id: String,
-    background_color: String,
-    foreground_color: String,
-    hidden: bool,
-    selected: bool,
-    access_role: GoogleCalendarAccessRole,
-    primary: bool,
-    deleted: bool,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub enum GoogleCalendarAccessRole {
-    Owner,
-    Writer,
-    Reader,
-    FreeBusyReader,
-}
-
 const GOOGLE_API_BASE_URL: &str = "https://www.googleapis.com/calendar/v3";
 
 impl GoogleCalendarRestApi {
@@ -179,16 +152,19 @@ impl GoogleCalendarRestApi {
         match self
             .client
             .post(&format!("{}/{}", GOOGLE_API_BASE_URL, path))
-            .header("authorization", format!("Bearer: {}", self.access_token))
+            .header("authorization", format!("Bearer {}", self.access_token))
             .json(body)
             .send()
             .await
         {
             Ok(res) => res.json::<T>().await.map_err(|e| {
-                warn!("Error: {:?}", e);
+                warn!("Google calendar api POST deserialize error: {:?}", e);
                 ()
             }),
-            Err(_) => Err(()),
+            Err(e) => {
+                warn!("Google calendar api POST error: {:?}", e);
+                Err(())
+            }
         }
     }
 
@@ -196,15 +172,18 @@ impl GoogleCalendarRestApi {
         match self
             .client
             .get(&format!("{}/{}", GOOGLE_API_BASE_URL, path))
-            .header("authorization", format!("Bearer: {}", self.access_token))
+            .header("authorization", format!("Bearer {}", self.access_token))
             .send()
             .await
         {
             Ok(res) => res.json::<T>().await.map_err(|e| {
-                warn!("Error: {:?}", e);
+                warn!("Google calendar api GET deserialize error: {:?}", e);
                 ()
             }),
-            Err(_) => Err(()),
+            Err(e) => {
+                warn!("Google calendar api get error: {:?}", e);
+                Err(())
+            }
         }
     }
 
@@ -212,7 +191,7 @@ impl GoogleCalendarRestApi {
         match self
             .client
             .delete(&format!("{}/{}", GOOGLE_API_BASE_URL, path))
-            .header("authorization", format!("Bearer: {}", self.access_token))
+            .header("authorization", format!("Bearer {}", self.access_token))
             .send()
             .await
         {
@@ -225,7 +204,7 @@ impl GoogleCalendarRestApi {
     }
 
     pub async fn freebusy(&self, body: &FreeBusyRequest) -> Result<FreeBusyResponse, ()> {
-        self.post(body, "freebusy".into()).await
+        self.post(body, "freeBusy".into()).await
     }
 
     pub async fn insert(
@@ -233,11 +212,12 @@ impl GoogleCalendarRestApi {
         calendar_id: String,
         body: &GoogleCalendarEventAttributes,
     ) -> Result<GoogleCalendarEvent, ()> {
-        self.post(body, format!("{}/events", calendar_id)).await
+        self.post(body, format!("calendars/{}/events", calendar_id))
+            .await
     }
 
     pub async fn remove(&self, calendar_id: String, event_id: String) -> Result<(), ()> {
-        self.delete(format!("{}/events/{}", calendar_id, event_id))
+        self.delete(format!("calendars/{}/events/{}", calendar_id, event_id))
             .await
     }
 
