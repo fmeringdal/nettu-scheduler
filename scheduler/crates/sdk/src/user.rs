@@ -47,6 +47,21 @@ impl UserClient {
             .await
     }
 
+    pub async fn oauth_google(
+        &self,
+        user_id: ID,
+        code: String,
+    ) -> APIResponse<oauth_google::APIResponse> {
+        let body = oauth_google::RequestBody { code };
+        self.base
+            .post(
+                body,
+                format!("user/{}/oauth/google", user_id.to_string()),
+                StatusCode::OK,
+            )
+            .await
+    }
+
     pub async fn get_by_meta(
         &self,
         input: MetadataFindInput,

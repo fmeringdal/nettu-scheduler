@@ -8,7 +8,6 @@ use chrono::Utc;
 use nettu_scheduler_api_structs::oauth_google::*;
 use nettu_scheduler_domain::{User, UserGoogleIntegrationData, UserIntegrationProvider};
 use nettu_scheduler_infra::{google_calendar::auth_provider, NettuContext};
-use tracing::log::warn;
 
 fn handle_error(e: UseCaseErrors) -> NettuError {
     match e {
@@ -127,7 +126,6 @@ impl UseCase for OAuthGoogleUseCase {
                 .integrations
                 .push(UserIntegrationProvider::Google(user_integration));
         }
-        warn!("OAUTH user ended with {:?}", self.user);
 
         ctx.repos
             .user_repo

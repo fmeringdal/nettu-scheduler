@@ -41,13 +41,13 @@ pub mod create_user {
 pub mod oauth_google {
     use super::*;
 
-    #[derive(Debug, Deserialize)]
+    #[derive(Debug, Deserialize, Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
         pub code: String,
     }
 
-    #[derive(Debug, Deserialize)]
+    #[derive(Debug, Deserialize, Serialize)]
     pub struct PathParams {
         pub user_id: ID,
     }
