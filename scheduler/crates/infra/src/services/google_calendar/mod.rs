@@ -66,6 +66,18 @@ impl GoogleCalendarProvider {
         self.api.insert(calendar_id, &google_calendar_event).await
     }
 
+    pub async fn update_event(
+        &self,
+        calendar_id: String,
+        event_id: String,
+        event: CalendarEvent,
+    ) -> Result<GoogleCalendarEvent, ()> {
+        let google_calendar_event: GoogleCalendarEventAttributes = event.into();
+        self.api
+            .update(calendar_id, event_id, &google_calendar_event)
+            .await
+    }
+
     pub async fn delete_event(&self, calendar_id: String, event_id: String) -> Result<(), ()> {
         self.api.remove(calendar_id, event_id).await
     }

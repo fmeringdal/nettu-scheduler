@@ -400,7 +400,7 @@ mod tests {
 
         let (_account, user, calendar) = insert_common_data(&ctx).await;
         let usecase = CreateEventUseCase {
-            user,
+            user: user.clone(),
             calendar_id: calendar.id.clone(),
             start_ts: now,
             duration: 1000 * 60 * 60 * 2,
@@ -422,6 +422,7 @@ mod tests {
         let start_ts_diff = 15 * 60 * 1000; // 15 minutes
         let new_start = calendar_event.start_ts + start_ts_diff; // Postponed 15 minutes
         let update_event_usecase = UpdateEventUseCase {
+            user,
             event_id: calendar_event.id,
             busy: None,
             duration: None,
@@ -431,7 +432,6 @@ mod tests {
             recurrence: Some(Default::default()),
             is_service: None,
             start_ts: Some(new_start),
-            user_id: calendar_event.user_id,
         };
         execute(update_event_usecase, &ctx).await.unwrap();
         let new_reminders = ctx.repos.reminder_repo.delete_all_before(new_start).await;
@@ -459,7 +459,7 @@ mod tests {
 
         let (_account, user, calendar) = insert_common_data(&ctx).await;
         let usecase = CreateEventUseCase {
-            user,
+            user: user.clone(),
             calendar_id: calendar.id.clone(),
             start_ts: now,
             duration: 1000 * 60 * 60 * 2,
@@ -479,6 +479,7 @@ mod tests {
             .unwrap();
 
         let update_event_usecase = UpdateEventUseCase {
+            user,
             event_id: calendar_event.id,
             busy: None,
             duration: None,
@@ -488,7 +489,6 @@ mod tests {
             recurrence: Some(Default::default()),
             is_service: None,
             start_ts: None,
-            user_id: calendar_event.user_id,
         };
         execute(update_event_usecase, &ctx).await.unwrap();
         let new_reminders = ctx.repos.reminder_repo.delete_all_before(now).await;

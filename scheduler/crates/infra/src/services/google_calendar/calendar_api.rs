@@ -144,6 +144,30 @@ pub struct ListCalendarsResponse {
 const GOOGLE_API_BASE_URL: &str = "https://www.googleapis.com/calendar/v3";
 
 impl GoogleCalendarRestApi {
+    async fn put<T: for<'de> Deserialize<'de>>(
+        &self,
+        body: &impl Serialize,
+        path: String,
+    ) -> Result<T, ()> {
+        match self
+            .client
+            .put(&format!("{}/{}", GOOGLE_API_BASE_URL, path))
+            .header("authorization", format!("Bearer {}", self.access_token))
+            .json(body)
+            .send()
+            .await
+        {
+            Ok(res) => res.json::<T>().await.map_err(|e| {
+                warn!("Google calendar api PUT deserialize error: {:?}", e);
+                ()
+            }),
+            Err(e) => {
+                warn!("Google calendar api PUT error: {:?}", e);
+                Err(())
+            }
+        }
+    }
+
     async fn post<T: for<'de> Deserialize<'de>>(
         &self,
         body: &impl Serialize,
@@ -214,6 +238,19 @@ impl GoogleCalendarRestApi {
     ) -> Result<GoogleCalendarEvent, ()> {
         self.post(body, format!("calendars/{}/events", calendar_id))
             .await
+    }
+
+    pub async fn update(
+        &self,
+        calendar_id: String,
+        event_id: String,
+        body: &GoogleCalendarEventAttributes,
+    ) -> Result<GoogleCalendarEvent, ()> {
+        self.put(
+            body,
+            format!("calendars/{}/events/{}", calendar_id, event_id),
+        )
+        .await
     }
 
     pub async fn remove(&self, calendar_id: String, event_id: String) -> Result<(), ()> {

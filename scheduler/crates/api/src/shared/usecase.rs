@@ -90,7 +90,6 @@ where
                 subscriber_promises.push(subscriber.notify(res, ctx));
             }
             join_all(subscriber_promises).await;
-            info!("Response: {:?}", res);
         }
         Err(e) => {
             warn!("Error: {:?}", e);

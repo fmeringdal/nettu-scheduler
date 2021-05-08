@@ -3,7 +3,9 @@ use crate::{
     event,
     shared::auth::protect_route,
     shared::{
-        auth::{account_can_modify_event, protect_account_route, Permission},
+        auth::{
+            account_can_modify_event, account_can_modify_user, protect_account_route, Permission,
+        },
         usecase::{
             execute, execute_with_policy, PermissionBoundary, Subscriber, UseCase,
             UseCaseErrorContainer,
@@ -13,8 +15,10 @@ use crate::{
 use actix_web::{web, HttpRequest, HttpResponse};
 use event::subscribers::SyncRemindersOnEventUpdated;
 use nettu_scheduler_api_structs::update_event::*;
-use nettu_scheduler_domain::{CalendarEvent, CalendarEventReminder, Metadata, RRuleOptions, ID};
-use nettu_scheduler_infra::NettuContext;
+use nettu_scheduler_domain::{
+    CalendarEvent, CalendarEventReminder, Metadata, RRuleOptions, SyncedCalendarProvider, User, ID,
+};
+use nettu_scheduler_infra::{google_calendar::GoogleCalendarProvider, NettuContext};
 
 fn handle_error(e: UseCaseErrors) -> NettuError {
     match e {
@@ -40,10 +44,11 @@ pub async fn update_event_admin_controller(
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
     let e = account_can_modify_event(&account, &path_params.event_id, &ctx).await?;
+    let user = account_can_modify_user(&account, &e.user_id, &ctx).await?;
 
     let body = body.0;
     let usecase = UpdateEventUseCase {
-        user_id: e.user_id,
+        user,
         event_id: e.id,
         duration: body.duration,
         start_ts: body.start_ts,
@@ -71,7 +76,7 @@ pub async fn update_event_controller(
 
     let body = body.0;
     let usecase = UpdateEventUseCase {
-        user_id: user.id.clone(),
+        user,
         event_id: path_params.event_id.clone(),
         duration: body.duration,
         start_ts: body.start_ts,
@@ -94,7 +99,7 @@ pub async fn update_event_controller(
 
 #[derive(Debug)]
 pub struct UpdateEventUseCase {
-    pub user_id: ID,
+    pub user: User,
     pub event_id: ID,
     pub start_ts: Option<i64>,
     pub busy: Option<bool>,
@@ -124,7 +129,7 @@ impl UseCase for UpdateEventUseCase {
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         let UpdateEventUseCase {
-            user_id,
+            user,
             event_id,
             start_ts,
             busy,
@@ -137,7 +142,7 @@ impl UseCase for UpdateEventUseCase {
         } = self;
 
         let mut e = match ctx.repos.event_repo.find(&event_id).await {
-            Some(event) if event.user_id == *user_id => event,
+            Some(event) if event.user_id == user.id => event,
             _ => {
                 return Err(UseCaseErrors::NotFound(
                     "Calendar Event".into(),
@@ -213,6 +218,26 @@ impl UseCase for UpdateEventUseCase {
             return Err(UseCaseErrors::StorageError);
         }
 
+        // Update synced calendar events
+        let synced_google_events = e
+            .synced_events
+            .iter()
+            .filter(|synced_event| synced_event.provider == SyncedCalendarProvider::Google)
+            .collect::<Vec<_>>();
+        if !synced_google_events.is_empty() {
+            if let Ok(provider) = GoogleCalendarProvider::new(&mut self.user, ctx).await {
+                for synced_google_event in synced_google_events {
+                    let _ = provider
+                        .update_event(
+                            synced_google_event.calendar_id.clone(),
+                            synced_google_event.event_id.clone(),
+                            e.clone(),
+                        )
+                        .await;
+                }
+            }
+        }
+
         Ok(e)
     }
 
@@ -237,13 +262,13 @@ mod test {
     #[test]
     async fn update_notexisting_event() {
         let mut usecase = UpdateEventUseCase {
+            user: User::new(Default::default()),
             event_id: Default::default(),
             start_ts: Some(500),
             duration: Some(800),
             reminder: None,
             recurrence: None,
             busy: Some(false),
-            user_id: Default::default(),
             is_service: None,
             exdates: None,
             metadata: None,
