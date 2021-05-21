@@ -87,6 +87,21 @@ struct Time {
     pub minutes: i64,
 }
 
+impl Time {
+    pub fn to_millis(&self, day: &Day, tzid: &Tz) -> i64 {
+        let dt = tzid.ymd(day.year, day.month, day.day).and_hms(0, 0, 0)
+            + Duration::minutes(self.minutes)
+            + Duration::hours(self.hours);
+        let millis = dt.timestamp_millis();
+        if dt.hour() != self.hours as u32 {
+            // DST probably
+            return millis - 1000 * 60 * 60 * 24;
+        }
+
+        millis
+    }
+}
+
 impl std::cmp::PartialOrd for Time {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         match self.hours.cmp(&other.hours) {
@@ -106,18 +121,54 @@ pub struct ScheduleRuleInterval {
 }
 
 impl ScheduleRuleInterval {
-    pub fn to_event(&self, day: &Day, tzid: &Tz) -> EventInstance {
-        EventInstance {
-            busy: false,
-            start_ts: tzid
-                .ymd(day.year, day.month, day.day)
-                .and_hms(self.start.hours as u32, self.start.minutes as u32, 0)
-                .timestamp_millis(),
-            end_ts: tzid
-                .ymd(day.year, day.month, day.day)
-                .and_hms(self.end.hours as u32, self.end.minutes as u32, 0)
-                .timestamp_millis(),
+    /// Creates an `EventInstance` if the given timerange exists within
+    /// that `Day` in the given timezone.
+    /// If it is possible to create a timerange that is smaller but
+    /// but still within the origin timerange then that timerange will be
+    /// returned.
+    pub fn to_event(&self, day: &Day, tzid: &Tz) -> Option<EventInstance> {
+        let mut hours = self.start.hours as u32;
+        let date = tzid.ymd(day.year, day.month, day.day);
+
+        // Try to find an hour in this day that is not invalid (DST) and greater than
+        // or equals to `self.start.hour`
+        let mut start = date.and_hms_opt(self.start.hours as u32, self.start.minutes as u32, 0);
+        while start.is_none() {
+            hours = (hours + 1) % 24;
+            // Minutes can be zero now
+            start = date.and_hms_opt(hours, 0, 0);
         }
+        let start = start.unwrap();
+        if self.start.hours as u32 > start.hour() {
+            // No valid start for this date
+            return None;
+        }
+
+        // Try to find an hour in this day that is not invalid (DST) and less than
+        // or equals to `self.end.hour`
+        let mut end = date.and_hms_opt(self.end.hours as u32, self.end.minutes as u32, 0);
+        while end.is_none() {
+            hours = if hours == 0 { 23 } else { hours - 1 };
+            end = date.and_hms_opt(hours, self.end.minutes as u32, 0);
+        }
+        let end = end.unwrap();
+        if end.hour() < self.end.hours as u32 {
+            // No valid end hours for this date
+            return None;
+        }
+
+        let start_ts = start.timestamp_millis();
+        let end_ts = end.timestamp_millis();
+        // Start should not be greater than end
+        if start_ts > end_ts {
+            return None;
+        }
+
+        Some(EventInstance {
+            busy: false,
+            start_ts,
+            end_ts,
+        })
     }
 }
 
@@ -312,8 +363,9 @@ impl Schedule {
             };
             if let Some(intervals) = intervals {
                 for interval in intervals.iter() {
-                    let event = interval.to_event(&day_cursor, &self.timezone);
-                    free_instances.push_back(event);
+                    if let Some(event) = interval.to_event(&day_cursor, &self.timezone) {
+                        free_instances.push_back(event);
+                    }
                 }
             }
             day_cursor.inc();
