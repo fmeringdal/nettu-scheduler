@@ -90,7 +90,7 @@ impl IServiceRepo for MongoServiceRepo {
     }
 
     async fn remove_user_from_services(&self, user_id: &ID) -> anyhow::Result<()> {
-        let user_id = user_id.inner_ref();
+        let user_id = &user_id.to_string();
         let filter = doc! {
             "ids": user_id
         };
@@ -98,7 +98,7 @@ impl IServiceRepo for MongoServiceRepo {
             "$pull": {
                 "ids": user_id,
                 "users": {
-                    "user_id": &user_id
+                    "user_id": user_id
                 }
             }
         };

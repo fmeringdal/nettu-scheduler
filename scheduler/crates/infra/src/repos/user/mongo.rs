@@ -47,9 +47,7 @@ impl IUserRepo for MongoUserRepo {
         let update = doc! {
             "$pull": {
                 "integrations": {
-                    "$elemMatch": {
-                        "provider": "Google"
-                    }
+                    "provider": "Google"
                 }
             }
         };
