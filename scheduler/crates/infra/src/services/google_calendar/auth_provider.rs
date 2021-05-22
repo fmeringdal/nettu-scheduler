@@ -23,7 +23,7 @@ struct RefreshTokenResponse {
     scope: String,
     token_type: String,
     // Access token expires in specified in seconds
-    expires_in: usize,
+    expires_in: i64,
 }
 
 async fn refresh_access_token(req: RefreshTokenRequest) -> Result<RefreshTokenResponse, ()> {
@@ -57,7 +57,7 @@ pub struct CodeTokenResponse {
     pub access_token: String,
     pub scope: String,
     pub token_type: String,
-    pub expires_in: usize,
+    pub expires_in: i64,
     pub refresh_token: String,
 }
 
@@ -105,7 +105,7 @@ pub async fn get_access_token(user: &mut User, ctx: &NettuContext) -> Option<Str
     }
     let integration = integration.unwrap();
 
-    let now = Utc::now().timestamp_millis() as usize;
+    let now = Utc::now().timestamp_millis();
     let one_minute_in_millis = 1000 * 60;
     if now + one_minute_in_millis <= integration.access_token_expires_ts {
         // Current acces token is still valid for at least one minutes so return it
@@ -132,7 +132,7 @@ pub async fn get_access_token(user: &mut User, ctx: &NettuContext) -> Option<Str
     match data {
         Ok(tokens) => {
             integration.access_token = tokens.access_token;
-            let now = Utc::now().timestamp_millis() as usize;
+            let now = Utc::now().timestamp_millis();
             let expires_in_millis = tokens.expires_in * 1000;
             integration.access_token_expires_ts = now + expires_in_millis;
             let access_token = integration.access_token.clone();

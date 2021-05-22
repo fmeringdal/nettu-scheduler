@@ -101,7 +101,7 @@ impl UseCase for OAuthGoogleUseCase {
             Ok(res) => res,
             Err(_) => return Err(UseCaseErrors::OAuthFailed),
         };
-        let now = Utc::now().timestamp_millis() as usize;
+        let now = Utc::now().timestamp_millis();
         let expires_in_millis = res.expires_in * 1000;
         let user_integration = UserGoogleIntegrationData {
             access_token: res.access_token,
