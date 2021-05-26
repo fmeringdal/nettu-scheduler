@@ -9,7 +9,7 @@ pub struct InMemoryServiceRepo {
 impl InMemoryServiceRepo {
     pub fn new() -> Self {
         Self {
-            services: std::sync::Mutex::new(vec![]),
+            services: std::sync::Mutex::new(Vec::new()),
         }
     }
 }

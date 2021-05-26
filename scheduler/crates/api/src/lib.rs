@@ -96,8 +96,10 @@ impl Application {
             .await
             .is_none()
         {
-            let mut account = Account::default();
-            account.secret_api_key = secret_api_key;
+            let mut account = Account {
+                secret_api_key,
+                ..Default::default()
+            };
             if let Ok(mut verification_key) = std::env::var("ACCOUNT_PUB_KEY") {
                 verification_key = verification_key.replacen("\\n", "\n", 100);
                 match PEMKey::new(verification_key) {

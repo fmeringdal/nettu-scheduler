@@ -2,7 +2,7 @@ use crate::CalendarEvent;
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 
-/// Occurence of a `CalendarEvent`
+/// Occurrence of a `CalendarEvent`
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EventInstance {
@@ -47,7 +47,7 @@ impl CompatibleInstances {
         }
     }
 
-    pub fn remove_intances(&mut self, instances: &CompatibleInstances, skip: usize) {
+    pub fn remove_instances(&mut self, instances: &CompatibleInstances, skip: usize) {
         self.events = self
             .events
             .iter()
@@ -218,13 +218,13 @@ impl EventInstance {
 
     pub fn remove_instances(
         &self,
-        intances: &CompatibleInstances,
+        instances: &CompatibleInstances,
         skip: usize,
     ) -> CompatibleInstances {
-        let mut free_instances_without_conflict = CompatibleInstances::new(vec![]);
+        let mut free_instances_without_conflict = CompatibleInstances::new(Vec::new());
 
         let mut conflict = false;
-        for (pos, instance) in intances.as_ref().iter().skip(skip).enumerate() {
+        for (pos, instance) in instances.as_ref().iter().skip(skip).enumerate() {
             if instance.start_ts >= self.end_ts {
                 break;
             }
@@ -237,7 +237,7 @@ impl EventInstance {
                 SubtractInstanceResult::OverlapBeginning(mut event) => {
                     assert_eq!(event.len(), 1);
                     conflict = true;
-                    event.remove_intances(intances, pos + 1);
+                    event.remove_instances(instances, pos + 1);
 
                     Some(event)
                 }
@@ -250,7 +250,7 @@ impl EventInstance {
                     let first_event = events.pop_front().unwrap();
 
                     let mut events = CompatibleInstances::new(vec![last_event.clone()]);
-                    events.remove_intances(intances, pos + 1);
+                    events.remove_instances(instances, pos + 1);
                     events.push_front(first_event);
 
                     Some(events)
@@ -282,11 +282,11 @@ pub struct EventWithInstances {
     pub instances: Vec<EventInstance>,
 }
 
-pub fn seperate_free_busy_events(
+pub fn separate_free_busy_events(
     instances: Vec<EventInstance>,
 ) -> (Vec<EventInstance>, Vec<EventInstance>) {
-    let mut free_instances = vec![];
-    let mut busy_instances = vec![];
+    let mut free_instances = Vec::new();
+    let mut busy_instances = Vec::new();
 
     for instance in instances {
         if instance.busy {
@@ -305,12 +305,12 @@ pub struct FreeBusy {
 }
 
 pub fn get_free_busy(instances: Vec<EventInstance>) -> FreeBusy {
-    let (free_instances, busy_instances) = seperate_free_busy_events(instances);
+    let (free_instances, busy_instances) = separate_free_busy_events(instances);
 
     let mut free_instances = CompatibleInstances::new(free_instances);
     let busy_instances = CompatibleInstances::new(busy_instances);
 
-    free_instances.remove_intances(&busy_instances, 0);
+    free_instances.remove_instances(&busy_instances, 0);
 
     FreeBusy {
         free: free_instances,
@@ -526,7 +526,7 @@ mod test {
             busy: false,
         };
         let busy = CompatibleInstances::new(vec![busy1, busy2, busy3]);
-        free.remove_intances(&busy, 0);
+        free.remove_instances(&busy, 0);
         let res = free.inner();
         assert_eq!(res.len(), 3);
         assert_eq!(
@@ -590,7 +590,7 @@ mod test {
             busy: false,
         };
         let busy = CompatibleInstances::new(vec![busy1, busy2, busy3]);
-        free.remove_intances(&busy, 0);
+        free.remove_instances(&busy, 0);
 
         let res = free.inner();
         assert_eq!(res.len(), 4);
@@ -630,7 +630,7 @@ mod test {
 
     #[test]
     fn compatible_events_test_1() {
-        let c_events = CompatibleInstances::new(vec![]);
+        let c_events = CompatibleInstances::new(Vec::new());
         assert_eq!(c_events.as_ref().len(), 0);
     }
     #[test]
@@ -816,7 +816,7 @@ mod test {
                 })
                 .collect(),
         );
-        free.remove_intances(&busy, 0);
+        free.remove_instances(&busy, 0);
         assert_eq!(free.len(), 200);
     }
 

@@ -9,7 +9,7 @@ pub struct InMemoryUserRepo {
 impl InMemoryUserRepo {
     pub fn new() -> Self {
         Self {
-            users: std::sync::Mutex::new(vec![]),
+            users: std::sync::Mutex::new(Vec::new()),
         }
     }
 }
@@ -34,11 +34,6 @@ impl IUserRepo for InMemoryUserRepo {
         find(user_id, &self.users)
     }
 
-    /// Ignores skip and limit as this is just used for testing
-    async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<User> {
-        find_by_metadata(&self.users, query)
-    }
-
     async fn find_by_account_id(&self, user_id: &ID, account_id: &ID) -> Option<User> {
         let mut user = find_by(&self.users, |u| {
             u.id == *user_id && u.account_id == *account_id
@@ -47,5 +42,10 @@ impl IUserRepo for InMemoryUserRepo {
             return None;
         }
         Some(user.remove(0))
+    }
+
+    /// Ignores skip and limit as this is just used for testing
+    async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<User> {
+        find_by_metadata(&self.users, query)
     }
 }

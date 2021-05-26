@@ -108,7 +108,7 @@ impl GetFreeBusyUseCase {
     ) -> Vec<EventInstance> {
         let calendar_ids = match &self.calendar_ids {
             Some(ids) if !ids.is_empty() => ids,
-            _ => return vec![],
+            _ => return Vec::new(),
         };
 
         // can probably make query to event repo instead
@@ -163,8 +163,14 @@ mod test {
     #[test]
     fn it_parses_vec_query_params_correctly() {
         assert_eq!(parse_vec_query_value(&None), None);
-        assert_eq!(parse_vec_query_value(&Some("".to_string())), Some(vec![]));
-        assert_eq!(parse_vec_query_value(&Some("2".to_string())), Some(vec![]));
+        assert_eq!(
+            parse_vec_query_value(&Some("".to_string())),
+            Some(Vec::new())
+        );
+        assert_eq!(
+            parse_vec_query_value(&Some("2".to_string())),
+            Some(Vec::new())
+        );
         let ids = vec![ID::default(), ID::default()];
         assert_eq!(
             parse_vec_query_value(&Some(format!("{},{}", ids[0], ids[1]))),
@@ -189,7 +195,7 @@ mod test {
             busy: true,
             duration: one_hour,
             end_ts: CalendarEvent::get_max_timestamp(),
-            exdates: vec![],
+            exdates: Vec::new(),
             id: Default::default(),
             start_ts: 0,
             recurrence: None,
@@ -212,7 +218,7 @@ mod test {
             busy: true,
             duration: one_hour,
             end_ts: CalendarEvent::get_max_timestamp(),
-            exdates: vec![],
+            exdates: Vec::new(),
             id: Default::default(),
             start_ts: one_hour * 4,
             recurrence: None,
@@ -235,7 +241,7 @@ mod test {
             busy: true,
             duration: one_hour,
             end_ts: one_hour,
-            exdates: vec![],
+            exdates: Vec::new(),
             id: Default::default(),
             start_ts: 0,
             recurrence: None,

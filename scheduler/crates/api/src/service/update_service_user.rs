@@ -25,7 +25,7 @@ pub async fn update_service_user_controller(
         account,
         service_id: path_params.service_id.to_owned(),
         user_id: path_params.user_id.to_owned(),
-        availibility: body.availibility.to_owned(),
+        availability: body.availibility.to_owned(),
         busy: body.busy.to_owned(),
         buffer: body.buffer,
         closest_booking_time: body.closest_booking_time,
@@ -52,7 +52,7 @@ struct UpdateServiceUserUseCase {
     pub account: Account,
     pub service_id: ID,
     pub user_id: ID,
-    pub availibility: Option<TimePlan>,
+    pub availability: Option<TimePlan>,
     pub busy: Option<Vec<ID>>,
     pub buffer: Option<i64>,
     pub closest_booking_time: Option<i64>,
@@ -94,7 +94,7 @@ impl UseCase for UpdateServiceUserUseCase {
         update_resource_values(
             &mut user_resource,
             &ServiceResourceUpdate {
-                availibility: self.availibility.clone(),
+                availability: self.availability.clone(),
                 busy: self.busy.clone(),
                 buffer: self.buffer,
                 closest_booking_time: self.closest_booking_time,

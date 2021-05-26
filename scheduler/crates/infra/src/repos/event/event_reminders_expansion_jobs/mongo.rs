@@ -46,7 +46,7 @@ impl IEventRemindersExpansionJobsRepo for MongoEventRemindersExpansionsJobRepo {
             Ok(docs) => docs,
             Err(err) => {
                 error!("{}", err);
-                return vec![];
+                return Vec::new();
             }
         };
 
@@ -80,7 +80,7 @@ struct EventRemindersExpansionJobMongo {
 }
 
 impl MongoDocument<EventRemindersExpansionJob> for EventRemindersExpansionJobMongo {
-    fn to_domain(self) -> EventRemindersExpansionJob {
+    fn into_domain(self) -> EventRemindersExpansionJob {
         EventRemindersExpansionJob {
             id: ID::from(self._id),
             event_id: ID::from(self.event_id),

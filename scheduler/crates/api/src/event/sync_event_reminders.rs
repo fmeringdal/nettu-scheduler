@@ -140,7 +140,7 @@ impl<'a> UseCase for SyncEventRemindersUseCase<'a> {
 
                 // Delete existing reminders
                 match op {
-                    // There are no remidners if `CalendarEvent` was just created
+                    // There are no reminders if `CalendarEvent` was just created
                     EventOperation::Created => (),
                     _ => {
                         let delete_result = ctx

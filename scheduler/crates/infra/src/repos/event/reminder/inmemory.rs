@@ -10,7 +10,7 @@ pub struct InMemoryReminderRepo {
 impl InMemoryReminderRepo {
     pub fn new() -> Self {
         Self {
-            reminders: std::sync::Mutex::new(vec![]),
+            reminders: std::sync::Mutex::new(Vec::new()),
         }
     }
 }

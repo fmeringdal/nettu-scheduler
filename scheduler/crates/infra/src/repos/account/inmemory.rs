@@ -9,7 +9,7 @@ pub struct InMemoryAccountRepo {
 impl InMemoryAccountRepo {
     pub fn new() -> Self {
         Self {
-            accounts: std::sync::Mutex::new(vec![]),
+            accounts: std::sync::Mutex::new(Vec::new()),
         }
     }
 }
@@ -30,13 +30,13 @@ impl IAccountRepo for InMemoryAccountRepo {
         find(account_id, &self.accounts)
     }
 
-    async fn delete(&self, account_id: &ID) -> Option<Account> {
-        delete(account_id, &self.accounts)
-    }
-
     async fn find_many(&self, account_ids: &[ID]) -> anyhow::Result<Vec<Account>> {
         let res = find_by(&self.accounts, |a| account_ids.contains(&a.id));
         Ok(res)
+    }
+
+    async fn delete(&self, account_id: &ID) -> Option<Account> {
+        delete(account_id, &self.accounts)
     }
 
     async fn find_by_apikey(&self, api_key: &str) -> Option<Account> {

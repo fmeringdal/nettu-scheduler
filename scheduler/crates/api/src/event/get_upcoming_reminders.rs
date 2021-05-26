@@ -213,7 +213,7 @@ mod tests {
 
     #[test]
     fn should_dedup_reminders() {
-        let mut reminders = vec![];
+        let mut reminders = Vec::new();
         dedup_reminders(&mut reminders);
         assert_eq!(reminders.len(), 0);
 

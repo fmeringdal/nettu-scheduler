@@ -42,7 +42,7 @@ impl ICalendarRepo for MongoCalendarRepo {
         };
         match mongo_repo::find_many_by::<_, CalendarMongo>(&self.collection, filter).await {
             Ok(cals) => cals,
-            Err(_) => vec![],
+            Err(_) => Vec::new(),
         }
     }
 
@@ -79,7 +79,7 @@ struct CalendarSettingsMongo {
 }
 
 impl MongoDocument<Calendar> for CalendarMongo {
-    fn to_domain(self) -> Calendar {
+    fn into_domain(self) -> Calendar {
         Calendar {
             id: ID::from(self._id),
             user_id: ID::from(self.user_id),
