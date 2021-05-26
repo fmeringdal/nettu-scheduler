@@ -25,7 +25,11 @@ struct Claims {
 }
 
 fn parse_authtoken_header(token_header_value: &str) -> String {
-    token_header_value.trim()[7..].to_string()
+    if token_header_value.len() < 6 || token_header_value[..6].to_lowercase() != "bearer" {
+        String::new()
+    } else {
+        token_header_value.trim()[6..].trim().to_string()
+    }
 }
 
 pub async fn auth_user_req(
@@ -33,7 +37,7 @@ pub async fn auth_user_req(
     account: &Account,
     ctx: &NettuContext,
 ) -> Option<(User, Policy)> {
-    let token = req.headers().get("authorization");
+    let token = req.headers().get("Authorization");
     match token {
         Some(token) => {
             let token = match token.to_str() {
@@ -372,6 +376,21 @@ mod test {
         let token = "sajfosajfposajfopaso12";
 
         let req = TestRequest::with_header("Authorization", format!("Bearer {}", token))
+            .to_http_request();
+        let res = protect_route(&req, &ctx).await;
+        assert!(res.is_err());
+    }
+
+    #[actix_web::main]
+    #[test]
+    async fn rejects_invalid_authz_header() {
+        let ctx = setup_context().await;
+        let account = setup_account(&ctx).await;
+        let user = User::new(account.id.clone());
+        ctx.repos.user_repo.insert(&user).await.unwrap();
+
+        let req = TestRequest::with_header("nettu-account", account.id.to_string())
+            .header("Authorization", "Bea")
             .to_http_request();
         let res = protect_route(&req, &ctx).await;
         assert!(res.is_err());
