@@ -37,7 +37,7 @@ pub async fn auth_user_req(
     account: &Account,
     ctx: &NettuContext,
 ) -> Option<(User, Policy)> {
-    let token = req.headers().get("Authorization");
+    let token = req.headers().get("authorization");
     match token {
         Some(token) => {
             let token = match token.to_str() {
