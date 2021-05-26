@@ -132,7 +132,7 @@ impl UseCase for CreateEventUseCase {
             updated: ctx.sys.get_timestamp_millis(),
             recurrence: None,
             end_ts: self.start_ts + self.duration, // default, if recurrence changes, this will be updated
-            exdates: vec![],
+            exdates: Vec::new(),
             calendar_id: calendar.id.clone(),
             user_id: self.user_id.clone(),
             account_id: self.account_id.clone(),
@@ -293,7 +293,7 @@ mod test {
             user,
         } = setup().await;
 
-        let mut invalid_rrules = vec![];
+        let mut invalid_rrules = Vec::new();
         invalid_rrules.push(RRuleOptions {
             count: Some(1000), // too big count
             ..Default::default()

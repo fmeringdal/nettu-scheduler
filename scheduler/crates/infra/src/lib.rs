@@ -35,7 +35,7 @@ impl NettuContext {
     async fn create(params: ContextParams) -> Self {
         let repos = Repos::create_mongodb(&params.mongodb.0, &params.mongodb.1)
             .await
-            .expect("Mongo db creds must be set and valid");
+            .expect("Mongo db credentials must be set and valid");
         Self {
             repos,
             config: Config::new(),
@@ -49,7 +49,7 @@ pub async fn setup_context() -> NettuContext {
     const MONGODB_CONNECTION_STRING: &str = "MONGODB_CONNECTION_STRING";
     const MONGODB_NAME: &str = "MONGODB_NAME";
 
-    let mongodb_conncetion_string = std::env::var(MONGODB_CONNECTION_STRING);
+    let mongodb_connection_string = std::env::var(MONGODB_CONNECTION_STRING);
     let mongodb_db_name = std::env::var(MONGODB_NAME);
 
     let args: Vec<_> = std::env::args().collect();
@@ -61,13 +61,13 @@ pub async fn setup_context() -> NettuContext {
         return NettuContext::create_inmemory();
     }
 
-    if mongodb_conncetion_string.is_ok() && mongodb_db_name.is_ok() {
+    if mongodb_connection_string.is_ok() && mongodb_db_name.is_ok() {
         info!(
             "{} and {} env vars was provided. Going to use mongodb.",
             MONGODB_CONNECTION_STRING, MONGODB_NAME
         );
         NettuContext::create(ContextParams {
-            mongodb: (mongodb_conncetion_string.unwrap(), mongodb_db_name.unwrap()),
+            mongodb: (mongodb_connection_string.unwrap(), mongodb_db_name.unwrap()),
         })
         .await
     } else {

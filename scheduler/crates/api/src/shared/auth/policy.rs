@@ -88,7 +88,7 @@ mod test {
     #[test]
     fn permissions() {
         let policy = Policy::empty();
-        assert!(policy.authorize(&vec![]));
+        assert!(policy.authorize(&Vec::new()));
         assert!(!policy.authorize(&vec![Permission::CreateCalendar]));
 
         let policy = Policy {
@@ -105,7 +105,7 @@ mod test {
 
         let policy = Policy {
             allow: Some(vec![Permission::CreateCalendar]),
-            reject: Some(vec![]),
+            reject: Some(Vec::new()),
         };
         assert!(policy.authorize(&vec![Permission::CreateCalendar]));
 

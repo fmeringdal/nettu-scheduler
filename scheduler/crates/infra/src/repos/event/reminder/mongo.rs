@@ -53,7 +53,7 @@ impl IReminderRepo for MongoReminderRepo {
                 Ok(docs) => docs,
                 Err(err) => {
                     error!("Error: {:?}", err);
-                    return vec![];
+                    return Vec::new();
                 }
             };
 
@@ -91,7 +91,7 @@ struct ReminderMongo {
 }
 
 impl MongoDocument<Reminder> for ReminderMongo {
-    fn to_domain(self) -> Reminder {
+    fn into_domain(self) -> Reminder {
         Reminder {
             id: ID::from(self._id),
             remind_at: self.remind_at,

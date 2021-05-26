@@ -18,7 +18,7 @@ impl ServiceResourceDTO {
         Self {
             id: resource.id,
             user_id: resource.user_id,
-            availibility: resource.availibility,
+            availibility: resource.availability,
             busy: resource.busy,
             buffer: resource.buffer,
             closest_booking_time: resource.closest_booking_time,

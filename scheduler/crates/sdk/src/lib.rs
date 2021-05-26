@@ -29,7 +29,7 @@ pub use event::{
 pub use nettu_scheduler_domain::{CalendarEventReminder, RRuleOptions, ScheduleRule, TimePlan, ID};
 pub use schedule::{CreateScheduleInput, UpdateScheduleInput};
 pub use service::{
-    AddServiceUserInput, GetSerivceBookingSlotsInput, RemoveServiceUserInput,
+    AddServiceUserInput, GetServiceBookingSlotsInput, RemoveServiceUserInput,
     UpdateServiceUserInput,
 };
 pub use shared::{KVMetadata, MetadataFindInput};
@@ -42,7 +42,7 @@ pub use nettu_scheduler_api_structs::dtos::AccountWebhookSettingsDTO as AccountW
 pub use nettu_scheduler_api_structs::dtos::CalendarDTO as Calendar;
 pub use nettu_scheduler_api_structs::dtos::CalendarEventDTO as CalendarEvent;
 pub use nettu_scheduler_api_structs::dtos::CalendarSettingsDTO as CalendarSettings;
-pub use nettu_scheduler_api_structs::dtos::EventWithInstancesDTO as EventWithINstances;
+pub use nettu_scheduler_api_structs::dtos::EventWithInstancesDTO as EventWithIInstances;
 pub use nettu_scheduler_api_structs::dtos::ScheduleDTO as Schedule;
 pub use nettu_scheduler_api_structs::dtos::ServiceDTO as Service;
 pub use nettu_scheduler_api_structs::dtos::ServiceResourceDTO as ServiceResource;

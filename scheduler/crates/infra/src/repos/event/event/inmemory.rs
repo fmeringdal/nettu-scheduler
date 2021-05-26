@@ -10,7 +10,7 @@ pub struct InMemoryEventRepo {
 impl InMemoryEventRepo {
     pub fn new() -> Self {
         Self {
-            calendar_events: std::sync::Mutex::new(vec![]),
+            calendar_events: std::sync::Mutex::new(Vec::new()),
         }
     }
 }
@@ -31,6 +31,11 @@ impl IEventRepo for InMemoryEventRepo {
         find(event_id, &self.calendar_events)
     }
 
+    async fn find_many(&self, event_ids: &[ID]) -> anyhow::Result<Vec<CalendarEvent>> {
+        let res = find_by(&self.calendar_events, |event| event_ids.contains(&event.id));
+        Ok(res)
+    }
+
     async fn find_by_calendar(
         &self,
         calendar_id: &ID,
@@ -40,18 +45,14 @@ impl IEventRepo for InMemoryEventRepo {
             if event.calendar_id == *calendar_id {
                 if let Some(span) = timespan {
                     // TODO: Consider if this should be strict equals or not
-                    return span.start() <= event.end_ts && span.end() >= event.start_ts;
+                    span.start() <= event.end_ts && span.end() >= event.start_ts
                 } else {
-                    return true;
+                    true
                 }
+            } else {
+                false
             }
-            false
         });
-        Ok(res)
-    }
-
-    async fn find_many(&self, event_ids: &[ID]) -> anyhow::Result<Vec<CalendarEvent>> {
-        let res = find_by(&self.calendar_events, |event| event_ids.contains(&event.id));
         Ok(res)
     }
 

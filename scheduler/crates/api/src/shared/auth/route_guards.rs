@@ -14,7 +14,7 @@ use super::Policy;
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct Claims {
-    /// Epiration time (as UTC timestamp)
+    /// Expiration time (as UTC timestamp)
     exp: usize,
     /// Issued at (as UTC timestamp)
     iat: usize,
@@ -25,11 +25,7 @@ struct Claims {
 }
 
 fn parse_authtoken_header(token_header_value: &str) -> String {
-    token_header_value
-        .replace("Bearer", "")
-        .replace("bearer", "")
-        .trim()
-        .to_string()
+    token_header_value.trim()[7..].to_string()
 }
 
 pub async fn auth_user_req(

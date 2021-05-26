@@ -45,6 +45,11 @@ impl IAccountRepo for MongoAccountRepo {
         mongo_repo::find_many_by::<_, AccountMongo>(&self.collection, filter).await
     }
 
+    async fn delete(&self, account_id: &ID) -> Option<Account> {
+        let oid = account_id.inner_ref();
+        mongo_repo::delete::<_, AccountMongo>(&self.collection, &oid).await
+    }
+
     async fn find_by_apikey(&self, api_key: &str) -> Option<Account> {
         let filter = doc! {
             "attributes": {
@@ -67,11 +72,6 @@ impl IAccountRepo for MongoAccountRepo {
             },
         };
         mongo_repo::find_one_by::<_, AccountMongo>(&self.collection, filter).await
-    }
-
-    async fn delete(&self, account_id: &ID) -> Option<Account> {
-        let oid = account_id.inner_ref();
-        mongo_repo::delete::<_, AccountMongo>(&self.collection, &oid).await
     }
 }
 
@@ -102,7 +102,7 @@ struct AccountWebhookSettingsMongo {
 }
 
 impl<'de> MongoDocument<Account> for AccountMongo {
-    fn to_domain(self) -> Account {
+    fn into_domain(self) -> Account {
         let mut settings = AccountSettings { webhook: None };
         if let Some(webhook_settings) = self.settings.webhook.as_ref() {
             settings.webhook = Some(AccountWebhookSettings {

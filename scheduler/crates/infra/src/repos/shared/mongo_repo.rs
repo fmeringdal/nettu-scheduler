@@ -1,5 +1,3 @@
-use std::cmp::max;
-
 use super::{query_structs::MetadataFindQuery, repo::DeleteResult};
 use anyhow::Result;
 use futures::stream::StreamExt;
@@ -8,13 +6,13 @@ use mongodb::{
     options::FindOptions,
     Collection, Cursor,
 };
-
 use serde::{de::DeserializeOwned, Serialize};
+use std::cmp::max;
 use tracing::error;
 
 pub trait MongoDocument<E>: Serialize + DeserializeOwned {
     // Maybe require `Into` trait impl instead of this method
-    fn to_domain(self) -> E;
+    fn into_domain(self) -> E;
     // Maybe require `From` trait impl instead of this method
     fn from_domain(entity: &E) -> Self;
     fn get_id_filter(&self) -> Document;
@@ -34,7 +32,7 @@ fn entity_to_persistence<E, D: MongoDocument<E>>(entity: &E) -> Document {
 fn persistence_to_entity<E, D: MongoDocument<E>>(doc: Document) -> E {
     // let bson = bson::Bson::Document(doc);
     let raw: D = bson::from_document(doc).unwrap();
-    raw.to_domain()
+    raw.into_domain()
 }
 
 fn doc_to_persistence<E, D: MongoDocument<E>>(raw: &D) -> Document {
@@ -135,7 +133,7 @@ pub async fn delete_many_by<E, D: MongoDocument<E>>(
 }
 
 async fn consume_cursor<E, D: MongoDocument<E>>(mut cursor: Cursor) -> Vec<E> {
-    let mut documents = vec![];
+    let mut documents = Vec::new();
     while let Some(result) = cursor.next().await {
         match result {
             Ok(document) => {
@@ -173,6 +171,6 @@ pub async fn find_by_metadata<E, D: MongoDocument<E>>(
     // find_options.
     match collection.find(filter, find_options).await {
         Ok(cursor) => consume_cursor::<E, D>(cursor).await,
-        Err(_) => vec![],
+        Err(_) => Vec::new(),
     }
 }

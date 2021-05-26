@@ -2,12 +2,13 @@ use crate::CalendarSettings;
 use chrono::prelude::*;
 use rrule::{Frequenzy, ParsedOptions};
 use serde::{de::Visitor, Deserialize, Serialize};
+use std::cmp::Ordering;
 use std::{fmt::Display, str::FromStr};
 use thiserror::Error;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
-pub enum RRuleFrequenzy {
+pub enum RRuleFrequency {
     Yearly,
     Monthly,
     Weekly,
@@ -17,7 +18,7 @@ pub enum RRuleFrequenzy {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RRuleOptions {
-    pub freq: RRuleFrequenzy,
+    pub freq: RRuleFrequency,
     pub interval: isize,
     pub count: Option<i32>,
     pub until: Option<isize>,
@@ -29,12 +30,12 @@ pub struct RRuleOptions {
     pub byweekno: Option<Vec<isize>>,
 }
 
-fn freq_convert(freq: &RRuleFrequenzy) -> Frequenzy {
+fn freq_convert(freq: &RRuleFrequency) -> Frequenzy {
     match freq {
-        RRuleFrequenzy::Yearly => Frequenzy::Yearly,
-        RRuleFrequenzy::Monthly => Frequenzy::Monthly,
-        RRuleFrequenzy::Weekly => Frequenzy::Weekly,
-        RRuleFrequenzy::Daily => Frequenzy::Daily,
+        RRuleFrequency::Yearly => Frequenzy::Yearly,
+        RRuleFrequency::Monthly => Frequenzy::Monthly,
+        RRuleFrequency::Weekly => Frequenzy::Weekly,
+        RRuleFrequency::Daily => Frequenzy::Daily,
     }
 }
 
@@ -86,8 +87,8 @@ impl RRuleOptions {
 
         let count = self.count.map(|c| std::cmp::max(c, 0) as u32);
 
-        let mut byweekday = vec![];
-        let mut bynweekday: Vec<Vec<isize>> = vec![];
+        let mut byweekday = Vec::new();
+        let mut bynweekday: Vec<Vec<isize>> = Vec::new();
         if let Some(opts_byweekday) = self.byweekday {
             for wday in opts_byweekday {
                 match wday.nth() {
@@ -99,14 +100,14 @@ impl RRuleOptions {
             }
         }
 
-        let mut bymonthday = vec![];
-        let mut bynmonthday = vec![];
+        let mut bymonthday = Vec::new();
+        let mut bynmonthday = Vec::new();
         if let Some(opts_bymonthday) = self.bymonthday {
             for monthday in opts_bymonthday {
-                if monthday > 0 {
-                    bymonthday.push(monthday);
-                } else if monthday < 0 {
-                    bynmonthday.push(monthday);
+                match monthday.cmp(&0) {
+                    Ordering::Greater => bymonthday.push(monthday),
+                    Ordering::Less => bynmonthday.push(monthday),
+                    Ordering::Equal => {}
                 }
             }
         }
@@ -138,7 +139,7 @@ impl RRuleOptions {
 impl Default for RRuleOptions {
     fn default() -> Self {
         Self {
-            freq: RRuleFrequenzy::Daily,
+            freq: RRuleFrequency::Daily,
             interval: 1,
             byweekday: None,
             bysetpos: None,
@@ -168,7 +169,7 @@ impl WeekDay {
                 return Err(());
             }
         }
-        Ok(Self { weekday, n })
+        Ok(Self { n, weekday })
     }
 
     pub fn nth(&self) -> Option<isize> {

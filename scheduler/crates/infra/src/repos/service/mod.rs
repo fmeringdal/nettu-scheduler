@@ -82,11 +82,11 @@ mod tests {
                 .await
                 .expect("To get service");
             assert_eq!(service.users.len(), 1);
-            println!("Serivce user: {:?}", service.users);
+            println!("Service user: {:?}", service.users);
             assert!(service.users[0].busy.is_empty());
 
             let mut user = service.find_user_mut(&user_id).expect("To find user");
-            user.availibility = TimePlan::Calendar(calendar_id.clone());
+            user.availability = TimePlan::Calendar(calendar_id.clone());
 
             ctx.repos
                 .service_repo
@@ -108,7 +108,7 @@ mod tests {
                 .expect("To get service");
             assert_eq!(service.users.len(), 1);
             assert!(service.users[0].busy.is_empty());
-            assert_eq!(service.users[0].availibility, TimePlan::Empty);
+            assert_eq!(service.users[0].availability, TimePlan::Empty);
 
             ctx.repos
                 .service_repo
