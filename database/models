@@ -1,0 +1,36 @@
+// User
+{
+    id: uuid,
+    account_id: uuid
+}
+
+// Account
+{
+    id: uuid,
+    pub secret_api_key: String,
+    pub public_jwt_key: Option<PEMKey>,
+    pub settings: AccountSettingsMongo,
+    pub attributes: Vec<AccountAttributeMongo>,
+}
+
+// AccountUser 
+{
+
+}
+
+// Calendar {
+    id: uuid,
+    user_id: uuid,
+    account_id: ObjectId,
+    settings: CalendarSettingsMongo,
+    metadata: Vec<KVMetadata>,
+}
+
+// Metadata
+{
+    id: uuid,
+    // LOl
+    entity: entity + entity_id,
+    key: string,
+    value: string,
+}
