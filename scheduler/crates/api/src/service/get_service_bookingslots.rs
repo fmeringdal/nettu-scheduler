@@ -165,8 +165,8 @@ impl GetServiceBookingSlotsUseCase {
         timespan: &TimeSpan,
         ctx: &NettuContext,
     ) -> CompatibleInstances {
-        let empty = CompatibleInstances::new(vec![]);
-        match &user.availibility {
+        let empty = CompatibleInstances::new(Vec::new());
+        match &user.availability {
             TimePlan::Calendar(id) => {
                 let calendar = match user_calendars.iter().find(|cal| cal.id == *id) {
                     Some(cal) => cal,
@@ -204,7 +204,7 @@ impl GetServiceBookingSlotsUseCase {
         timespan: &TimeSpan,
         ctx: &NettuContext,
     ) -> CompatibleInstances {
-        let mut busy_events: Vec<EventInstance> = vec![];
+        let mut busy_events: Vec<EventInstance> = Vec::new();
 
         for cal in busy_calendars {
             match ctx
@@ -282,7 +282,7 @@ impl GetServiceBookingSlotsUseCase {
         ctx: &NettuContext,
     ) -> UserFreeEvents {
         let empty = UserFreeEvents {
-            free_events: CompatibleInstances::new(vec![]),
+            free_events: CompatibleInstances::new(Vec::new()),
             user_id: user.user_id.clone(),
         };
 
@@ -305,7 +305,7 @@ impl GetServiceBookingSlotsUseCase {
             .get_user_busy(user, &busy_calendars, &timespan, ctx)
             .await;
 
-        free_events.remove_intances(&busy_events, 0);
+        free_events.remove_instances(&busy_events, 0);
 
         UserFreeEvents {
             free_events,
@@ -352,8 +352,8 @@ mod test {
             id: Default::default(),
             user_id: Default::default(),
             buffer: 0,
-            availibility: TimePlan::Empty,
-            busy: vec![],
+            availability: TimePlan::Empty,
+            busy: Vec::new(),
             closest_booking_time: 0,
             furthest_booking_time: None,
         };
@@ -361,8 +361,8 @@ mod test {
             id: Default::default(),
             user_id: Default::default(),
             buffer: 0,
-            availibility: TimePlan::Empty,
-            busy: vec![],
+            availability: TimePlan::Empty,
+            busy: Vec::new(),
             closest_booking_time: 0,
             furthest_booking_time: None,
         };
@@ -370,9 +370,9 @@ mod test {
         let account_id = ID::default();
 
         let calendar_user_1 = Calendar::new(&resource1.user_id, &account_id);
-        resource1.availibility = TimePlan::Calendar(calendar_user_1.id.clone());
+        resource1.availability = TimePlan::Calendar(calendar_user_1.id.clone());
         let calendar_user_2 = Calendar::new(&resource2.user_id, &account_id);
-        resource2.availibility = TimePlan::Calendar(calendar_user_2.id.clone());
+        resource2.availability = TimePlan::Calendar(calendar_user_2.id.clone());
 
         ctx.repos
             .calendar_repo
@@ -394,7 +394,7 @@ mod test {
             calendar_id: calendar_user_1.id,
             duration: 1000 * 60 * 60,
             end_ts: 0,
-            exdates: vec![],
+            exdates: Vec::new(),
             recurrence: None,
             start_ts: 1000 * 60 * 60,
             user_id: resource1.user_id.to_owned(),
@@ -411,7 +411,7 @@ mod test {
             calendar_id: calendar_user_2.id.clone(),
             duration: 1000 * 60 * 60,
             end_ts: 0,
-            exdates: vec![],
+            exdates: Vec::new(),
             recurrence: None,
             start_ts: 1000 * 60 * 60,
             user_id: resource2.user_id.to_owned(),
@@ -428,7 +428,7 @@ mod test {
             calendar_id: calendar_user_2.id,
             duration: 1000 * 60 * 105,
             end_ts: 0,
-            exdates: vec![],
+            exdates: Vec::new(),
             recurrence: None,
             start_ts: 1000 * 60 * 60 * 4,
             user_id: resource1.user_id.to_owned(),

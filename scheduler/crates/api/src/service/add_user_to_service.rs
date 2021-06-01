@@ -20,7 +20,7 @@ pub async fn add_user_to_service_controller(
         account,
         service_id: path_params.service_id.to_owned(),
         user_id: body.user_id.to_owned(),
-        availibility: body.availibility.to_owned(),
+        availability: body.availibility.to_owned(),
         busy: body.busy.to_owned(),
         buffer: body.buffer,
         closest_booking_time: body.closest_booking_time,
@@ -43,7 +43,7 @@ struct AddUserToServiceUseCase {
     pub account: Account,
     pub service_id: ID,
     pub user_id: ID,
-    pub availibility: Option<TimePlan>,
+    pub availability: Option<TimePlan>,
     pub busy: Option<Vec<ID>>,
     pub buffer: Option<i64>,
     pub closest_booking_time: Option<i64>,
@@ -92,12 +92,13 @@ impl UseCase for AddUserToServiceUseCase {
             return Err(UseCaseErrors::UserAlreadyInService);
         }
 
-        let mut user_resource = ServiceResource::new(self.user_id.clone(), TimePlan::Empty, vec![]);
+        let mut user_resource =
+            ServiceResource::new(self.user_id.clone(), TimePlan::Empty, Vec::new());
 
         update_resource_values(
             &mut user_resource,
             &ServiceResourceUpdate {
-                availibility: self.availibility.clone(),
+                availability: self.availability.clone(),
                 busy: self.busy.clone(),
                 buffer: self.buffer,
                 closest_booking_time: self.closest_booking_time,
@@ -119,7 +120,7 @@ impl UseCase for AddUserToServiceUseCase {
 }
 
 pub struct ServiceResourceUpdate {
-    pub availibility: Option<TimePlan>,
+    pub availability: Option<TimePlan>,
     pub busy: Option<Vec<ID>>,
     pub buffer: Option<i64>,
     pub closest_booking_time: Option<i64>,
@@ -138,7 +139,7 @@ impl UpdateServiceResourceError {
     pub fn to_nettu_error(&self) -> NettuError {
         match self {
             Self::InvalidBuffer => {
-                NettuError::BadClientData("The provided buffer was invalid, it should be netween 0 and 12 hours specified in minutes.".into())
+                NettuError::BadClientData("The provided buffer was invalid, it should be between 0 and 12 hours specified in minutes.".into())
             }
             Self::CalendarNotOwnedByUser(calendar_id) => NettuError::NotFound(format!("The calendar: {}, was not found among the calendars for the specified user", calendar_id)),
             Self::ScheduleNotOwnedByUser(schedule_id) => {
@@ -179,8 +180,8 @@ pub async fn update_resource_values(
         user_resource.set_busy(busy.clone());
     }
 
-    if let Some(availibility) = &update.availibility {
-        match availibility {
+    if let Some(availability) = &update.availability {
+        match availability {
             TimePlan::Calendar(id) => {
                 if !user_calendars.contains(id) {
                     return Err(UpdateServiceResourceError::CalendarNotOwnedByUser(
@@ -201,7 +202,7 @@ pub async fn update_resource_values(
             }
             _ => (),
         };
-        user_resource.set_availibility(availibility.clone());
+        user_resource.set_availability(availability.clone());
     }
 
     if let Some(buffer) = update.buffer {

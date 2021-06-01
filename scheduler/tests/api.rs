@@ -7,7 +7,7 @@ use nettu_scheduler_domain::PEMKey;
 use nettu_scheduler_sdk::{
     AddServiceUserInput, CreateCalendarInput, CreateEventInput, CreateScheduleInput,
     CreateUserInput, DeleteCalendarInput, DeleteEventInput, GetCalendarEventsInput,
-    GetCalendarInput, GetEventInput, GetEventsInstancesInput, GetSerivceBookingSlotsInput,
+    GetCalendarInput, GetEventInput, GetEventsInstancesInput, GetServiceBookingSlotsInput,
     KVMetadata, MetadataFindInput, NettuSDK, RemoveServiceUserInput, UpdateCalendarInput,
     UpdateEventInput, UpdateScheduleInput, UpdateServiceUserInput,
 };
@@ -102,7 +102,7 @@ async fn test_crud_user() {
         .user
         .delete(res.user.id.clone())
         .await
-        .expect("To delet euser")
+        .expect("To delete user")
         .user;
     assert_eq!(delete_user_res.id, res.user.id);
 
@@ -140,12 +140,12 @@ async fn test_crud_schedule() {
         .schedule;
     assert_eq!(schedule.user_id, create_user_res.user.id);
     assert_eq!(schedule.timezone, "UTC");
-    assert_eq!(schedule.rules.len(), 5); // mon-fri
+    assert_eq!(schedule.rules.len(), 7);
 
     let schedule = admin_client
         .schedule
         .update(UpdateScheduleInput {
-            rules: Some(vec![]),
+            rules: Some(Vec::new()),
             timezone: Some("Europe/Oslo".into()),
             schedule_id: schedule.id.clone(),
             metadata: None,
@@ -489,7 +489,7 @@ async fn test_crud_service() {
         .add_user(AddServiceUserInput {
             service_id: service.id.clone(),
             user_id: user.id.clone(),
-            availibility: None,
+            availability: None,
             buffer: None,
             busy: None,
             closest_booking_time: None,
@@ -506,7 +506,7 @@ async fn test_crud_service() {
         .update_user(UpdateServiceUserInput {
             service_id: service.id.clone(),
             user_id: user.id.clone(),
-            availibility: None,
+            availability: None,
             buffer: None,
             busy: None,
             closest_booking_time: Some(new_closest_booking_time),
@@ -533,7 +533,7 @@ async fn test_crud_service() {
 
     let booking_slots = admin_client
         .service
-        .bookingslots(GetSerivceBookingSlotsInput {
+        .bookingslots(GetServiceBookingSlotsInput {
             start_date: "2030-1-1".to_string(),
             end_date: "2030-1-2".to_string(),
             duration: 1000 * 60 * 30,
@@ -549,7 +549,7 @@ async fn test_crud_service() {
     // About 100 days timespan
     let booking_slots = admin_client
         .service
-        .bookingslots(GetSerivceBookingSlotsInput {
+        .bookingslots(GetServiceBookingSlotsInput {
             start_date: "2030-1-1".to_string(),
             end_date: "2030-4-1".to_string(),
             duration: 1000 * 60 * 30,

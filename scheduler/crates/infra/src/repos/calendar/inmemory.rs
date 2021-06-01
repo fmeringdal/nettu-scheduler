@@ -11,7 +11,7 @@ pub struct InMemoryCalendarRepo {
 impl InMemoryCalendarRepo {
     pub fn new() -> Self {
         Self {
-            calendars: std::sync::Mutex::new(vec![]),
+            calendars: std::sync::Mutex::new(Vec::new()),
         }
     }
 }

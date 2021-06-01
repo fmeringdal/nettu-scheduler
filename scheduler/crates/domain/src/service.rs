@@ -22,12 +22,12 @@ pub struct ServiceResource {
     pub id: ID,
     /// Id of the `User` registered on this `Service`
     pub user_id: ID,
-    /// Every available event in a `Calendar` or a `Shedule` in this field
+    /// Every available event in a `Calendar` or a `Schedule` in this field
     /// describes the time when this `ServiceResource` will be bookable.
     /// Note: If there are busy `CalendarEvent`s in the `Calendar` then the user
     /// will not be bookable during that time.
-    pub availibility: TimePlan,
-    /// List of `Calendar` ids that should be subtracted from the availibility
+    pub availability: TimePlan,
+    /// List of `Calendar` ids that should be subtracted from the availability
     /// time plan.
     pub busy: Vec<ID>,
     /// This `ServiceResource` will not be bookable this amount of *minutes*
@@ -37,23 +37,23 @@ pub struct ServiceResource {
     pub buffer: i64,
     /// Minimum amount of time in minutes before this user could receive any
     /// booking requests. That means that if a bookingslots query is made at
-    /// time T then this `ServiceResource` will not have any availaible
+    /// time T then this `ServiceResource` will not have any available
     /// bookingslots before at least T + `closest_booking_time`
     pub closest_booking_time: i64,
     /// Amount of time in minutes into the future after which the user can not receive any
     /// booking requests. This is useful to ensure that booking requests are not made multiple
     /// years into the future. That means that if a bookingslots query is made at
-    /// time T then this `ServiceResource` will not have any availaible
+    /// time T then this `ServiceResource` will not have any available
     /// bookingslots after T + `furthest_booking_time`
     pub furthest_booking_time: Option<i64>,
 }
 
 impl ServiceResource {
-    pub fn new(user_id: ID, availibility: TimePlan, busy: Vec<ID>) -> Self {
+    pub fn new(user_id: ID, availability: TimePlan, busy: Vec<ID>) -> Self {
         Self {
             id: Default::default(),
             user_id,
-            availibility,
+            availability,
             busy,
             buffer: 0,
             closest_booking_time: 0,
@@ -61,8 +61,8 @@ impl ServiceResource {
         }
     }
 
-    pub fn set_availibility(&mut self, availibility: TimePlan) {
-        self.availibility = availibility;
+    pub fn set_availability(&mut self, availability: TimePlan) {
+        self.availability = availability;
     }
 
     pub fn set_busy(&mut self, busy: Vec<ID>) {
@@ -82,7 +82,7 @@ impl ServiceResource {
     pub fn get_calendar_ids(&self) -> Vec<ID> {
         let mut calendar_ids = self.busy.clone();
 
-        if let TimePlan::Calendar(id) = &self.availibility {
+        if let TimePlan::Calendar(id) = &self.availability {
             calendar_ids.push(id.clone());
         }
 
@@ -90,14 +90,14 @@ impl ServiceResource {
     }
 
     pub fn get_schedule_id(&self) -> Option<ID> {
-        match &self.availibility {
+        match &self.availability {
             TimePlan::Schedule(id) => Some(id.clone()),
             _ => None,
         }
     }
 
     pub fn contains_calendar(&self, calendar_id: &ID) -> bool {
-        match &self.availibility {
+        match &self.availability {
             TimePlan::Calendar(id) if id == calendar_id => {
                 return true;
             }
@@ -108,9 +108,9 @@ impl ServiceResource {
     }
 
     pub fn remove_calendar(&mut self, calendar_id: &ID) {
-        match &self.availibility {
+        match &self.availability {
             TimePlan::Calendar(id) if id == calendar_id => {
-                self.availibility = TimePlan::Empty;
+                self.availability = TimePlan::Empty;
             }
             _ => (),
         }
@@ -119,13 +119,13 @@ impl ServiceResource {
     }
 
     pub fn contains_schedule(&self, schedule_id: &ID) -> bool {
-        matches!(&self.availibility, TimePlan::Schedule(id) if id == schedule_id)
+        matches!(&self.availability, TimePlan::Schedule(id) if id == schedule_id)
     }
 
     pub fn remove_schedule(&mut self, schedule_id: &ID) {
-        match &self.availibility {
+        match &self.availability {
             TimePlan::Schedule(id) if id == schedule_id => {
-                self.availibility = TimePlan::Empty;
+                self.availability = TimePlan::Empty;
             }
             _ => (),
         }

@@ -12,7 +12,7 @@ pub struct InMemoryScheduleRepo {
 impl InMemoryScheduleRepo {
     pub fn new() -> Self {
         Self {
-            schedules: std::sync::Mutex::new(vec![]),
+            schedules: std::sync::Mutex::new(Vec::new()),
         }
     }
 }
@@ -33,14 +33,18 @@ impl IScheduleRepo for InMemoryScheduleRepo {
         find(schedule_id, &self.schedules)
     }
 
-    async fn find_by_user(&self, user_id: &ID) -> Vec<Schedule> {
-        find_by(&self.schedules, |schedule| schedule.user_id == *user_id)
-    }
-
     async fn find_many(&self, schedule_ids: &[ID]) -> Vec<Schedule> {
         find_by(&self.schedules, |schedule| {
             schedule_ids.contains(&schedule.id)
         })
+    }
+
+    async fn find_by_user(&self, user_id: &ID) -> Vec<Schedule> {
+        find_by(&self.schedules, |schedule| schedule.user_id == *user_id)
+    }
+
+    async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<Schedule> {
+        find_by_metadata(&self.schedules, query)
     }
 
     async fn delete(&self, schedule_id: &ID) -> Option<Schedule> {
@@ -50,9 +54,5 @@ impl IScheduleRepo for InMemoryScheduleRepo {
     async fn delete_by_user(&self, user_id: &ID) -> anyhow::Result<DeleteResult> {
         let res = delete_by(&self.schedules, |schedule| schedule.user_id == *user_id);
         Ok(res)
-    }
-
-    async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<Schedule> {
-        find_by_metadata(&self.schedules, query)
     }
 }

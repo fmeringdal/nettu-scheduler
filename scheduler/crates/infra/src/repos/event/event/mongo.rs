@@ -39,6 +39,16 @@ impl IEventRepo for MongoEventRepo {
         mongo_repo::find::<_, CalendarEventMongo>(&self.collection, &oid).await
     }
 
+    async fn find_many(&self, event_ids: &[ID]) -> anyhow::Result<Vec<CalendarEvent>> {
+        let filter = doc! {
+            "_id": {
+                "$in": event_ids.iter().map(|id| id.inner_ref()).collect::<Vec<_>>()
+            }
+        };
+
+        mongo_repo::find_many_by::<_, CalendarEventMongo>(&self.collection, filter).await
+    }
+
     async fn find_by_calendar(
         &self,
         calendar_id: &ID,
@@ -64,16 +74,6 @@ impl IEventRepo for MongoEventRepo {
                 ]
             };
         }
-
-        mongo_repo::find_many_by::<_, CalendarEventMongo>(&self.collection, filter).await
-    }
-
-    async fn find_many(&self, event_ids: &[ID]) -> anyhow::Result<Vec<CalendarEvent>> {
-        let filter = doc! {
-            "_id": {
-                "$in": event_ids.iter().map(|id| id.inner_ref()).collect::<Vec<_>>()
-            }
-        };
 
         mongo_repo::find_many_by::<_, CalendarEventMongo>(&self.collection, filter).await
     }
@@ -128,7 +128,7 @@ struct CalendarEventMongo {
 }
 
 impl MongoDocument<CalendarEvent> for CalendarEventMongo {
-    fn to_domain(self) -> CalendarEvent {
+    fn into_domain(self) -> CalendarEvent {
         CalendarEvent {
             id: ID::from(self._id),
             start_ts: self.start_ts,

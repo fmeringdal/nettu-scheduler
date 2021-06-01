@@ -179,7 +179,7 @@ impl UseCase for UpdateEventUseCase {
         if let Some(start_ts) = start_ts {
             if e.start_ts != *start_ts {
                 e.start_ts = *start_ts;
-                e.exdates = vec![];
+                e.exdates = Vec::new();
                 start_or_duration_change = true;
             }
         }

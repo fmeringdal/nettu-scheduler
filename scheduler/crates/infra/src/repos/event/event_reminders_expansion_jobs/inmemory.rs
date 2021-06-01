@@ -10,7 +10,7 @@ pub struct InMemoryEventRemindersExpansionJobsRepo {
 impl InMemoryEventRemindersExpansionJobsRepo {
     pub fn new() -> Self {
         Self {
-            jobs: std::sync::Mutex::new(vec![]),
+            jobs: std::sync::Mutex::new(Vec::new()),
         }
     }
 }

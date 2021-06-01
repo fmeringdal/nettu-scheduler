@@ -41,16 +41,6 @@ impl IScheduleRepo for MongoScheduleRepo {
         mongo_repo::find::<_, ScheduleMongo>(&self.collection, &oid).await
     }
 
-    async fn find_by_user(&self, user_id: &ID) -> Vec<Schedule> {
-        let filter = doc! {
-            "user_id": user_id.inner_ref()
-        };
-        match mongo_repo::find_many_by::<_, ScheduleMongo>(&self.collection, filter).await {
-            Ok(cals) => cals,
-            Err(_) => vec![],
-        }
-    }
-
     async fn find_many(&self, schedule_ids: &[ID]) -> Vec<Schedule> {
         let filter = doc! {
             "_id": {
@@ -59,7 +49,17 @@ impl IScheduleRepo for MongoScheduleRepo {
         };
         match mongo_repo::find_many_by::<_, ScheduleMongo>(&self.collection, filter).await {
             Ok(cals) => cals,
-            Err(_) => vec![],
+            Err(_) => Vec::new(),
+        }
+    }
+
+    async fn find_by_user(&self, user_id: &ID) -> Vec<Schedule> {
+        let filter = doc! {
+            "user_id": user_id.inner_ref()
+        };
+        match mongo_repo::find_many_by::<_, ScheduleMongo>(&self.collection, filter).await {
+            Ok(cals) => cals,
+            Err(_) => Vec::new(),
         }
     }
 
@@ -91,7 +91,7 @@ struct ScheduleMongo {
 }
 
 impl MongoDocument<Schedule> for ScheduleMongo {
-    fn to_domain(self) -> Schedule {
+    fn into_domain(self) -> Schedule {
         Schedule {
             id: ID::from(self._id),
             user_id: ID::from(self.user_id),

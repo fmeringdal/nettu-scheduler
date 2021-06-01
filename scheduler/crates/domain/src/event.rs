@@ -51,7 +51,7 @@ pub struct CalendarEventReminder {
 }
 
 impl CalendarEventReminder {
-    // This isnt ideal at all, shouldnt be possible to construct
+    // This isn't ideal at all, shouldn't be possible to construct
     // this type of it is not valid, but for now it is good enough
     pub fn is_valid(&self) -> bool {
         self.minutes_before >= 0 && self.minutes_before <= 60 * 24
@@ -79,16 +79,16 @@ impl CalendarEvent {
 
     pub fn set_recurrence(
         &mut self,
-        reccurence: RRuleOptions,
+        recurrence: RRuleOptions,
         calendar_settings: &CalendarSettings,
         update_endtime: bool,
     ) -> bool {
-        let valid_recurrence = reccurence.is_valid(self.start_ts);
+        let valid_recurrence = recurrence.is_valid(self.start_ts);
         if !valid_recurrence {
             return false;
         }
 
-        self.recurrence = Some(reccurence);
+        self.recurrence = Some(recurrence);
         if update_endtime {
             return self.update_endtime(calendar_settings);
         }
@@ -144,8 +144,8 @@ impl CalendarEvent {
 
                 instances
                     .iter()
-                    .map(|occurence| {
-                        let start_ts = occurence.timestamp_millis();
+                    .map(|occurrence| {
+                        let start_ts = occurrence.timestamp_millis();
 
                         EventInstance {
                             start_ts,
@@ -157,7 +157,7 @@ impl CalendarEvent {
             }
             None => {
                 if self.exdates.contains(&self.start_ts) {
-                    vec![]
+                    Vec::new()
                 } else {
                     vec![EventInstance {
                         start_ts: self.start_ts,
@@ -173,7 +173,7 @@ impl CalendarEvent {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{shared::recurrence::WeekDay, RRuleFrequenzy};
+    use crate::{shared::recurrence::WeekDay, RRuleFrequency};
     use chrono_tz::UTC;
 
     #[test]
@@ -188,7 +188,7 @@ mod test {
             busy: false,
             duration: 1000 * 60 * 60,
             recurrence: Some(RRuleOptions {
-                freq: RRuleFrequenzy::Daily,
+                freq: RRuleFrequency::Daily,
                 interval: 1,
                 count: Some(4),
                 ..Default::default()
@@ -222,7 +222,7 @@ mod test {
             duration: 1000 * 60 * 60,
             recurrence: None,
             end_ts: 2521317491239,
-            exdates: vec![],
+            exdates: Vec::new(),
             calendar_id: Default::default(),
             user_id: Default::default(),
             account_id: Default::default(),
@@ -248,7 +248,7 @@ mod test {
             timezone: UTC,
             week_start: 0,
         };
-        let mut invalid_rrules = vec![];
+        let mut invalid_rrules = Vec::new();
         invalid_rrules.push(RRuleOptions {
             count: Some(1000), // too big count
             ..Default::default()
@@ -260,7 +260,7 @@ mod test {
         invalid_rrules.push(RRuleOptions {
             // Only bysetpos and no by*
             bysetpos: Some(vec![1]),
-            freq: RRuleFrequenzy::Monthly,
+            freq: RRuleFrequency::Monthly,
             ..Default::default()
         });
         for rrule in invalid_rrules {
@@ -270,7 +270,7 @@ mod test {
                 busy: false,
                 duration: 1000 * 60 * 60,
                 end_ts: 2521317491239,
-                exdates: vec![],
+                exdates: Vec::new(),
                 calendar_id: Default::default(),
                 user_id: Default::default(),
                 account_id: Default::default(),
@@ -292,7 +292,7 @@ mod test {
             timezone: UTC,
             week_start: 0,
         };
-        let mut valid_rrules = vec![];
+        let mut valid_rrules = Vec::new();
         let start_ts = 1521317491239;
         valid_rrules.push(Default::default());
         valid_rrules.push(RRuleOptions {
@@ -309,7 +309,7 @@ mod test {
         });
         valid_rrules.push(RRuleOptions {
             byweekday: Some(vec![WeekDay::new_nth(1, 1).unwrap()]),
-            freq: RRuleFrequenzy::Monthly,
+            freq: RRuleFrequency::Monthly,
             ..Default::default()
         });
         for rrule in valid_rrules {
@@ -319,7 +319,7 @@ mod test {
                 busy: false,
                 duration: 1000 * 60 * 60,
                 end_ts: 2521317491239,
-                exdates: vec![],
+                exdates: Vec::new(),
                 calendar_id: Default::default(),
                 account_id: Default::default(),
                 user_id: Default::default(),

@@ -35,7 +35,7 @@ pub fn find_by<T: Clone + Entity, F: FnMut(&T) -> bool>(
     mut compare: F,
 ) -> Vec<T> {
     let collection = collection.lock().unwrap();
-    let mut items = vec![];
+    let mut items = Vec::new();
     for item in collection.iter() {
         if compare(item) {
             items.push(item.clone());
@@ -69,7 +69,7 @@ pub fn find_and_delete_by<T: Clone + Entity, F: Fn(&T) -> bool>(
     compare: F,
 ) -> Vec<T> {
     let mut collection = collection.lock().unwrap();
-    let mut deleted_items = vec![];
+    let mut deleted_items = Vec::new();
 
     for i in (0..collection.len()).rev() {
         let index = collection.len() - i - 1;

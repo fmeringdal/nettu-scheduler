@@ -13,7 +13,7 @@ pub struct ServiceClient {
 pub struct AddServiceUserInput {
     pub service_id: ID,
     pub user_id: ID,
-    pub availibility: Option<TimePlan>,
+    pub availability: Option<TimePlan>,
     pub busy: Option<Vec<ID>>,
     pub buffer: Option<i64>,
     pub closest_booking_time: Option<i64>,
@@ -23,7 +23,7 @@ pub struct AddServiceUserInput {
 pub struct UpdateServiceUserInput {
     pub service_id: ID,
     pub user_id: ID,
-    pub availibility: Option<TimePlan>,
+    pub availability: Option<TimePlan>,
     pub busy: Option<Vec<ID>>,
     pub buffer: Option<i64>,
     pub closest_booking_time: Option<i64>,
@@ -35,7 +35,7 @@ pub struct RemoveServiceUserInput {
     pub user_id: ID,
 }
 
-pub struct GetSerivceBookingSlotsInput {
+pub struct GetServiceBookingSlotsInput {
     pub service_id: ID,
     pub iana_tz: Option<String>,
     pub duration: i64,
@@ -65,7 +65,7 @@ impl ServiceClient {
 
     pub async fn bookingslots(
         &self,
-        input: GetSerivceBookingSlotsInput,
+        input: GetServiceBookingSlotsInput,
     ) -> APIResponse<get_service_bookingslots::APIResponse> {
         let mut query_string = format!(
             "duration={}&interval={}&startDate={}&endDate={}",
@@ -143,7 +143,7 @@ impl ServiceClient {
         let user_id = input.user_id.clone();
         let service_id = input.service_id.clone();
         let body = update_service_user::RequestBody {
-            availibility: input.availibility,
+            availibility: input.availability,
             buffer: input.buffer,
             busy: input.busy,
             closest_booking_time: input.closest_booking_time,
@@ -166,7 +166,7 @@ impl ServiceClient {
         let service_id = input.service_id.clone();
         let body = add_user_to_service::RequestBody {
             user_id: input.user_id,
-            availibility: input.availibility,
+            availibility: input.availability,
             buffer: input.buffer,
             busy: input.busy,
             closest_booking_time: input.closest_booking_time,

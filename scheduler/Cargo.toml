@@ -23,7 +23,7 @@ nettu_scheduler_infra = { path = "./crates/infra" }
 actix-web = "3.3.2"
 tracing = "0.1.19"
 tracing-subscriber = { version = "0.2.12", features = ["registry", "env-filter"] }
-tracing-bunyan-formatter = "0.1.6"
+tracing-bunyan-formatter = "0.2.4"
 tracing-log = "0.1.1"
 
 [dev-dependencies]
