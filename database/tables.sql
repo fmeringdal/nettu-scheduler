@@ -27,10 +27,12 @@ CREATE TABLE metadata {
     "value" varchar(255) NOT NULL,
     user_id uuid,
     CHECK (
-        (group_id IS NOT NULL AND user_id IS NULL)
-        OR (group_id IS NULL AND user_id IS NOT NULL)
+        (group_id IS NOT NULL AND user_id IS NULL) OR 
+        (group_id IS NULL AND user_id IS NOT NULL)
     )
 }
+
+-- 5 tables with metadata
 
 CREATE TABLE metadata_users {
     id INTEGER PRIMARY KEY,
