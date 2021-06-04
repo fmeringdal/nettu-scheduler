@@ -6,8 +6,8 @@ mod service;
 mod shared;
 mod user;
 
-use account::{IAccountRepo, InMemoryAccountRepo, MongoAccountRepo};
-use calendar::{ICalendarRepo, InMemoryCalendarRepo, MongoCalendarRepo};
+use account::{IAccountRepo, InMemoryAccountRepo, MongoAccountRepo, PostgresAccountRepo};
+use calendar::{ICalendarRepo, InMemoryCalendarRepo, MongoCalendarRepo, PostgresCalendarRepo};
 use event::{
     IEventRemindersExpansionJobsRepo, IEventRepo, IReminderRepo,
     InMemoryEventRemindersExpansionJobsRepo, InMemoryEventRepo, InMemoryReminderRepo,
@@ -16,6 +16,7 @@ use event::{
 use mongodb::{options::ClientOptions, Client};
 use schedule::{IScheduleRepo, InMemoryScheduleRepo, MongoScheduleRepo};
 use service::{IServiceRepo, InMemoryServiceRepo, MongoServiceRepo};
+use sqlx::postgres::PgPoolOptions;
 use std::sync::Arc;
 use tracing::info;
 use user::{IUserRepo, InMemoryUserRepo, MongoUserRepo};
@@ -69,11 +70,19 @@ impl Repos {
         })
     }
 
-    pub fn create_inmemory() -> Self {
+    pub async fn create_inmemory() -> Self {
+        let pool = PgPoolOptions::new()
+            .max_connections(5)
+            .connect("postgresql://localhost:5432/tester")
+            .await
+            .expect("TO CONNECT TO POSTGRES");
+
         Self {
             event_repo: Arc::new(InMemoryEventRepo::new()),
-            calendar_repo: Arc::new(InMemoryCalendarRepo::new()),
-            account_repo: Arc::new(InMemoryAccountRepo::new()),
+            // calendar_repo: Arc::new(InMemoryCalendarRepo::new()),
+            calendar_repo: Arc::new(PostgresCalendarRepo::new(pool.clone())),
+            // account_repo: Arc::new(InMemoryAccountRepo::new()),
+            account_repo: Arc::new(PostgresAccountRepo::new(pool)),
             user_repo: Arc::new(InMemoryUserRepo::new()),
             service_repo: Arc::new(InMemoryServiceRepo::new()),
             schedule_repo: Arc::new(InMemoryScheduleRepo::new()),

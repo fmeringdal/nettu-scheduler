@@ -1,10 +1,12 @@
 mod inmemory;
 mod mongo;
+mod postgres;
 
 use crate::repos::shared::repo::DeleteResult;
 pub use inmemory::InMemoryCalendarRepo;
 pub use mongo::MongoCalendarRepo;
 use nettu_scheduler_domain::{Calendar, ID};
+pub use postgres::PostgresCalendarRepo;
 
 use super::shared::query_structs::MetadataFindQuery;
 
@@ -14,7 +16,7 @@ pub trait ICalendarRepo: Send + Sync {
     async fn save(&self, calendar: &Calendar) -> anyhow::Result<()>;
     async fn find(&self, calendar_id: &ID) -> Option<Calendar>;
     async fn find_by_user(&self, user_id: &ID) -> Vec<Calendar>;
-    async fn delete(&self, calendar_id: &ID) -> Option<Calendar>;
+    async fn delete(&self, calendar_id: &ID) -> anyhow::Result<()>;
     async fn delete_by_user(&self, user_id: &ID) -> anyhow::Result<DeleteResult>;
     async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<Calendar>;
 }
@@ -27,7 +29,7 @@ mod tests {
     /// Creates inmemory and mongo context when mongo is running,
     /// otherwise it will create two inmemory
     async fn create_contexts() -> Vec<NettuContext> {
-        vec![NettuContext::create_inmemory(), setup_context().await]
+        vec![NettuContext::create_inmemory().await, setup_context().await]
     }
 
     #[tokio::test]
@@ -48,8 +50,7 @@ mod tests {
 
             // Delete
             let res = ctx.repos.calendar_repo.delete(&calendar.id).await;
-            assert!(res.is_some());
-            assert!(res.unwrap().eq(&calendar));
+            assert!(res.is_ok());
 
             // Find
             assert!(ctx.repos.calendar_repo.find(&calendar.id).await.is_none());

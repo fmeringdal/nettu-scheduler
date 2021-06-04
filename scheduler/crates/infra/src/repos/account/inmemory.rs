@@ -46,15 +46,4 @@ impl IAccountRepo for InMemoryAccountRepo {
         }
         Some(accounts[0].clone())
     }
-
-    async fn find_by_webhook_url(&self, url: &str) -> Option<Account> {
-        let accounts = find_by(&self.accounts, |account| match &account.settings.webhook {
-            Some(webhook_settings) => webhook_settings.url == *url,
-            None => false,
-        });
-        if accounts.is_empty() {
-            return None;
-        }
-        Some(accounts[0].clone())
-    }
 }

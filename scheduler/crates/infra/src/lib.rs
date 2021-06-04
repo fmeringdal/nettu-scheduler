@@ -24,9 +24,9 @@ struct ContextParams {
 }
 
 impl NettuContext {
-    fn create_inmemory() -> Self {
+    async fn create_inmemory() -> Self {
         Self {
-            repos: Repos::create_inmemory(),
+            repos: Repos::create_inmemory().await,
             config: Config::new(),
             sys: Arc::new(RealSys {}),
         }
@@ -58,7 +58,7 @@ pub async fn setup_context() -> NettuContext {
     let inmemory_arg_set = args.len() > 1 && args[1].eq("inmemory");
     if inmemory_arg_set {
         info!("Inmemory argument provided. Going to use inmemory infra.");
-        return NettuContext::create_inmemory();
+        return NettuContext::create_inmemory().await;
     }
 
     if mongodb_connection_string.is_ok() && mongodb_db_name.is_ok() {
@@ -75,6 +75,6 @@ pub async fn setup_context() -> NettuContext {
             "{} and {} env vars was not provided. Going to use inmemory infra. This should only be used during testing!",
             MONGODB_CONNECTION_STRING, MONGODB_NAME
         );
-        NettuContext::create_inmemory()
+        NettuContext::create_inmemory().await
     }
 }

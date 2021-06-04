@@ -6,6 +6,7 @@ use crate::{
     Meta,
 };
 use chrono_tz::{Tz, UTC};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone)]
 pub struct Calendar {
@@ -25,7 +26,7 @@ impl Meta for Calendar {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CalendarSettings {
     pub week_start: isize,
     pub timezone: Tz,

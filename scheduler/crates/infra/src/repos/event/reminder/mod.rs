@@ -1,5 +1,6 @@
 mod inmemory;
 mod mongo;
+mod postgres;
 
 pub use inmemory::InMemoryReminderRepo;
 pub use mongo::MongoReminderRepo;

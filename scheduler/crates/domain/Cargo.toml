@@ -13,7 +13,7 @@ nettu_scheduler_utils = { path = "../utils", version = "0.1.0" }
 serde = { version = "1.0", features = ["derive"] }
 rrule = "0.5.7"
 chrono = { version = "0.4.19", features = ["serde"] }
-chrono-tz = "0.5.3"
+chrono-tz = { version = "0.5.3", features = ["serde"] }
 anyhow = "1.0.0"
 url = "2.2.0"
 jsonwebtoken = "7"

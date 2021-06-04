@@ -51,9 +51,9 @@
 // ReminderMongo 
 {
     id: uuid,
-    remind_at: i64,
     event_id: uuid,
     account_id: uuid,
+    remind_at: i64,
     priority: i64,
 }
 

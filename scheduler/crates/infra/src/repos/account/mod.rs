@@ -1,9 +1,11 @@
 mod inmemory;
 mod mongo;
+mod postgres;
 
 pub use inmemory::InMemoryAccountRepo;
 pub use mongo::MongoAccountRepo;
 use nettu_scheduler_domain::Account;
+pub use postgres::PostgresAccountRepo;
 
 use nettu_scheduler_domain::ID;
 
@@ -15,27 +17,28 @@ pub trait IAccountRepo: Send + Sync {
     async fn find_many(&self, account_ids: &[ID]) -> anyhow::Result<Vec<Account>>;
     async fn delete(&self, account_id: &ID) -> Option<Account>;
     async fn find_by_apikey(&self, api_key: &str) -> Option<Account>;
-    async fn find_by_webhook_url(&self, url: &str) -> Option<Account>;
 }
 
 #[cfg(test)]
 mod tests {
     use crate::{setup_context, NettuContext};
-    use nettu_scheduler_domain::{Entity, PEMKey};
+    use nettu_scheduler_domain::{Account, Entity, PEMKey};
 
     /// Creates inmemory and mongo context when mongo is running,
     /// otherwise it will create two inmemory
     async fn create_contexts() -> Vec<NettuContext> {
-        vec![NettuContext::create_inmemory(), setup_context().await]
+        vec![NettuContext::create_inmemory().await, setup_context().await]
     }
 
     #[tokio::test]
     async fn create_and_delete() {
         for ctx in create_contexts().await {
-            let account = Default::default();
+            let account = Account::default();
 
             // Insert
-            assert!(ctx.repos.account_repo.insert(&account).await.is_ok());
+            let res = ctx.repos.account_repo.find_many(&vec![]).await;
+            println!("Res {:?}", res);
+            // assert!(ctx.repos.account_repo.insert(&account).await.is_ok());
 
             // Different find methods
             let res = ctx.repos.account_repo.find(&account.id).await.unwrap();

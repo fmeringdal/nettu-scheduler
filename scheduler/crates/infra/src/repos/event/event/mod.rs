@@ -1,5 +1,6 @@
 mod inmemory;
 mod mongo;
+mod postgres;
 
 use crate::repos::shared::{query_structs::MetadataFindQuery, repo::DeleteResult};
 pub use inmemory::InMemoryEventRepo;
@@ -31,7 +32,7 @@ mod tests {
     /// Creates inmemory and mongo context when mongo is running,
     /// otherwise it will create two inmemory
     async fn create_contexts() -> Vec<NettuContext> {
-        vec![NettuContext::create_inmemory(), setup_context().await]
+        vec![NettuContext::create_inmemory().await, setup_context().await]
     }
 
     fn generate_default_event() -> CalendarEvent {

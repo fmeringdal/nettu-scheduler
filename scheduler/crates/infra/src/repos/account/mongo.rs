@@ -61,18 +61,6 @@ impl IAccountRepo for MongoAccountRepo {
         };
         mongo_repo::find_one_by::<_, AccountMongo>(&self.collection, filter).await
     }
-
-    async fn find_by_webhook_url(&self, url: &str) -> Option<Account> {
-        let filter = doc! {
-            "attributes": {
-                "$elemMatch": {
-                    "key": "webhook_url",
-                    "value": url
-                }
-            },
-        };
-        mongo_repo::find_one_by::<_, AccountMongo>(&self.collection, filter).await
-    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]

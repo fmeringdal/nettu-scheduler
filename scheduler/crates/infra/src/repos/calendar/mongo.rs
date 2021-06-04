@@ -46,9 +46,10 @@ impl ICalendarRepo for MongoCalendarRepo {
         }
     }
 
-    async fn delete(&self, calendar_id: &ID) -> Option<Calendar> {
+    async fn delete(&self, calendar_id: &ID) -> anyhow::Result<()> {
         let oid = calendar_id.inner_ref();
-        mongo_repo::delete::<_, CalendarMongo>(&self.collection, &oid).await
+        mongo_repo::delete::<_, CalendarMongo>(&self.collection, &oid).await;
+        Ok(())
     }
 
     async fn delete_by_user(&self, user_id: &ID) -> anyhow::Result<DeleteResult> {

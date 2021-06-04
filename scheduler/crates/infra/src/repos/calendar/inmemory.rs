@@ -36,8 +36,11 @@ impl ICalendarRepo for InMemoryCalendarRepo {
         find_by(&self.calendars, |cal| cal.user_id == *user_id)
     }
 
-    async fn delete(&self, calendar_id: &ID) -> Option<Calendar> {
-        delete(calendar_id, &self.calendars)
+    async fn delete(&self, calendar_id: &ID) -> anyhow::Result<()> {
+        match delete(calendar_id, &self.calendars) {
+            Some(_) => Ok(()),
+            None => Err(anyhow::Error::msg("Unable to delete calendar")),
+        }
     }
 
     async fn delete_by_user(&self, user_id: &ID) -> anyhow::Result<DeleteResult> {
