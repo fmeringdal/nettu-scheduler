@@ -31,20 +31,24 @@ pub struct ServiceUserRaw {
 impl Into<ServiceResource> for ServiceUserRaw {
     fn into(self) -> ServiceResource {
         let availability = if let Some(calendar) = self.available_calendar_uid {
-            TimePlan::Calendar(Default::default())
+            TimePlan::Calendar(calendar.into())
         } else if let Some(schedule) = self.available_schedule_uid {
-            TimePlan::Schedule(Default::default())
+            TimePlan::Schedule(schedule.into())
         } else {
             TimePlan::Empty
         };
 
         ServiceResource {
-            id: Default::default(),
-            user_id: Default::default(),
-            service_id: Default::default(),
+            user_id: self.user_uid.into(),
+            service_id: self.service_uid.into(),
             availability,
             buffer: self.buffer,
-            busy: vec![Default::default()],
+            busy: self
+                .busy
+                .unwrap_or_default()
+                .into_iter()
+                .map(|uid| uid.into())
+                .collect(),
             closest_booking_time: self.closest_booking_time,
             furthest_booking_time: self.furthest_booking_time,
         }
@@ -54,19 +58,21 @@ impl Into<ServiceResource> for ServiceUserRaw {
 #[async_trait::async_trait]
 impl IServiceUserRepo for PostgresServiceUserRepo {
     async fn insert(&self, user: &ServiceResource) -> anyhow::Result<()> {
-        let id = Uuid::new_v4();
-        let id2 = Uuid::new_v4();
-        let id3 = Uuid::new_v4();
-        let id4 = Uuid::new_v4();
+        let (available_calendar_id, available_schedule_id) = match &user.availability {
+            TimePlan::Calendar(id) => (Some(id.inner_ref()), None),
+            TimePlan::Schedule(id) => (None, Some(id.inner_ref())),
+            _ => (None, None),
+        };
+
         sqlx::query!(
             r#"
             INSERT INTO service_users(service_uid, user_uid, available_calendar_uid, available_schedule_uid, buffer, closest_booking_time, furthest_booking_time)
             VALUES($1, $2, $3, $4, $5, $6, $7)
             "#,
-            id,
-            id2,
-            id3,
-            id4,
+            user.service_id.inner_ref(),
+            user.user_id.inner_ref(),
+            available_calendar_id,
+            available_schedule_id,
             user.buffer,
             user.closest_booking_time,
             user.furthest_booking_time
@@ -80,9 +86,9 @@ impl IServiceUserRepo for PostgresServiceUserRepo {
             INSERT INTO service_user_busy_calendars(service_uid, user_uid, calendar_uid)
             VALUES($1, $2, $3)
             "#,
-                id,
-                id2,
-                id3,
+                user.service_id.inner_ref(),
+                user.user_id.inner_ref(),
+                busy.inner_ref()
             )
             .execute(&self.pool)
             .await?;
@@ -92,10 +98,11 @@ impl IServiceUserRepo for PostgresServiceUserRepo {
     }
 
     async fn save(&self, user: &ServiceResource) -> anyhow::Result<()> {
-        let id = Uuid::new_v4();
-        let id2 = Uuid::new_v4();
-        let id3 = Uuid::new_v4();
-        let id4 = Uuid::new_v4();
+        let (available_calendar_id, available_schedule_id) = match &user.availability {
+            TimePlan::Calendar(id) => (Some(id.inner_ref()), None),
+            TimePlan::Schedule(id) => (None, Some(id.inner_ref())),
+            _ => (None, None),
+        };
         sqlx::query!(
             r#"
             UPDATE service_users SET 
@@ -106,10 +113,10 @@ impl IServiceUserRepo for PostgresServiceUserRepo {
                 furthest_booking_time = $7
             WHERE service_uid = $1 AND user_uid = $2
             "#,
-            id,
-            id2,
-            id3,
-            id4,
+            user.service_id.inner_ref(),
+            user.user_id.inner_ref(),
+            available_calendar_id,
+            available_schedule_id,
             user.buffer,
             user.closest_booking_time,
             user.furthest_booking_time
@@ -124,9 +131,9 @@ impl IServiceUserRepo for PostgresServiceUserRepo {
             VALUES($1, $2, $3)
             ON CONFLICT DO NOTHING
             "#,
-                id,
-                id2,
-                id3,
+                user.service_id.inner_ref(),
+                user.user_id.inner_ref(),
+                busy.inner_ref()
             )
             .execute(&self.pool)
             .await?;
@@ -136,8 +143,6 @@ impl IServiceUserRepo for PostgresServiceUserRepo {
     }
 
     async fn find(&self, service_id: &ID, user_id: &ID) -> Option<ServiceResource> {
-        let id = Uuid::new_v4();
-        let id2 = Uuid::new_v4();
         let schedule: ServiceUserRaw = match sqlx::query_as!(
             ServiceUserRaw,
             r#"
@@ -147,8 +152,8 @@ impl IServiceUserRepo for PostgresServiceUserRepo {
             WHERE su.service_uid = $1 AND su.user_uid = $2
             GROUP BY su.service_uid, su.user_uid
             "#,
-            id,
-            id2
+            service_id.inner_ref(),
+            user_id.inner_ref()
         )
         .fetch_one(&self.pool)
         .await
@@ -160,19 +165,17 @@ impl IServiceUserRepo for PostgresServiceUserRepo {
     }
 
     async fn delete(&self, service_id: &ID, user_id: &ID) -> anyhow::Result<()> {
-        let id = Uuid::new_v4();
-        let id2 = Uuid::new_v4();
         sqlx::query!(
             r#"
             DELETE FROM service_users AS s
             WHERE s.service_uid = $1 AND
             s.user_uid = $2
             "#,
-            id,
-            id2
+            service_id.inner_ref(),
+            user_id.inner_ref()
         )
         .execute(&self.pool)
-        .await;
+        .await?;
         Ok(())
     }
 }

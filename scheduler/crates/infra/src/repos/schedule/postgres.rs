@@ -46,9 +46,9 @@ fn to_metadata(metadata: Metadata) -> Vec<String> {
 impl Into<Schedule> for ScheduleRaw {
     fn into(self) -> Schedule {
         Schedule {
-            id: Default::default(),
-            user_id: Default::default(),
-            account_id: Default::default(),
+            id: self.schedule_uid.into(),
+            user_id: self.user_uid.into(),
+            account_id: self.account_uid.into(),
             rules: serde_json::from_value(self.rules).unwrap_or_default(),
             timezone: self.timezone.parse().unwrap_or("UTC".parse().unwrap()),
             metadata: extract_metadata(self.metadata),
@@ -59,18 +59,15 @@ impl Into<Schedule> for ScheduleRaw {
 #[async_trait::async_trait]
 impl IScheduleRepo for PostgresScheduleRepo {
     async fn insert(&self, schedule: &Schedule) -> anyhow::Result<()> {
-        let id = Uuid::new_v4();
-        let id2 = Uuid::new_v4();
-        let id3 = Uuid::new_v4();
         let metadata = to_metadata(schedule.metadata.clone());
         sqlx::query!(
             r#"
             INSERT INTO schedules(schedule_uid, user_uid, account_uid, rules, timezone, metadata)
             VALUES($1, $2, $3, $4, $5, $6)
             "#,
-            id,
-            id2,
-            id3,
+            schedule.id.inner_ref(),
+            schedule.user_id.inner_ref(),
+            schedule.account_id.inner_ref(),
             Json(&schedule.rules) as _,
             schedule.timezone.to_string(),
             &metadata
@@ -82,9 +79,6 @@ impl IScheduleRepo for PostgresScheduleRepo {
     }
 
     async fn save(&self, schedule: &Schedule) -> anyhow::Result<()> {
-        let id = Uuid::new_v4();
-        let id2 = Uuid::new_v4();
-        let id3 = Uuid::new_v4();
         let metadata = to_metadata(schedule.metadata.clone());
         sqlx::query!(
             r#"
@@ -96,9 +90,9 @@ impl IScheduleRepo for PostgresScheduleRepo {
             metadata = $6
             WHERE schedule_uid = $1
             "#,
-            id,
-            id2,
-            id3,
+            schedule.id.inner_ref(),
+            schedule.user_id.inner_ref(),
+            schedule.account_id.inner_ref(),
             Json(&schedule.rules) as _,
             schedule.timezone.to_string(),
             &metadata
@@ -110,14 +104,13 @@ impl IScheduleRepo for PostgresScheduleRepo {
     }
 
     async fn find(&self, schedule_id: &ID) -> Option<Schedule> {
-        let id = Uuid::new_v4();
         let schedule: ScheduleRaw = match sqlx::query_as!(
             ScheduleRaw,
             r#"
             SELECT * FROM schedules AS s
             WHERE s.schedule_uid = $1
             "#,
-            id,
+            schedule_id.inner_ref(),
         )
         .fetch_one(&self.pool)
         .await
@@ -129,7 +122,10 @@ impl IScheduleRepo for PostgresScheduleRepo {
     }
 
     async fn find_many(&self, schedule_ids: &[ID]) -> Vec<Schedule> {
-        let ids = vec![Uuid::new_v4()];
+        let ids = schedule_ids
+            .iter()
+            .map(|id| id.inner_ref().clone())
+            .collect::<Vec<_>>();
         sqlx::query_as!(
             ScheduleRaw,
             r#"
@@ -147,14 +143,13 @@ impl IScheduleRepo for PostgresScheduleRepo {
     }
 
     async fn find_by_user(&self, user_id: &ID) -> Vec<Schedule> {
-        let id = Uuid::new_v4();
         let schedules: Vec<ScheduleRaw> = sqlx::query_as!(
             ScheduleRaw,
             r#"
             SELECT * FROM schedules AS s
             WHERE s.user_uid = $1
             "#,
-            id,
+            user_id.inner_ref(),
         )
         .fetch_all(&self.pool)
         .await

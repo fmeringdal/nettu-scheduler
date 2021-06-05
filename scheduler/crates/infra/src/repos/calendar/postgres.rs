@@ -45,9 +45,9 @@ fn to_metadata(metadata: Metadata) -> Vec<String> {
 impl Into<Calendar> for CalendarRaw {
     fn into(self) -> Calendar {
         Calendar {
-            id: Default::default(),
-            user_id: Default::default(),
-            account_id: Default::default(),
+            id: self.calendar_uid.into(),
+            user_id: self.user_uid.into(),
+            account_id: self.account_uid.into(),
             settings: serde_json::from_value(self.settings).unwrap(),
             metadata: extract_metadata(self.metadata),
         }
@@ -57,18 +57,15 @@ impl Into<Calendar> for CalendarRaw {
 #[async_trait::async_trait]
 impl ICalendarRepo for PostgresCalendarRepo {
     async fn insert(&self, calendar: &Calendar) -> anyhow::Result<()> {
-        let id = Uuid::new_v4();
-        let id2 = Uuid::new_v4();
-        let id3 = Uuid::new_v4();
         let metadata = to_metadata(calendar.metadata.clone());
         sqlx::query!(
             r#"
             INSERT INTO calendars(calendar_uid, user_uid, account_uid, settings, metadata)
             VALUES($1, $2, $3, $4, $5)
             "#,
-            id,
-            id2,
-            id3,
+            calendar.id.inner_ref(),
+            calendar.user_id.inner_ref(),
+            calendar.account_id.inner_ref(),
             Json(&calendar.settings) as _,
             &metadata
         )
@@ -79,9 +76,6 @@ impl ICalendarRepo for PostgresCalendarRepo {
     }
 
     async fn save(&self, calendar: &Calendar) -> anyhow::Result<()> {
-        let id = Uuid::new_v4();
-        let id2 = Uuid::new_v4();
-        let id3 = Uuid::new_v4();
         let metadata = to_metadata(calendar.metadata.clone());
         sqlx::query!(
             r#"
@@ -92,9 +86,9 @@ impl ICalendarRepo for PostgresCalendarRepo {
             metadata = $5
             WHERE calendar_uid = $1
             "#,
-            id,
-            id2,
-            id3,
+            calendar.id.inner_ref(),
+            calendar.user_id.inner_ref(),
+            calendar.account_id.inner_ref(),
             Json(&calendar.settings) as _,
             &metadata
         )
@@ -105,14 +99,13 @@ impl ICalendarRepo for PostgresCalendarRepo {
     }
 
     async fn find(&self, calendar_id: &ID) -> Option<Calendar> {
-        let id = Uuid::new_v4();
         let calendar: CalendarRaw = match sqlx::query_as!(
             CalendarRaw,
             r#"
             SELECT * FROM calendars AS c
             WHERE c.calendar_uid = $1
             "#,
-            id,
+            calendar_id.inner_ref(),
         )
         .fetch_one(&self.pool)
         .await
@@ -124,14 +117,13 @@ impl ICalendarRepo for PostgresCalendarRepo {
     }
 
     async fn find_by_user(&self, user_id: &ID) -> Vec<Calendar> {
-        let id = Uuid::new_v4();
         let calendars: Vec<CalendarRaw> = sqlx::query_as!(
             CalendarRaw,
             r#"
             SELECT * FROM calendars AS c
             WHERE c.user_uid = $1
             "#,
-            id,
+            user_id.inner_ref(),
         )
         .fetch_all(&self.pool)
         .await
@@ -141,13 +133,12 @@ impl ICalendarRepo for PostgresCalendarRepo {
     }
 
     async fn delete(&self, calendar_id: &ID) -> anyhow::Result<()> {
-        let id = Uuid::new_v4();
         sqlx::query!(
             r#"
             DELETE FROM calendars AS c
             WHERE c.calendar_uid = $1
             "#,
-            id,
+            calendar_id.inner_ref(),
         )
         .execute(&self.pool)
         .await
@@ -156,7 +147,6 @@ impl ICalendarRepo for PostgresCalendarRepo {
     }
 
     async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<Calendar> {
-        let account_id = Uuid::new_v4();
         let key = format!("{}_{}", query.metadata.key, query.metadata.value);
 
         let calendars: Vec<CalendarRaw> = sqlx::query_as!(
@@ -167,7 +157,7 @@ impl ICalendarRepo for PostgresCalendarRepo {
             LIMIT $3
             OFFSET $4
             "#,
-            account_id,
+            query.account_id.inner_ref(),
             key,
             query.limit as i64,
             query.skip as i64,

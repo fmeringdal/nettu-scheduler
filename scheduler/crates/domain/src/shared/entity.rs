@@ -34,6 +34,17 @@ impl ID {
     }
 }
 
+impl Into<ID> for Uuid {
+    fn into(self) -> ID {
+        ID::from(self)
+    }
+}
+impl Into<Uuid> for ID {
+    fn into(self) -> Uuid {
+        self.inner()
+    }
+}
+
 impl Default for ID {
     fn default() -> Self {
         Self::new()

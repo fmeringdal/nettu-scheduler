@@ -28,7 +28,7 @@ pub struct AccountRaw {
 impl Into<Account> for AccountRaw {
     fn into(self) -> Account {
         Account {
-            id: Default::default(),
+            id: self.account_uid.into(),
             secret_api_key: self.secret_api_key,
             public_jwt_key: self.public_jwt_key.map(|key| PEMKey::new(key).unwrap()),
             settings: serde_json::from_value(self.settings).unwrap(),

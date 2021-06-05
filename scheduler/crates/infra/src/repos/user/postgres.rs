@@ -40,8 +40,8 @@ fn to_metadata(metadata: Metadata) -> Vec<String> {
 impl Into<User> for UserRaw {
     fn into(self) -> User {
         User {
-            id: Default::default(),
-            account_id: Default::default(),
+            id: self.user_uid.into(),
+            account_id: self.account_uid.into(),
             metadata: extract_metadata(self.metadata),
         }
     }
@@ -50,16 +50,14 @@ impl Into<User> for UserRaw {
 #[async_trait::async_trait]
 impl IUserRepo for PostgresUserRepo {
     async fn insert(&self, user: &User) -> anyhow::Result<()> {
-        let id = Uuid::new_v4();
-        let id2 = Uuid::new_v4();
         let metadata = to_metadata(user.metadata.clone());
         sqlx::query!(
             r#"
             INSERT INTO users(user_uid, account_uid, metadata)
             VALUES($1, $2, $3)
             "#,
-            id,
-            id2,
+            user.id.inner_ref(),
+            user.account_id.inner_ref(),
             &metadata
         )
         .execute(&self.pool)
@@ -69,8 +67,6 @@ impl IUserRepo for PostgresUserRepo {
     }
 
     async fn save(&self, user: &User) -> anyhow::Result<()> {
-        let id = Uuid::new_v4();
-        let id2 = Uuid::new_v4();
         let metadata = to_metadata(user.metadata.clone());
         sqlx::query!(
             r#"
@@ -79,8 +75,8 @@ impl IUserRepo for PostgresUserRepo {
             metadata = $3
             WHERE user_uid = $1
             "#,
-            id,
-            id2,
+            user.id.inner_ref(),
+            user.account_id.inner_ref(),
             &metadata
         )
         .execute(&self.pool)
@@ -90,7 +86,6 @@ impl IUserRepo for PostgresUserRepo {
     }
 
     async fn delete(&self, user_id: &ID) -> Option<User> {
-        let id = Uuid::new_v4();
         match sqlx::query_as!(
             UserRaw,
             r#"
@@ -98,7 +93,7 @@ impl IUserRepo for PostgresUserRepo {
             WHERE u.user_uid = $1
             RETURNING *
             "#,
-            id,
+            user_id.inner_ref(),
         )
         .fetch_one(&self.pool)
         .await
@@ -109,14 +104,13 @@ impl IUserRepo for PostgresUserRepo {
     }
 
     async fn find(&self, user_id: &ID) -> Option<User> {
-        let id = Uuid::new_v4();
         let user: UserRaw = match sqlx::query_as!(
             UserRaw,
             r#"
             SELECT * FROM users AS u
             WHERE u.user_uid = $1
             "#,
-            id,
+            user_id.inner_ref(),
         )
         .fetch_one(&self.pool)
         .await
@@ -128,8 +122,6 @@ impl IUserRepo for PostgresUserRepo {
     }
 
     async fn find_by_account_id(&self, user_id: &ID, account_id: &ID) -> Option<User> {
-        let id = Uuid::new_v4();
-        let account_id = Uuid::new_v4();
         let user: UserRaw = match sqlx::query_as!(
             UserRaw,
             r#"
@@ -137,8 +129,8 @@ impl IUserRepo for PostgresUserRepo {
             WHERE u.user_uid = $1 AND
             u.account_uid = $2
             "#,
-            id,
-            account_id
+            user_id.inner_ref(),
+            account_id.inner_ref()
         )
         .fetch_one(&self.pool)
         .await
@@ -150,7 +142,6 @@ impl IUserRepo for PostgresUserRepo {
     }
 
     async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<User> {
-        let account_id = Uuid::new_v4();
         let key = format!("{}_{}", query.metadata.key, query.metadata.value);
 
         let users: Vec<UserRaw> = sqlx::query_as!(
@@ -161,7 +152,7 @@ impl IUserRepo for PostgresUserRepo {
             LIMIT $3
             OFFSET $4
             "#,
-            account_id,
+            query.account_id.inner_ref(),
             key,
             query.limit as i64,
             query.skip as i64,

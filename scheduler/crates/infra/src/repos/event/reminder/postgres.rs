@@ -27,9 +27,9 @@ struct ReminderRaw {
 impl Into<Reminder> for ReminderRaw {
     fn into(self) -> Reminder {
         Reminder {
-            id: Default::default(),
-            event_id: Default::default(),
-            account_id: Default::default(),
+            id: self.reminder_uid.into(),
+            event_id: self.event_uid.into(),
+            account_id: self.account_uid.into(),
             remind_at: self.remind_at,
             priority: self.priority as i64,
         }
@@ -40,18 +40,15 @@ impl Into<Reminder> for ReminderRaw {
 impl IReminderRepo for PostgresReminderRepo {
     async fn bulk_insert(&self, reminders: &[Reminder]) -> anyhow::Result<()> {
         for reminder in reminders {
-            let id = Uuid::new_v4();
-            let event_id = Uuid::new_v4();
-            let account_id = Uuid::new_v4();
             sqlx::query!(
                 r#"
             INSERT INTO reminders 
             (reminder_uid, event_uid, account_uid, remind_at, priority)
             VALUES($1, $2, $3, $4, $5)
             "#,
-                id,
-                event_id,
-                account_id,
+                reminder.id.inner_ref(),
+                reminder.event_id.inner_ref(),
+                reminder.account_id.inner_ref(),
                 reminder.remind_at,
                 reminder.priority as i16
             )
@@ -80,7 +77,10 @@ impl IReminderRepo for PostgresReminderRepo {
     }
 
     async fn delete_by_events(&self, event_ids: &[ID]) -> anyhow::Result<DeleteResult> {
-        let ids = vec![Uuid::new_v4()];
+        let ids = event_ids
+            .iter()
+            .map(|id| id.inner_ref().clone())
+            .collect::<Vec<_>>();
         let res = sqlx::query!(
             r#"
             DELETE FROM reminders AS r
@@ -96,7 +96,6 @@ impl IReminderRepo for PostgresReminderRepo {
     }
 
     async fn find_by_event_and_priority(&self, event_id: &ID, priority: i64) -> Option<Reminder> {
-        let event_id = Uuid::new_v4();
         match sqlx::query_as!(
             ReminderRaw,
             r#"
@@ -104,7 +103,7 @@ impl IReminderRepo for PostgresReminderRepo {
             WHERE r.event_uid = $1 AND
             r.priority = $2
             "#,
-            event_id,
+            event_id.inner_ref(),
             priority as i16
         )
         .fetch_one(&self.pool)

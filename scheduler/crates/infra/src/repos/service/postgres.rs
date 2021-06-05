@@ -48,8 +48,8 @@ fn to_metadata(metadata: &Metadata) -> Vec<String> {
 impl Into<Service> for ServiceRaw {
     fn into(self) -> Service {
         Service {
-            id: Default::default(),
-            account_id: Default::default(),
+            id: self.service_uid.into(),
+            account_id: self.account_uid.into(),
             metadata: extract_metadata(self.metadata),
         }
     }
@@ -58,8 +58,8 @@ impl Into<Service> for ServiceRaw {
 impl Into<Service> for ServiceWithUsersRaw {
     fn into(self) -> Service {
         Service {
-            id: Default::default(),
-            account_id: Default::default(),
+            id: self.service_uid.into(),
+            account_id: self.account_uid.into(),
             metadata: extract_metadata(self.metadata),
         }
     }
@@ -68,15 +68,13 @@ impl Into<Service> for ServiceWithUsersRaw {
 #[async_trait::async_trait]
 impl IServiceRepo for PostgresServiceRepo {
     async fn insert(&self, service: &Service) -> anyhow::Result<()> {
-        let id = Uuid::new_v4();
-        let id2 = Uuid::new_v4();
         sqlx::query!(
             r#"
             INSERT INTO services(service_uid, account_uid, metadata)
             VALUES($1, $2, $3)
             "#,
-            id,
-            id2,
+            service.id.inner_ref(),
+            service.account_id.inner_ref(),
             &to_metadata(&service.metadata)
         )
         .execute(&self.pool)
@@ -86,15 +84,13 @@ impl IServiceRepo for PostgresServiceRepo {
     }
 
     async fn save(&self, service: &Service) -> anyhow::Result<()> {
-        let id = Uuid::new_v4();
-        let id2 = Uuid::new_v4();
         sqlx::query!(
             r#"
             UPDATE services SET 
                 metadata = $2 
             WHERE service_uid = $1 
             "#,
-            id,
+            service.id.inner_ref(),
             &to_metadata(&service.metadata)
         )
         .execute(&self.pool)
@@ -104,7 +100,6 @@ impl IServiceRepo for PostgresServiceRepo {
     }
 
     async fn find(&self, service_id: &ID) -> Option<Service> {
-        let id = Uuid::new_v4();
         let schedule: ServiceWithUsersRaw = match sqlx::query_as(
             r#"
             SELECT s.*, jsonb_agg((u.*)) AS users FROM services AS s 
@@ -119,7 +114,7 @@ impl IServiceRepo for PostgresServiceRepo {
             GROUP BY s.service_uid
             "#,
         )
-        .bind(id)
+        .bind(service_id.inner_ref())
         .fetch_one(&self.pool)
         .await
         {
@@ -130,13 +125,12 @@ impl IServiceRepo for PostgresServiceRepo {
     }
 
     async fn delete(&self, service_id: &ID) -> anyhow::Result<()> {
-        let id = Uuid::new_v4();
         sqlx::query!(
             r#"
             DELETE FROM services AS s
             WHERE s.service_uid = $1 
             "#,
-            id,
+            service_id.inner_ref(),
         )
         .execute(&self.pool)
         .await;
@@ -144,7 +138,6 @@ impl IServiceRepo for PostgresServiceRepo {
     }
 
     async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<Service> {
-        let account_id = Uuid::new_v4();
         let key = format!("{}_{}", query.metadata.key, query.metadata.value);
 
         let services: Vec<ServiceRaw> = sqlx::query_as!(
@@ -155,7 +148,7 @@ impl IServiceRepo for PostgresServiceRepo {
             LIMIT $3
             OFFSET $4
             "#,
-            account_id,
+            query.account_id.inner_ref(),
             key,
             query.limit as i64,
             query.skip as i64,

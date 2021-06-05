@@ -19,7 +19,6 @@ pub enum TimePlan {
 /// A bookable `User` registered on a `Service`
 #[derive(Clone, Debug, Serialize)]
 pub struct ServiceResource {
-    pub id: ID,
     /// Id of the `User` registered on this `Service`
     pub user_id: ID,
     /// Id of the `Service` this user is reqistered on
@@ -53,7 +52,6 @@ pub struct ServiceResource {
 impl ServiceResource {
     pub fn new(user_id: ID, service_id: ID, availability: TimePlan, busy: Vec<ID>) -> Self {
         Self {
-            id: Default::default(),
             service_id,
             user_id,
             availability,

@@ -1,6 +1,6 @@
 use super::IEventRemindersExpansionJobsRepo;
-use crate::repos::shared::{query_structs::MetadataFindQuery, repo::DeleteResult};
-use nettu_scheduler_domain::{Calendar, CalendarEvent, EventRemindersExpansionJob, Metadata, ID};
+use crate::repos::shared::repo::DeleteResult;
+use nettu_scheduler_domain::{EventRemindersExpansionJob, ID};
 use sqlx::{types::Uuid, Done, FromRow, PgPool};
 
 pub struct PostgresEventReminderExpansionJobsRepo {
@@ -23,8 +23,8 @@ struct JobRaw {
 impl Into<EventRemindersExpansionJob> for JobRaw {
     fn into(self) -> EventRemindersExpansionJob {
         EventRemindersExpansionJob {
-            id: Default::default(),
-            event_id: Default::default(),
+            id: self.job_uid.into(),
+            event_id: self.event_uid.into(),
             timestamp: self.timestamp,
         }
     }
@@ -34,16 +34,14 @@ impl Into<EventRemindersExpansionJob> for JobRaw {
 impl IEventRemindersExpansionJobsRepo for PostgresEventReminderExpansionJobsRepo {
     async fn bulk_insert(&self, jobs: &[EventRemindersExpansionJob]) -> anyhow::Result<()> {
         for job in jobs {
-            let id = Uuid::new_v4();
-            let event_id = Uuid::new_v4();
             sqlx::query!(
                 r#"
             INSERT INTO calendar_event_reminder_expansion_jobs 
             (job_uid, event_uid, timestamp)
             VALUES($1, $2, $3)
             "#,
-                id,
-                event_id,
+                job.id.inner_ref(),
+                job.event_id.inner_ref(),
                 job.timestamp
             )
             .execute(&self.pool)
@@ -71,13 +69,12 @@ impl IEventRemindersExpansionJobsRepo for PostgresEventReminderExpansionJobsRepo
     }
 
     async fn delete_by_event(&self, event_id: &ID) -> anyhow::Result<DeleteResult> {
-        let id = Uuid::new_v4();
         let res = sqlx::query!(
             r#"
             DELETE FROM calendar_event_reminder_expansion_jobs AS j
             WHERE j.event_uid = $1
             "#,
-            id,
+            event_id.inner_ref(),
         )
         .execute(&self.pool)
         .await?;
