@@ -10,7 +10,7 @@ use crate::{
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::update_service_user::*;
-use nettu_scheduler_domain::{Account, Service, TimePlan, ID};
+use nettu_scheduler_domain::{Account, ServiceResource, TimePlan, ID};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn update_service_user_controller(
@@ -34,7 +34,7 @@ pub async fn update_service_user_controller(
 
     execute(usecase, &ctx)
         .await
-        .map(|usecase_res| HttpResponse::Ok().json(APIResponse::new(usecase_res.service)))
+        .map(|usecase_res| HttpResponse::Ok().json(APIResponse::new(usecase_res.user)))
         .map_err(|e| match e {
             UseCaseErrors::StorageError => NettuError::InternalError,
             UseCaseErrors::ServiceNotFound => {
@@ -61,7 +61,7 @@ struct UpdateServiceUserUseCase {
 
 #[derive(Debug)]
 struct UseCaseRes {
-    pub service: Service,
+    pub user: ServiceResource,
 }
 
 #[derive(Debug)]
@@ -86,7 +86,12 @@ impl UseCase for UpdateServiceUserUseCase {
             _ => return Err(UseCaseErrors::ServiceNotFound),
         };
 
-        let mut user_resource = match service.find_user_mut(&self.user_id) {
+        let mut user_resource = match ctx
+            .repos
+            .service_users
+            .find(&self.service_id, &self.user_id)
+            .await
+        {
             Some(res) => res,
             _ => return Err(UseCaseErrors::UserNotFound),
         };
@@ -105,10 +110,13 @@ impl UseCase for UpdateServiceUserUseCase {
         .await
         .map_err(UseCaseErrors::InvalidValue)?;
 
-        let res = ctx.repos.services.save(&service).await;
-        match res {
-            Ok(_) => Ok(UseCaseRes { service }),
-            Err(_) => Err(UseCaseErrors::StorageError),
-        }
+        ctx.repos
+            .service_users
+            .save(&user_resource)
+            .await
+            .map(|_| UseCaseRes {
+                user: user_resource,
+            })
+            .map_err(|_| UseCaseErrors::StorageError)
     }
 }

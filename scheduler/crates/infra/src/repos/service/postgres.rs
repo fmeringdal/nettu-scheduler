@@ -1,6 +1,7 @@
 use super::IServiceRepo;
+use crate::repos::service_user::ServiceUserRaw;
 use crate::repos::shared::query_structs::MetadataFindQuery;
-use nettu_scheduler_domain::{Metadata, Service, ID};
+use nettu_scheduler_domain::{Metadata, Service, ServiceResource, ServiceWithUsers, ID};
 use sqlx::{types::Uuid, FromRow, PgPool};
 
 pub struct PostgresServiceRepo {
@@ -55,11 +56,16 @@ impl Into<Service> for ServiceRaw {
     }
 }
 
-impl Into<Service> for ServiceWithUsersRaw {
-    fn into(self) -> Service {
-        Service {
+impl Into<ServiceWithUsers> for ServiceWithUsersRaw {
+    fn into(self) -> ServiceWithUsers {
+        let users: Vec<ServiceUserRaw> = match self.users {
+            Some(json) => serde_json::from_value(json).unwrap(),
+            None => vec![],
+        };
+        ServiceWithUsers {
             id: self.service_uid.into(),
             account_id: self.account_uid.into(),
+            users: users.into_iter().map(|u| u.into()).collect(),
             metadata: extract_metadata(self.metadata),
         }
     }
@@ -100,7 +106,25 @@ impl IServiceRepo for PostgresServiceRepo {
     }
 
     async fn find(&self, service_id: &ID) -> Option<Service> {
-        let schedule: ServiceWithUsersRaw = match sqlx::query_as(
+        let service: ServiceRaw = match sqlx::query_as!(
+            ServiceRaw,
+            r#"
+            SELECT * FROM services AS s 
+            WHERE s.service_uid = $1
+            "#,
+            service_id.inner_ref()
+        )
+        .fetch_one(&self.pool)
+        .await
+        {
+            Ok(s) => s,
+            Err(_) => return None,
+        };
+        Some(service.into())
+    }
+
+    async fn find_with_users(&self, service_id: &ID) -> Option<ServiceWithUsers> {
+        let service: ServiceWithUsersRaw = match sqlx::query_as(
             r#"
             SELECT s.*, jsonb_agg((u.*)) AS users FROM services AS s 
             LEFT JOIN (
@@ -121,7 +145,7 @@ impl IServiceRepo for PostgresServiceRepo {
             Ok(s) => s,
             Err(_) => return None,
         };
-        Some(schedule.into())
+        Some(service.into())
     }
 
     async fn delete(&self, service_id: &ID) -> anyhow::Result<()> {

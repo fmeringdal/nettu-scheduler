@@ -1,4 +1,4 @@
-use nettu_scheduler_domain::{Service, ServiceResource, TimePlan, ID};
+use nettu_scheduler_domain::{Service, ServiceResource, ServiceWithUsers, TimePlan, ID};
 use serde::{Deserialize, Serialize};
 
 use crate::dtos::{ServiceDTO, ServiceResourceDTO, ServiceWithUsersDTO};
@@ -24,9 +24,9 @@ pub struct ServiceWithUsersResponse {
 }
 
 impl ServiceWithUsersResponse {
-    pub fn new(service: Service, users: Vec<ServiceResource>) -> Self {
+    pub fn new(service: ServiceWithUsers) -> Self {
         Self {
-            service: ServiceWithUsersDTO::new(service, users),
+            service: ServiceWithUsersDTO::new(service),
         }
     }
 }
@@ -241,7 +241,7 @@ pub mod remove_user_from_service {
         pub user_id: ID,
     }
 
-    pub type APIResponse = ServiceResourceDTO;
+    pub type APIResponse = String;
 }
 
 pub mod update_service_user {

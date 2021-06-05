@@ -5,7 +5,7 @@ use crate::shared::{
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::add_user_to_service::*;
-use nettu_scheduler_domain::{Account, Service, ServiceResource, TimePlan, ID};
+use nettu_scheduler_domain::{Account, ServiceResource, TimePlan, ID};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn add_user_to_service_controller(
@@ -28,7 +28,7 @@ pub async fn add_user_to_service_controller(
     };
 
     execute(usecase, &ctx).await
-        .map(|res| HttpResponse::Ok().json(APIResponse::new(res.service)))
+        .map(|res| HttpResponse::Ok().json(APIResponse::new(res.user)))
         .map_err(|e| match e {
             UseCaseErrors::StorageError => NettuError::InternalError,
             UseCaseErrors::ServiceNotFound => NettuError::NotFound("The requested service was not found".into()),
@@ -52,7 +52,7 @@ struct AddUserToServiceUseCase {
 
 #[derive(Debug)]
 struct UseCaseRes {
-    pub service: Service,
+    pub user: ServiceResource,
 }
 
 #[derive(Debug)]
@@ -88,12 +88,12 @@ impl UseCase for AddUserToServiceUseCase {
             _ => return Err(UseCaseErrors::ServiceNotFound),
         };
 
-        if let Some(_user_resource) = service.find_user(&self.user_id) {
-            return Err(UseCaseErrors::UserAlreadyInService);
-        }
-
-        let mut user_resource =
-            ServiceResource::new(self.user_id.clone(), TimePlan::Empty, Vec::new());
+        let mut user_resource = ServiceResource::new(
+            self.user_id.clone(),
+            service.id.clone(),
+            TimePlan::Empty,
+            Vec::new(),
+        );
 
         update_resource_values(
             &mut user_resource,
@@ -109,14 +109,14 @@ impl UseCase for AddUserToServiceUseCase {
         .await
         .map_err(UseCaseErrors::InvalidValue)?;
 
-        service.add_user(user_resource);
-
         ctx.repos
-            .services
-            .save(&service)
+            .service_users
+            .save(&user_resource)
             .await
-            .map(|_| UseCaseRes { service })
-            .map_err(|_| UseCaseErrors::StorageError)
+            .map(|_| UseCaseRes {
+                user: user_resource,
+            })
+            .map_err(|_| UseCaseErrors::UserAlreadyInService)
     }
 }
 

@@ -1,6 +1,6 @@
 use super::IServiceRepo;
 use crate::repos::shared::{inmemory_repo::*, query_structs::MetadataFindQuery};
-use nettu_scheduler_domain::{Service, ID};
+use nettu_scheduler_domain::{Service, ServiceWithUsers, ID};
 
 pub struct InMemoryServiceRepo {
     services: std::sync::Mutex<Vec<Service>>,
@@ -28,6 +28,16 @@ impl IServiceRepo for InMemoryServiceRepo {
 
     async fn find(&self, service_id: &ID) -> Option<Service> {
         find(service_id, &self.services)
+    }
+
+    async fn find_with_users(&self, service_id: &ID) -> Option<ServiceWithUsers> {
+        let s = find(service_id, &self.services);
+        s.map(|s| ServiceWithUsers {
+            id: s.id,
+            account_id: s.account_id,
+            users: vec![],
+            metadata: s.metadata,
+        })
     }
 
     async fn delete(&self, service_id: &ID) -> anyhow::Result<()> {

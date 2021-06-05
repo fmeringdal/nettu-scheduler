@@ -2,7 +2,7 @@ mod inmemory;
 mod postgres;
 
 pub use inmemory::InMemoryServiceRepo;
-use nettu_scheduler_domain::{Service, ID};
+use nettu_scheduler_domain::{Service, ServiceWithUsers, ID};
 pub use postgres::PostgresServiceRepo;
 
 use super::shared::query_structs::MetadataFindQuery;
@@ -12,6 +12,7 @@ pub trait IServiceRepo: Send + Sync {
     async fn insert(&self, service: &Service) -> anyhow::Result<()>;
     async fn save(&self, service: &Service) -> anyhow::Result<()>;
     async fn find(&self, service_id: &ID) -> Option<Service>;
+    async fn find_with_users(&self, service_id: &ID) -> Option<ServiceWithUsers>;
     async fn delete(&self, service_id: &ID) -> anyhow::Result<()>;
     async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<Service>;
 }

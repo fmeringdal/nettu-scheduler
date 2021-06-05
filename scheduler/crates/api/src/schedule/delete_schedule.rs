@@ -86,14 +86,6 @@ impl UseCase for DeleteScheduleUseCase {
                 if res.is_none() {
                     return Err(UseCaseErrors::StorageError);
                 }
-                let res = ctx
-                    .repos
-                    .services
-                    .remove_schedule_from_services(&schedule.id)
-                    .await;
-                if res.is_err() {
-                    return Err(UseCaseErrors::StorageError);
-                }
 
                 Ok(schedule)
             }

@@ -196,11 +196,10 @@ impl Service {
     // }
 }
 
+#[derive(Debug)]
 pub struct ServiceWithUsers {
     pub id: ID,
     pub account_id: ID,
-    // interval: usize,
-    // allow_more_booking_requests_in_queue_than_resources
-    // pub users: Vec<ServiceResource>,
+    pub users: Vec<ServiceResource>,
     pub metadata: Metadata,
 }

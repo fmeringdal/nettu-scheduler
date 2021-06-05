@@ -19,7 +19,7 @@ pub use event_instance::{
 };
 pub use reminder::{EventRemindersExpansionJob, Reminder};
 pub use schedule::{Schedule, ScheduleRule};
-pub use service::{Service, ServiceResource, TimePlan};
+pub use service::{Service, ServiceResource, ServiceWithUsers, TimePlan};
 pub use shared::entity::{Entity, ID};
 pub use shared::metadata::{Meta, Metadata};
 pub use shared::recurrence::{RRuleFrequency, RRuleOptions};

@@ -1,6 +1,7 @@
 use super::IServiceUserRepo;
 
 use nettu_scheduler_domain::{ServiceResource, TimePlan, ID};
+use serde::Deserialize;
 use sqlx::{types::Uuid, FromRow, PgPool};
 
 pub struct PostgresServiceUserRepo {
@@ -13,7 +14,7 @@ impl PostgresServiceUserRepo {
     }
 }
 
-#[derive(Debug, FromRow)]
+#[derive(Debug, FromRow, Deserialize)]
 pub struct ServiceUserRaw {
     service_uid: Uuid,
     user_uid: Uuid,

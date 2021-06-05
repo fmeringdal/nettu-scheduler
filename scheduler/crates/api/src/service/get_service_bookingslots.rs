@@ -122,7 +122,7 @@ impl UseCase for GetServiceBookingSlotsUseCase {
             .parse()
             .unwrap();
 
-        let service = match ctx.repos.services.find(&self.service_id).await {
+        let service = match ctx.repos.services.find_with_users(&self.service_id).await {
             Some(s) => s,
             None => return Err(UseCaseErrors::ServiceNotFound),
         };
@@ -349,8 +349,8 @@ mod test {
 
     async fn setup_service_users(ctx: &NettuContext, service: &mut Service) {
         let mut resource1 = ServiceResource {
-            id: Default::default(),
             user_id: Default::default(),
+            service_id: service.id.clone(),
             buffer: 0,
             availability: TimePlan::Empty,
             busy: Vec::new(),
@@ -358,8 +358,8 @@ mod test {
             furthest_booking_time: None,
         };
         let mut resource2 = ServiceResource {
-            id: Default::default(),
             user_id: Default::default(),
+            service_id: service.id.clone(),
             buffer: 0,
             availability: TimePlan::Empty,
             busy: Vec::new(),
@@ -439,9 +439,8 @@ mod test {
         ctx.repos.events.insert(&availibility_event2).await.unwrap();
         ctx.repos.events.insert(&availibility_event3).await.unwrap();
 
-        service.add_user(resource1);
-        service.add_user(resource2);
-        ctx.repos.services.save(&service).await.unwrap();
+        ctx.repos.service_users.insert(&resource1).await.unwrap();
+        ctx.repos.service_users.insert(&resource2).await.unwrap();
     }
 
     #[actix_web::main]

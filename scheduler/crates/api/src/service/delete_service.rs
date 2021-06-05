@@ -7,7 +7,7 @@ use crate::{
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::delete_service::*;
-use nettu_scheduler_domain::{Account, Service, ID};
+use nettu_scheduler_domain::{Account, Service, ServiceWithUsers, ID};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn delete_service_controller(
@@ -63,7 +63,7 @@ impl UseCase for DeleteServiceUseCase {
         let res = ctx.repos.services.find(&self.service_id).await;
         match res {
             Some(service) if service.account_id == self.account.id => {
-                if ctx.repos.services.delete(&self.service_id).await.is_none() {
+                if ctx.repos.services.delete(&self.service_id).await.is_err() {
                     return Err(UseCaseErrors::StorageError);
                 }
                 Ok(UseCaseRes { service })

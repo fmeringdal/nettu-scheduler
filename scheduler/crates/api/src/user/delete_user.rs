@@ -65,13 +65,6 @@ impl UseCase for DeleteUserUseCase {
             _ => return Err(UseCaseErrors::UserNotFound),
         };
 
-        let _ = join_all(vec![
-            ctx.repos.calendars.delete_by_user(&user.id),
-            ctx.repos.events.delete_by_user(&user.id),
-            ctx.repos.schedules.delete_by_user(&user.id),
-        ]);
-        let _ = ctx.repos.services.remove_user_from_services(&user.id).await;
-
         Ok(UseCaseRes { user })
     }
 }
