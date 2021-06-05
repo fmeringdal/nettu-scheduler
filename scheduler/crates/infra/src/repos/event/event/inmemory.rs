@@ -60,16 +60,6 @@ impl IEventRepo for InMemoryEventRepo {
         delete(event_id, &self.calendar_events)
     }
 
-    async fn delete_by_calendar(&self, calendar_id: &ID) -> anyhow::Result<DeleteResult> {
-        let res = delete_by(&self.calendar_events, |e| e.calendar_id == *calendar_id);
-        Ok(res)
-    }
-
-    async fn delete_by_user(&self, user_id: &ID) -> anyhow::Result<DeleteResult> {
-        let res = delete_by(&self.calendar_events, |e| e.user_id == *user_id);
-        Ok(res)
-    }
-
     async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<CalendarEvent> {
         find_by_metadata(&self.calendar_events, query)
     }

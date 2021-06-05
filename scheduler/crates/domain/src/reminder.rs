@@ -24,9 +24,9 @@ pub struct Reminder {
     pub priority: i64,
 }
 
-impl Entity for Reminder {
-    fn id(&self) -> &ID {
-        &self.id
+impl Entity<ID> for Reminder {
+    fn id(&self) -> ID {
+        self.id.clone()
     }
 }
 
@@ -37,8 +37,8 @@ pub struct EventRemindersExpansionJob {
     pub timestamp: i64,
 }
 
-impl Entity for EventRemindersExpansionJob {
-    fn id(&self) -> &ID {
-        &self.id
+impl Entity<ID> for EventRemindersExpansionJob {
+    fn id(&self) -> ID {
+        self.id.clone()
     }
 }

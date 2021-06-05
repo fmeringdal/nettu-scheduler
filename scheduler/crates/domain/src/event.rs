@@ -29,13 +29,13 @@ pub struct CalendarEvent {
     pub metadata: Metadata,
 }
 
-impl Entity for CalendarEvent {
-    fn id(&self) -> &ID {
-        &self.id
+impl Entity<ID> for CalendarEvent {
+    fn id(&self) -> ID {
+        self.id.clone()
     }
 }
 
-impl Meta for CalendarEvent {
+impl Meta<ID> for CalendarEvent {
     fn metadata(&self) -> &Metadata {
         &self.metadata
     }

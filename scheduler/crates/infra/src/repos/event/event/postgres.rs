@@ -267,16 +267,9 @@ impl IEventRepo for PostgresEventRepo {
         }
     }
 
-    async fn delete_by_calendar(&self, calendar_id: &ID) -> anyhow::Result<DeleteResult> {
-        todo!()
-    }
-
-    async fn delete_by_user(&self, user_id: &ID) -> anyhow::Result<DeleteResult> {
-        todo!()
-    }
-
     async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<CalendarEvent> {
         let account_id = Uuid::new_v4();
+        let key = format!("{}_{}", query.metadata.key, query.metadata.value);
 
         let events: Vec<EventRaw> = sqlx::query_as!(
             EventRaw,
@@ -287,7 +280,7 @@ impl IEventRepo for PostgresEventRepo {
             OFFSET $4
             "#,
             account_id,
-            query.metadata.key,
+            key,
             query.limit as i64,
             query.skip as i64,
         )

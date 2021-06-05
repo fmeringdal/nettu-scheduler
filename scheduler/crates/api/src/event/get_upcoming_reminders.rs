@@ -30,7 +30,7 @@ async fn get_accounts_from_reminders(
         .map(|r| r.account_id.to_owned())
         .collect::<Vec<_>>();
     ctx.repos
-        .account_repo
+        .accounts
         .find_many(&account_ids)
         .await
         .unwrap()
@@ -116,7 +116,7 @@ async fn remove_old_reminders(reminders: &mut Vec<Reminder>, ctx: &NettuContext)
         let reminder = reminders_p0[i];
         if ctx
             .repos
-            .reminder_repo
+            .reminders
             .find_by_event_and_priority(&reminder.event_id, 1)
             .await
             .is_some()
@@ -142,13 +142,13 @@ impl UseCase for GetUpcomingRemindersUseCase {
         let ts = ctx.sys.get_timestamp_millis() + self.reminders_interval;
 
         // Get all reminders and filter out invalid / expired reminders
-        let mut reminders = ctx.repos.reminder_repo.delete_all_before(ts).await;
+        let mut reminders = ctx.repos.reminders.delete_all_before(ts).await;
         dedup_reminders(&mut reminders);
         remove_old_reminders(&mut reminders, ctx).await;
 
         let event_lookup = ctx
             .repos
-            .event_repo
+            .events
             .find_many(
                 &reminders
                     .iter()
@@ -190,7 +190,7 @@ mod tests {
     async fn setup_context() -> NettuContext {
         let ctx = _setup_ctx().await;
         ctx.repos
-            .reminder_repo
+            .reminders
             .delete_all_before(CalendarEvent::get_max_timestamp())
             .await;
 
@@ -250,7 +250,7 @@ mod tests {
         let event_id = ID::default();
         let reminder_p1 = reminder_factory(&event_id, 1);
         ctx.repos
-            .reminder_repo
+            .reminders
             .bulk_insert(&[reminder_p1])
             .await
             .unwrap();
@@ -265,7 +265,7 @@ mod tests {
         let event_id = ID::default();
         let reminder_p0 = reminder_factory(&event_id, 0);
         ctx.repos
-            .reminder_repo
+            .reminders
             .bulk_insert(&[reminder_p0])
             .await
             .unwrap();
@@ -299,12 +299,12 @@ mod tests {
 
     async fn insert_common_data(ctx: &NettuContext) -> (Account, ID, Calendar) {
         let account = Account::default();
-        ctx.repos.account_repo.insert(&account).await.unwrap();
+        ctx.repos.accounts.insert(&account).await.unwrap();
 
         let user_id = ID::default();
         let mut calendar = Calendar::new(&user_id, &account.id);
         calendar.settings.timezone = chrono_tz::Europe::Oslo;
-        ctx.repos.calendar_repo.insert(&calendar).await.unwrap();
+        ctx.repos.calendars.insert(&calendar).await.unwrap();
         (account, user_id, calendar)
     }
 
@@ -414,9 +414,9 @@ mod tests {
         };
 
         let calendar_event = execute(usecase, &ctx).await.unwrap();
-        let old_reminders = ctx.repos.reminder_repo.delete_all_before(now).await;
+        let old_reminders = ctx.repos.reminders.delete_all_before(now).await;
         ctx.repos
-            .reminder_repo
+            .reminders
             .bulk_insert(&old_reminders)
             .await
             .unwrap();
@@ -436,7 +436,7 @@ mod tests {
             user_id: calendar_event.user_id,
         };
         execute(update_event_usecase, &ctx).await.unwrap();
-        let new_reminders = ctx.repos.reminder_repo.delete_all_before(new_start).await;
+        let new_reminders = ctx.repos.reminders.delete_all_before(new_start).await;
         assert_eq!(new_reminders.len(), old_reminders.len());
         assert_eq!(new_reminders.len(), 1);
         assert_eq!(
@@ -474,9 +474,9 @@ mod tests {
         };
 
         let calendar_event = execute(usecase, &ctx).await.unwrap();
-        let old_reminders = ctx.repos.reminder_repo.delete_all_before(now).await;
+        let old_reminders = ctx.repos.reminders.delete_all_before(now).await;
         ctx.repos
-            .reminder_repo
+            .reminders
             .bulk_insert(&old_reminders)
             .await
             .unwrap();
@@ -494,7 +494,7 @@ mod tests {
             user_id: calendar_event.user_id,
         };
         execute(update_event_usecase, &ctx).await.unwrap();
-        let new_reminders = ctx.repos.reminder_repo.delete_all_before(now).await;
+        let new_reminders = ctx.repos.reminders.delete_all_before(now).await;
         assert!(new_reminders.is_empty());
     }
 
@@ -522,9 +522,9 @@ mod tests {
         };
 
         let calendar_event = execute(usecase, &ctx).await.unwrap();
-        let old_reminders = ctx.repos.reminder_repo.delete_all_before(now).await;
+        let old_reminders = ctx.repos.reminders.delete_all_before(now).await;
         ctx.repos
-            .reminder_repo
+            .reminders
             .bulk_insert(&old_reminders)
             .await
             .unwrap();
@@ -534,7 +534,7 @@ mod tests {
             user_id: calendar_event.user_id,
         };
         execute(update_event_usecase, &ctx).await.unwrap();
-        let new_reminders = ctx.repos.reminder_repo.delete_all_before(now).await;
+        let new_reminders = ctx.repos.reminders.delete_all_before(now).await;
         assert!(new_reminders.is_empty());
     }
 }

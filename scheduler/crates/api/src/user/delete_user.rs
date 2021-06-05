@@ -55,9 +55,9 @@ impl UseCase for DeleteUserUseCase {
     const NAME: &'static str = "DeleteUser";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
-        let user = match ctx.repos.user_repo.find(&self.user_id).await {
+        let user = match ctx.repos.users.find(&self.user_id).await {
             Some(u) if u.account_id == self.account.id => {
-                match ctx.repos.user_repo.delete(&self.user_id).await {
+                match ctx.repos.users.delete(&self.user_id).await {
                     Some(u) => u,
                     None => return Err(UseCaseErrors::StorageError),
                 }
@@ -66,15 +66,11 @@ impl UseCase for DeleteUserUseCase {
         };
 
         let _ = join_all(vec![
-            ctx.repos.calendar_repo.delete_by_user(&user.id),
-            ctx.repos.event_repo.delete_by_user(&user.id),
-            ctx.repos.schedule_repo.delete_by_user(&user.id),
+            ctx.repos.calendars.delete_by_user(&user.id),
+            ctx.repos.events.delete_by_user(&user.id),
+            ctx.repos.schedules.delete_by_user(&user.id),
         ]);
-        let _ = ctx
-            .repos
-            .service_repo
-            .remove_user_from_services(&user.id)
-            .await;
+        let _ = ctx.repos.services.remove_user_from_services(&user.id).await;
 
         Ok(UseCaseRes { user })
     }

@@ -31,19 +31,31 @@ impl ServiceResourceDTO {
 #[serde(rename_all = "camelCase")]
 pub struct ServiceDTO {
     pub id: ID,
-    pub users: Vec<ServiceResourceDTO>,
     pub metadata: Metadata,
 }
 
 impl ServiceDTO {
     pub fn new(service: Service) -> Self {
         Self {
-            id: service.id.clone(),
-            users: service
-                .users
-                .into_iter()
-                .map(ServiceResourceDTO::new)
-                .collect(),
+            id: service.id,
+            metadata: service.metadata,
+        }
+    }
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ServiceWithUsersDTO {
+    pub id: ID,
+    pub users: Vec<ServiceResourceDTO>,
+    pub metadata: Metadata,
+}
+
+impl ServiceWithUsersDTO {
+    pub fn new(service: Service, users: Vec<ServiceResource>) -> Self {
+        Self {
+            id: service.id,
+            users: users.into_iter().map(ServiceResourceDTO::new).collect(),
             metadata: service.metadata,
         }
     }

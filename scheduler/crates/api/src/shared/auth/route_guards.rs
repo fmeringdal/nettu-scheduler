@@ -50,7 +50,7 @@ pub async fn auth_user_req(
                 // signed the token
                 Ok(claims) => ctx
                     .repos
-                    .user_repo
+                    .users
                     .find_by_account_id(&claims.nettu_scheduler_user_id, &account.id)
                     .await
                     .map(|user| (user, claims.scheduler_policy.unwrap_or_default())),
@@ -67,7 +67,7 @@ pub async fn auth_user_req(
 /// Finds out which `Account` the client is associated with.
 pub async fn get_client_account(req: &HttpRequest, ctx: &NettuContext) -> Option<Account> {
     match get_nettu_account_header(req) {
-        Some(Ok(account_id)) => ctx.repos.account_repo.find(&account_id).await,
+        Some(Ok(account_id)) => ctx.repos.accounts.find(&account_id).await,
         _ => None,
     }
 }
@@ -149,7 +149,7 @@ pub async fn protect_account_route(
         }
     };
 
-    let account = ctx.repos.account_repo.find_by_apikey(api_key).await;
+    let account = ctx.repos.accounts.find_by_apikey(api_key).await;
 
     match account {
         Some(acc) => Ok(acc),
@@ -170,7 +170,7 @@ pub async fn protect_public_account_route(
         Some(res) => {
             let account_id = res?;
 
-            match ctx.repos.account_repo.find(&account_id).await {
+            match ctx.repos.accounts.find(&account_id).await {
                 Some(acc) => Ok(acc),
                 None => Err(NettuError::UnidentifiableClient(
                     "Could not find out which account the client belongs to".into(),
@@ -189,7 +189,7 @@ pub async fn account_can_modify_user(
     user_id: &ID,
     ctx: &NettuContext,
 ) -> Result<User, NettuError> {
-    match ctx.repos.user_repo.find(user_id).await {
+    match ctx.repos.users.find(user_id).await {
         Some(user) if user.account_id == account.id => Ok(user),
         _ => Err(NettuError::NotFound(format!(
             "User with id: {} was not found",
@@ -205,7 +205,7 @@ pub async fn account_can_modify_calendar(
     calendar_id: &ID,
     ctx: &NettuContext,
 ) -> Result<Calendar, NettuError> {
-    match ctx.repos.calendar_repo.find(calendar_id).await {
+    match ctx.repos.calendars.find(calendar_id).await {
         Some(cal) if cal.account_id == account.id => Ok(cal),
         _ => Err(NettuError::NotFound(format!(
             "Calendar with id: {} was not found",
@@ -221,7 +221,7 @@ pub async fn account_can_modify_event(
     event_id: &ID,
     ctx: &NettuContext,
 ) -> Result<CalendarEvent, NettuError> {
-    match ctx.repos.event_repo.find(event_id).await {
+    match ctx.repos.events.find(event_id).await {
         Some(event) if event.account_id == account.id => Ok(event),
         _ => Err(NettuError::NotFound(format!(
             "Calendar event with id: {} was not found",
@@ -237,7 +237,7 @@ pub async fn account_can_modify_schedule(
     schedule_id: &ID,
     ctx: &NettuContext,
 ) -> Result<Schedule, NettuError> {
-    match ctx.repos.schedule_repo.find(schedule_id).await {
+    match ctx.repos.schedules.find(schedule_id).await {
         Some(schedule) if schedule.account_id == account.id => Ok(schedule),
         _ => Err(NettuError::NotFound(format!(
             "Schedule with id: {} was not found",
@@ -256,7 +256,7 @@ mod test {
 
     async fn setup_account(ctx: &NettuContext) -> Account {
         let account = get_account();
-        ctx.repos.account_repo.insert(&account).await.unwrap();
+        ctx.repos.accounts.insert(&account).await.unwrap();
         account
     }
 
@@ -293,7 +293,7 @@ mod test {
         let ctx = setup_context().await;
         let account = setup_account(&ctx).await;
         let user = User::new(account.id.clone());
-        ctx.repos.user_repo.insert(&user).await.unwrap();
+        ctx.repos.users.insert(&user).await.unwrap();
         let token = get_token(false, user.id.clone());
 
         let req = TestRequest::with_header("nettu-account", account.id.to_string())
@@ -310,7 +310,7 @@ mod test {
         let account = setup_account(&ctx).await;
         let account2 = setup_account(&ctx).await;
         let user = User::new(account2.id.clone()); // user belongs to account2
-        ctx.repos.user_repo.insert(&user).await.unwrap();
+        ctx.repos.users.insert(&user).await.unwrap();
         // account1 tries to sign a token with user_id that belongs to account2
         let token = get_token(false, user.id.clone());
 
@@ -327,7 +327,7 @@ mod test {
         let ctx = setup_context().await;
         let account = setup_account(&ctx).await;
         let user = User::new(account.id.clone());
-        ctx.repos.user_repo.insert(&user).await.unwrap();
+        ctx.repos.users.insert(&user).await.unwrap();
         let token = get_token(true, user.id.clone());
 
         let req = TestRequest::with_header("nettu-account", account.id.to_string())
@@ -343,7 +343,7 @@ mod test {
         let ctx = setup_context().await;
         let account = setup_account(&ctx).await;
         let user = User::new(account.id.clone());
-        ctx.repos.user_repo.insert(&user).await.unwrap();
+        ctx.repos.users.insert(&user).await.unwrap();
         let token = get_token(true, user.id.clone());
 
         let req = TestRequest::with_header("Authorization", format!("Bearer {}", token))
@@ -358,7 +358,7 @@ mod test {
         let ctx = setup_context().await;
         let account = setup_account(&ctx).await;
         let user = User::new(account.id.clone());
-        ctx.repos.user_repo.insert(&user).await.unwrap();
+        ctx.repos.users.insert(&user).await.unwrap();
         let token = get_token(true, user.id.clone());
 
         let req = TestRequest::with_header("nettu-account", account.id.to_string() + "s")
@@ -387,7 +387,7 @@ mod test {
         let ctx = setup_context().await;
         let account = setup_account(&ctx).await;
         let user = User::new(account.id.clone());
-        ctx.repos.user_repo.insert(&user).await.unwrap();
+        ctx.repos.users.insert(&user).await.unwrap();
 
         let req = TestRequest::with_header("nettu-account", account.id.to_string())
             .header("Authorization", "Bea")

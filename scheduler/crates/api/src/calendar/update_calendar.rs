@@ -94,7 +94,7 @@ impl UseCase for UpdateCalendarUseCase {
     const NAME: &'static str = "UpdateCalendar";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
-        let mut calendar = match ctx.repos.calendar_repo.find(&self.calendar_id).await {
+        let mut calendar = match ctx.repos.calendars.find(&self.calendar_id).await {
             Some(cal) if cal.user_id == self.user_id => cal,
             _ => return Err(UseCaseErrors::CalendarNotFound),
         };
@@ -121,7 +121,7 @@ impl UseCase for UpdateCalendarUseCase {
             calendar.metadata = metadata.clone();
         }
 
-        let repo_res = ctx.repos.calendar_repo.save(&calendar).await;
+        let repo_res = ctx.repos.calendars.save(&calendar).await;
         match repo_res {
             Ok(_) => Ok(calendar),
             Err(_) => Err(UseCaseErrors::StorageError),
@@ -151,7 +151,7 @@ mod test {
         let user_id = ID::default();
         let account_id = ID::default();
         let calendar = Calendar::new(&user_id, &account_id);
-        ctx.repos.calendar_repo.insert(&calendar).await.unwrap();
+        ctx.repos.calendars.insert(&calendar).await.unwrap();
 
         let mut usecase = UpdateCalendarUseCase {
             calendar_id: calendar.id.into(),
@@ -171,7 +171,7 @@ mod test {
         let user_id = ID::default();
         let account_id = ID::default();
         let calendar = Calendar::new(&user_id, &account_id);
-        ctx.repos.calendar_repo.insert(&calendar).await.unwrap();
+        ctx.repos.calendars.insert(&calendar).await.unwrap();
 
         assert_eq!(calendar.settings.week_start, 0);
         let new_wkst = 3;
@@ -186,7 +186,7 @@ mod test {
         assert!(res.is_ok());
 
         // Check that calendar settings have been updated
-        let calendar = ctx.repos.calendar_repo.find(&calendar.id).await.unwrap();
+        let calendar = ctx.repos.calendars.find(&calendar.id).await.unwrap();
         assert_eq!(calendar.settings.week_start, new_wkst);
     }
 }

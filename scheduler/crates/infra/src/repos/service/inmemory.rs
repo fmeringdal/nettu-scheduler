@@ -30,58 +30,8 @@ impl IServiceRepo for InMemoryServiceRepo {
         find(service_id, &self.services)
     }
 
-    async fn delete(&self, service_id: &ID) -> Option<Service> {
-        delete(service_id, &self.services)
-    }
-
-    async fn remove_calendar_from_services(&self, calendar_id: &ID) -> anyhow::Result<()> {
-        update_many(
-            &self.services,
-            |service| {
-                for user in &service.users {
-                    if user.contains_calendar(&calendar_id) {
-                        return true;
-                    }
-                }
-                false
-            },
-            |service| {
-                for user in &mut service.users {
-                    user.remove_calendar(&calendar_id);
-                }
-            },
-        );
-        Ok(())
-    }
-
-    async fn remove_schedule_from_services(&self, schedule_id: &ID) -> anyhow::Result<()> {
-        update_many(
-            &self.services,
-            |service| {
-                for user in &service.users {
-                    if user.contains_schedule(&schedule_id) {
-                        return true;
-                    }
-                }
-                false
-            },
-            |service| {
-                for user in &mut service.users {
-                    user.remove_schedule(&schedule_id);
-                }
-            },
-        );
-        Ok(())
-    }
-
-    async fn remove_user_from_services(&self, user_id: &ID) -> anyhow::Result<()> {
-        update_many(
-            &self.services,
-            |service| service.users.iter().any(|u| u.user_id == *user_id),
-            |service| {
-                service.users.retain(|u| u.user_id != *user_id);
-            },
-        );
+    async fn delete(&self, service_id: &ID) -> anyhow::Result<()> {
+        delete(service_id, &self.services);
         Ok(())
     }
 

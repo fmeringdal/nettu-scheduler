@@ -59,7 +59,7 @@ impl UseCase for SetAccountPubKeyUseCase {
         };
         self.account.set_public_jwt_key(key);
 
-        match ctx.repos.account_repo.save(&self.account).await {
+        match ctx.repos.accounts.save(&self.account).await {
             Ok(_) => Ok(self.account.clone()),
             Err(_) => Err(UseCaseErrors::StorageError),
         }

@@ -20,13 +20,13 @@ impl User {
     }
 }
 
-impl Entity for User {
-    fn id(&self) -> &ID {
-        &self.id
+impl Entity<ID> for User {
+    fn id(&self) -> ID {
+        self.id.clone()
     }
 }
 
-impl Meta for User {
+impl Meta<ID> for User {
     fn metadata(&self) -> &Metadata {
         &self.metadata
     }

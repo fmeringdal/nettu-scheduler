@@ -22,6 +22,8 @@ pub struct ServiceResource {
     pub id: ID,
     /// Id of the `User` registered on this `Service`
     pub user_id: ID,
+    /// Id of the `Service` this user is reqistered on
+    pub service_id: ID,
     /// Every available event in a `Calendar` or a `Schedule` in this field
     /// describes the time when this `ServiceResource` will be bookable.
     /// Note: If there are busy `CalendarEvent`s in the `Calendar` then the user
@@ -49,9 +51,10 @@ pub struct ServiceResource {
 }
 
 impl ServiceResource {
-    pub fn new(user_id: ID, availability: TimePlan, busy: Vec<ID>) -> Self {
+    pub fn new(user_id: ID, service_id: ID, availability: TimePlan, busy: Vec<ID>) -> Self {
         Self {
             id: Default::default(),
+            service_id,
             user_id,
             availability,
             busy,
@@ -132,23 +135,29 @@ impl ServiceResource {
     }
 }
 
+impl Entity<String> for ServiceResource {
+    fn id(&self) -> String {
+        format!("{}#{}", self.service_id, self.user_id)
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct Service {
     pub id: ID,
     pub account_id: ID,
     // interval: usize,
     // allow_more_booking_requests_in_queue_than_resources
-    pub users: Vec<ServiceResource>,
+    // pub users: Vec<ServiceResource>,
     pub metadata: Metadata,
 }
 
-impl Entity for Service {
-    fn id(&self) -> &ID {
-        &self.id
+impl Entity<ID> for Service {
+    fn id(&self) -> ID {
+        self.id.clone()
     }
 }
 
-impl Meta for Service {
+impl Meta<ID> for Service {
     fn metadata(&self) -> &Metadata {
         &self.metadata
     }
@@ -162,29 +171,38 @@ impl Service {
         Self {
             id: Default::default(),
             account_id,
-            users: Default::default(),
+            // users: Default::default(),
             metadata: Default::default(),
         }
     }
 
-    pub fn add_user(&mut self, user: ServiceResource) {
-        self.users.push(user);
-    }
+    // pub fn add_user(&mut self, user: ServiceResource) {
+    //     self.users.push(user);
+    // }
 
-    pub fn remove_user(&mut self, user_id: &ID) -> Option<ServiceResource> {
-        for (pos, user) in self.users.iter().enumerate() {
-            if user.user_id == *user_id {
-                return Some(self.users.remove(pos));
-            }
-        }
-        None
-    }
+    // pub fn remove_user(&mut self, user_id: &ID) -> Option<ServiceResource> {
+    //     for (pos, user) in self.users.iter().enumerate() {
+    //         if user.user_id == *user_id {
+    //             return Some(self.users.remove(pos));
+    //         }
+    //     }
+    //     None
+    // }
 
-    pub fn find_user(&self, user_id: &ID) -> Option<&ServiceResource> {
-        self.users.iter().find(|u| u.user_id == *user_id)
-    }
+    // pub fn find_user(&self, user_id: &ID) -> Option<&ServiceResource> {
+    //     self.users.iter().find(|u| u.user_id == *user_id)
+    // }
 
-    pub fn find_user_mut(&mut self, user_id: &ID) -> Option<&mut ServiceResource> {
-        self.users.iter_mut().find(|u| u.user_id == *user_id)
-    }
+    // pub fn find_user_mut(&mut self, user_id: &ID) -> Option<&mut ServiceResource> {
+    //     self.users.iter_mut().find(|u| u.user_id == *user_id)
+    // }
+}
+
+pub struct ServiceWithUsers {
+    pub id: ID,
+    pub account_id: ID,
+    // interval: usize,
+    // allow_more_booking_requests_in_queue_than_resources
+    // pub users: Vec<ServiceResource>,
+    pub metadata: Metadata,
 }

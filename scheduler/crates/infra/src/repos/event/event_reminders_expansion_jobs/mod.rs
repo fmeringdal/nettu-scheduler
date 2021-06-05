@@ -1,10 +1,9 @@
 mod inmemory;
-mod mongo;
 mod postgres;
 
 pub use inmemory::InMemoryEventRemindersExpansionJobsRepo;
-pub use mongo::MongoEventRemindersExpansionsJobRepo;
 use nettu_scheduler_domain::{EventRemindersExpansionJob, ID};
+pub use postgres::PostgresEventReminderExpansionJobsRepo;
 
 use crate::repos::shared::repo::DeleteResult;
 

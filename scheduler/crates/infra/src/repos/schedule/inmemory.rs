@@ -48,11 +48,7 @@ impl IScheduleRepo for InMemoryScheduleRepo {
     }
 
     async fn delete(&self, schedule_id: &ID) -> Option<Schedule> {
+        // TODO: remove_schedule_from_services
         delete(schedule_id, &self.schedules)
-    }
-
-    async fn delete_by_user(&self, user_id: &ID) -> anyhow::Result<DeleteResult> {
-        let res = delete_by(&self.schedules, |schedule| schedule.user_id == *user_id);
-        Ok(res)
     }
 }

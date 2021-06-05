@@ -122,7 +122,7 @@ impl UseCase for GetServiceBookingSlotsUseCase {
             .parse()
             .unwrap();
 
-        let service = match ctx.repos.service_repo.find(&self.service_id).await {
+        let service = match ctx.repos.services.find(&self.service_id).await {
             Some(s) => s,
             None => return Err(UseCaseErrors::ServiceNotFound),
         };
@@ -176,7 +176,7 @@ impl GetServiceBookingSlotsUseCase {
                 };
                 let all_calendar_events = ctx
                     .repos
-                    .event_repo
+                    .events
                     .find_by_calendar(&id, Some(&timespan))
                     .await
                     .unwrap_or_default();
@@ -189,7 +189,7 @@ impl GetServiceBookingSlotsUseCase {
 
                 get_free_busy(all_event_instances).free
             }
-            TimePlan::Schedule(id) => match ctx.repos.schedule_repo.find(&id).await {
+            TimePlan::Schedule(id) => match ctx.repos.schedules.find(&id).await {
                 Some(schedule) if schedule.user_id == user.user_id => schedule.freebusy(&timespan),
                 _ => empty,
             },
@@ -209,7 +209,7 @@ impl GetServiceBookingSlotsUseCase {
         for cal in busy_calendars {
             match ctx
                 .repos
-                .event_repo
+                .events
                 .find_by_calendar(&cal.id, Some(&timespan))
                 .await
             {
@@ -291,7 +291,7 @@ impl GetServiceBookingSlotsUseCase {
             Err(_) => return empty,
         }
 
-        let user_calendars = ctx.repos.calendar_repo.find_by_user(&user.user_id).await;
+        let user_calendars = ctx.repos.calendars.find_by_user(&user.user_id).await;
         let busy_calendars = user_calendars
             .iter()
             .filter(|cal| user.busy.contains(&cal.id))
@@ -342,7 +342,7 @@ mod test {
         ctx.sys = Arc::new(DummySys {});
 
         let service = Service::new(Default::default());
-        ctx.repos.service_repo.insert(&service).await.unwrap();
+        ctx.repos.services.insert(&service).await.unwrap();
 
         TestContext { ctx, service }
     }
@@ -374,16 +374,8 @@ mod test {
         let calendar_user_2 = Calendar::new(&resource2.user_id, &account_id);
         resource2.availability = TimePlan::Calendar(calendar_user_2.id.clone());
 
-        ctx.repos
-            .calendar_repo
-            .insert(&calendar_user_1)
-            .await
-            .unwrap();
-        ctx.repos
-            .calendar_repo
-            .insert(&calendar_user_2)
-            .await
-            .unwrap();
+        ctx.repos.calendars.insert(&calendar_user_1).await.unwrap();
+        ctx.repos.calendars.insert(&calendar_user_2).await.unwrap();
 
         let account_id = ID::default();
 
@@ -443,25 +435,13 @@ mod test {
         };
         availibility_event3.set_recurrence(recurrence, &calendar_user_2.settings, true);
 
-        ctx.repos
-            .event_repo
-            .insert(&availibility_event1)
-            .await
-            .unwrap();
-        ctx.repos
-            .event_repo
-            .insert(&availibility_event2)
-            .await
-            .unwrap();
-        ctx.repos
-            .event_repo
-            .insert(&availibility_event3)
-            .await
-            .unwrap();
+        ctx.repos.events.insert(&availibility_event1).await.unwrap();
+        ctx.repos.events.insert(&availibility_event2).await.unwrap();
+        ctx.repos.events.insert(&availibility_event3).await.unwrap();
 
         service.add_user(resource1);
         service.add_user(resource2);
-        ctx.repos.service_repo.save(&service).await.unwrap();
+        ctx.repos.services.save(&service).await.unwrap();
     }
 
     #[actix_web::main]

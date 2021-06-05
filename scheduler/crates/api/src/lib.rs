@@ -91,7 +91,7 @@ impl Application {
         if self
             .context
             .repos
-            .account_repo
+            .accounts
             .find_by_apikey(&secret_api_key)
             .await
             .is_none()
@@ -101,7 +101,7 @@ impl Application {
                 ..Default::default()
             };
             if let Ok(mut verification_key) = std::env::var("ACCOUNT_PUB_KEY") {
-                verification_key = verification_key.replacen("\\n", "\n", 100);
+                verification_key = verification_key.replace("\\n", "\n");
                 match PEMKey::new(verification_key) {
                     Ok(k) => account.set_public_jwt_key(Some(k)),
                     Err(e) => warn!("Invalid ACCOUNT_PUB_KEY provided: {:?}", e),
@@ -110,7 +110,7 @@ impl Application {
 
             self.context
                 .repos
-                .account_repo
+                .accounts
                 .insert(&account)
                 .await
                 .expect("To create default account");

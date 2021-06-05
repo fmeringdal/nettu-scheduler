@@ -56,11 +56,11 @@ impl UseCase for CreateUserUseCase {
         let mut user = User::new(self.account_id.clone());
         user.metadata = self.metadata.clone();
 
-        if let Some(_existing_user) = ctx.repos.user_repo.find(&user.id).await {
+        if let Some(_existing_user) = ctx.repos.users.find(&user.id).await {
             return Err(UseCaseErrors::UserAlreadyExists);
         }
 
-        let res = ctx.repos.user_repo.insert(&user).await;
+        let res = ctx.repos.users.insert(&user).await;
         match res {
             Ok(_) => Ok(UseCaseRes { user }),
             Err(_) => Err(UseCaseErrors::StorageError),

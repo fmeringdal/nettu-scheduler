@@ -19,6 +19,6 @@ pub async fn get_schedules_by_meta_controller(
         limit: query_params.0.limit.unwrap_or(20),
         skip: query_params.0.skip.unwrap_or(0),
     };
-    let schedules = ctx.repos.schedule_repo.find_by_metadata(query).await;
+    let schedules = ctx.repos.schedules.find_by_metadata(query).await;
     Ok(HttpResponse::Ok().json(APIResponse::new(schedules)))
 }

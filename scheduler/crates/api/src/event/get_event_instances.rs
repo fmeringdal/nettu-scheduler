@@ -93,10 +93,10 @@ impl UseCase for GetEventInstancesUseCase {
     const NAME: &'static str = "GetEventInstances";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
-        let e = ctx.repos.event_repo.find(&self.event_id).await;
+        let e = ctx.repos.events.find(&self.event_id).await;
         match e {
             Some(event) if self.user_id == event.user_id => {
-                let calendar = match ctx.repos.calendar_repo.find(&event.calendar_id).await {
+                let calendar = match ctx.repos.calendars.find(&event.calendar_id).await {
                     Some(cal) => cal,
                     None => {
                         return Err(UseCaseErrors::NotFound(

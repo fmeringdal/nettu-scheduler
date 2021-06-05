@@ -118,7 +118,7 @@ impl UseCase for CreateEventUseCase {
     const NAME: &'static str = "CreateEvent";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
-        let calendar = match ctx.repos.calendar_repo.find(&self.calendar_id).await {
+        let calendar = match ctx.repos.calendars.find(&self.calendar_id).await {
             Some(calendar) if calendar.user_id == self.user_id => calendar,
             _ => return Err(UseCaseErrors::NotFound(self.calendar_id.clone())),
         };
@@ -152,7 +152,7 @@ impl UseCase for CreateEventUseCase {
             }
         }
 
-        let repo_res = ctx.repos.event_repo.insert(&e).await;
+        let repo_res = ctx.repos.events.insert(&e).await;
         if repo_res.is_err() {
             return Err(UseCaseErrors::StorageError);
         }
@@ -192,7 +192,7 @@ mod test {
         let account_id = ID::default();
         let calendar = Calendar::new(&user.id, &account_id);
 
-        ctx.repos.calendar_repo.insert(&calendar).await.unwrap();
+        ctx.repos.calendars.insert(&calendar).await.unwrap();
         TestContext {
             user,
             calendar,

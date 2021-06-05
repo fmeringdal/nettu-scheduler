@@ -112,7 +112,7 @@ impl UseCase for CreateScheduleUseCase {
 
         let user = ctx
             .repos
-            .user_repo
+            .users
             .find_by_account_id(&self.user_id, &self.account_id)
             .await;
         if user.is_none() {
@@ -128,7 +128,7 @@ impl UseCase for CreateScheduleUseCase {
             schedule.metadata = metadata.clone();
         }
 
-        let res = ctx.repos.schedule_repo.insert(&schedule).await;
+        let res = ctx.repos.schedules.insert(&schedule).await;
         match res {
             Ok(_) => Ok(UseCaseRes { schedule }),
             Err(_) => Err(UseCaseErrors::Storage),

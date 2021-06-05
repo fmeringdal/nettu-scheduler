@@ -101,9 +101,9 @@ impl Account {
     }
 }
 
-impl Entity for Account {
-    fn id(&self) -> &ID {
-        &self.id
+impl Entity<ID> for Account {
+    fn id(&self) -> ID {
+        self.id.clone()
     }
 }
 

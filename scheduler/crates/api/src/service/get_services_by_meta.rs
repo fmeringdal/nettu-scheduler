@@ -19,6 +19,6 @@ pub async fn get_services_by_meta_controller(
         limit: query_params.0.limit.unwrap_or(20),
         skip: query_params.0.skip.unwrap_or(0),
     };
-    let services = ctx.repos.service_repo.find_by_metadata(query).await;
+    let services = ctx.repos.services.find_by_metadata(query).await;
     Ok(HttpResponse::Ok().json(APIResponse::new(services)))
 }

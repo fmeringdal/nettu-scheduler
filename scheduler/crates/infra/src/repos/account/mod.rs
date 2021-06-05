@@ -1,9 +1,7 @@
 mod inmemory;
-mod mongo;
 mod postgres;
 
 pub use inmemory::InMemoryAccountRepo;
-pub use mongo::MongoAccountRepo;
 use nettu_scheduler_domain::Account;
 pub use postgres::PostgresAccountRepo;
 
@@ -27,7 +25,7 @@ mod tests {
     /// Creates inmemory and mongo context when mongo is running,
     /// otherwise it will create two inmemory
     async fn create_contexts() -> Vec<NettuContext> {
-        vec![NettuContext::create_inmemory().await, setup_context().await]
+        vec![NettuContext::create_inmemory(), setup_context().await]
     }
 
     #[tokio::test]
@@ -36,35 +34,35 @@ mod tests {
             let account = Account::default();
 
             // Insert
-            let res = ctx.repos.account_repo.find_many(&vec![]).await;
+            let res = ctx.repos.accounts.find_many(&vec![]).await;
             println!("Res {:?}", res);
             // assert!(ctx.repos.account_repo.insert(&account).await.is_ok());
 
             // Different find methods
-            let res = ctx.repos.account_repo.find(&account.id).await.unwrap();
+            let res = ctx.repos.accounts.find(&account.id).await.unwrap();
             assert!(res.eq(&account));
             let res = ctx
                 .repos
-                .account_repo
+                .accounts
                 .find_many(&[account.id.clone()])
                 .await
                 .unwrap();
             assert!(res[0].eq(&account));
             let res = ctx
                 .repos
-                .account_repo
+                .accounts
                 .find_by_apikey(&account.secret_api_key)
                 .await
                 .unwrap();
             assert!(res.eq(&account));
 
             // Delete
-            let res = ctx.repos.account_repo.delete(&account.id).await;
+            let res = ctx.repos.accounts.delete(&account.id).await;
             assert!(res.is_some());
             assert!(res.unwrap().eq(&account));
 
             // Find
-            assert!(ctx.repos.account_repo.find(&account.id).await.is_none());
+            assert!(ctx.repos.accounts.find(&account.id).await.is_none());
         }
     }
 
@@ -74,7 +72,7 @@ mod tests {
             let mut account = Default::default();
 
             // Insert
-            assert!(ctx.repos.account_repo.insert(&account).await.is_ok());
+            assert!(ctx.repos.accounts.insert(&account).await.is_ok());
 
             let pubkey = std::fs::read("../api/config/test_public_rsa_key.crt").unwrap();
             let pubkey = String::from_utf8(pubkey).unwrap();
@@ -83,12 +81,12 @@ mod tests {
             account.set_public_jwt_key(Some(pubkey));
 
             // Save
-            assert!(ctx.repos.account_repo.save(&account).await.is_ok());
+            assert!(ctx.repos.accounts.save(&account).await.is_ok());
 
             // Find
             assert!(ctx
                 .repos
-                .account_repo
+                .accounts
                 .find(&account.id)
                 .await
                 .unwrap()

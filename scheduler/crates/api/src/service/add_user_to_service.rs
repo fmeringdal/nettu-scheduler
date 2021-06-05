@@ -75,7 +75,7 @@ impl UseCase for AddUserToServiceUseCase {
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         if ctx
             .repos
-            .user_repo
+            .users
             .find_by_account_id(&self.user_id, &self.account.id)
             .await
             .is_none()
@@ -83,7 +83,7 @@ impl UseCase for AddUserToServiceUseCase {
             return Err(UseCaseErrors::UserNotFound);
         }
 
-        let mut service = match ctx.repos.service_repo.find(&self.service_id).await {
+        let mut service = match ctx.repos.services.find(&self.service_id).await {
             Some(service) if service.account_id == self.account.id => service,
             _ => return Err(UseCaseErrors::ServiceNotFound),
         };
@@ -111,11 +111,12 @@ impl UseCase for AddUserToServiceUseCase {
 
         service.add_user(user_resource);
 
-        let res = ctx.repos.service_repo.save(&service).await;
-        match res {
-            Ok(_) => Ok(UseCaseRes { service }),
-            Err(_) => Err(UseCaseErrors::StorageError),
-        }
+        ctx.repos
+            .services
+            .save(&service)
+            .await
+            .map(|_| UseCaseRes { service })
+            .map_err(|_| UseCaseErrors::StorageError)
     }
 }
 
@@ -162,7 +163,7 @@ pub async fn update_resource_values(
 ) -> Result<(), UpdateServiceResourceError> {
     let user_calendars = ctx
         .repos
-        .calendar_repo
+        .calendars
         .find_by_user(&user_resource.user_id)
         .await
         .into_iter()
@@ -190,7 +191,7 @@ pub async fn update_resource_values(
                 }
             }
             TimePlan::Schedule(id) => {
-                let schedule = ctx.repos.schedule_repo.find(id).await;
+                let schedule = ctx.repos.schedules.find(id).await;
                 match schedule {
                     Some(schedule) if schedule.user_id == user_resource.user_id => {}
                     _ => {

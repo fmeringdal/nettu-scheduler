@@ -1,5 +1,5 @@
 use crate::repos::shared::repo::DeleteResult;
-use nettu_scheduler_domain::{Entity, Meta, ID};
+use nettu_scheduler_domain::{Entity, Meta};
 use std::sync::Mutex;
 
 use super::query_structs::MetadataFindQuery;
@@ -11,7 +11,10 @@ pub fn insert<T: Clone>(val: &T, collection: &Mutex<Vec<T>>) {
     collection.push(val.clone());
 }
 
-pub fn save<T: Clone + Entity + std::fmt::Debug>(val: &T, collection: &Mutex<Vec<T>>) {
+pub fn save<I: PartialEq, T: Clone + Entity<I> + std::fmt::Debug>(
+    val: &T,
+    collection: &Mutex<Vec<T>>,
+) {
     let mut collection = collection.lock().unwrap();
     for i in 0..collection.len() {
         if collection[i].id() == val.id() {
@@ -20,17 +23,20 @@ pub fn save<T: Clone + Entity + std::fmt::Debug>(val: &T, collection: &Mutex<Vec
     }
 }
 
-pub fn find<T: Clone + Entity>(val_id: &ID, collection: &Mutex<Vec<T>>) -> Option<T> {
+pub fn find<I: PartialEq, T: Clone + Entity<I>>(
+    val_id: &I,
+    collection: &Mutex<Vec<T>>,
+) -> Option<T> {
     let collection = collection.lock().unwrap();
     for i in 0..collection.len() {
-        if collection[i].id() == val_id {
+        if collection[i].id() == *val_id {
             return Some(collection[i].clone());
         }
     }
     None
 }
 
-pub fn find_by<T: Clone + Entity, F: FnMut(&T) -> bool>(
+pub fn find_by<I: PartialEq, T: Clone + Entity<I>, F: FnMut(&T) -> bool>(
     collection: &Mutex<Vec<T>>,
     mut compare: F,
 ) -> Vec<T> {
@@ -44,10 +50,13 @@ pub fn find_by<T: Clone + Entity, F: FnMut(&T) -> bool>(
     items
 }
 
-pub fn delete<T: Clone + Entity>(val_id: &ID, collection: &Mutex<Vec<T>>) -> Option<T> {
+pub fn delete<I: PartialEq, T: Clone + Entity<I>>(
+    val_id: &I,
+    collection: &Mutex<Vec<T>>,
+) -> Option<T> {
     let mut collection = collection.lock().unwrap();
     for i in 0..collection.len() {
-        if collection[i].id() == val_id {
+        if collection[i].id() == *val_id {
             let deleted_val = collection.remove(i);
             return Some(deleted_val);
         }
@@ -55,7 +64,7 @@ pub fn delete<T: Clone + Entity>(val_id: &ID, collection: &Mutex<Vec<T>>) -> Opt
     None
 }
 
-pub fn delete_by<T: Clone + Entity, F: Fn(&T) -> bool>(
+pub fn delete_by<I: PartialEq, T: Clone + Entity<I>, F: Fn(&T) -> bool>(
     collection: &Mutex<Vec<T>>,
     compare: F,
 ) -> DeleteResult {
@@ -64,7 +73,7 @@ pub fn delete_by<T: Clone + Entity, F: Fn(&T) -> bool>(
     }
 }
 
-pub fn find_and_delete_by<T: Clone + Entity, F: Fn(&T) -> bool>(
+pub fn find_and_delete_by<I: PartialEq, T: Clone + Entity<I>, F: Fn(&T) -> bool>(
     collection: &Mutex<Vec<T>>,
     compare: F,
 ) -> Vec<T> {
@@ -82,7 +91,7 @@ pub fn find_and_delete_by<T: Clone + Entity, F: Fn(&T) -> bool>(
     deleted_items
 }
 
-pub fn update_many<T: Clone + Entity, F: Fn(&T) -> bool, U: Fn(&mut T)>(
+pub fn update_many<I: PartialEq, T: Clone + Entity<I>, F: Fn(&T) -> bool, U: Fn(&mut T)>(
     collection: &Mutex<Vec<T>>,
     compare: F,
     update: U,
@@ -98,7 +107,7 @@ pub fn update_many<T: Clone + Entity, F: Fn(&T) -> bool, U: Fn(&mut T)>(
 }
 
 /// Ignores skip and limit as this is just used for testing
-pub fn find_by_metadata<T: Clone + Entity + Meta>(
+pub fn find_by_metadata<I: PartialEq, T: Clone + Entity<I> + Meta<I>>(
     collection: &Mutex<Vec<T>>,
     query: MetadataFindQuery,
 ) -> Vec<T> {

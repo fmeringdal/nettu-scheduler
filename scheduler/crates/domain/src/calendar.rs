@@ -17,7 +17,7 @@ pub struct Calendar {
     pub metadata: Metadata,
 }
 
-impl Meta for Calendar {
+impl Meta<ID> for Calendar {
     fn metadata(&self) -> &Metadata {
         &self.metadata
     }
@@ -74,8 +74,8 @@ impl Calendar {
     }
 }
 
-impl Entity for Calendar {
-    fn id(&self) -> &ID {
-        &self.id
+impl Entity<ID> for Calendar {
+    fn id(&self) -> ID {
+        self.id.clone()
     }
 }

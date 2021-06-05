@@ -66,13 +66,13 @@ impl UseCase for RemoveUserFromServiceUseCase {
     const NAME: &'static str = "RemoveUserFromService";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
-        let mut service = match ctx.repos.service_repo.find(&self.service_id).await {
+        let mut service = match ctx.repos.services.find(&self.service_id).await {
             Some(service) if service.account_id == self.account.id => service,
             _ => return Err(UseCaseErrors::ServiceNotFound),
         };
 
         match service.remove_user(&self.user_id) {
-            Some(_) => match ctx.repos.service_repo.save(&service).await {
+            Some(_) => match ctx.repos.services.save(&service).await {
                 Ok(_) => Ok(UseCaseRes { service }),
                 Err(_) => Err(UseCaseErrors::StorageError),
             },

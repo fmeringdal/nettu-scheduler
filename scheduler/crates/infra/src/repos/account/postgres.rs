@@ -7,8 +7,6 @@ use sqlx::{
     Done, FromRow, PgPool,
 };
 
-// DB URL: postgresql://localhost:5432
-
 pub struct PostgresAccountRepo {
     pool: PgPool,
 }

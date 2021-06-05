@@ -155,24 +155,9 @@ impl ICalendarRepo for PostgresCalendarRepo {
         .map_err(|e| anyhow::Error::new(e))
     }
 
-    async fn delete_by_user(&self, user_id: &ID) -> anyhow::Result<DeleteResult> {
-        let id = Uuid::new_v4();
-        let res = sqlx::query!(
-            r#"
-            DELETE FROM calendars AS c
-            WHERE c.user_uid = $1
-            "#,
-            id,
-        )
-        .execute(&self.pool)
-        .await?;
-        Ok(DeleteResult {
-            deleted_count: res.rows_affected() as i64,
-        })
-    }
-
     async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<Calendar> {
         let account_id = Uuid::new_v4();
+        let key = format!("{}_{}", query.metadata.key, query.metadata.value);
 
         let calendars: Vec<CalendarRaw> = sqlx::query_as!(
             CalendarRaw,
@@ -183,7 +168,7 @@ impl ICalendarRepo for PostgresCalendarRepo {
             OFFSET $4
             "#,
             account_id,
-            query.metadata.key,
+            key,
             query.limit as i64,
             query.skip as i64,
         )

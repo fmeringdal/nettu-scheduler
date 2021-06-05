@@ -19,21 +19,20 @@ pub struct NettuContext {
 }
 
 struct ContextParams {
-    // (connection_string, db_name)
-    pub mongodb: (String, String),
+    pub postgres_connection_string: String,
 }
 
 impl NettuContext {
-    async fn create_inmemory() -> Self {
+    fn create_inmemory() -> Self {
         Self {
-            repos: Repos::create_inmemory().await,
+            repos: Repos::create_inmemory(),
             config: Config::new(),
             sys: Arc::new(RealSys {}),
         }
     }
 
     async fn create(params: ContextParams) -> Self {
-        let repos = Repos::create_mongodb(&params.mongodb.0, &params.mongodb.1)
+        let repos = Repos::create_postgres(&params.postgres_connection_string)
             .await
             .expect("Mongo db credentials must be set and valid");
         Self {
@@ -46,11 +45,9 @@ impl NettuContext {
 
 /// Will setup the correct Infra Context given the environment
 pub async fn setup_context() -> NettuContext {
-    const MONGODB_CONNECTION_STRING: &str = "MONGODB_CONNECTION_STRING";
-    const MONGODB_NAME: &str = "MONGODB_NAME";
+    const PSQL_CONNECTION_STRING: &str = "POSTGRES_CONNECTION_STRING";
 
-    let mongodb_connection_string = std::env::var(MONGODB_CONNECTION_STRING);
-    let mongodb_db_name = std::env::var(MONGODB_NAME);
+    let psql_connection_string = std::env::var(PSQL_CONNECTION_STRING);
 
     let args: Vec<_> = std::env::args().collect();
 
@@ -58,23 +55,23 @@ pub async fn setup_context() -> NettuContext {
     let inmemory_arg_set = args.len() > 1 && args[1].eq("inmemory");
     if inmemory_arg_set {
         info!("Inmemory argument provided. Going to use inmemory infra.");
-        return NettuContext::create_inmemory().await;
+        return NettuContext::create_inmemory();
     }
 
-    if mongodb_connection_string.is_ok() && mongodb_db_name.is_ok() {
+    if psql_connection_string.is_ok() {
         info!(
-            "{} and {} env vars was provided. Going to use mongodb.",
-            MONGODB_CONNECTION_STRING, MONGODB_NAME
+            "{} env var was provided. Going to use postgres.",
+            PSQL_CONNECTION_STRING
         );
         NettuContext::create(ContextParams {
-            mongodb: (mongodb_connection_string.unwrap(), mongodb_db_name.unwrap()),
+            postgres_connection_string: String::from("postgresql://localhost:5432/tester"),
         })
         .await
     } else {
         warn!(
-            "{} and {} env vars was not provided. Going to use inmemory infra. This should only be used during testing!",
-            MONGODB_CONNECTION_STRING, MONGODB_NAME
+            "{} env var was not provided. Going to use inmemory infra. This should only be used during testing!",
+            PSQL_CONNECTION_STRING
         );
-        NettuContext::create_inmemory().await
+        NettuContext::create_inmemory()
     }
 }

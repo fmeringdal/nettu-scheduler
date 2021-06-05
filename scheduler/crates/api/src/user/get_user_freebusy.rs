@@ -112,7 +112,7 @@ impl GetFreeBusyUseCase {
         };
 
         // can probably make query to event repo instead
-        let mut calendars = ctx.repos.calendar_repo.find_by_user(&self.user_id).await;
+        let mut calendars = ctx.repos.calendars.find_by_user(&self.user_id).await;
 
         if !calendar_ids.is_empty() {
             calendars = calendars
@@ -128,7 +128,7 @@ impl GetFreeBusyUseCase {
 
         let all_events_futures = calendars.iter().map(|calendar| {
             ctx.repos
-                .event_repo
+                .events
                 .find_by_calendar(&calendar.id, Some(&timespan))
         });
 
@@ -186,7 +186,7 @@ mod test {
 
         let calendar = Calendar::new(&user.id(), &user.account_id);
 
-        ctx.repos.calendar_repo.insert(&calendar).await.unwrap();
+        ctx.repos.calendars.insert(&calendar).await.unwrap();
         let one_hour = 1000 * 60 * 60;
         let mut e1 = CalendarEvent {
             calendar_id: calendar.id.clone(),
@@ -258,9 +258,9 @@ mod test {
         };
         e3.set_recurrence(e3rr, &calendar.settings, true);
 
-        ctx.repos.event_repo.insert(&e1).await.unwrap();
-        ctx.repos.event_repo.insert(&e2).await.unwrap();
-        ctx.repos.event_repo.insert(&e3).await.unwrap();
+        ctx.repos.events.insert(&e1).await.unwrap();
+        ctx.repos.events.insert(&e2).await.unwrap();
+        ctx.repos.events.insert(&e3).await.unwrap();
 
         let mut usecase = GetFreeBusyUseCase {
             user_id: user.id().clone(),

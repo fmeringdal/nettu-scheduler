@@ -44,8 +44,8 @@ pub use nettu_scheduler_api_structs::dtos::CalendarEventDTO as CalendarEvent;
 pub use nettu_scheduler_api_structs::dtos::CalendarSettingsDTO as CalendarSettings;
 pub use nettu_scheduler_api_structs::dtos::EventWithInstancesDTO as EventWithIInstances;
 pub use nettu_scheduler_api_structs::dtos::ScheduleDTO as Schedule;
-pub use nettu_scheduler_api_structs::dtos::ServiceDTO as Service;
 pub use nettu_scheduler_api_structs::dtos::ServiceResourceDTO as ServiceResource;
+pub use nettu_scheduler_api_structs::dtos::ServiceWithUsersDTO as Service;
 pub use nettu_scheduler_api_structs::dtos::UserDTO as User;
 
 /// Nettu Scheduler Server SDK

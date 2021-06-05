@@ -27,6 +27,10 @@ impl IUserRepo for InMemoryUserRepo {
     }
 
     async fn delete(&self, user_id: &ID) -> Option<User> {
+        // TODO: Remove user from services
+        // TODO: Remove calendars by user
+        // TODO: Remove events by user
+        // TODO: Remove schedules by user
         delete(user_id, &self.users)
     }
 

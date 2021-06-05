@@ -37,15 +37,12 @@ impl ICalendarRepo for InMemoryCalendarRepo {
     }
 
     async fn delete(&self, calendar_id: &ID) -> anyhow::Result<()> {
+        // TODO: Delete from services
+        // TODO: Delete events with this calendar
         match delete(calendar_id, &self.calendars) {
             Some(_) => Ok(()),
             None => Err(anyhow::Error::msg("Unable to delete calendar")),
         }
-    }
-
-    async fn delete_by_user(&self, user_id: &ID) -> anyhow::Result<DeleteResult> {
-        let res = delete_by(&self.calendars, |cal| cal.user_id == *user_id);
-        Ok(res)
     }
 
     async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<Calendar> {

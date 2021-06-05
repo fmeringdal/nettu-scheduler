@@ -57,7 +57,7 @@ impl UseCase for GetServiceUseCase {
     const NAME: &'static str = "GetService";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
-        let res = ctx.repos.service_repo.find(&self.service_id).await;
+        let res = ctx.repos.services.find(&self.service_id).await;
         match res {
             Some(service) if service.account_id == self.account.id => Ok(UseCaseRes { service }),
             _ => Err(UseCaseErrors::NotFound),

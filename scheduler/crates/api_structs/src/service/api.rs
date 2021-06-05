@@ -1,7 +1,7 @@
-use nettu_scheduler_domain::{Service, TimePlan, ID};
+use nettu_scheduler_domain::{Service, ServiceResource, TimePlan, ID};
 use serde::{Deserialize, Serialize};
 
-use crate::dtos::ServiceDTO;
+use crate::dtos::{ServiceDTO, ServiceResourceDTO, ServiceWithUsersDTO};
 
 #[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -13,6 +13,34 @@ impl ServiceResponse {
     pub fn new(service: Service) -> Self {
         Self {
             service: ServiceDTO::new(service),
+        }
+    }
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ServiceWithUsersResponse {
+    pub service: ServiceWithUsersDTO,
+}
+
+impl ServiceWithUsersResponse {
+    pub fn new(service: Service, users: Vec<ServiceResource>) -> Self {
+        Self {
+            service: ServiceWithUsersDTO::new(service, users),
+        }
+    }
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ServiceResourceResponse {
+    pub user: ServiceResourceDTO,
+}
+
+impl ServiceResourceResponse {
+    pub fn new(user: ServiceResource) -> Self {
+        Self {
+            user: ServiceResourceDTO::new(user),
         }
     }
 }
@@ -37,7 +65,7 @@ pub mod add_user_to_service {
         pub furthest_booking_time: Option<i64>,
     }
 
-    pub type APIResponse = ServiceResponse;
+    pub type APIResponse = ServiceResourceDTO;
 }
 
 pub mod create_service {
@@ -161,10 +189,12 @@ pub mod get_service {
         pub service_id: ID,
     }
 
-    pub type APIResponse = ServiceResponse;
+    pub type APIResponse = ServiceWithUsersDTO;
 }
 
 pub mod get_services_by_meta {
+    use crate::dtos::ServiceDTO;
+
     use super::*;
 
     #[derive(Deserialize)]
@@ -211,7 +241,7 @@ pub mod remove_user_from_service {
         pub user_id: ID,
     }
 
-    pub type APIResponse = ServiceResponse;
+    pub type APIResponse = ServiceResourceDTO;
 }
 
 pub mod update_service_user {
@@ -233,5 +263,5 @@ pub mod update_service_user {
         pub furthest_booking_time: Option<i64>,
     }
 
-    pub type APIResponse = ServiceResponse;
+    pub type APIResponse = ServiceResourceDTO;
 }

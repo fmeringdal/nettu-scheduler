@@ -61,7 +61,7 @@ impl UseCase for SetAccountWebhookUseCase {
             )));
         }
 
-        match ctx.repos.account_repo.save(&self.account).await {
+        match ctx.repos.accounts.save(&self.account).await {
             Ok(_) => Ok(self.account.clone()),
             Err(_) => Err(UseCaseErrors::StorageError),
         }

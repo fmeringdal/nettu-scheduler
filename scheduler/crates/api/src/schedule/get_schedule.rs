@@ -71,7 +71,7 @@ impl UseCase for GetScheduleUseCase {
     const NAME: &'static str = "GetSchedule";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
-        let schedule = ctx.repos.schedule_repo.find(&self.schedule_id).await;
+        let schedule = ctx.repos.schedules.find(&self.schedule_id).await;
         match schedule {
             Some(schedule) => Ok(schedule),
             _ => Err(UseCaseErrors::NotFound(self.schedule_id.clone())),

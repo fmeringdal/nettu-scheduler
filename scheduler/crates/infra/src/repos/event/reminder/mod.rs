@@ -1,10 +1,9 @@
 mod inmemory;
-mod mongo;
 mod postgres;
 
 pub use inmemory::InMemoryReminderRepo;
-pub use mongo::MongoReminderRepo;
 use nettu_scheduler_domain::{Reminder, ID};
+pub use postgres::PostgresReminderRepo;
 
 use crate::repos::shared::repo::DeleteResult;
 

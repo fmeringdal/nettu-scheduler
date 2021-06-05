@@ -1,19 +1,17 @@
 mod inmemory;
 mod postgres;
 
-pub use inmemory::InMemoryServiceRepo;
-use nettu_scheduler_domain::{Service, ID};
-pub use postgres::PostgresServiceRepo;
-
-use super::shared::query_structs::MetadataFindQuery;
+pub use inmemory::InMemoryServiceUserRepo;
+use nettu_scheduler_domain::{ServiceResource, ID};
+pub use postgres::PostgresServiceUserRepo;
+pub use postgres::ServiceUserRaw;
 
 #[async_trait::async_trait]
-pub trait IServiceRepo: Send + Sync {
-    async fn insert(&self, service: &Service) -> anyhow::Result<()>;
-    async fn save(&self, service: &Service) -> anyhow::Result<()>;
-    async fn find(&self, service_id: &ID) -> Option<Service>;
-    async fn delete(&self, service_id: &ID) -> anyhow::Result<()>;
-    async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<Service>;
+pub trait IServiceUserRepo: Send + Sync {
+    async fn insert(&self, user: &ServiceResource) -> anyhow::Result<()>;
+    async fn save(&self, user: &ServiceResource) -> anyhow::Result<()>;
+    async fn find(&self, service_id: &ID, user_id: &ID) -> Option<ServiceResource>;
+    async fn delete(&self, service_id: &ID, user_uid: &ID) -> anyhow::Result<()>;
 }
 
 // #[cfg(test)]
@@ -47,8 +45,12 @@ pub trait IServiceRepo: Send + Sync {
 //             let user_id = ID::default();
 //             let calendar_id = ID::default();
 //             let timeplan = TimePlan::Empty;
-//             let resource =
-//                 ServiceResource::new(user_id.clone(), timeplan, vec![calendar_id.clone()]);
+//             let resource = ServiceResource::new(
+//                 user_id.clone(),
+//                 service.id,
+//                 timeplan,
+//                 vec![calendar_id.clone()],
+//             );
 //             service.add_user(resource);
 
 //             ctx.repos

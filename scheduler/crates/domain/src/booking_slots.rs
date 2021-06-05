@@ -1,6 +1,5 @@
 use crate::{date, event_instance::EventInstance, CompatibleInstances, ID};
 use chrono::prelude::*;
-
 use chrono_tz::Tz;
 use date::format_date;
 use serde::Serialize;

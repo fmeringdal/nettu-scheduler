@@ -136,7 +136,7 @@ impl UseCase for UpdateEventUseCase {
             metadata,
         } = self;
 
-        let mut e = match ctx.repos.event_repo.find(&event_id).await {
+        let mut e = match ctx.repos.events.find(&event_id).await {
             Some(event) if event.user_id == *user_id => event,
             _ => {
                 return Err(UseCaseErrors::NotFound(
@@ -164,7 +164,7 @@ impl UseCase for UpdateEventUseCase {
         }
         e.reminder = reminder.clone();
 
-        let calendar = match ctx.repos.calendar_repo.find(&e.calendar_id).await {
+        let calendar = match ctx.repos.calendars.find(&e.calendar_id).await {
             Some(cal) => cal,
             _ => {
                 return Err(UseCaseErrors::NotFound(
@@ -208,7 +208,7 @@ impl UseCase for UpdateEventUseCase {
 
         e.updated = ctx.sys.get_timestamp_millis();
 
-        let repo_res = ctx.repos.event_repo.save(&e).await;
+        let repo_res = ctx.repos.events.save(&e).await;
         if repo_res.is_err() {
             return Err(UseCaseErrors::StorageError);
         }

@@ -68,31 +68,22 @@ CREATE TABLE IF NOT EXISTS services (
 CREATE TABLE IF NOT EXISTS service_users (
     service_uid uuid NOT NULL REFERENCES services(service_uid) ON DELETE CASCADE,
     user_uid uuid NOT NULL REFERENCES users(user_uid) ON DELETE CASCADE,
-    available_calendar_uid uuid REFERENCES calendars(calendar_uid) ON DELETE CASCADE,
-    available_schedule_uid uuid REFERENCES schedules(schedule_uid) ON DELETE CASCADE,
+    available_calendar_uid uuid REFERENCES calendars(calendar_uid) ON DELETE SET NULL,
+    available_schedule_uid uuid REFERENCES schedules(schedule_uid) ON DELETE SET NULL,
     "buffer" BIGINT NOT NULL, 
     closest_booking_time BIGINT NOT NULL, 
     furthest_booking_time BIGINT, 
 	PRIMARY KEY(service_uid, user_uid),
     CHECK (
-        (available_calendar_uid IS NOT NULL AND available_schedule_uid IS NULL) OR
-        (available_calendar_uid IS NULL AND available_schedule_uid IS NOT NULL) OR
-        (available_calendar_uid IS NOT NULL AND available_schedule_uid IS NULL)
+        NOT (available_calendar_uid IS NOT NULL AND available_schedule_uid IS NOT NULL)
     )
 );
 -- Maybe this can be created better ?
-CREATE TABLE IF NOT EXISTS service_user_calendars (
+CREATE TABLE IF NOT EXISTS service_user_busy_calendars (
     service_uid uuid NOT NULL REFERENCES services(service_uid) ON DELETE CASCADE,
     user_uid uuid NOT NULL REFERENCES users(user_uid) ON DELETE CASCADE,
     calendar_uid uuid NOT NULL REFERENCES calendars(calendar_uid) ON DELETE CASCADE,
 	PRIMARY KEY(service_uid, user_uid, calendar_uid)
-);
--- Maybe this can be created better ?
-CREATE TABLE IF NOT EXISTS service_user_schedules (
-    service_uid uuid NOT NULL REFERENCES services(service_uid) ON DELETE CASCADE,
-    user_uid uuid NOT NULL REFERENCES users(user_uid) ON DELETE CASCADE,
-    schedule_uid uuid NOT NULL REFERENCES schedules(schedule_uid) ON DELETE CASCADE,
-	PRIMARY KEY(service_uid, user_uid, schedule_uid)
 );
 
 -- CREATE TABLE IF NOT EXISTS metadata (

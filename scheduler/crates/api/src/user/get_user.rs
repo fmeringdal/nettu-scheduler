@@ -57,7 +57,7 @@ impl UseCase for GetUserUseCase {
     const NAME: &'static str = "GetUser";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
-        let user = match ctx.repos.user_repo.find(&self.user_id).await {
+        let user = match ctx.repos.users.find(&self.user_id).await {
             Some(u) if u.account_id == self.account.id => u,
             _ => return Err(UseCaseErrors::UserNotFound),
         };

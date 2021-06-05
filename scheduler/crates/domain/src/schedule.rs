@@ -20,7 +20,7 @@ pub struct Schedule {
     pub metadata: Metadata,
 }
 
-impl Meta for Schedule {
+impl Meta<ID> for Schedule {
     fn metadata(&self) -> &Metadata {
         &self.metadata
     }
@@ -68,9 +68,9 @@ impl Schedule {
     }
 }
 
-impl Entity for Schedule {
-    fn id(&self) -> &ID {
-        &self.id
+impl Entity<ID> for Schedule {
+    fn id(&self) -> ID {
+        self.id.clone()
     }
 }
 

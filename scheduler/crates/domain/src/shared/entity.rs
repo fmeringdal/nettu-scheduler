@@ -3,8 +3,8 @@ use serde::{de::Visitor, Deserialize, Serialize};
 use std::{fmt::Display, str::FromStr};
 use thiserror::Error;
 
-pub trait Entity {
-    fn id(&self) -> &ID;
+pub trait Entity<T: PartialEq> {
+    fn id(&self) -> T;
     fn eq(&self, other: &Self) -> bool {
         self.id() == other.id()
     }

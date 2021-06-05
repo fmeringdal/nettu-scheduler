@@ -74,7 +74,7 @@ impl UseCase for GetCalendarUseCase {
     const NAME: &'static str = "GetCalendar";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
-        let cal = ctx.repos.calendar_repo.find(&self.calendar_id).await;
+        let cal = ctx.repos.calendars.find(&self.calendar_id).await;
         match cal {
             Some(cal) if cal.user_id == self.user_id => Ok(cal),
             _ => Err(UseCaseErrors::NotFound(self.calendar_id.clone())),
