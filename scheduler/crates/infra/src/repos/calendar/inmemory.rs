@@ -1,6 +1,6 @@
 use super::ICalendarRepo;
 use crate::repos::shared::{
-    inmemory_repo::*, query_structs::MetadataFindQuery, repo::DeleteResult,
+    inmemory_repo::*, query_structs::MetadataFindQuery,
 };
 use nettu_scheduler_domain::{Calendar, ID};
 

@@ -1,10 +1,7 @@
 use super::IServiceUserRepo;
-use crate::repos::shared::{query_structs::MetadataFindQuery, repo::DeleteResult};
-use nettu_scheduler_domain::{Schedule, ServiceResource, TimePlan, ID};
-use sqlx::{
-    types::{Json, Uuid},
-    Done, FromRow, PgPool,
-};
+
+use nettu_scheduler_domain::{ServiceResource, TimePlan, ID};
+use sqlx::{types::Uuid, FromRow, PgPool};
 
 pub struct PostgresServiceUserRepo {
     pool: PgPool,

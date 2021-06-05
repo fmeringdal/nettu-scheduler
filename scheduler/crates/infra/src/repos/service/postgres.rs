@@ -133,7 +133,7 @@ impl IServiceRepo for PostgresServiceRepo {
             service_id.inner_ref(),
         )
         .execute(&self.pool)
-        .await;
+        .await?;
         Ok(())
     }
 

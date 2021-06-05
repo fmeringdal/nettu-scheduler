@@ -1,5 +1,5 @@
 use super::IEventRepo;
-use crate::repos::shared::repo::DeleteResult;
+
 use crate::repos::shared::{inmemory_repo::*, query_structs::MetadataFindQuery};
 use nettu_scheduler_domain::{CalendarEvent, TimeSpan, ID};
 

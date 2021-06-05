@@ -1,5 +1,5 @@
 use super::ICalendarRepo;
-use crate::repos::shared::{query_structs::MetadataFindQuery, repo::DeleteResult};
+use crate::repos::shared::{query_structs::MetadataFindQuery};
 use nettu_scheduler_domain::{Calendar, Metadata, ID};
 use sqlx::{
     types::{Json, Uuid},

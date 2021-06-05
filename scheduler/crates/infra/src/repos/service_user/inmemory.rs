@@ -1,6 +1,6 @@
 use super::IServiceUserRepo;
-use crate::repos::shared::{inmemory_repo::*, query_structs::MetadataFindQuery};
-use nettu_scheduler_domain::{Service, ServiceResource, ID};
+use crate::repos::shared::{inmemory_repo::*};
+use nettu_scheduler_domain::{ServiceResource, ID};
 
 pub struct InMemoryServiceUserRepo {
     service_users: std::sync::Mutex<Vec<ServiceResource>>,

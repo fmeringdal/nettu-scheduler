@@ -1,6 +1,6 @@
 use super::IScheduleRepo;
 use crate::{
-    repos::shared::{inmemory_repo::*, repo::DeleteResult},
+    repos::shared::{inmemory_repo::*},
     MetadataFindQuery,
 };
 use nettu_scheduler_domain::{Schedule, ID};

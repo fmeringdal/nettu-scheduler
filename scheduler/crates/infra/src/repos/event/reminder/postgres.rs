@@ -1,7 +1,7 @@
 use super::IReminderRepo;
-use crate::repos::shared::{query_structs::MetadataFindQuery, repo::DeleteResult};
+use crate::repos::shared::{repo::DeleteResult};
 use nettu_scheduler_domain::{
-    Calendar, CalendarEvent, EventRemindersExpansionJob, Metadata, Reminder, ID,
+    Reminder, ID,
 };
 use sqlx::{types::Uuid, Done, FromRow, PgPool};
 

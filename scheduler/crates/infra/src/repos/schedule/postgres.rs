@@ -158,7 +158,7 @@ impl IScheduleRepo for PostgresScheduleRepo {
         schedules.into_iter().map(|s| s.into()).collect()
     }
 
-    async fn delete(&self, schedule_id: &ID) -> Option<Schedule> {
+    async fn delete(&self, _schedule_id: &ID) -> Option<Schedule> {
         let id = Uuid::new_v4();
         match sqlx::query_as!(
             ScheduleRaw,

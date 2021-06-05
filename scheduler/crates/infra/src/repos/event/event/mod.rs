@@ -1,7 +1,7 @@
 mod inmemory;
 mod postgres;
 
-use crate::repos::shared::{query_structs::MetadataFindQuery, repo::DeleteResult};
+use crate::repos::shared::{query_structs::MetadataFindQuery};
 pub use inmemory::InMemoryEventRepo;
 use nettu_scheduler_domain::{CalendarEvent, TimeSpan, ID};
 pub use postgres::PostgresEventRepo;
