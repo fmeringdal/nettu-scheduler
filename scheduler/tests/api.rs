@@ -484,7 +484,7 @@ async fn test_crud_service() {
 
     let service = admin_client.service.create().await.unwrap().service;
 
-    let service = admin_client
+    let add_user_res = admin_client
         .service
         .add_user(AddServiceUserInput {
             service_id: service.id.clone(),
@@ -495,13 +495,18 @@ async fn test_crud_service() {
             closest_booking_time: None,
             furthest_booking_time: None,
         })
-        .await
-        .unwrap()
-        .service;
+        .await;
+    assert!(add_user_res.is_ok());
+    let added_service_resource = add_user_res.unwrap();
+    assert_eq!(added_service_resource.user_id, user.id.clone());
+    assert_eq!(added_service_resource.service_id, service.id.clone());
+
+    let service = admin_client.service.get(service.id.clone()).await.unwrap();
 
     assert_eq!(service.users.len(), 1);
     let new_closest_booking_time = service.users[0].closest_booking_time + 1000 * 60 * 60;
-    let service = admin_client
+
+    let service_resource = admin_client
         .service
         .update_user(UpdateServiceUserInput {
             service_id: service.id.clone(),
@@ -513,22 +518,23 @@ async fn test_crud_service() {
             furthest_booking_time: None,
         })
         .await
-        .unwrap()
-        .service;
+        .unwrap();
 
     assert_eq!(
-        service.users[0].closest_booking_time,
+        service_resource.closest_booking_time,
         new_closest_booking_time
     );
-    let service = admin_client
+    let remove_user_res = admin_client
         .service
         .remove_user(RemoveServiceUserInput {
             service_id: service.id.clone(),
             user_id: user.id.clone(),
         })
-        .await
-        .unwrap()
-        .service;
+        .await;
+    assert!(remove_user_res.is_ok());
+
+    let service = admin_client.service.get(service.id.clone()).await.unwrap();
+
     assert!(service.users.is_empty());
 
     let booking_slots = admin_client
