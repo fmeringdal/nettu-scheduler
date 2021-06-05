@@ -1935,12 +1935,12 @@ dependencies = [
  "chrono",
  "chrono-tz",
  "jsonwebtoken",
- "mongodb",
  "nettu_scheduler_utils",
  "rrule",
  "serde",
  "thiserror",
  "url",
+ "uuid",
 ]
 
 [[package]]

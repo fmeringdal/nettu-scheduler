@@ -1,7 +1,7 @@
-use mongodb::bson::oid::ObjectId;
 use serde::{de::Visitor, Deserialize, Serialize};
 use std::{fmt::Display, str::FromStr};
 use thiserror::Error;
+use uuid::Uuid;
 
 pub trait Entity<T: PartialEq> {
     fn id(&self) -> T;
@@ -11,25 +11,25 @@ pub trait Entity<T: PartialEq> {
 }
 
 #[derive(Debug, Clone)]
-pub struct ID(ObjectId);
+pub struct ID(Uuid);
 impl ID {
     pub fn new() -> Self {
-        Self(ObjectId::new())
+        Self(Uuid::new_v4())
     }
 
-    pub fn from(oid: ObjectId) -> Self {
-        Self(oid)
+    pub fn from(uid: Uuid) -> Self {
+        Self(uid)
     }
 
     pub fn as_string(&self) -> String {
         self.0.to_string()
     }
 
-    pub fn inner(self) -> ObjectId {
+    pub fn inner(self) -> Uuid {
         self.0
     }
 
-    pub fn inner_ref(&self) -> &ObjectId {
+    pub fn inner_ref(&self) -> &Uuid {
         &self.0
     }
 }
@@ -56,7 +56,7 @@ impl FromStr for ID {
     type Err = InvalidIDError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        ObjectId::with_string(s)
+        s.parse::<Uuid>()
             .map(Self)
             .map_err(|_| InvalidIDError::Malformed(s.to_string()))
     }

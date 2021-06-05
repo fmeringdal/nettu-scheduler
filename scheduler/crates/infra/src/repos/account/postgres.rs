@@ -36,25 +36,15 @@ impl Into<Account> for AccountRaw {
     }
 }
 
-// impl PostgresAccountRepo {
-//     pub fn new() -> Self {
-//         Self {
-//             : db.collection("accounts"),
-//         }
-//     }
-// }
-
 #[async_trait::async_trait]
 impl IAccountRepo for PostgresAccountRepo {
     async fn insert(&self, account: &Account) -> anyhow::Result<()> {
-        // let id = Uuid::from_str(account.id.to_string().as_str())?;
-        let id = Uuid::new_v4();
         sqlx::query!(
             r#"
             INSERT INTO accounts(account_uid, secret_api_key, public_jwt_key, settings)
             VALUES($1, $2, $3, $4)
             "#,
-            id,
+            account.id.inner_ref(),
             account.secret_api_key,
             account.public_jwt_key.clone().map(|key| key.inner()),
             Json(&account.settings) as _
@@ -65,7 +55,6 @@ impl IAccountRepo for PostgresAccountRepo {
     }
 
     async fn save(&self, account: &Account) -> anyhow::Result<()> {
-        let id = Uuid::from_str(account.id.to_string().as_str())?;
         sqlx::query!(
             r#"
             UPDATE accounts
@@ -74,7 +63,7 @@ impl IAccountRepo for PostgresAccountRepo {
             settings = $4
             WHERE account_uid = $1
             "#,
-            id,
+            account.id.inner_ref(),
             account.secret_api_key,
             account.public_jwt_key.clone().map(|key| key.inner()),
             Json(&account.settings) as _
@@ -86,15 +75,13 @@ impl IAccountRepo for PostgresAccountRepo {
     }
 
     async fn find(&self, account_id: &ID) -> Option<Account> {
-        // let id = Uuid::from_str(account_id.to_string().as_str()).unwrap();
-        let id = Uuid::new_v4();
         let account: AccountRaw = match sqlx::query_as!(
             AccountRaw,
             r#"
             SELECT * FROM accounts
             WHERE account_uid = $1
             "#,
-            id,
+            account_id.inner_ref(),
         )
         .fetch_one(&self.pool)
         .await
@@ -106,12 +93,10 @@ impl IAccountRepo for PostgresAccountRepo {
     }
 
     async fn find_many(&self, accounts_ids: &[ID]) -> anyhow::Result<Vec<Account>> {
-        // let ids = accounts_ids
-        //     .iter()
-        //     .map(|account_id| Uuid::from_str(&account_id.to_string()).unwrap())
-        //     .collect::<Vec<_>>();
-        let ids = vec![Uuid::from_str("510ae4e5-3fa5-4ab4-8f87-fe33c2c9205c").unwrap()];
-        println!("ids: {:?}", ids);
+        let ids = accounts_ids
+            .iter()
+            .map(|id| id.inner_ref().clone())
+            .collect::<Vec<_>>();
         let accounts_raw: Vec<AccountRaw> = sqlx::query_as!(
             AccountRaw,
             "
@@ -127,7 +112,6 @@ impl IAccountRepo for PostgresAccountRepo {
     }
 
     async fn delete(&self, account_id: &ID) -> Option<Account> {
-        let id = Uuid::new_v4();
         let account: AccountRaw = match sqlx::query_as!(
             AccountRaw,
             "
@@ -135,7 +119,7 @@ impl IAccountRepo for PostgresAccountRepo {
             WHERE account_uid = $1
             RETURNING *
             ",
-            id
+            account_id.inner_ref()
         )
         .fetch_one(&self.pool)
         .await

@@ -16,6 +16,7 @@ chrono = { version = "0.4.19", features = ["serde"] }
 chrono-tz = { version = "0.5.3", features = ["serde"] }
 anyhow = "1.0.0"
 url = "2.2.0"
+uuid = { version="0.8.2", features = ["v4"]}
+# sqlx={version = "0.4.2", features = ["runtime-actix-rustls", "uuid"] }
 jsonwebtoken = "7"
-mongodb = { version = "1.1.1", default-features = false, features = ["async-std-runtime"] }
 thiserror = "1.0"
