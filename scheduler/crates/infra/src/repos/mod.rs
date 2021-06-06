@@ -17,13 +17,11 @@ use event::{
 use schedule::{IScheduleRepo, InMemoryScheduleRepo, PostgresScheduleRepo};
 use service::{IServiceRepo, InMemoryServiceRepo, PostgresServiceRepo};
 use service_user::{IServiceUserRepo, InMemoryServiceUserRepo, PostgresServiceUserRepo};
+pub use shared::query_structs::*;
 use sqlx::postgres::PgPoolOptions;
 use std::sync::Arc;
 use tracing::info;
 use user::{IUserRepo, InMemoryUserRepo, PostgresUserRepo};
-
-pub use mongodb::bson::oid::ObjectId;
-pub use shared::query_structs::*;
 
 #[derive(Clone)]
 pub struct Repos {

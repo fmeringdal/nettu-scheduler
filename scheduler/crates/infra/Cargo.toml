@@ -11,10 +11,8 @@ nettu_scheduler_utils = { path = "../utils" }
 nettu_scheduler_domain = { path = "../domain" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1"
-futures = "0.3" # todo, only need stream feature for mongodb
 async-trait = "0.1.42"
 chrono = { version = "0.4.19", features = ["serde"] }
-mongodb = { version = "1.1.1", default-features = false, features = ["async-std-runtime"] }
 anyhow = "1.0.0"
 tokio = { version = "0.2", features = ["macros"] }
 tracing = "0.1.25"
