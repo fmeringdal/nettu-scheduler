@@ -1,7 +1,7 @@
 use crate::shared::usecase::{execute, UseCase};
 use crate::{error::NettuError, shared::auth::protect_account_route};
 use actix_web::{web, HttpRequest, HttpResponse};
-use futures::future::join_all;
+
 use nettu_scheduler_api_structs::delete_user::*;
 use nettu_scheduler_domain::{Account, User, ID};
 use nettu_scheduler_infra::NettuContext;

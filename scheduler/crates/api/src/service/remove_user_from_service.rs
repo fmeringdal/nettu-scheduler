@@ -26,7 +26,7 @@ pub async fn remove_user_from_service_controller(
 
     execute(usecase, &ctx)
         .await
-        .map(|usecase_res| HttpResponse::Ok().json(APIResponse::from("User removed from service")))
+        .map(|_usecase_res| HttpResponse::Ok().json(APIResponse::from("User removed from service")))
         .map_err(|e| match e {
             UseCaseErrors::StorageError => NettuError::InternalError,
             UseCaseErrors::ServiceNotFound => {
@@ -64,7 +64,7 @@ impl UseCase for RemoveUserFromServiceUseCase {
     const NAME: &'static str = "RemoveUserFromService";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
-        let mut service = match ctx.repos.services.find(&self.service_id).await {
+        let service = match ctx.repos.services.find(&self.service_id).await {
             Some(service) if service.account_id == self.account.id => service,
             _ => return Err(UseCaseErrors::ServiceNotFound),
         };

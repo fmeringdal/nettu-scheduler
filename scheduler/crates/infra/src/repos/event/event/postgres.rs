@@ -186,7 +186,7 @@ impl IEventRepo for PostgresEventRepo {
         .await
         {
             Ok(event) => event,
-            Err(e) => return None,
+            Err(_e) => return None,
         };
         Some(event.into())
     }

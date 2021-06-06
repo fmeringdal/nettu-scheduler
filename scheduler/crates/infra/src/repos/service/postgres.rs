@@ -1,6 +1,6 @@
 use super::IServiceRepo;
 use crate::repos::{service_user::ServiceUserRaw, shared::query_structs::MetadataFindQuery};
-use nettu_scheduler_domain::{Metadata, Service, ServiceWithUsers, TimePlan, ID};
+use nettu_scheduler_domain::{Metadata, Service, ServiceWithUsers, ID};
 use sqlx::{types::Uuid, FromRow, PgPool};
 
 pub struct PostgresServiceRepo {

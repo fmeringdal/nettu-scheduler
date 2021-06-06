@@ -1,8 +1,7 @@
 use super::IAccountRepo;
 use nettu_scheduler_domain::{Account, PEMKey, ID};
 use sqlx::{
-    types::{Json, Uuid},
-    Done, FromRow, PgPool,
+    types::{Json, Uuid}, FromRow, PgPool,
 };
 
 pub struct PostgresAccountRepo {

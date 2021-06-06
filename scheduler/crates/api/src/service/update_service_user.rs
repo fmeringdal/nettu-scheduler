@@ -81,7 +81,7 @@ impl UseCase for UpdateServiceUserUseCase {
     const NAME: &'static str = "UpdateServiceUser";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
-        let mut service = match ctx.repos.services.find(&self.service_id).await {
+        let _service = match ctx.repos.services.find(&self.service_id).await {
             Some(service) if service.account_id == self.account.id => service,
             _ => return Err(UseCaseErrors::ServiceNotFound),
         };

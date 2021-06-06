@@ -458,7 +458,7 @@ mod test {
         let TestContext {
             ctx,
             service,
-            account,
+            account: _,
         } = setup().await;
 
         let mut usecase = GetServiceBookingSlotsUseCase {

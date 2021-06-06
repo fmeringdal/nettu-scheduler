@@ -7,7 +7,7 @@ use crate::{
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::delete_service::*;
-use nettu_scheduler_domain::{Account, Service, ServiceWithUsers, ID};
+use nettu_scheduler_domain::{Account, Service, ID};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn delete_service_controller(

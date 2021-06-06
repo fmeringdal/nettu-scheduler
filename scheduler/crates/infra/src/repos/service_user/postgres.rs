@@ -158,7 +158,7 @@ impl IServiceUserRepo for PostgresServiceUserRepo {
         .await
         {
             Ok(s) => s,
-            Err(e) => return None,
+            Err(_e) => return None,
         };
         Some(schedule.into())
     }

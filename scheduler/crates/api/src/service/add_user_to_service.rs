@@ -83,7 +83,7 @@ impl UseCase for AddUserToServiceUseCase {
             return Err(UseCaseErrors::UserNotFound);
         }
 
-        let mut service = match ctx.repos.services.find(&self.service_id).await {
+        let service = match ctx.repos.services.find(&self.service_id).await {
             Some(service) if service.account_id == self.account.id => service,
             _ => return Err(UseCaseErrors::ServiceNotFound),
         };
