@@ -7,21 +7,20 @@ mod service_user;
 mod shared;
 mod user;
 
-use account::{IAccountRepo, InMemoryAccountRepo, PostgresAccountRepo};
-use calendar::{ICalendarRepo, InMemoryCalendarRepo, PostgresCalendarRepo};
+use account::{IAccountRepo, PostgresAccountRepo};
+use calendar::{ICalendarRepo, PostgresCalendarRepo};
 use event::{
     IEventRemindersExpansionJobsRepo, IEventRepo, IReminderRepo,
-    InMemoryEventRemindersExpansionJobsRepo, InMemoryEventRepo, InMemoryReminderRepo,
     PostgresEventReminderExpansionJobsRepo, PostgresEventRepo, PostgresReminderRepo,
 };
-use schedule::{IScheduleRepo, InMemoryScheduleRepo, PostgresScheduleRepo};
-use service::{IServiceRepo, InMemoryServiceRepo, PostgresServiceRepo};
-use service_user::{IServiceUserRepo, InMemoryServiceUserRepo, PostgresServiceUserRepo};
+use schedule::{IScheduleRepo, PostgresScheduleRepo};
+use service::{IServiceRepo, PostgresServiceRepo};
+use service_user::{IServiceUserRepo, PostgresServiceUserRepo};
 pub use shared::query_structs::*;
 use sqlx::postgres::PgPoolOptions;
 use std::sync::Arc;
 use tracing::info;
-use user::{IUserRepo, InMemoryUserRepo, PostgresUserRepo};
+use user::{IUserRepo, PostgresUserRepo};
 
 #[derive(Clone)]
 pub struct Repos {
@@ -60,19 +59,5 @@ impl Repos {
                 pool,
             )),
         })
-    }
-
-    pub fn create_inmemory() -> Self {
-        Self {
-            events: Arc::new(InMemoryEventRepo::new()),
-            calendars: Arc::new(InMemoryCalendarRepo::new()),
-            accounts: Arc::new(InMemoryAccountRepo::new()),
-            users: Arc::new(InMemoryUserRepo::new()),
-            services: Arc::new(InMemoryServiceRepo::new()),
-            service_users: Arc::new(InMemoryServiceUserRepo::new()),
-            schedules: Arc::new(InMemoryScheduleRepo::new()),
-            reminders: Arc::new(InMemoryReminderRepo::new()),
-            event_reminders_expansion_jobs: Arc::new(InMemoryEventRemindersExpansionJobsRepo::new()),
-        }
     }
 }

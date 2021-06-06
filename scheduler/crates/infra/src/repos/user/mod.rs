@@ -1,7 +1,5 @@
-mod inmemory;
 mod postgres;
 
-pub use inmemory::InMemoryUserRepo;
 use nettu_scheduler_domain::{User, ID};
 pub use postgres::PostgresUserRepo;
 

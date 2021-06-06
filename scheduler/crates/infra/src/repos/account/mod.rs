@@ -1,7 +1,5 @@
-mod inmemory;
 mod postgres;
 
-pub use inmemory::InMemoryAccountRepo;
 use nettu_scheduler_domain::Account;
 pub use postgres::PostgresAccountRepo;
 
@@ -25,7 +23,7 @@ mod tests {
     /// Creates inmemory and mongo context when mongo is running,
     /// otherwise it will create two inmemory
     async fn create_contexts() -> Vec<NettuContext> {
-        vec![NettuContext::create_inmemory(), setup_context().await]
+        vec![setup_context().await]
     }
 
     #[tokio::test]
@@ -34,9 +32,7 @@ mod tests {
             let account = Account::default();
 
             // Insert
-            let res = ctx.repos.accounts.find_many(&vec![]).await;
-            println!("Res {:?}", res);
-            // assert!(ctx.repos.account_repo.insert(&account).await.is_ok());
+            assert!(ctx.repos.accounts.insert(&account).await.is_ok());
 
             // Different find methods
             let res = ctx.repos.accounts.find(&account.id).await.unwrap();

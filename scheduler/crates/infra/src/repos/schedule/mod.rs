@@ -1,8 +1,6 @@
-mod inmemory;
 mod postgres;
 
 use crate::MetadataFindQuery;
-pub use inmemory::InMemoryScheduleRepo;
 use nettu_scheduler_domain::{Schedule, ID};
 pub use postgres::PostgresScheduleRepo;
 

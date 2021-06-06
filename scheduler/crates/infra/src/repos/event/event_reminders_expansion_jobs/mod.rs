@@ -1,7 +1,5 @@
-mod inmemory;
 mod postgres;
 
-pub use inmemory::InMemoryEventRemindersExpansionJobsRepo;
 use nettu_scheduler_domain::{EventRemindersExpansionJob, ID};
 pub use postgres::PostgresEventReminderExpansionJobsRepo;
 

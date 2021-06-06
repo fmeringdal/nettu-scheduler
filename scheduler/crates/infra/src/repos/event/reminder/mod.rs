@@ -1,7 +1,5 @@
-mod inmemory;
 mod postgres;
 
-pub use inmemory::InMemoryReminderRepo;
 use nettu_scheduler_domain::{Reminder, ID};
 pub use postgres::PostgresReminderRepo;
 
