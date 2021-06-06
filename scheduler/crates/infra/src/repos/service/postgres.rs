@@ -1,7 +1,6 @@
 use super::IServiceRepo;
-use crate::repos::service_user::ServiceUserRaw;
-use crate::repos::shared::query_structs::MetadataFindQuery;
-use nettu_scheduler_domain::{Metadata, Service, ServiceWithUsers, ID};
+use crate::repos::{service_user::ServiceUserRaw, shared::query_structs::MetadataFindQuery};
+use nettu_scheduler_domain::{Metadata, Service, ServiceWithUsers, TimePlan, ID};
 use sqlx::{types::Uuid, FromRow, PgPool};
 
 pub struct PostgresServiceRepo {
@@ -33,7 +32,7 @@ fn extract_metadata(entries: Vec<String>) -> Metadata {
     entries
         .into_iter()
         .map(|row| {
-            let key_value = row.splitn(1, "_").collect::<Vec<_>>();
+            let key_value = row.splitn(2, "_").collect::<Vec<_>>();
             (key_value[0].to_string(), key_value[1].to_string())
         })
         .collect()
@@ -59,7 +58,7 @@ impl Into<Service> for ServiceRaw {
 impl Into<ServiceWithUsers> for ServiceWithUsersRaw {
     fn into(self) -> ServiceWithUsers {
         let users: Vec<ServiceUserRaw> = match self.users {
-            Some(json) => serde_json::from_value(json).unwrap(),
+            Some(json) => serde_json::from_value(json).unwrap_or_default(),
             None => vec![],
         };
         ServiceWithUsers {

@@ -20,7 +20,7 @@ pub struct ServiceUserRaw {
     user_uid: Uuid,
     available_calendar_uid: Option<Uuid>,
     available_schedule_uid: Option<Uuid>,
-    busy: Option<Vec<Uuid>>,
+    busy: Option<Vec<Option<Uuid>>>,
     buffer: i64,
     closest_booking_time: i64,
     furthest_booking_time: Option<i64>,
@@ -45,7 +45,8 @@ impl Into<ServiceResource> for ServiceUserRaw {
                 .busy
                 .unwrap_or_default()
                 .into_iter()
-                .map(|uid| uid.into())
+                .filter(|uid| uid.is_some())
+                .map(|uid| uid.unwrap().into())
                 .collect(),
             closest_booking_time: self.closest_booking_time,
             furthest_booking_time: self.furthest_booking_time,
@@ -141,8 +142,8 @@ impl IServiceUserRepo for PostgresServiceUserRepo {
     }
 
     async fn find(&self, service_id: &ID, user_id: &ID) -> Option<ServiceResource> {
-        let schedule: ServiceUserRaw = match sqlx::query_as!(
-            ServiceUserRaw,
+        // https://github.com/launchbadge/sqlx/issues/367
+        let schedule: ServiceUserRaw = match sqlx::query_as(
             r#"
             SELECT su.*, array_agg(c.calendar_uid) AS busy FROM service_users as su 
             LEFT JOIN service_user_busy_calendars AS c
@@ -150,14 +151,14 @@ impl IServiceUserRepo for PostgresServiceUserRepo {
             WHERE su.service_uid = $1 AND su.user_uid = $2
             GROUP BY su.service_uid, su.user_uid
             "#,
-            service_id.inner_ref(),
-            user_id.inner_ref()
         )
+        .bind(service_id.inner_ref())
+        .bind(user_id.inner_ref())
         .fetch_one(&self.pool)
         .await
         {
             Ok(s) => s,
-            Err(_) => return None,
+            Err(e) => return None,
         };
         Some(schedule.into())
     }

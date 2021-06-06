@@ -1,5 +1,5 @@
 use super::ICalendarRepo;
-use crate::repos::shared::{query_structs::MetadataFindQuery};
+use crate::repos::shared::query_structs::MetadataFindQuery;
 use nettu_scheduler_domain::{Calendar, Metadata, ID};
 use sqlx::{
     types::{Json, Uuid},
@@ -29,7 +29,7 @@ fn extract_metadata(entries: Vec<String>) -> Metadata {
     entries
         .into_iter()
         .map(|row| {
-            let key_value = row.splitn(1, "_").collect::<Vec<_>>();
+            let key_value = row.splitn(2, "_").collect::<Vec<_>>();
             (key_value[0].to_string(), key_value[1].to_string())
         })
         .collect()

@@ -111,7 +111,7 @@ impl UseCase for AddUserToServiceUseCase {
 
         ctx.repos
             .service_users
-            .save(&user_resource)
+            .insert(&user_resource)
             .await
             .map(|_| UseCaseRes {
                 user: user_resource,

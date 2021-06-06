@@ -5,7 +5,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE IF NOT EXISTS accounts (
     account_uid uuid PRIMARY KEY DEFAULT uuid_generate_v4() NOT NULL,
     secret_api_key varchar(255) NOT NULL UNIQUE,
-    public_jwt_key varchar(255),
+    public_jwt_key varchar(1024),
     settings JSONB NOT NULL
 );
 CREATE TABLE IF NOT EXISTS users (

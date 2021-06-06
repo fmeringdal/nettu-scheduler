@@ -1,6 +1,6 @@
 use super::IEventRepo;
-use crate::repos::shared::{query_structs::MetadataFindQuery};
-use nettu_scheduler_domain::{CalendarEvent, Metadata, ID};
+use crate::repos::shared::query_structs::MetadataFindQuery;
+use nettu_scheduler_domain::{CalendarEvent, CalendarEventReminder, Metadata, RRuleOptions, ID};
 use sqlx::{
     types::{Json, Uuid},
     FromRow, PgPool,
@@ -39,7 +39,7 @@ fn extract_metadata(entries: Vec<String>) -> Metadata {
     entries
         .into_iter()
         .map(|row| {
-            let key_value = row.splitn(1, "_").collect::<Vec<_>>();
+            let key_value = row.splitn(2, "_").collect::<Vec<_>>();
             (key_value[0].to_string(), key_value[1].to_string())
         })
         .collect()
@@ -54,6 +54,15 @@ fn to_metadata(metadata: Metadata) -> Vec<String> {
 
 impl Into<CalendarEvent> for EventRaw {
     fn into(self) -> CalendarEvent {
+        let recurrence: Option<RRuleOptions> = match self.recurrence {
+            Some(json) => serde_json::from_value(json).unwrap(),
+            None => None,
+        };
+        let reminder: Option<CalendarEventReminder> = match self.reminder {
+            Some(json) => serde_json::from_value(json).unwrap(),
+            None => None,
+        };
+
         CalendarEvent {
             id: self.event_uid.into(),
             user_id: self.user_uid.into(),
@@ -65,13 +74,9 @@ impl Into<CalendarEvent> for EventRaw {
             end_ts: self.end_ts,
             created: self.created,
             updated: self.updated,
-            recurrence: self
-                .recurrence
-                .map(|recurrence| serde_json::from_value(recurrence).unwrap()),
+            recurrence,
             exdates: self.exdates,
-            reminder: self
-                .reminder
-                .map(|reminder| serde_json::from_value(reminder).unwrap()),
+            reminder,
             is_service: self.is_service,
             metadata: extract_metadata(self.metadata),
         }
@@ -181,7 +186,7 @@ impl IEventRepo for PostgresEventRepo {
         .await
         {
             Ok(event) => event,
-            Err(_) => return None,
+            Err(e) => return None,
         };
         Some(event.into())
     }

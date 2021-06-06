@@ -1,5 +1,3 @@
-
-
 use super::IAccountRepo;
 use nettu_scheduler_domain::{Account, PEMKey, ID};
 use sqlx::{
@@ -69,8 +67,7 @@ impl IAccountRepo for PostgresAccountRepo {
             Json(&account.settings) as _
         )
         .execute(&self.pool)
-        .await?
-        .rows_affected();
+        .await?;
         Ok(())
     }
 

@@ -30,7 +30,7 @@ fn extract_metadata(entries: Vec<String>) -> Metadata {
     entries
         .into_iter()
         .map(|row| {
-            let key_value = row.splitn(1, "_").collect::<Vec<_>>();
+            let key_value = row.splitn(2, "_").collect::<Vec<_>>();
             (key_value[0].to_string(), key_value[1].to_string())
         })
         .collect()
@@ -158,8 +158,7 @@ impl IScheduleRepo for PostgresScheduleRepo {
         schedules.into_iter().map(|s| s.into()).collect()
     }
 
-    async fn delete(&self, _schedule_id: &ID) -> Option<Schedule> {
-        let id = Uuid::new_v4();
+    async fn delete(&self, schedule_id: &ID) -> Option<Schedule> {
         match sqlx::query_as!(
             ScheduleRaw,
             r#"
@@ -167,7 +166,7 @@ impl IScheduleRepo for PostgresScheduleRepo {
             WHERE s.schedule_uid = $1
             RETURNING *
             "#,
-            id,
+            schedule_id.inner_ref(),
         )
         .fetch_one(&self.pool)
         .await
@@ -178,7 +177,6 @@ impl IScheduleRepo for PostgresScheduleRepo {
     }
 
     async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<Schedule> {
-        let account_id = Uuid::new_v4();
         let key = format!("{}_{}", query.metadata.key, query.metadata.value);
 
         let schedules: Vec<ScheduleRaw> = sqlx::query_as!(
@@ -189,7 +187,7 @@ impl IScheduleRepo for PostgresScheduleRepo {
             LIMIT $3
             OFFSET $4
             "#,
-            account_id,
+            query.account_id.inner_ref(),
             key,
             query.limit as i64,
             query.skip as i64,
