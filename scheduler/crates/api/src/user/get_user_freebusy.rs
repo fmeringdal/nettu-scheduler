@@ -157,7 +157,7 @@ impl GetFreeBusyUseCase {
 #[cfg(test)]
 mod test {
     use super::*;
-    use nettu_scheduler_domain::{Calendar, CalendarEvent, Entity, RRuleOptions, User};
+    use nettu_scheduler_domain::{Account, Calendar, CalendarEvent, Entity, RRuleOptions, User};
     use nettu_scheduler_infra::setup_context;
 
     #[test]
@@ -182,10 +182,11 @@ mod test {
     #[test]
     async fn freebusy_works() {
         let ctx = setup_context().await;
-        let user = User::new(Default::default());
-
+        let account = Account::default();
+        ctx.repos.accounts.insert(&account).await.unwrap();
+        let user = User::new(account.id.clone());
+        ctx.repos.users.insert(&user).await.unwrap();
         let calendar = Calendar::new(&user.id(), &user.account_id);
-
         ctx.repos.calendars.insert(&calendar).await.unwrap();
         let one_hour = 1000 * 60 * 60;
         let mut e1 = CalendarEvent {

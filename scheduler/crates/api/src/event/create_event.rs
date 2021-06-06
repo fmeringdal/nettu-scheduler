@@ -176,7 +176,7 @@ mod test {
     use super::*;
     use chrono::prelude::*;
     use chrono::Utc;
-    use nettu_scheduler_domain::{Calendar, User};
+    use nettu_scheduler_domain::{Account, Calendar, User};
     use nettu_scheduler_infra::setup_context;
 
     struct TestContext {
@@ -187,12 +187,13 @@ mod test {
 
     async fn setup() -> TestContext {
         let ctx = setup_context().await;
-        let user = User::new(Default::default());
-
-        let account_id = ID::default();
-        let calendar = Calendar::new(&user.id, &account_id);
-
+        let account = Account::default();
+        ctx.repos.accounts.insert(&account).await.unwrap();
+        let user = User::new(account.id.clone());
+        ctx.repos.users.insert(&user).await.unwrap();
+        let calendar = Calendar::new(&user.id, &account.id);
         ctx.repos.calendars.insert(&calendar).await.unwrap();
+
         TestContext {
             user,
             calendar,

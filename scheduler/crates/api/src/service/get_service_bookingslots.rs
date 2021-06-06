@@ -321,12 +321,15 @@ mod test {
     use super::*;
     use chrono::prelude::*;
     use chrono::Utc;
-    use nettu_scheduler_domain::{Calendar, CalendarEvent, RRuleOptions, Service, ServiceResource};
+    use nettu_scheduler_domain::{
+        Account, Calendar, CalendarEvent, RRuleOptions, Service, ServiceResource, User,
+    };
     use nettu_scheduler_infra::{setup_context, ISys};
 
     struct TestContext {
         ctx: NettuContext,
         service: Service,
+        account: Account,
     }
 
     struct DummySys {}
@@ -341,15 +344,25 @@ mod test {
         let mut ctx = setup_context().await;
         ctx.sys = Arc::new(DummySys {});
 
-        let service = Service::new(Default::default());
+        let account = Account::default();
+        ctx.repos.accounts.insert(&account).await.unwrap();
+        let service = Service::new(account.id.clone());
         ctx.repos.services.insert(&service).await.unwrap();
 
-        TestContext { ctx, service }
+        TestContext {
+            ctx,
+            service,
+            account,
+        }
     }
 
-    async fn setup_service_users(ctx: &NettuContext, service: &mut Service) {
+    async fn setup_service_users(ctx: &NettuContext, service: &mut Service, account_id: &ID) {
+        let user1 = User::new(account_id.clone());
+        let user2 = User::new(account_id.clone());
+        ctx.repos.users.insert(&user1).await.unwrap();
+        ctx.repos.users.insert(&user2).await.unwrap();
         let mut resource1 = ServiceResource {
-            user_id: Default::default(),
+            user_id: user1.id.clone(),
             service_id: service.id.clone(),
             buffer: 0,
             availability: TimePlan::Empty,
@@ -358,7 +371,7 @@ mod test {
             furthest_booking_time: None,
         };
         let mut resource2 = ServiceResource {
-            user_id: Default::default(),
+            user_id: user2.id.clone(),
             service_id: service.id.clone(),
             buffer: 0,
             availability: TimePlan::Empty,
@@ -367,8 +380,6 @@ mod test {
             furthest_booking_time: None,
         };
 
-        let account_id = ID::default();
-
         let calendar_user_1 = Calendar::new(&resource1.user_id, &account_id);
         resource1.availability = TimePlan::Calendar(calendar_user_1.id.clone());
         let calendar_user_2 = Calendar::new(&resource2.user_id, &account_id);
@@ -376,8 +387,6 @@ mod test {
 
         ctx.repos.calendars.insert(&calendar_user_1).await.unwrap();
         ctx.repos.calendars.insert(&calendar_user_2).await.unwrap();
-
-        let account_id = ID::default();
 
         let availibility_event1 = CalendarEvent {
             id: Default::default(),
@@ -446,7 +455,11 @@ mod test {
     #[actix_web::main]
     #[test]
     async fn get_service_bookingslots() {
-        let TestContext { ctx, service } = setup().await;
+        let TestContext {
+            ctx,
+            service,
+            account,
+        } = setup().await;
 
         let mut usecase = GetServiceBookingSlotsUseCase {
             start_date: "2010-1-1".into(),
@@ -465,8 +478,12 @@ mod test {
     #[actix_web::main]
     #[test]
     async fn get_bookingslots_with_multiple_users_in_service() {
-        let TestContext { ctx, mut service } = setup().await;
-        setup_service_users(&ctx, &mut service).await;
+        let TestContext {
+            ctx,
+            mut service,
+            account,
+        } = setup().await;
+        setup_service_users(&ctx, &mut service, &account.id).await;
 
         let mut usecase = GetServiceBookingSlotsUseCase {
             start_date: "2010-1-1".into(),

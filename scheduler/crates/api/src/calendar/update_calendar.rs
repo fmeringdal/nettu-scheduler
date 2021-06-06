@@ -139,7 +139,7 @@ impl PermissionBoundary for UpdateCalendarUseCase {
 mod test {
     use std::collections::HashMap;
 
-    use nettu_scheduler_domain::Calendar;
+    use nettu_scheduler_domain::{Account, Calendar, User};
     use nettu_scheduler_infra::setup_context;
 
     use super::*;
@@ -148,14 +148,16 @@ mod test {
     #[test]
     async fn it_rejects_invalid_wkst() {
         let ctx = setup_context().await;
-        let user_id = ID::default();
-        let account_id = ID::default();
-        let calendar = Calendar::new(&user_id, &account_id);
+        let account = Account::default();
+        ctx.repos.accounts.insert(&account).await.unwrap();
+        let user = User::new(account.id.clone());
+        ctx.repos.users.insert(&user).await.unwrap();
+        let calendar = Calendar::new(&user.id, &account.id);
         ctx.repos.calendars.insert(&calendar).await.unwrap();
 
         let mut usecase = UpdateCalendarUseCase {
             calendar_id: calendar.id.into(),
-            user_id: user_id.into(),
+            user_id: user.id.into(),
             week_start: Some(20),
             timezone: None,
             metadata: None,
@@ -168,16 +170,18 @@ mod test {
     #[test]
     async fn it_update_settings_with_valid_wkst() {
         let ctx = setup_context().await;
-        let user_id = ID::default();
-        let account_id = ID::default();
-        let calendar = Calendar::new(&user_id, &account_id);
+        let account = Account::default();
+        ctx.repos.accounts.insert(&account).await.unwrap();
+        let user = User::new(account.id.clone());
+        ctx.repos.users.insert(&user).await.unwrap();
+        let calendar = Calendar::new(&user.id, &account.id);
         ctx.repos.calendars.insert(&calendar).await.unwrap();
 
         assert_eq!(calendar.settings.week_start, 0);
         let new_wkst = 3;
         let mut usecase = UpdateCalendarUseCase {
             calendar_id: calendar.id.clone(),
-            user_id,
+            user_id: user.id.clone(),
             week_start: Some(new_wkst),
             timezone: None,
             metadata: Some(HashMap::new()),

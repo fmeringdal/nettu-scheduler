@@ -198,7 +198,9 @@ mod tests {
     }
 
     fn get_account_id() -> ID {
-        "507f1f77bcf86cd799439011".parse().expect("Valid ID")
+        "a574624d-7c7f-456c-bbdd-670710302d45"
+            .parse()
+            .expect("Valid ID")
     }
 
     fn reminder_factory(event_id: &ID, priority: i64) -> Reminder {
