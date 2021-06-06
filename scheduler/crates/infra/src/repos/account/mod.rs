@@ -17,7 +17,7 @@ pub trait IAccountRepo: Send + Sync {
 
 #[cfg(test)]
 mod tests {
-    use crate::{setup_context, NettuContext};
+    use crate::setup_context;
     use nettu_scheduler_domain::{Account, Entity, PEMKey};
 
     #[tokio::test]

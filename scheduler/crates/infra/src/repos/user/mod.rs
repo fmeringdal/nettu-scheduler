@@ -15,58 +15,55 @@ pub trait IUserRepo: Send + Sync {
     async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<User>;
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use nettu_scheduler_domain::Metadata;
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{repos::shared::query_structs::KVMetadata, setup_context, NettuContext};
+    use nettu_scheduler_domain::{Account, Metadata};
 
-//     use crate::{repos::shared::query_structs::KVMetadata, setup_context, NettuContext};
+    #[tokio::test]
+    async fn test_metadata_query() {
+        let ctx = setup_context().await;
 
-//     use super::*;
+        let account = Account::new();
+        ctx.repos
+            .accounts
+            .insert(&account)
+            .await
+            .expect("To insert account");
+        let mut user = User::new(account.id.clone());
+        ctx.repos.users.insert(&user).await.expect("To insert user");
 
-//     async fn create_contexts() -> Vec<NettuContext> {
-//         vec![NettuContext::create_inmemory(), setup_context().await]
-//     }
+        let mut query = MetadataFindQuery {
+            account_id: account.id.clone(),
+            limit: 100,
+            metadata: KVMetadata {
+                key: "group_id".into(),
+                value: "123".into(),
+            },
+            skip: 0,
+        };
 
-//     #[tokio::test]
-//     async fn test_metadata_query() {
-//         let ctxs = create_contexts().await;
+        assert!(ctx
+            .repos
+            .users
+            .find_by_metadata(query.clone())
+            .await
+            .is_empty());
 
-//         for ctx in ctxs {
-//             let account_id = ID::default();
-//             let mut user = User::new(account_id.clone());
-//             ctx.repos.users.insert(&user).await.expect("To save user");
+        // Now add metadata
+        let mut metadata = Metadata::default();
+        metadata.insert("group_id".to_string(), "123".to_string());
 
-//             let mut query = MetadataFindQuery {
-//                 account_id,
-//                 limit: 100,
-//                 metadata: KVMetadata {
-//                     key: "group_id".into(),
-//                     value: "123".into(),
-//                 },
-//                 skip: 0,
-//             };
+        user.metadata = metadata;
+        ctx.repos.users.save(&user).await.expect("To save user");
 
-//             assert!(ctx
-//                 .repos
-//                 .users
-//                 .find_by_metadata(query.clone())
-//                 .await
-//                 .is_empty());
+        let res = ctx.repos.users.find_by_metadata(query.clone()).await;
+        assert_eq!(res.len(), 1);
+        assert_eq!(res[0].id, user.id);
 
-//             // Now add metadata
-//             let mut metadata = Metadata::default();
-//             metadata.insert("group_id".to_string(), "123".to_string());
-
-//             user.metadata = metadata;
-//             ctx.repos.users.save(&user).await.expect("To save user");
-
-//             let res = ctx.repos.users.find_by_metadata(query.clone()).await;
-//             assert_eq!(res.len(), 1);
-//             assert_eq!(res[0].id, user.id);
-
-//             // Different account id should give no results
-//             query.account_id = Default::default();
-//             assert!(ctx.repos.users.find_by_metadata(query).await.is_empty());
-//         }
-//     }
-// }
+        // Different account id should give no results
+        query.account_id = Default::default();
+        assert!(ctx.repos.users.find_by_metadata(query).await.is_empty());
+    }
+}

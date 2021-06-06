@@ -1,4 +1,3 @@
-use nettu_scheduler_domain::Metadata;
 use nettu_scheduler_domain::ID;
 use serde::{Deserialize, Serialize};
 

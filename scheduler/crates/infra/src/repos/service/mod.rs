@@ -15,116 +15,104 @@ pub trait IServiceRepo: Send + Sync {
     async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<Service>;
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use crate::{setup_context, NettuContext};
-//     use nettu_scheduler_domain::{Service, ServiceResource, TimePlan, ID};
+#[cfg(test)]
+mod tests {
+    use crate::setup_context;
+    use nettu_scheduler_domain::{
+        Account, Calendar, Metadata, Service, ServiceResource, TimePlan, User, ID,
+    };
 
-//     async fn create_contexts() -> Vec<NettuContext> {
-//         vec![NettuContext::create_inmemory(), setup_context().await]
-//     }
+    #[tokio::test]
+    async fn create_and_delete() {
+        let ctx = setup_context().await;
+        let account = Account::default();
+        ctx.repos
+            .accounts
+            .insert(&account)
+            .await
+            .expect("To insert account");
+        let service = Service::new(account.id.clone());
 
-//     #[tokio::test]
-//     async fn create_and_delete() {
-//         for ctx in create_contexts().await {
-//             let account_id = ID::default();
-//             let service = Service::new(account_id);
+        // Insert
+        assert!(ctx.repos.services.insert(&service).await.is_ok());
 
-//             // Insert
-//             assert!(ctx.repos.services.insert(&service).await.is_ok());
+        // Get by id
+        let mut service = ctx
+            .repos
+            .services
+            .find(&service.id)
+            .await
+            .expect("To get service");
 
-//             // Get by id
-//             let mut service = ctx
-//                 .repos
-//                 .services
-//                 .find(&service.id)
-//                 .await
-//                 .expect("To get service");
+        let user = User::new(account.id.clone());
+        ctx.repos.users.insert(&user).await.unwrap();
 
-//             let user_id = ID::default();
-//             let calendar_id = ID::default();
-//             let timeplan = TimePlan::Empty;
-//             let resource =
-//                 ServiceResource::new(user_id.clone(), timeplan, vec![calendar_id.clone()]);
-//             service.add_user(resource);
+        let calendar = Calendar::new(&user.id, &account.id);
+        ctx.repos.calendars.insert(&calendar).await.unwrap();
 
-//             ctx.repos
-//                 .services
-//                 .save(&service)
-//                 .await
-//                 .expect("To save service");
+        let timeplan = TimePlan::Empty;
+        let resource = ServiceResource::new(
+            user.id.clone(),
+            service.id.clone(),
+            timeplan,
+            vec![calendar.id.clone()],
+        );
+        assert!(ctx.repos.service_users.insert(&resource).await.is_ok());
 
-//             let service = ctx
-//                 .repos
-//                 .services
-//                 .find(&service.id)
-//                 .await
-//                 .expect("To get service");
-//             assert_eq!(service.users.len(), 1);
-//             assert_eq!(service.users[0].busy, vec![calendar_id.clone()]);
+        let mut metadata = Metadata::new();
+        metadata.insert("foo".to_string(), "bar".to_string());
+        service.metadata = metadata;
+        ctx.repos
+            .services
+            .save(&service)
+            .await
+            .expect("To save service");
 
-//             ctx.repos
-//                 .services
-//                 .remove_calendar_from_services(&calendar_id)
-//                 .await
-//                 .expect("To remove calendar from services");
+        let service = ctx
+            .repos
+            .services
+            .find_with_users(&service.id)
+            .await
+            .expect("To get service");
+        assert_eq!(*service.metadata.get("foo").unwrap(), "bar".to_string());
+        assert_eq!(service.users.len(), 1);
+        assert_eq!(service.users[0].busy, vec![calendar.id.clone()]);
 
-//             let mut service = ctx
-//                 .repos
-//                 .services
-//                 .find(&service.id)
-//                 .await
-//                 .expect("To get service");
-//             assert_eq!(service.users.len(), 1);
-//             println!("Service user: {:?}", service.users);
-//             assert!(service.users[0].busy.is_empty());
+        ctx.repos
+            .calendars
+            .delete(&calendar.id)
+            .await
+            .expect("To delete calendar ");
 
-//             let mut user = service.find_user_mut(&user_id).expect("To find user");
-//             user.availability = TimePlan::Calendar(calendar_id.clone());
+        let service = ctx
+            .repos
+            .services
+            .find_with_users(&service.id)
+            .await
+            .expect("To get service");
+        assert_eq!(service.users.len(), 1);
+        assert!(service.users[0].busy.is_empty());
 
-//             ctx.repos
-//                 .services
-//                 .save(&service)
-//                 .await
-//                 .expect("To save service");
+        ctx.repos
+            .users
+            .delete(&user.id)
+            .await
+            .expect("To delete user");
 
-//             ctx.repos
-//                 .services
-//                 .remove_calendar_from_services(&calendar_id)
-//                 .await
-//                 .expect("To remove calendar from services");
+        let service = ctx
+            .repos
+            .services
+            .find_with_users(&service.id)
+            .await
+            .expect("To get service");
+        assert!(service.users.is_empty());
 
-//             let service = ctx
-//                 .repos
-//                 .services
-//                 .find(&service.id)
-//                 .await
-//                 .expect("To get service");
-//             assert_eq!(service.users.len(), 1);
-//             assert!(service.users[0].busy.is_empty());
-//             assert_eq!(service.users[0].availability, TimePlan::Empty);
+        ctx.repos
+            .services
+            .delete(&service.id)
+            .await
+            .expect("To delete service");
 
-//             ctx.repos
-//                 .services
-//                 .remove_user_from_services(&user_id)
-//                 .await
-//                 .expect("To remove user from services");
-
-//             let service = ctx
-//                 .repos
-//                 .services
-//                 .find(&service.id)
-//                 .await
-//                 .expect("To get service");
-//             assert!(service.users.is_empty());
-
-//             ctx.repos
-//                 .services
-//                 .delete(&service.id)
-//                 .await
-//                 .expect("To delete service");
-
-//             assert!(ctx.repos.services.find(&service.id).await.is_none());
-//         }
-//     }
-// }
+        assert!(ctx.repos.services.find(&service.id).await.is_none());
+    }
+}
