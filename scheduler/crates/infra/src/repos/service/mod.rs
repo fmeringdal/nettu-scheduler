@@ -20,8 +20,6 @@ pub trait IServiceRepo: Send + Sync {
 //     use crate::{setup_context, NettuContext};
 //     use nettu_scheduler_domain::{Service, ServiceResource, TimePlan, ID};
 
-//     /// Creates inmemory and mongo context when mongo is running,
-//     /// otherwise it will create two inmemory
 //     async fn create_contexts() -> Vec<NettuContext> {
 //         vec![NettuContext::create_inmemory(), setup_context().await]
 //     }

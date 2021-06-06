@@ -23,8 +23,6 @@ pub trait IUserRepo: Send + Sync {
 
 //     use super::*;
 
-//     /// Creates inmemory and mongo context when mongo is running,
-//     /// otherwise it will create two inmemory
 //     async fn create_contexts() -> Vec<NettuContext> {
 //         vec![NettuContext::create_inmemory(), setup_context().await]
 //     }

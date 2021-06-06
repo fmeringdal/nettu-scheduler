@@ -22,8 +22,6 @@ pub trait IScheduleRepo: Send + Sync {
 
 //     use nettu_scheduler_domain::{Entity, Schedule, ID};
 
-//     /// Creates inmemory and mongo context when mongo is running,
-//     /// otherwise it will create two inmemory
 //     async fn create_contexts() -> Vec<NettuContext> {
 //         vec![NettuContext::create_inmemory(), setup_context().await]
 //     }
