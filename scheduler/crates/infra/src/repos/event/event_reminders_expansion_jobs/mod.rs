@@ -16,7 +16,7 @@ pub trait IEventRemindersExpansionJobsRepo: Send + Sync {
 mod tests {
     use crate::setup_context;
     use nettu_scheduler_domain::{
-        Account, Calendar, CalendarEvent, EventRemindersExpansionJob, Reminder, User,
+        Account, Calendar, CalendarEvent, EventRemindersExpansionJob, User,
     };
 
     #[tokio::test]

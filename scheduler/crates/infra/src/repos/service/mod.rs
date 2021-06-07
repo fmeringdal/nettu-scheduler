@@ -19,7 +19,7 @@ pub trait IServiceRepo: Send + Sync {
 mod tests {
     use crate::setup_context;
     use nettu_scheduler_domain::{
-        Account, Calendar, Metadata, Service, ServiceResource, TimePlan, User, ID,
+        Account, Calendar, Metadata, Service, ServiceResource, TimePlan, User,
     };
 
     #[tokio::test]

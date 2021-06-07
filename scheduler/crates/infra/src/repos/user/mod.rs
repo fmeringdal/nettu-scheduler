@@ -18,7 +18,7 @@ pub trait IUserRepo: Send + Sync {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{repos::shared::query_structs::KVMetadata, setup_context, NettuContext};
+    use crate::{repos::shared::query_structs::KVMetadata, setup_context};
     use nettu_scheduler_domain::{Account, Metadata};
 
     #[tokio::test]
