@@ -1,31 +1,29 @@
-name:                           Tests
+name: Tests
 
-on:                             [push]
+on: [push]
 jobs:
   test:
-    name:                       test
-    runs-on:                    ubuntu-latest
+    name: test
+    runs-on: ubuntu-latest
     env:
-      PORT:                    5000
-      MONGODB_CONNECTION_STRING: mongodb://root:rootpassword@localhost:27017
-      MONGODB_NAME: nettuscheduler
+      PORT: 5000
+      MONGODB_CONNECTION_STRING: postgresql://postgres:postgres@localhost:5432/nettuscheduler
     steps:
-      - name:                   Checkout repository
-        uses:                   actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-      - name:                   Build docker compose stack
+      - name: Build docker compose stack
         run: |
           cd scheduler
           docker-compose -f ./integrations/docker-compose.yml up
 
-      - name:                   Generate code coverage
+      - name: Generate code coverage
         run: |
           cd scheduler
           cargo install cargo-tarpaulin
           cargo tarpaulin --verbose --all-features --workspace --timeout 120 --out Xml
 
-      - name:                   Upload to codecov.io
-        uses:                   codecov/codecov-action@v1
+      - name: Upload to codecov.io
+        uses: codecov/codecov-action@v1
         with:
-          fail_ci_if_error:     true
-
+          fail_ci_if_error: true
