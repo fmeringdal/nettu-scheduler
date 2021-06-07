@@ -221,7 +221,7 @@ impl GetServiceBookingSlotsUseCase {
                             let mut instances = e.expand(Some(&timespan), &cal.settings);
 
                             // Add buffer to instances if event is a service event
-                            if user.buffer > 0 && e.is_service {
+                            if user.buffer > 0 && e.service_id.is_some() {
                                 let buffer_in_millis = user.buffer * 60 * 1000;
                                 for instance in instances.iter_mut() {
                                     instance.end_ts += buffer_in_millis;
@@ -400,7 +400,7 @@ mod test {
             start_ts: 1000 * 60 * 60,
             user_id: resource1.user_id.to_owned(),
             reminder: None,
-            is_service: false,
+            service_id: None,
             metadata: Default::default(),
             updated: Default::default(),
             created: Default::default(),
@@ -417,7 +417,7 @@ mod test {
             start_ts: 1000 * 60 * 60,
             user_id: resource2.user_id.to_owned(),
             reminder: None,
-            is_service: false,
+            service_id: None,
             metadata: Default::default(),
             updated: Default::default(),
             created: Default::default(),
@@ -434,7 +434,7 @@ mod test {
             start_ts: 1000 * 60 * 60 * 4,
             user_id: resource1.user_id.to_owned(),
             reminder: None,
-            is_service: false,
+            service_id: None,
             metadata: Default::default(),
             updated: Default::default(),
             created: Default::default(),

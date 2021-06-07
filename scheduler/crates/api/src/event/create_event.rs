@@ -47,7 +47,7 @@ pub async fn create_event_admin_controller(
         recurrence: body.recurrence,
         account_id: account.id,
         reminder: body.reminder,
-        is_service: body.is_service.unwrap_or(false),
+        service_id: body.service_id,
         metadata: body.metadata.unwrap_or_default(),
     };
 
@@ -74,7 +74,7 @@ pub async fn create_event_controller(
         user_id: user.id,
         account_id: user.account_id,
         reminder: body.reminder,
-        is_service: body.is_service.unwrap_or(false),
+        service_id: body.service_id,
         metadata: body.metadata.unwrap_or_default(),
     };
 
@@ -97,7 +97,7 @@ pub struct CreateEventUseCase {
     pub busy: bool,
     pub recurrence: Option<RRuleOptions>,
     pub reminder: Option<CalendarEventReminder>,
-    pub is_service: bool,
+    pub service_id: Option<ID>,
     pub metadata: Metadata,
 }
 
@@ -137,7 +137,7 @@ impl UseCase for CreateEventUseCase {
             user_id: self.user_id.clone(),
             account_id: self.account_id.clone(),
             reminder: self.reminder.clone(),
-            is_service: self.is_service,
+            service_id: self.service_id.clone(),
             metadata: self.metadata.clone(),
         };
         if let Some(rrule_opts) = self.recurrence.clone() {
@@ -219,7 +219,7 @@ mod test {
             user_id: user.id.clone(),
             account_id: user.account_id,
             reminder: None,
-            is_service: false,
+            service_id: None,
             metadata: Default::default(),
         };
 
@@ -246,7 +246,7 @@ mod test {
             user_id: user.id.clone(),
             account_id: user.account_id,
             reminder: None,
-            is_service: false,
+            service_id: None,
             metadata: Default::default(),
         };
 
@@ -273,7 +273,7 @@ mod test {
             user_id: user.id.clone(),
             account_id: user.account_id,
             reminder: None,
-            is_service: false,
+            service_id: None,
             metadata: Default::default(),
         };
 
@@ -313,7 +313,7 @@ mod test {
                 user_id: user.id.clone(),
                 account_id: user.account_id.to_owned(),
                 reminder: None,
-                is_service: false,
+                service_id: None,
                 metadata: Default::default(),
             };
 

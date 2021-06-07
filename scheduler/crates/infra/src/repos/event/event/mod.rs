@@ -34,7 +34,7 @@ mod tests {
             end_ts: Default::default(),
             exdates: Default::default(),
             id: Default::default(),
-            is_service: Default::default(),
+            service_id: Default::default(),
             metadata: Default::default(),
             recurrence: Default::default(),
             reminder: Default::default(),

@@ -39,7 +39,7 @@ mod tests {
             start_ts: 1000 * 60 * 60,
             user_id: user.id.clone(),
             reminder: None,
-            is_service: false,
+            service_id: None,
             metadata: Default::default(),
             updated: Default::default(),
             created: Default::default(),

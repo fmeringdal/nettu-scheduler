@@ -31,7 +31,7 @@ struct EventRaw {
     recurrence: Option<serde_json::Value>,
     exdates: Vec<i64>,
     reminder: Option<serde_json::Value>,
-    is_service: bool,
+    service_uid: Option<Uuid>,
     metadata: Vec<String>,
 }
 
@@ -77,7 +77,7 @@ impl Into<CalendarEvent> for EventRaw {
             recurrence,
             exdates: self.exdates,
             reminder,
-            is_service: self.is_service,
+            service_id: self.service_uid.map(|id| id.into()),
             metadata: extract_metadata(self.metadata),
         }
     }
@@ -103,7 +103,7 @@ impl IEventRepo for PostgresEventRepo {
                 recurrence,
                 exdates,
                 reminder,
-                is_service,
+                service_uid,
                 metadata
             )
             VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
@@ -121,7 +121,7 @@ impl IEventRepo for PostgresEventRepo {
             Json(&e.recurrence) as _,
             &e.exdates,
             Json(&e.reminder) as _,
-            e.is_service,
+            e.service_id.as_ref().map(|id| id.inner_ref()),
             &metadata
         )
         .execute(&self.pool)
@@ -147,7 +147,7 @@ impl IEventRepo for PostgresEventRepo {
                 recurrence = $11,
                 exdates = $12,
                 reminder = $13,
-                is_service = $14,
+                service_uid = $14,
                 metadata = $15
             WHERE event_uid = $1
             "#,
@@ -164,7 +164,7 @@ impl IEventRepo for PostgresEventRepo {
             Json(&e.recurrence) as _,
             &e.exdates,
             Json(&e.reminder) as _,
-            e.is_service,
+            e.service_id.as_ref().map(|id| id.inner_ref()),
             &metadata
         )
         .execute(&self.pool)

@@ -37,7 +37,7 @@ pub mod create_event {
         pub recurrence: Option<RRuleOptions>,
         pub reminder: Option<CalendarEventReminder>,
         #[serde(default)]
-        pub is_service: Option<bool>,
+        pub service_id: Option<ID>,
         #[serde(default)]
         pub metadata: Option<Metadata>,
     }
@@ -138,7 +138,7 @@ pub mod update_event {
         pub duration: Option<i64>,
         pub busy: Option<bool>,
         pub recurrence: Option<RRuleOptions>,
-        pub is_service: Option<bool>,
+        pub service_id: Option<ID>,
         pub exdates: Option<Vec<i64>>,
         pub reminder: Option<CalendarEventReminder>,
         #[serde(default)]

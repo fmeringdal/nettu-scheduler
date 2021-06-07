@@ -50,7 +50,7 @@ pub async fn update_event_admin_controller(
         reminder: body.reminder,
         recurrence: body.recurrence,
         busy: body.busy,
-        is_service: body.is_service,
+        service_id: body.service_id,
         exdates: body.exdates,
         metadata: body.metadata,
     };
@@ -78,7 +78,7 @@ pub async fn update_event_controller(
         reminder: body.reminder,
         recurrence: body.recurrence,
         busy: body.busy,
-        is_service: body.is_service,
+        service_id: body.service_id,
         exdates: body.exdates,
         metadata: body.metadata,
     };
@@ -101,7 +101,7 @@ pub struct UpdateEventUseCase {
     pub duration: Option<i64>,
     pub reminder: Option<CalendarEventReminder>,
     pub recurrence: Option<RRuleOptions>,
-    pub is_service: Option<bool>,
+    pub service_id: Option<ID>,
     pub exdates: Option<Vec<i64>>,
     pub metadata: Option<Metadata>,
 }
@@ -132,7 +132,7 @@ impl UseCase for UpdateEventUseCase {
             recurrence,
             exdates,
             reminder,
-            is_service,
+            service_id,
             metadata,
         } = self;
 
@@ -146,9 +146,7 @@ impl UseCase for UpdateEventUseCase {
             }
         };
 
-        if let Some(is_service) = is_service {
-            e.is_service = *is_service;
-        }
+        e.service_id = service_id.clone();
 
         if let Some(exdates) = exdates {
             e.exdates = exdates.clone();
@@ -244,7 +242,7 @@ mod test {
             recurrence: None,
             busy: Some(false),
             user_id: Default::default(),
-            is_service: None,
+            service_id: None,
             exdates: None,
             metadata: None,
         };

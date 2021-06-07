@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS calendar_events (
     recurrence JSON,
     exdates BIGINT[] NOT NULL,
     reminder JSON,
-    is_service boolean NOT NULL,
+    service_uid uuid REFERENCES services(service_uid) ON DELETE CASCADE,
     metadata text[] NOT NULL
 );
 CREATE INDEX IF NOT EXISTS metadata ON calendar_events USING GIN (metadata);
