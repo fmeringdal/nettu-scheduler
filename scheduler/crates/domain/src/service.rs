@@ -35,7 +35,8 @@ pub struct ServiceResource {
     /// after a meeting. A `CalendarEvent` will be interpreted as a meeting
     /// if the attribute `services` on the `CalendarEvent` includes this
     /// `Service` id or "*".
-    pub buffer: i64,
+    pub buffer_after: i64,
+    pub buffer_before: i64,
     /// Minimum amount of time in minutes before this user could receive any
     /// booking requests. That means that if a bookingslots query is made at
     /// time T then this `ServiceResource` will not have any available
@@ -56,7 +57,8 @@ impl ServiceResource {
             user_id,
             availability,
             busy,
-            buffer: 0,
+            buffer_after: 0,
+            buffer_before: 0,
             closest_booking_time: 0,
             furthest_booking_time: None,
         }
@@ -70,14 +72,29 @@ impl ServiceResource {
         self.busy = busy;
     }
 
-    pub fn set_buffer(&mut self, buffer: i64) -> bool {
+    fn valid_buffer(&self, buffer: i64) -> bool {
         let min_buffer = 0;
         let max_buffer = 60 * 12; // 12 Hours
         if buffer < min_buffer || buffer > max_buffer {
             return false;
         }
-        self.buffer = buffer;
         true
+    }
+
+    pub fn set_buffer_after(&mut self, buffer: i64) -> bool {
+        if self.valid_buffer(buffer) {
+            self.buffer_after = buffer;
+            return true;
+        }
+        false
+    }
+
+    pub fn set_buffer_before(&mut self, buffer: i64) -> bool {
+        if self.valid_buffer(buffer) {
+            self.buffer_before = buffer;
+            return true;
+        }
+        false
     }
 
     pub fn get_calendar_ids(&self) -> Vec<ID> {

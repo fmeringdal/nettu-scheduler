@@ -21,7 +21,8 @@ pub struct ServiceUserRaw {
     available_calendar_uid: Option<Uuid>,
     available_schedule_uid: Option<Uuid>,
     busy: Option<Vec<Option<Uuid>>>,
-    buffer: i64,
+    buffer_after: i64,
+    buffer_before: i64,
     closest_booking_time: i64,
     furthest_booking_time: Option<i64>,
 }
@@ -40,7 +41,8 @@ impl Into<ServiceResource> for ServiceUserRaw {
             user_id: self.user_uid.into(),
             service_id: self.service_uid.into(),
             availability,
-            buffer: self.buffer,
+            buffer_after: self.buffer_after,
+            buffer_before: self.buffer_before,
             busy: self
                 .busy
                 .unwrap_or_default()
@@ -65,14 +67,15 @@ impl IServiceUserRepo for PostgresServiceUserRepo {
 
         sqlx::query!(
             r#"
-            INSERT INTO service_users(service_uid, user_uid, available_calendar_uid, available_schedule_uid, buffer, closest_booking_time, furthest_booking_time)
-            VALUES($1, $2, $3, $4, $5, $6, $7)
+            INSERT INTO service_users(service_uid, user_uid, available_calendar_uid, available_schedule_uid, buffer_after, buffer_before, closest_booking_time, furthest_booking_time)
+            VALUES($1, $2, $3, $4, $5, $6, $7, $8)
             "#,
             user.service_id.inner_ref(),
             user.user_id.inner_ref(),
             available_calendar_id,
             available_schedule_id,
-            user.buffer,
+            user.buffer_after,
+            user.buffer_before,
             user.closest_booking_time,
             user.furthest_booking_time
         )
@@ -107,16 +110,18 @@ impl IServiceUserRepo for PostgresServiceUserRepo {
             UPDATE service_users SET 
                 available_calendar_uid = $3, 
                 available_schedule_uid = $4, 
-                buffer = $5, 
-                closest_booking_time = $6, 
-                furthest_booking_time = $7
+                buffer_after = $5, 
+                buffer_before = $6, 
+                closest_booking_time = $7, 
+                furthest_booking_time = $8
             WHERE service_uid = $1 AND user_uid = $2
             "#,
             user.service_id.inner_ref(),
             user.user_id.inner_ref(),
             available_calendar_id,
             available_schedule_id,
-            user.buffer,
+            user.buffer_after,
+            user.buffer_before,
             user.closest_booking_time,
             user.furthest_booking_time
         )

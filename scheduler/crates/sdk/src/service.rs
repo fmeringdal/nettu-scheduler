@@ -15,7 +15,8 @@ pub struct AddServiceUserInput {
     pub user_id: ID,
     pub availability: Option<TimePlan>,
     pub busy: Option<Vec<ID>>,
-    pub buffer: Option<i64>,
+    pub buffer_after: Option<i64>,
+    pub buffer_before: Option<i64>,
     pub closest_booking_time: Option<i64>,
     pub furthest_booking_time: Option<i64>,
 }
@@ -25,7 +26,8 @@ pub struct UpdateServiceUserInput {
     pub user_id: ID,
     pub availability: Option<TimePlan>,
     pub busy: Option<Vec<ID>>,
-    pub buffer: Option<i64>,
+    pub buffer_after: Option<i64>,
+    pub buffer_before: Option<i64>,
     pub closest_booking_time: Option<i64>,
     pub furthest_booking_time: Option<i64>,
 }
@@ -144,7 +146,8 @@ impl ServiceClient {
         let service_id = input.service_id.clone();
         let body = update_service_user::RequestBody {
             availibility: input.availability,
-            buffer: input.buffer,
+            buffer_after: input.buffer_after,
+            buffer_before: input.buffer_before,
             busy: input.busy,
             closest_booking_time: input.closest_booking_time,
             furthest_booking_time: input.furthest_booking_time,
@@ -167,7 +170,8 @@ impl ServiceClient {
         let body = add_user_to_service::RequestBody {
             user_id: input.user_id,
             availibility: input.availability,
-            buffer: input.buffer,
+            buffer_after: input.buffer_after,
+            buffer_before: input.buffer_before,
             busy: input.busy,
             closest_booking_time: input.closest_booking_time,
             furthest_booking_time: input.furthest_booking_time,

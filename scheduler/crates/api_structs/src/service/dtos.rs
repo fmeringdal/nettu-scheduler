@@ -20,7 +20,7 @@ impl ServiceResourceDTO {
             service_id: resource.service_id,
             availibility: resource.availability,
             busy: resource.busy,
-            buffer: resource.buffer,
+            buffer: resource.buffer_after,
             closest_booking_time: resource.closest_booking_time,
             furthest_booking_time: resource.furthest_booking_time,
         }

@@ -27,7 +27,8 @@ pub async fn update_service_user_controller(
         user_id: path_params.user_id.to_owned(),
         availability: body.availibility.to_owned(),
         busy: body.busy.to_owned(),
-        buffer: body.buffer,
+        buffer_after: body.buffer_after,
+        buffer_before: body.buffer_before,
         closest_booking_time: body.closest_booking_time,
         furthest_booking_time: body.furthest_booking_time,
     };
@@ -54,7 +55,8 @@ struct UpdateServiceUserUseCase {
     pub user_id: ID,
     pub availability: Option<TimePlan>,
     pub busy: Option<Vec<ID>>,
-    pub buffer: Option<i64>,
+    pub buffer_after: Option<i64>,
+    pub buffer_before: Option<i64>,
     pub closest_booking_time: Option<i64>,
     pub furthest_booking_time: Option<i64>,
 }
@@ -101,7 +103,8 @@ impl UseCase for UpdateServiceUserUseCase {
             &ServiceResourceUpdate {
                 availability: self.availability.clone(),
                 busy: self.busy.clone(),
-                buffer: self.buffer,
+                buffer_after: self.buffer_after,
+                buffer_before: self.buffer_before,
                 closest_booking_time: self.closest_booking_time,
                 furthest_booking_time: self.furthest_booking_time,
             },

@@ -221,10 +221,16 @@ impl GetServiceBookingSlotsUseCase {
                             let mut instances = e.expand(Some(&timespan), &cal.settings);
 
                             // Add buffer to instances if event is a service event
-                            if user.buffer > 0 && e.service_id.is_some() {
-                                let buffer_in_millis = user.buffer * 60 * 1000;
+                            if user.buffer_after > 0 && e.service_id.is_some() {
+                                let buffer_in_millis = user.buffer_after * 60 * 1000;
                                 for instance in instances.iter_mut() {
                                     instance.end_ts += buffer_in_millis;
+                                }
+                            }
+                            if user.buffer_before > 0 && e.service_id.is_some() {
+                                let buffer_in_millis = user.buffer_before * 60 * 1000;
+                                for instance in instances.iter_mut() {
+                                    instance.start_ts -= buffer_in_millis;
                                 }
                             }
 
@@ -364,7 +370,8 @@ mod test {
         let mut resource1 = ServiceResource {
             user_id: user1.id.clone(),
             service_id: service.id.clone(),
-            buffer: 0,
+            buffer_after: 0,
+            buffer_before: 0,
             availability: TimePlan::Empty,
             busy: Vec::new(),
             closest_booking_time: 0,
@@ -373,7 +380,8 @@ mod test {
         let mut resource2 = ServiceResource {
             user_id: user2.id.clone(),
             service_id: service.id.clone(),
-            buffer: 0,
+            buffer_after: 0,
+            buffer_before: 0,
             availability: TimePlan::Empty,
             busy: Vec::new(),
             closest_booking_time: 0,

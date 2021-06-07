@@ -60,7 +60,9 @@ pub mod add_user_to_service {
         pub availibility: Option<TimePlan>,
         pub busy: Option<Vec<ID>>,
         #[serde(default)]
-        pub buffer: Option<i64>,
+        pub buffer_after: Option<i64>,
+        #[serde(default)]
+        pub buffer_before: Option<i64>,
         pub closest_booking_time: Option<i64>,
         pub furthest_booking_time: Option<i64>,
     }
@@ -258,7 +260,8 @@ pub mod update_service_user {
     pub struct RequestBody {
         pub availibility: Option<TimePlan>,
         pub busy: Option<Vec<ID>>,
-        pub buffer: Option<i64>,
+        pub buffer_after: Option<i64>,
+        pub buffer_before: Option<i64>,
         pub closest_booking_time: Option<i64>,
         pub furthest_booking_time: Option<i64>,
     }

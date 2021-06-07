@@ -48,7 +48,7 @@ mod tests {
         ctx.repos.calendars.insert(&calendar).await.unwrap();
 
         let mut service_user = res;
-        service_user.buffer = 60;
+        service_user.buffer_after = 60;
         service_user.availability = TimePlan::Calendar(calendar.id.clone());
         service_user.busy = vec![calendar.id.clone()];
         assert!(ctx.repos.service_users.save(&service_user).await.is_ok());
@@ -59,7 +59,7 @@ mod tests {
             .find(&service.id, &user.id)
             .await
             .unwrap();
-        assert_eq!(updated_service_user.buffer, service_user.buffer);
+        assert_eq!(updated_service_user.buffer_after, service_user.buffer_after);
         assert_eq!(updated_service_user.busy, service_user.busy);
         assert_eq!(updated_service_user.user_id, service_user.user_id);
         assert_eq!(updated_service_user.service_id, service_user.service_id);
