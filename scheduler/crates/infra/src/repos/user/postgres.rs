@@ -1,9 +1,9 @@
 use super::IUserRepo;
 use crate::repos::shared::query_structs::MetadataFindQuery;
-use nettu_scheduler_domain::{Metadata, User, ID};
+use nettu_scheduler_domain::{Metadata, User, UserIntegrationProvider, ID};
 use sqlx::{
     types::{Json, Uuid},
-    Done, FromRow, PgPool,
+    FromRow, PgPool,
 };
 
 pub struct PostgresUserRepo {
@@ -92,8 +92,7 @@ impl IUserRepo for PostgresUserRepo {
             &metadata
         )
         .execute(&self.pool)
-        .await?
-        .rows_affected();
+        .await?;
         Ok(())
     }
 
@@ -177,6 +176,18 @@ impl IUserRepo for PostgresUserRepo {
     }
 
     async fn revoke_google_integration(&self, account_id: &ID) -> anyhow::Result<()> {
-        todo!()
+        let empty: Vec<UserIntegrationProvider> = vec![];
+        sqlx::query!(
+            r#"
+            UPDATE users
+            SET integrations = $2
+            WHERE account_uid = $1
+            "#,
+            account_id.inner_ref(),
+            Json(&empty) as _,
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
     }
 }
