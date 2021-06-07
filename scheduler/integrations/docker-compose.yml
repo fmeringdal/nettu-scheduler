@@ -1,18 +1,5 @@
 version: "3.7"
 services:
-  mongodb:
-    image: mongo:latest
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: rootpassword
-      MONGO_INITDB_DATABASE: nettuscheduler
-
-    ports:
-      - 27017:27017
-    volumes:
-      - mongodb_data_nettuscheduler_container:/data/nettuscheduler/db
-    logging:
-      driver: none
   postgres:
     image: postgres:13
     ports:
@@ -23,25 +10,22 @@ services:
     restart: always
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: newPassword
-      POSTGRES_DB: todo-db
-
-  # app:
-  #   build: ..
-  #   ports:
-  #     - "5000:5000"
-  #   environment:
-  #     MONGODB_CONNECTION_STRING: mongodb://root:rootpassword@mongodb:27017
-  #     MONGODB_NAME: nettuscheduler
-  #   volumes:
-  #     - ../:/var/application
-  #   command: bash -c "cargo watch -x run"
-  #   init: true
-  #   entrypoint:
-  #     - "integrations/wait-for.sh"
-  #     - "mongodb:27017"
-  #     - "--"
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: nettuscheduler
+  app:
+    build: ..
+    ports:
+      - "5000:5000"
+    environment:
+      NETTU_POSTGRES_CONNECTION_STRING: postgresql://postgres:5432/nettuscheduler
+    volumes:
+      - ../:/var/application
+    command: bash -c "cargo watch -x run"
+    init: true
+    entrypoint:
+      - "integrations/wait-for.sh"
+      - "postgres:5432"
+      - "--"
 
 volumes:
-  mongodb_data_nettuscheduler_container:
   postgresdata:
