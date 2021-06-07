@@ -168,6 +168,27 @@ impl IServiceUserRepo for PostgresServiceUserRepo {
         Some(schedule.into())
     }
 
+    async fn find_by_user(&self, user_id: &ID) -> Vec<ServiceResource> {
+        // https://github.com/launchbadge/sqlx/issues/367
+        let schedules: Vec<ServiceUserRaw> = match sqlx::query_as(
+            r#"
+            SELECT su.*, array_agg(c.calendar_uid) AS busy FROM service_users as su 
+            LEFT JOIN service_user_busy_calendars AS c
+            ON su.service_uid = c.service_uid AND su.user_uid = c.user_uid
+            WHERE su.user_uid = $1
+            GROUP BY su.user_uid
+            "#,
+        )
+        .bind(user_id.inner_ref())
+        .fetch_all(&self.pool)
+        .await
+        {
+            Ok(s) => s,
+            Err(_e) => return vec![],
+        };
+        schedules.into_iter().map(|s| s.into()).collect()
+    }
+
     async fn delete(&self, service_id: &ID, user_id: &ID) -> anyhow::Result<()> {
         sqlx::query!(
             r#"

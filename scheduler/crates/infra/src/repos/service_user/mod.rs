@@ -9,6 +9,7 @@ pub trait IServiceUserRepo: Send + Sync {
     async fn insert(&self, user: &ServiceResource) -> anyhow::Result<()>;
     async fn save(&self, user: &ServiceResource) -> anyhow::Result<()>;
     async fn find(&self, service_id: &ID, user_id: &ID) -> Option<ServiceResource>;
+    async fn find_by_user(&self, user_id: &ID) -> Vec<ServiceResource>;
     async fn delete(&self, service_id: &ID, user_uid: &ID) -> anyhow::Result<()>;
 }
 
@@ -42,6 +43,10 @@ mod tests {
             .await
             .unwrap();
         assert!(res.eq(&service_user));
+        // Find by user
+        let find_by_user = ctx.repos.service_users.find_by_user(&user.id).await;
+        assert_eq!(find_by_user.len(), 1);
+        assert!(find_by_user[0].eq(&service_user));
 
         // Update
         let calendar = Calendar::new(&user.id, &account.id);

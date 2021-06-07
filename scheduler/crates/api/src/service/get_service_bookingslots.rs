@@ -205,6 +205,7 @@ impl GetServiceBookingSlotsUseCase {
         ctx: &NettuContext,
     ) -> CompatibleInstances {
         let mut busy_events: Vec<EventInstance> = Vec::new();
+        let all_service_resources = ctx.repos.service_users.find_by_user(&user.user_id).await;
 
         for cal in busy_calendars {
             match ctx
@@ -221,16 +222,19 @@ impl GetServiceBookingSlotsUseCase {
                             let mut instances = e.expand(Some(&timespan), &cal.settings);
 
                             // Add buffer to instances if event is a service event
-                            if user.buffer_after > 0 && e.service_id.is_some() {
-                                let buffer_in_millis = user.buffer_after * 60 * 1000;
-                                for instance in instances.iter_mut() {
-                                    instance.end_ts += buffer_in_millis;
-                                }
-                            }
-                            if user.buffer_before > 0 && e.service_id.is_some() {
-                                let buffer_in_millis = user.buffer_before * 60 * 1000;
-                                for instance in instances.iter_mut() {
-                                    instance.start_ts -= buffer_in_millis;
+                            if let Some(service_id) = e.service_id {
+                                let service_resource = all_service_resources
+                                    .iter()
+                                    .find(|s| s.service_id == service_id);
+                                if let Some(service_resource) = service_resource {
+                                    let buffer_after_in_millis =
+                                        service_resource.buffer_after * 60 * 1000;
+                                    let buffer_before_in_millis =
+                                        service_resource.buffer_before * 60 * 1000;
+                                    for instance in instances.iter_mut() {
+                                        instance.end_ts += buffer_after_in_millis;
+                                        instance.start_ts -= buffer_before_in_millis;
+                                    }
                                 }
                             }
 
