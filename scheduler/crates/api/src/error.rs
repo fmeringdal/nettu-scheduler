@@ -24,12 +24,6 @@ pub enum NettuError {
 }
 
 impl actix_web::error::ResponseError for NettuError {
-    fn error_response(&self) -> HttpResponse {
-        HttpResponseBuilder::new(self.status_code())
-            .set_header(header::CONTENT_TYPE, "text/html; charset=utf-8")
-            .body(self.to_string())
-    }
-
     fn status_code(&self) -> StatusCode {
         match *self {
             NettuError::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
@@ -39,5 +33,11 @@ impl actix_web::error::ResponseError for NettuError {
             NettuError::NotFound(_) => StatusCode::NOT_FOUND,
             NettuError::UnidentifiableClient(_) => StatusCode::UNAUTHORIZED,
         }
+    }
+
+    fn error_response(&self) -> HttpResponse {
+        HttpResponseBuilder::new(self.status_code())
+            .set_header(header::CONTENT_TYPE, "text/html; charset=utf-8")
+            .body(self.to_string())
     }
 }

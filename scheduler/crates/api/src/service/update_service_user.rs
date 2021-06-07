@@ -10,7 +10,7 @@ use crate::{
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::update_service_user::*;
-use nettu_scheduler_domain::{Account, BusyCalendar, Service, TimePlan, ID};
+use nettu_scheduler_domain::{Account, BusyCalendar, Service, ServiceResource, TimePlan, ID};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn update_service_user_controller(
@@ -25,16 +25,17 @@ pub async fn update_service_user_controller(
         account,
         service_id: path_params.service_id.to_owned(),
         user_id: path_params.user_id.to_owned(),
-        availibility: body.availibility.to_owned(),
+        availability: body.availability.to_owned(),
         busy: body.busy.to_owned(),
-        buffer: body.buffer,
+        buffer_after: body.buffer_after,
+        buffer_before: body.buffer_before,
         closest_booking_time: body.closest_booking_time,
         furthest_booking_time: body.furthest_booking_time,
     };
 
     execute(usecase, &ctx)
         .await
-        .map(|usecase_res| HttpResponse::Ok().json(APIResponse::new(usecase_res.service)))
+        .map(|usecase_res| HttpResponse::Ok().json(APIResponse::new(usecase_res.user)))
         .map_err(|e| match e {
             UseCaseErrors::StorageError => NettuError::InternalError,
             UseCaseErrors::ServiceNotFound => {
@@ -52,16 +53,17 @@ struct UpdateServiceUserUseCase {
     pub account: Account,
     pub service_id: ID,
     pub user_id: ID,
-    pub availibility: Option<TimePlan>,
+    pub availability: Option<TimePlan>,
     pub busy: Option<Vec<BusyCalendar>>,
-    pub buffer: Option<i64>,
+    pub buffer_after: Option<i64>,
+    pub buffer_before: Option<i64>,
     pub closest_booking_time: Option<i64>,
     pub furthest_booking_time: Option<i64>,
 }
 
 #[derive(Debug)]
 struct UseCaseRes {
-    pub service: Service,
+    pub user: ServiceResource,
 }
 
 #[derive(Debug)]
@@ -81,12 +83,17 @@ impl UseCase for UpdateServiceUserUseCase {
     const NAME: &'static str = "UpdateServiceUser";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
-        let mut service = match ctx.repos.service_repo.find(&self.service_id).await {
+        let _service = match ctx.repos.services.find(&self.service_id).await {
             Some(service) if service.account_id == self.account.id => service,
             _ => return Err(UseCaseErrors::ServiceNotFound),
         };
 
-        let mut user_resource = match service.find_user_mut(&self.user_id) {
+        let mut user_resource = match ctx
+            .repos
+            .service_users
+            .find(&self.service_id, &self.user_id)
+            .await
+        {
             Some(res) => res,
             _ => return Err(UseCaseErrors::UserNotFound),
         };
@@ -94,9 +101,10 @@ impl UseCase for UpdateServiceUserUseCase {
         update_resource_values(
             &mut user_resource,
             &ServiceResourceUpdate {
-                availibility: self.availibility.clone(),
+                availability: self.availability.clone(),
                 busy: self.busy.clone(),
-                buffer: self.buffer,
+                buffer_after: self.buffer_after,
+                buffer_before: self.buffer_before,
                 closest_booking_time: self.closest_booking_time,
                 furthest_booking_time: self.furthest_booking_time,
             },
@@ -105,10 +113,13 @@ impl UseCase for UpdateServiceUserUseCase {
         .await
         .map_err(UseCaseErrors::InvalidValue)?;
 
-        let res = ctx.repos.service_repo.save(&service).await;
-        match res {
-            Ok(_) => Ok(UseCaseRes { service }),
-            Err(_) => Err(UseCaseErrors::StorageError),
-        }
+        ctx.repos
+            .service_users
+            .save(&user_resource)
+            .await
+            .map(|_| UseCaseRes {
+                user: user_resource,
+            })
+            .map_err(|_| UseCaseErrors::StorageError)
     }
 }

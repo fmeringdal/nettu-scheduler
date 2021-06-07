@@ -1,4 +1,9 @@
-import { INettuClient, INettuUserClient, ScheduleRuleVariant, Weekday } from "@nettu/sdk-scheduler";
+import {
+  INettuClient,
+  INettuUserClient,
+  ScheduleRuleVariant,
+  Weekday,
+} from "@nettu/sdk-scheduler";
 import { setupAccount, setupUserClient } from "./helpers/fixtures";
 
 describe("Service API", () => {
@@ -43,7 +48,10 @@ describe("Service API", () => {
     await client.service.addUser(serviceRes.data!.service.id, {
       userId: user.data!.user.id,
     });
-    await client.service.removeUser(serviceRes.data!.service.id, user.data!.user.id);
+    await client.service.removeUser(
+      serviceRes.data!.service.id,
+      user.data!.user.id
+    );
 
     const service = await client.service.find(serviceRes.data!.service.id);
     expect(service.data!.service.users.length).toBe(0);
@@ -52,13 +60,16 @@ describe("Service API", () => {
   it("should get service bookingslots with no users", async () => {
     const serviceRes = await client.service.create();
 
-    const service = await client.service.getBookingslots(serviceRes.data!.service.id, {
-      startDate: "2030-1-1",
-      endDate: "2030-1-3",
-      duration: 60 * 60 * 1000,
-      ianaTz: "UTC",
-      interval: 15 * 60 * 1000,
-    });
+    const service = await client.service.getBookingslots(
+      serviceRes.data!.service.id,
+      {
+        startDate: "2030-1-1",
+        endDate: "2030-1-3",
+        duration: 60 * 60 * 1000,
+        ianaTz: "UTC",
+        interval: 15 * 60 * 1000,
+      }
+    );
 
     expect(service.data!.dates.length).toBe(0);
   });
@@ -70,39 +81,43 @@ describe("Service API", () => {
     // Available all the time schedule
     const scheduleRes = await userClient.schedule.create({
       timezone: "Europe/Berlin",
-      rules: [Weekday.Mon, Weekday.Tue, Weekday.Wed, Weekday.Thu, Weekday.Fri, Weekday.Sat, Weekday.Sun].map(day => (
-        {
-          variant: {
-            type: ScheduleRuleVariant.WDay,
-            value: day
+      rules: [
+        Weekday.Mon,
+        Weekday.Tue,
+        Weekday.Wed,
+        Weekday.Thu,
+        Weekday.Fri,
+        Weekday.Sat,
+        Weekday.Sun,
+      ].map((day) => ({
+        variant: {
+          type: ScheduleRuleVariant.WDay,
+          value: day,
+        },
+        intervals: [
+          {
+            start: {
+              hours: 0,
+              minutes: 0,
+            },
+            end: {
+              hours: 23,
+              minutes: 59,
+            },
           },
-          intervals: [
-            {
-              start: {
-                hours: 0,
-                minutes: 0
-              },
-              end: {
-                hours: 23,
-                minutes: 59
-              }
-            }
-
-          ]
-        }
-      )
-      )
+        ],
+      })),
     });
 
     const scheduleId = scheduleRes.data!.schedule.id;
     const closestBookingTime = 60; // one hour in minutes
     await client.service.addUser(serviceId, {
       userId,
-      availibility: {
+      availability: {
         variant: "Schedule",
-        id: scheduleId
+        id: scheduleId,
       },
-      closestBookingTime
+      closestBookingTime,
     });
     const now = new Date();
     const today = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
@@ -117,15 +132,20 @@ describe("Service API", () => {
 
     expect(data!.dates.length).toBe(1);
     let bookingSlots = data!.dates[0].slots;
-    expect(bookingSlots[0].start).toBeGreaterThanOrEqual(now.valueOf() + closestBookingTime);
+    expect(bookingSlots[0].start).toBeGreaterThanOrEqual(
+      now.valueOf() + closestBookingTime
+    );
 
-    const { data: dataFuture } = await client.service.getBookingslots(serviceId, {
-      startDate: "2030-10-10",
-      endDate: "2030-10-10",
-      duration: 60 * 60 * 1000,
-      ianaTz: "UTC",
-      interval: 15 * 60 * 1000,
-    });
+    const { data: dataFuture } = await client.service.getBookingslots(
+      serviceId,
+      {
+        startDate: "2030-10-10",
+        endDate: "2030-10-10",
+        duration: 60 * 60 * 1000,
+        ianaTz: "UTC",
+        interval: 15 * 60 * 1000,
+      }
+    );
 
     expect(data!.dates.length).toBe(1);
     bookingSlots = dataFuture!.dates[0].slots;

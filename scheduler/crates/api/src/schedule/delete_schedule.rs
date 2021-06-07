@@ -79,19 +79,11 @@ impl UseCase for DeleteScheduleUseCase {
     const NAME: &'static str = "DeleteSchedule";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
-        let schedule = ctx.repos.schedule_repo.find(&self.schedule_id).await;
+        let schedule = ctx.repos.schedules.find(&self.schedule_id).await;
         match schedule {
             Some(schedule) if schedule.user_id == self.user_id => {
-                let res = ctx.repos.schedule_repo.delete(&schedule.id).await;
+                let res = ctx.repos.schedules.delete(&schedule.id).await;
                 if res.is_none() {
-                    return Err(UseCaseErrors::StorageError);
-                }
-                let res = ctx
-                    .repos
-                    .service_repo
-                    .remove_schedule_from_services(&schedule.id)
-                    .await;
-                if res.is_err() {
                     return Err(UseCaseErrors::StorageError);
                 }
 

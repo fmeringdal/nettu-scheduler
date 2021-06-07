@@ -47,7 +47,7 @@ impl UseCase for CreateAccountUseCase {
             return Err(UseCaseErrors::InvalidCreateAccountCode);
         }
         let account = Account::new();
-        let res = ctx.repos.account_repo.insert(&account).await;
+        let res = ctx.repos.accounts.insert(&account).await;
 
         res.map(|_| account)
             .map_err(|_| UseCaseErrors::StorageError)

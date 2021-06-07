@@ -76,7 +76,7 @@ impl UseCase for GetEventUseCase {
     const NAME: &'static str = "GetEvent";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
-        let e = ctx.repos.event_repo.find(&self.event_id).await;
+        let e = ctx.repos.events.find(&self.event_id).await;
         match e {
             Some(event) if event.user_id == self.user_id => Ok(event),
             _ => Err(UseCaseErrors::NotFound(self.event_id.clone())),

@@ -27,15 +27,19 @@ impl PEMKey {
     pub fn as_bytes(&self) -> &[u8] {
         self.0.as_bytes()
     }
+
+    pub fn inner(self) -> String {
+        self.0
+    }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AccountSettings {
     pub webhook: Option<AccountWebhookSettings>,
     pub google: Option<AccountGoogleIntegration>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AccountWebhookSettings {
     pub url: String,
     pub key: String,
@@ -108,9 +112,9 @@ impl Account {
     }
 }
 
-impl Entity for Account {
-    fn id(&self) -> &ID {
-        &self.id
+impl Entity<ID> for Account {
+    fn id(&self) -> ID {
+        self.id.clone()
     }
 }
 

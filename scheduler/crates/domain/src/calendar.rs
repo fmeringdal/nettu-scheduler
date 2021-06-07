@@ -18,7 +18,7 @@ pub struct Calendar {
     pub metadata: Metadata,
 }
 
-impl Meta for Calendar {
+impl Meta<ID> for Calendar {
     fn metadata(&self) -> &Metadata {
         &self.metadata
     }
@@ -33,7 +33,7 @@ pub enum SyncedCalendar {
     Google(String),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CalendarSettings {
     pub week_start: isize,
     pub timezone: Tz,
@@ -82,8 +82,8 @@ impl Calendar {
     }
 }
 
-impl Entity for Calendar {
-    fn id(&self) -> &ID {
-        &self.id
+impl Entity<ID> for Calendar {
+    fn id(&self) -> ID {
+        self.id.clone()
     }
 }

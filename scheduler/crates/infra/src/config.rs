@@ -45,11 +45,15 @@ impl Config {
                 default_port.parse::<usize>().unwrap()
             }
         };
+
+        const DAYS_62: i64 = 1000 * 60 * 60 * 24 * 62;
+        const DAYS_101: i64 = 1000 * 60 * 60 * 24 * 101;
+
         Self {
             create_account_secret_code,
             port,
-            event_instances_query_duration_limit: 1000 * 60 * 60 * 24 * 62, // 62 days
-            booking_slots_query_duration_limit: 1000 * 60 * 60 * 24 * 101,  // 101 days
+            event_instances_query_duration_limit: DAYS_62,
+            booking_slots_query_duration_limit: DAYS_101,
         }
     }
 }

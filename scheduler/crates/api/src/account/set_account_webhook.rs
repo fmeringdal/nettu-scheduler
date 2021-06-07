@@ -24,9 +24,6 @@ pub async fn set_account_webhook_controller(
             UseCaseErrors::InvalidURI(err) => {
                 NettuError::BadClientData(format!("Invalid URI provided. Error message: {}", err))
             }
-            UseCaseErrors::WebhookUrlTaken => {
-                NettuError::BadClientData("URI is already in use by someone else".into())
-            }
             UseCaseErrors::StorageError => NettuError::InternalError,
         })
 }
@@ -40,7 +37,6 @@ pub struct SetAccountWebhookUseCase {
 #[derive(Debug, PartialEq)]
 pub enum UseCaseErrors {
     InvalidURI(String),
-    WebhookUrlTaken,
     StorageError,
 }
 
@@ -65,15 +61,7 @@ impl UseCase for SetAccountWebhookUseCase {
             )));
         }
 
-        if let Some(url) = &self.webhook_url {
-            if let Some(acc) = ctx.repos.account_repo.find_by_webhook_url(url).await {
-                if acc.id != self.account.id {
-                    return Err(UseCaseErrors::WebhookUrlTaken);
-                }
-            }
-        }
-
-        match ctx.repos.account_repo.save(&self.account).await {
+        match ctx.repos.accounts.save(&self.account).await {
             Ok(_) => Ok(self.account.clone()),
             Err(_) => Err(UseCaseErrors::StorageError),
         }

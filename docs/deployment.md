@@ -8,12 +8,10 @@ cd scheduler
 cargo run --release
 ```
 
-Then setup a mongodb with the indexes specified [here](./mongodb.md).
+Then setup a postgres db with the init script specified [here](../scheduler/crates/infra/migrations/dbinit.sql).
 Lastly provide the following environment variables to the `nettu scheduler` server:
 ```bash
 # The connection string to the database
-MONGODB_CONNECTION_STRING
-# The mongo database name that the server should use
-MONGODB_NAME
+DATABASE_URL
 ```
 

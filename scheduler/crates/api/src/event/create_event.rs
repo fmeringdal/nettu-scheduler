@@ -50,7 +50,7 @@ pub async fn create_event_admin_controller(
         calendar_id: body.calendar_id,
         recurrence: body.recurrence,
         reminder: body.reminder,
-        is_service: body.is_service.unwrap_or(false),
+        service_id: body.service_id,
         metadata: body.metadata.unwrap_or_default(),
     };
 
@@ -76,7 +76,7 @@ pub async fn create_event_controller(
         recurrence: body.recurrence,
         user,
         reminder: body.reminder,
-        is_service: body.is_service.unwrap_or(false),
+        service_id: body.service_id,
         metadata: body.metadata.unwrap_or_default(),
     };
 
@@ -98,7 +98,7 @@ pub struct CreateEventUseCase {
     pub busy: bool,
     pub recurrence: Option<RRuleOptions>,
     pub reminder: Option<CalendarEventReminder>,
-    pub is_service: bool,
+    pub service_id: Option<ID>,
     pub metadata: Metadata,
 }
 
@@ -119,7 +119,7 @@ impl UseCase for CreateEventUseCase {
     const NAME: &'static str = "CreateEvent";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
-        let calendar = match ctx.repos.calendar_repo.find(&self.calendar_id).await {
+        let calendar = match ctx.repos.calendars.find(&self.calendar_id).await {
             Some(calendar) if calendar.user_id == self.user.id => calendar,
             _ => return Err(UseCaseErrors::NotFound(self.calendar_id.clone())),
         };
@@ -133,12 +133,12 @@ impl UseCase for CreateEventUseCase {
             updated: ctx.sys.get_timestamp_millis(),
             recurrence: None,
             end_ts: self.start_ts + self.duration, // default, if recurrence changes, this will be updated
-            exdates: vec![],
+            exdates: Vec::new(),
             calendar_id: calendar.id.clone(),
             user_id: self.user.id.clone(),
             account_id: self.user.account_id.clone(),
             reminder: self.reminder.clone(),
-            is_service: self.is_service,
+            service_id: self.service_id.clone(),
             metadata: self.metadata.clone(),
             synced_events: Default::default(),
         };
@@ -182,7 +182,7 @@ impl UseCase for CreateEventUseCase {
             }
         }
 
-        let repo_res = ctx.repos.event_repo.insert(&e).await;
+        let repo_res = ctx.repos.events.insert(&e).await;
         if repo_res.is_err() {
             return Err(UseCaseErrors::StorageError);
         }
@@ -206,7 +206,7 @@ mod test {
     use super::*;
     use chrono::prelude::*;
     use chrono::Utc;
-    use nettu_scheduler_domain::{Calendar, User};
+    use nettu_scheduler_domain::{Account, Calendar, User};
     use nettu_scheduler_infra::setup_context;
 
     struct TestContext {
@@ -217,12 +217,13 @@ mod test {
 
     async fn setup() -> TestContext {
         let ctx = setup_context().await;
-        let user = User::new(Default::default());
+        let account = Account::default();
+        ctx.repos.accounts.insert(&account).await.unwrap();
+        let user = User::new(account.id.clone());
+        ctx.repos.users.insert(&user).await.unwrap();
+        let calendar = Calendar::new(&user.id, &account.id);
+        ctx.repos.calendars.insert(&calendar).await.unwrap();
 
-        let account_id = ID::default();
-        let calendar = Calendar::new(&user.id, &account_id);
-
-        ctx.repos.calendar_repo.insert(&calendar).await.unwrap();
         TestContext {
             user,
             calendar,
@@ -247,7 +248,7 @@ mod test {
             calendar_id: calendar.id.clone(),
             user,
             reminder: None,
-            is_service: false,
+            service_id: None,
             metadata: Default::default(),
         };
 
@@ -273,7 +274,7 @@ mod test {
             calendar_id: calendar.id.clone(),
             user,
             reminder: None,
-            is_service: false,
+            service_id: None,
             metadata: Default::default(),
         };
 
@@ -299,7 +300,7 @@ mod test {
             calendar_id: ID::default(),
             user,
             reminder: None,
-            is_service: false,
+            service_id: None,
             metadata: Default::default(),
         };
 
@@ -320,7 +321,7 @@ mod test {
             user,
         } = setup().await;
 
-        let mut invalid_rrules = vec![];
+        let mut invalid_rrules = Vec::new();
         invalid_rrules.push(RRuleOptions {
             count: Some(1000), // too big count
             ..Default::default()
@@ -338,7 +339,7 @@ mod test {
                 calendar_id: calendar.id.clone(),
                 user: user.clone(),
                 reminder: None,
-                is_service: false,
+                service_id: None,
                 metadata: Default::default(),
             };
 

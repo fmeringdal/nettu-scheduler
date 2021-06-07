@@ -1,6 +1,6 @@
 use crate::shared::entity::{Entity, ID};
 
-/// A `Reminder` represents a specific time before the occurence a
+/// A `Reminder` represents a specific time before the occurrence a
 /// `CalendarEvent` at which the owner `Account` should be notified.
 #[derive(Debug, Clone)]
 pub struct Reminder {
@@ -14,7 +14,7 @@ pub struct Reminder {
     /// This is usually some minutes before a `CalendarEvent`
     pub remind_at: i64,
     /// This field is needed to avoid sending duplicate `Reminder`s to the `Account`.
-    /// There are 2 proccesses which produces `Reminder`s, one is triggered when a `CalendarEvent`
+    /// There are 2 processes which produces `Reminder`s, one is triggered when a `CalendarEvent`
     /// is created or modified and the other is a job scheduler generating
     /// `Reminder`s on a schedule. These two could possibly interfere and generate
     /// duplicate `Reminder`s for the same `CalendarEvent`. The former has a higher priority
@@ -24,9 +24,9 @@ pub struct Reminder {
     pub priority: i64,
 }
 
-impl Entity for Reminder {
-    fn id(&self) -> &ID {
-        &self.id
+impl Entity<ID> for Reminder {
+    fn id(&self) -> ID {
+        self.id.clone()
     }
 }
 
@@ -37,8 +37,8 @@ pub struct EventRemindersExpansionJob {
     pub timestamp: i64,
 }
 
-impl Entity for EventRemindersExpansionJob {
-    fn id(&self) -> &ID {
-        &self.id
+impl Entity<ID> for EventRemindersExpansionJob {
+    fn id(&self) -> ID {
+        self.id.clone()
     }
 }

@@ -1,7 +1,7 @@
 use crate::shared::usecase::{execute, UseCase};
 use crate::{error::NettuError, shared::auth::protect_account_route};
 use actix_web::{web, HttpRequest, HttpResponse};
-use futures::future::join_all;
+
 use nettu_scheduler_api_structs::delete_user::*;
 use nettu_scheduler_domain::{Account, User, ID};
 use nettu_scheduler_infra::NettuContext;
@@ -55,26 +55,15 @@ impl UseCase for DeleteUserUseCase {
     const NAME: &'static str = "DeleteUser";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
-        let user = match ctx.repos.user_repo.find(&self.user_id).await {
+        let user = match ctx.repos.users.find(&self.user_id).await {
             Some(u) if u.account_id == self.account.id => {
-                match ctx.repos.user_repo.delete(&self.user_id).await {
+                match ctx.repos.users.delete(&self.user_id).await {
                     Some(u) => u,
                     None => return Err(UseCaseErrors::StorageError),
                 }
             }
             _ => return Err(UseCaseErrors::UserNotFound),
         };
-
-        let _ = join_all(vec![
-            ctx.repos.calendar_repo.delete_by_user(&user.id),
-            ctx.repos.event_repo.delete_by_user(&user.id),
-            ctx.repos.schedule_repo.delete_by_user(&user.id),
-        ]);
-        let _ = ctx
-            .repos
-            .service_repo
-            .remove_user_from_services(&user.id)
-            .await;
 
         Ok(UseCaseRes { user })
     }

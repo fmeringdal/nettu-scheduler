@@ -3,7 +3,7 @@
 `Nettu scheduler` provides a `Service` type that makes it really easy to build a booking application. The `Service` type represents a bookable service that your app provides.
 
 It works by adding `User`s to the `Service` that are going to be bookable. Each `User`
-on the `Service` can have a bunch of different settings for when they can be booked (availibility schedule, closest booking time, buffers etc.).
+on the `Service` can have a bunch of different settings for when they can be booked (availability schedule, closest booking time, buffers etc.).
 Then you can then easily query the `Service` for the available bookingslots. When
 a booking is made you can represent it as a `CalendarEvent` with the booked `User`
 as the owner of the `CalendarEvent` and the `User` will no longer be bookable
@@ -36,11 +36,11 @@ const calendarRes = await client.calendar.create(user.id, {
 });
 const { calendar } = calendarRes.data!;
 
-// Register the User on the Service with the specified Schedule as availibility and
+// Register the User on the Service with the specified Schedule as availability and
 // also a buffer time after every service event 
 await client.service.addUser(service.id, {
     userId: user.id,
-    availibility: {
+    availability: {
         variant: "Schedule",
         id: schedule.id
     },

@@ -102,7 +102,7 @@ impl UseCase for UpdateCalendarUseCase {
     const NAME: &'static str = "UpdateCalendar";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
-        let mut calendar = match ctx.repos.calendar_repo.find(&self.calendar_id).await {
+        let mut calendar = match ctx.repos.calendars.find(&self.calendar_id).await {
             Some(cal) if cal.user_id == self.user.id => cal,
             _ => return Err(UseCaseErrors::CalendarNotFound),
         };
@@ -133,7 +133,7 @@ impl UseCase for UpdateCalendarUseCase {
         }
 
         ctx.repos
-            .calendar_repo
+            .calendars
             .save(&calendar)
             .await
             .map(|_| calendar)
@@ -151,7 +151,7 @@ impl PermissionBoundary for UpdateCalendarUseCase {
 mod test {
     use std::collections::HashMap;
 
-    use nettu_scheduler_domain::Calendar;
+    use nettu_scheduler_domain::{Account, Calendar, User};
     use nettu_scheduler_infra::setup_context;
 
     use super::*;
@@ -160,10 +160,12 @@ mod test {
     #[test]
     async fn it_rejects_invalid_wkst() {
         let ctx = setup_context().await;
-        let account_id = ID::default();
-        let user = User::new(account_id.clone());
-        let calendar = Calendar::new(&user.id, &account_id);
-        ctx.repos.calendar_repo.insert(&calendar).await.unwrap();
+        let account = Account::default();
+        ctx.repos.accounts.insert(&account).await.unwrap();
+        let user = User::new(account.id.clone());
+        ctx.repos.users.insert(&user).await.unwrap();
+        let calendar = Calendar::new(&user.id, &account.id);
+        ctx.repos.calendars.insert(&calendar).await.unwrap();
 
         let mut usecase = UpdateCalendarUseCase {
             user,
@@ -181,10 +183,12 @@ mod test {
     #[test]
     async fn it_update_settings_with_valid_wkst() {
         let ctx = setup_context().await;
-        let account_id = ID::default();
-        let user = User::new(account_id.clone());
-        let calendar = Calendar::new(&user.id, &account_id);
-        ctx.repos.calendar_repo.insert(&calendar).await.unwrap();
+        let account = Account::default();
+        ctx.repos.accounts.insert(&account).await.unwrap();
+        let user = User::new(account.id.clone());
+        ctx.repos.users.insert(&user).await.unwrap();
+        let calendar = Calendar::new(&user.id, &account.id);
+        ctx.repos.calendars.insert(&calendar).await.unwrap();
 
         assert_eq!(calendar.settings.week_start, 0);
         let new_wkst = 3;
@@ -200,7 +204,7 @@ mod test {
         assert!(res.is_ok());
 
         // Check that calendar settings have been updated
-        let calendar = ctx.repos.calendar_repo.find(&calendar.id).await.unwrap();
+        let calendar = ctx.repos.calendars.find(&calendar.id).await.unwrap();
         assert_eq!(calendar.settings.week_start, new_wkst);
     }
 }

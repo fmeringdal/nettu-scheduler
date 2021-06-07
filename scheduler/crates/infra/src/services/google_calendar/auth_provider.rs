@@ -114,7 +114,7 @@ pub async fn get_access_token(user: &mut User, ctx: &NettuContext) -> Option<Str
     // Access token has or will expire soon, now renew it
 
     // The account contains the google client id and secret
-    let account = match ctx.repos.account_repo.find(&user.account_id).await {
+    let account = match ctx.repos.accounts.find(&user.account_id).await {
         Some(a) => a,
         None => return None,
     };
@@ -138,7 +138,7 @@ pub async fn get_access_token(user: &mut User, ctx: &NettuContext) -> Option<Str
             let access_token = integration.access_token.clone();
 
             // Update user with updated google tokens
-            if let Err(e) = ctx.repos.user_repo.save(&user).await {
+            if let Err(e) = ctx.repos.users.save(&user).await {
                 warn!(
                     "Unable to save updated google credentials for user. Error: {:?}",
                     e

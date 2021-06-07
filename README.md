@@ -29,20 +29,26 @@ It supports authentication through api keys for server - server communication an
 
 ## Quick start
 
-First of all we will need a running instance of the server. The quickest way to start one
-is with `docker`:
+The server is using PostgreSQL for persistence so we will need to spin up that first: 
 ```bash
-docker run -p 5000:5000 --env ACCOUNT_API_KEY="REPLACE_ME" fmeringdal/nettu-scheduler:latest 
+cd scheduler
+docker-compose -f integrations/docker-compose.yml up -d
+```
+
+Now we are ready to start the `nettu-scheduler` server with `docker`
+```bash
+docker run -p 5000:5000 ---e ACCOUNT_API_KEY="REPLACE_ME" \ 
+    -e DATABASE_URL="postgresql://postgres:postgres@localhost:5432/nettuscheduler" \ 
+    fmeringdal/nettu-scheduler:latest 
 ```
 or if you want to build it yourself with `cargo`:
 ```bash
 cd scheduler
 export ACCOUNT_API_KEY="REPLACE_ME"
+export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/nettuscheduler"
 cargo run inmemory
 ```
-Both of these methods will start the server with an in-memory data store which should never
-be used in production, but is good enough while just playing around.
-For information about setting up this server for deployment, read [here](./docs/deployment.md).
+
 The `ACCOUNT_API_KEY` environment variable is going to create an `Account` (if it does not already exist) during
 server startup with the given key. `Account`s act as tenants in the server and it is possible to create multiple `Account`s by using the `CREATE_ACCOUNT_SECRET_CODE` which you can provide as an environment variable.
 

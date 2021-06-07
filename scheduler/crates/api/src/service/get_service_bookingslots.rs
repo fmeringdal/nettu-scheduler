@@ -124,7 +124,7 @@ impl UseCase for GetServiceBookingSlotsUseCase {
             .parse()
             .unwrap();
 
-        let service = match ctx.repos.service_repo.find(&self.service_id).await {
+        let service = match ctx.repos.services.find_with_users(&self.service_id).await {
             Some(s) => s,
             None => return Err(UseCaseErrors::ServiceNotFound),
         };
@@ -160,15 +160,15 @@ impl UseCase for GetServiceBookingSlotsUseCase {
 }
 
 impl GetServiceBookingSlotsUseCase {
-    async fn get_user_availibility(
+    async fn get_user_availability(
         &self,
         user: &ServiceResource,
         user_calendars: &[Calendar],
         timespan: &TimeSpan,
         ctx: &NettuContext,
     ) -> CompatibleInstances {
-        let empty = CompatibleInstances::new(vec![]);
-        match &user.availibility {
+        let empty = CompatibleInstances::new(Vec::new());
+        match &user.availability {
             TimePlan::Calendar(id) => {
                 let calendar = match user_calendars.iter().find(|cal| cal.id == *id) {
                     Some(cal) => cal,
@@ -178,7 +178,7 @@ impl GetServiceBookingSlotsUseCase {
                 };
                 let all_calendar_events = ctx
                     .repos
-                    .event_repo
+                    .events
                     .find_by_calendar(&id, Some(&timespan))
                     .await
                     .unwrap_or_default();
@@ -191,7 +191,7 @@ impl GetServiceBookingSlotsUseCase {
 
                 get_free_busy(all_event_instances).free
             }
-            TimePlan::Schedule(id) => match ctx.repos.schedule_repo.find(&id).await {
+            TimePlan::Schedule(id) => match ctx.repos.schedules.find(&id).await {
                 Some(schedule) if schedule.user_id == user.user_id => schedule.freebusy(&timespan),
                 _ => empty,
             },
@@ -201,17 +201,18 @@ impl GetServiceBookingSlotsUseCase {
 
     async fn get_user_busy(
         &self,
-        service_resource: &ServiceResource,
+        user: &ServiceResource,
         busy_calendars: &[&Calendar],
         timespan: &TimeSpan,
         ctx: &NettuContext,
     ) -> CompatibleInstances {
-        let mut busy_events: Vec<EventInstance> = vec![];
+        let mut busy_events: Vec<EventInstance> = Vec::new();
+        let all_service_resources = ctx.repos.service_users.find_by_user(&user.user_id).await;
 
         for cal in busy_calendars {
             match ctx
                 .repos
-                .event_repo
+                .events
                 .find_by_calendar(&cal.id, Some(&timespan))
                 .await
             {
@@ -223,10 +224,19 @@ impl GetServiceBookingSlotsUseCase {
                             let mut instances = e.expand(Some(&timespan), &cal.settings);
 
                             // Add buffer to instances if event is a service event
-                            if service_resource.buffer > 0 && e.is_service {
-                                let buffer_in_millis = service_resource.buffer * 60 * 1000;
-                                for instance in instances.iter_mut() {
-                                    instance.end_ts += buffer_in_millis;
+                            if let Some(service_id) = e.service_id {
+                                let service_resource = all_service_resources
+                                    .iter()
+                                    .find(|s| s.service_id == service_id);
+                                if let Some(service_resource) = service_resource {
+                                    let buffer_after_in_millis =
+                                        service_resource.buffer_after * 60 * 1000;
+                                    let buffer_before_in_millis =
+                                        service_resource.buffer_before * 60 * 1000;
+                                    for instance in instances.iter_mut() {
+                                        instance.end_ts += buffer_after_in_millis;
+                                        instance.start_ts -= buffer_before_in_millis;
+                                    }
                                 }
                             }
 
@@ -243,7 +253,7 @@ impl GetServiceBookingSlotsUseCase {
             }
         }
 
-        let google_busy_calendars = service_resource
+        let google_busy_calendars = user
             .busy
             .iter()
             .filter(|busy_cal| match busy_cal {
@@ -256,8 +266,8 @@ impl GetServiceBookingSlotsUseCase {
             // TODO: no unwrap
             let mut user = ctx
                 .repos
-                .user_repo
-                .find(&service_resource.user_id)
+                .users
+                .find(&user.user_id)
                 .await
                 .expect("User to be found");
             match GoogleCalendarProvider::new(&mut user, ctx).await {
@@ -324,7 +334,7 @@ impl GetServiceBookingSlotsUseCase {
         ctx: &NettuContext,
     ) -> UserFreeEvents {
         let empty = UserFreeEvents {
-            free_events: CompatibleInstances::new(vec![]),
+            free_events: CompatibleInstances::new(Vec::new()),
             user_id: service_resource.user_id.clone(),
         };
 
@@ -335,7 +345,7 @@ impl GetServiceBookingSlotsUseCase {
 
         let user_calendars = ctx
             .repos
-            .calendar_repo
+            .calendars
             .find_by_user(&service_resource.user_id)
             .await;
         let busy_calendars = user_calendars
@@ -353,14 +363,14 @@ impl GetServiceBookingSlotsUseCase {
             .collect::<Vec<_>>();
 
         let mut free_events = self
-            .get_user_availibility(service_resource, &user_calendars, &timespan, ctx)
+            .get_user_availability(service_resource, &user_calendars, &timespan, ctx)
             .await;
 
         let busy_events = self
             .get_user_busy(service_resource, &busy_calendars, &timespan, ctx)
             .await;
 
-        free_events.remove_intances(&busy_events, 0);
+        free_events.remove_instances(&busy_events, 0);
 
         UserFreeEvents {
             free_events,
@@ -376,12 +386,15 @@ mod test {
     use super::*;
     use chrono::prelude::*;
     use chrono::Utc;
-    use nettu_scheduler_domain::{Calendar, CalendarEvent, RRuleOptions, Service, ServiceResource};
+    use nettu_scheduler_domain::{
+        Account, Calendar, CalendarEvent, RRuleOptions, Service, ServiceResource, User,
+    };
     use nettu_scheduler_infra::{setup_context, ISys};
 
     struct TestContext {
         ctx: NettuContext,
         service: Service,
+        account: Account,
     }
 
     struct DummySys {}
@@ -396,101 +409,101 @@ mod test {
         let mut ctx = setup_context().await;
         ctx.sys = Arc::new(DummySys {});
 
-        let service = Service::new(Default::default());
-        ctx.repos.service_repo.insert(&service).await.unwrap();
+        let account = Account::default();
+        ctx.repos.accounts.insert(&account).await.unwrap();
+        let service = Service::new(account.id.clone());
+        ctx.repos.services.insert(&service).await.unwrap();
 
-        TestContext { ctx, service }
+        TestContext {
+            ctx,
+            service,
+            account,
+        }
     }
 
-    async fn setup_service_users(ctx: &NettuContext, service: &mut Service) {
+    async fn setup_service_users(ctx: &NettuContext, service: &mut Service, account_id: &ID) {
+        let user1 = User::new(account_id.clone());
+        let user2 = User::new(account_id.clone());
+        ctx.repos.users.insert(&user1).await.unwrap();
+        ctx.repos.users.insert(&user2).await.unwrap();
         let mut resource1 = ServiceResource {
-            id: Default::default(),
-            user_id: Default::default(),
-            buffer: 0,
-            availibility: TimePlan::Empty,
-            busy: vec![],
+            user_id: user1.id.clone(),
+            service_id: service.id.clone(),
+            buffer_after: 0,
+            buffer_before: 0,
+            availability: TimePlan::Empty,
+            busy: Vec::new(),
             closest_booking_time: 0,
             furthest_booking_time: None,
         };
         let mut resource2 = ServiceResource {
-            id: Default::default(),
-            user_id: Default::default(),
-            buffer: 0,
-            availibility: TimePlan::Empty,
-            busy: vec![],
+            user_id: user2.id.clone(),
+            service_id: service.id.clone(),
+            buffer_after: 0,
+            buffer_before: 0,
+            availability: TimePlan::Empty,
+            busy: Vec::new(),
             closest_booking_time: 0,
             furthest_booking_time: None,
         };
 
-        let account_id = ID::default();
-
         let calendar_user_1 = Calendar::new(&resource1.user_id, &account_id);
-        resource1.availibility = TimePlan::Calendar(calendar_user_1.id.clone());
+        resource1.availability = TimePlan::Calendar(calendar_user_1.id.clone());
         let calendar_user_2 = Calendar::new(&resource2.user_id, &account_id);
-        resource2.availibility = TimePlan::Calendar(calendar_user_2.id.clone());
+        resource2.availability = TimePlan::Calendar(calendar_user_2.id.clone());
 
-        ctx.repos
-            .calendar_repo
-            .insert(&calendar_user_1)
-            .await
-            .unwrap();
-        ctx.repos
-            .calendar_repo
-            .insert(&calendar_user_2)
-            .await
-            .unwrap();
+        ctx.repos.calendars.insert(&calendar_user_1).await.unwrap();
+        ctx.repos.calendars.insert(&calendar_user_2).await.unwrap();
 
-        let account_id = ID::default();
-
-        let availibility_event1 = CalendarEvent {
+        let availability_event1 = CalendarEvent {
             id: Default::default(),
             account_id: account_id.clone(),
             busy: false,
             calendar_id: calendar_user_1.id,
             duration: 1000 * 60 * 60,
             end_ts: 0,
-            exdates: vec![],
+            exdates: Vec::new(),
             recurrence: None,
             start_ts: 1000 * 60 * 60,
             user_id: resource1.user_id.to_owned(),
             reminder: None,
-            is_service: false,
+            service_id: None,
             metadata: Default::default(),
             updated: Default::default(),
             created: Default::default(),
             synced_events: Default::default(),
         };
-        let availibility_event2 = CalendarEvent {
+        let availability_event2 = CalendarEvent {
             id: ID::default(),
             account_id: account_id.clone(),
             busy: false,
             calendar_id: calendar_user_2.id.clone(),
             duration: 1000 * 60 * 60,
             end_ts: 0,
-            exdates: vec![],
+            exdates: Vec::new(),
             recurrence: None,
             start_ts: 1000 * 60 * 60,
             user_id: resource2.user_id.to_owned(),
             reminder: None,
-            is_service: false,
+            service_id: None,
             metadata: Default::default(),
             updated: Default::default(),
             created: Default::default(),
             synced_events: Default::default(),
         };
-        let mut availibility_event3 = CalendarEvent {
+        let mut availability_event3 = CalendarEvent {
             id: ID::default(),
             account_id: account_id.clone(),
             busy: false,
             calendar_id: calendar_user_2.id,
             duration: 1000 * 60 * 105,
             end_ts: 0,
-            exdates: vec![],
+            exdates: Vec::new(),
             recurrence: None,
             start_ts: 1000 * 60 * 60 * 4,
             user_id: resource1.user_id.to_owned(),
             reminder: None,
-            is_service: false,
+            service_id: None,
             metadata: Default::default(),
             updated: Default::default(),
             created: Default::default(),
@@ -499,33 +512,24 @@ mod test {
         let recurrence = RRuleOptions {
             ..Default::default()
         };
-        availibility_event3.set_recurrence(recurrence, &calendar_user_2.settings, true);
+        availability_event3.set_recurrence(recurrence, &calendar_user_2.settings, true);
 
-        ctx.repos
-            .event_repo
-            .insert(&availibility_event1)
-            .await
-            .unwrap();
-        ctx.repos
-            .event_repo
-            .insert(&availibility_event2)
-            .await
-            .unwrap();
-        ctx.repos
-            .event_repo
-            .insert(&availibility_event3)
-            .await
-            .unwrap();
+        ctx.repos.events.insert(&availability_event1).await.unwrap();
+        ctx.repos.events.insert(&availability_event2).await.unwrap();
+        ctx.repos.events.insert(&availability_event3).await.unwrap();
 
-        service.add_user(resource1);
-        service.add_user(resource2);
-        ctx.repos.service_repo.save(&service).await.unwrap();
+        ctx.repos.service_users.insert(&resource1).await.unwrap();
+        ctx.repos.service_users.insert(&resource2).await.unwrap();
     }
 
     #[actix_web::main]
     #[test]
     async fn get_service_bookingslots() {
-        let TestContext { ctx, service } = setup().await;
+        let TestContext {
+            ctx,
+            service,
+            account: _,
+        } = setup().await;
 
         let mut usecase = GetServiceBookingSlotsUseCase {
             start_date: "2010-1-1".into(),
@@ -544,8 +548,12 @@ mod test {
     #[actix_web::main]
     #[test]
     async fn get_bookingslots_with_multiple_users_in_service() {
-        let TestContext { ctx, mut service } = setup().await;
-        setup_service_users(&ctx, &mut service).await;
+        let TestContext {
+            ctx,
+            mut service,
+            account,
+        } = setup().await;
+        setup_service_users(&ctx, &mut service, &account.id).await;
 
         let mut usecase = GetServiceBookingSlotsUseCase {
             start_date: "2010-1-1".into(),

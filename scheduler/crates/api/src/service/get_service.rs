@@ -7,7 +7,7 @@ use crate::{
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::get_service::*;
-use nettu_scheduler_domain::{Account, Service, ID};
+use nettu_scheduler_domain::{Account, ServiceWithUsers, ID};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn get_service_controller(
@@ -41,7 +41,7 @@ struct GetServiceUseCase {
 
 #[derive(Debug)]
 struct UseCaseRes {
-    pub service: Service,
+    pub service: ServiceWithUsers,
 }
 
 #[derive(Debug)]
@@ -57,7 +57,8 @@ impl UseCase for GetServiceUseCase {
     const NAME: &'static str = "GetService";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
-        let res = ctx.repos.service_repo.find(&self.service_id).await;
+        let res = ctx.repos.services.find_with_users(&self.service_id).await;
+        println!("Query returned service with users: {:?}", res);
         match res {
             Some(service) if service.account_id == self.account.id => Ok(UseCaseRes { service }),
             _ => Err(UseCaseErrors::NotFound),

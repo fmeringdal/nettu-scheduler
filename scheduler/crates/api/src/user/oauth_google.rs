@@ -83,7 +83,7 @@ impl UseCase for OAuthGoogleUseCase {
     const NAME: &'static str = "OAuthGoogle";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
-        let account = match ctx.repos.account_repo.find(&self.user.account_id).await {
+        let account = match ctx.repos.accounts.find(&self.user.account_id).await {
             Some(acc) => acc,
             None => return Err(UseCaseErrors::StorageError),
         };
@@ -128,7 +128,7 @@ impl UseCase for OAuthGoogleUseCase {
         }
 
         ctx.repos
-            .user_repo
+            .users
             .save(&self.user)
             .await
             .map(|_| UseCaseRes {

@@ -58,7 +58,7 @@ impl UseCase for UpdateUserUseCase {
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         let mut user = match ctx
             .repos
-            .user_repo
+            .users
             .find_by_account_id(&self.user_id, &self.account_id)
             .await
         {
@@ -71,7 +71,7 @@ impl UseCase for UpdateUserUseCase {
         }
 
         ctx.repos
-            .user_repo
+            .users
             .save(&user)
             .await
             .map(|_| UseCaseRes { user })

@@ -1,12 +1,14 @@
-use nettu_scheduler_domain::{BusyCalendar, Metadata, Service, ServiceResource, TimePlan, ID};
+use nettu_scheduler_domain::{
+    BusyCalendar, Metadata, Service, ServiceResource, ServiceWithUsers, TimePlan, ID,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ServiceResourceDTO {
-    pub id: ID,
     pub user_id: ID,
-    pub availibility: TimePlan,
+    pub service_id: ID,
+    pub availability: TimePlan,
     pub busy: Vec<BusyCalendar>,
     pub buffer: i64,
     pub closest_booking_time: i64,
@@ -16,11 +18,11 @@ pub struct ServiceResourceDTO {
 impl ServiceResourceDTO {
     pub fn new(resource: ServiceResource) -> Self {
         Self {
-            id: resource.id,
             user_id: resource.user_id,
-            availibility: resource.availibility,
+            service_id: resource.service_id,
+            availability: resource.availability,
             busy: resource.busy,
-            buffer: resource.buffer,
+            buffer: resource.buffer_after,
             closest_booking_time: resource.closest_booking_time,
             furthest_booking_time: resource.furthest_booking_time,
         }
@@ -31,14 +33,30 @@ impl ServiceResourceDTO {
 #[serde(rename_all = "camelCase")]
 pub struct ServiceDTO {
     pub id: ID,
-    pub users: Vec<ServiceResourceDTO>,
     pub metadata: Metadata,
 }
 
 impl ServiceDTO {
     pub fn new(service: Service) -> Self {
         Self {
-            id: service.id.clone(),
+            id: service.id,
+            metadata: service.metadata,
+        }
+    }
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ServiceWithUsersDTO {
+    pub id: ID,
+    pub users: Vec<ServiceResourceDTO>,
+    pub metadata: Metadata,
+}
+
+impl ServiceWithUsersDTO {
+    pub fn new(service: ServiceWithUsers) -> Self {
+        Self {
+            id: service.id,
             users: service
                 .users
                 .into_iter()

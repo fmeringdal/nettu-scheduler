@@ -64,7 +64,7 @@ impl UseCase for SetAccountGoogleIntegrationUseCase {
         if need_to_revoke_user_integrations {
             if ctx
                 .repos
-                .user_repo
+                .users
                 .revoke_google_integration(&self.account.id)
                 .await
                 .is_err()
@@ -80,7 +80,7 @@ impl UseCase for SetAccountGoogleIntegrationUseCase {
         });
 
         ctx.repos
-            .account_repo
+            .accounts
             .save(&self.account)
             .await
             .map(|_| self.account.clone())

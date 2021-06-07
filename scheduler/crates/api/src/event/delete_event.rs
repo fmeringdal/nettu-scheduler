@@ -87,7 +87,7 @@ impl UseCase for DeleteEventUseCase {
 
     // TODO: use only one db call
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
-        let e = match ctx.repos.event_repo.find(&self.event_id).await {
+        let e = match ctx.repos.events.find(&self.event_id).await {
             Some(e) if e.user_id == self.user.id => e,
             _ => return Err(UseCaseErrors::NotFound(self.event_id.clone())),
         };
@@ -110,7 +110,7 @@ impl UseCase for DeleteEventUseCase {
             }
         }
 
-        ctx.repos.event_repo.delete(&e.id).await;
+        ctx.repos.events.delete(&e.id).await;
 
         Ok(e)
     }

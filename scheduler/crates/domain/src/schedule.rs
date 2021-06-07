@@ -20,7 +20,7 @@ pub struct Schedule {
     pub metadata: Metadata,
 }
 
-impl Meta for Schedule {
+impl Meta<ID> for Schedule {
     fn metadata(&self) -> &Metadata {
         &self.metadata
     }
@@ -42,12 +42,12 @@ impl Schedule {
         }
     }
 
-    pub fn set_rules(&mut self, rules: &Vec<ScheduleRule>) {
+    pub fn set_rules(&mut self, rules: &[ScheduleRule]) {
         let now = Utc::now();
         let min_date = self.timezone.ymd(now.year(), now.month(), now.day()) - Duration::days(2);
         let max_date = self.timezone.ymd(min_date.year() + 5, 1, 1);
         let allowed_rules = rules
-            .clone()
+            .to_owned()
             .into_iter()
             .filter(|r| match &r.variant {
                 ScheduleRuleVariant::Date(datestr) => match datestr.parse::<Day>() {
@@ -68,9 +68,9 @@ impl Schedule {
     }
 }
 
-impl Entity for Schedule {
-    fn id(&self) -> &ID {
-        &self.id
+impl Entity<ID> for Schedule {
+    fn id(&self) -> ID {
+        self.id.clone()
     }
 }
 
@@ -180,7 +180,7 @@ pub struct ScheduleRule {
 
 impl ScheduleRule {
     fn default_rules() -> Vec<Self> {
-        let mut weekly_rules = vec![];
+        let mut weekly_rules = Vec::new();
         let weekdays = vec![
             Weekday::Mon,
             Weekday::Tue,
@@ -192,7 +192,7 @@ impl ScheduleRule {
         ];
         for wday in weekdays {
             let intervals = match wday {
-                Weekday::Sat | Weekday::Sun => vec![],
+                Weekday::Sat | Weekday::Sun => Vec::new(),
                 _ => vec![ScheduleRuleInterval {
                     start: Time {
                         hours: 9,
@@ -214,7 +214,7 @@ impl ScheduleRule {
 
     fn parse_intervals(&mut self) {
         if self.intervals.len() > 10 {
-            self.intervals.splice(10.., vec![]);
+            self.intervals.splice(10.., Vec::new());
         }
         // earliest start first
         self.intervals
@@ -337,7 +337,7 @@ impl Schedule {
             }
         }
 
-        let mut free_instances = CompatibleInstances::new(vec![]);
+        let mut free_instances = CompatibleInstances::new(Vec::new());
 
         let mut day_cursor = Day {
             year: start.year(),

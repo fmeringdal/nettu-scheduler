@@ -6,11 +6,10 @@ use crate::shared::{
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::add_user_to_service::*;
 use nettu_scheduler_domain::{
-    providers::google::GoogleCalendarAccessRole, Account, BusyCalendar, Service, ServiceResource,
-    TimePlan, ID,
+    providers::google::GoogleCalendarAccessRole, Account, BusyCalendar, ServiceResource, TimePlan,
+    ID,
 };
 use nettu_scheduler_infra::{google_calendar::GoogleCalendarProvider, NettuContext};
-
 
 pub async fn add_user_to_service_controller(
     http_req: HttpRequest,
@@ -24,15 +23,16 @@ pub async fn add_user_to_service_controller(
         account,
         service_id: path_params.service_id.to_owned(),
         user_id: body.user_id.to_owned(),
-        availibility: body.availibility.to_owned(),
+        availability: body.availability.to_owned(),
         busy: body.busy.to_owned(),
-        buffer: body.buffer,
+        buffer_before: body.buffer_before,
+        buffer_after: body.buffer_after,
         closest_booking_time: body.closest_booking_time,
         furthest_booking_time: body.furthest_booking_time,
     };
 
     execute(usecase, &ctx).await
-        .map(|res| HttpResponse::Ok().json(APIResponse::new(res.service)))
+        .map(|res| HttpResponse::Ok().json(APIResponse::new(res.user)))
         .map_err(|e| match e {
             UseCaseErrors::StorageError => NettuError::InternalError,
             UseCaseErrors::ServiceNotFound => NettuError::NotFound("The requested service was not found".into()),
@@ -47,16 +47,17 @@ struct AddUserToServiceUseCase {
     pub account: Account,
     pub service_id: ID,
     pub user_id: ID,
-    pub availibility: Option<TimePlan>,
+    pub availability: Option<TimePlan>,
     pub busy: Option<Vec<BusyCalendar>>,
-    pub buffer: Option<i64>,
+    pub buffer_before: Option<i64>,
+    pub buffer_after: Option<i64>,
     pub closest_booking_time: Option<i64>,
     pub furthest_booking_time: Option<i64>,
 }
 
 #[derive(Debug)]
 struct UseCaseRes {
-    pub service: Service,
+    pub user: ServiceResource,
 }
 
 #[derive(Debug)]
@@ -79,7 +80,7 @@ impl UseCase for AddUserToServiceUseCase {
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         if ctx
             .repos
-            .user_repo
+            .users
             .find_by_account_id(&self.user_id, &self.account.id)
             .await
             .is_none()
@@ -87,23 +88,25 @@ impl UseCase for AddUserToServiceUseCase {
             return Err(UseCaseErrors::UserNotFound);
         }
 
-        let mut service = match ctx.repos.service_repo.find(&self.service_id).await {
+        let service = match ctx.repos.services.find(&self.service_id).await {
             Some(service) if service.account_id == self.account.id => service,
             _ => return Err(UseCaseErrors::ServiceNotFound),
         };
 
-        if let Some(_user_resource) = service.find_user(&self.user_id) {
-            return Err(UseCaseErrors::UserAlreadyInService);
-        }
-
-        let mut user_resource = ServiceResource::new(self.user_id.clone(), TimePlan::Empty, vec![]);
+        let mut user_resource = ServiceResource::new(
+            self.user_id.clone(),
+            service.id.clone(),
+            TimePlan::Empty,
+            Vec::new(),
+        );
 
         update_resource_values(
             &mut user_resource,
             &ServiceResourceUpdate {
-                availibility: self.availibility.clone(),
+                availability: self.availability.clone(),
                 busy: self.busy.clone(),
-                buffer: self.buffer,
+                buffer_after: self.buffer_after,
+                buffer_before: self.buffer_before,
                 closest_booking_time: self.closest_booking_time,
                 furthest_booking_time: self.furthest_booking_time,
             },
@@ -112,20 +115,22 @@ impl UseCase for AddUserToServiceUseCase {
         .await
         .map_err(UseCaseErrors::InvalidValue)?;
 
-        service.add_user(user_resource);
-
-        let res = ctx.repos.service_repo.save(&service).await;
-        match res {
-            Ok(_) => Ok(UseCaseRes { service }),
-            Err(_) => Err(UseCaseErrors::StorageError),
-        }
+        ctx.repos
+            .service_users
+            .insert(&user_resource)
+            .await
+            .map(|_| UseCaseRes {
+                user: user_resource,
+            })
+            .map_err(|_| UseCaseErrors::UserAlreadyInService)
     }
 }
 
 pub struct ServiceResourceUpdate {
-    pub availibility: Option<TimePlan>,
+    pub availability: Option<TimePlan>,
     pub busy: Option<Vec<BusyCalendar>>,
-    pub buffer: Option<i64>,
+    pub buffer_after: Option<i64>,
+    pub buffer_before: Option<i64>,
     pub closest_booking_time: Option<i64>,
     pub furthest_booking_time: Option<i64>,
 }
@@ -142,7 +147,7 @@ impl UpdateServiceResourceError {
     pub fn to_nettu_error(&self) -> NettuError {
         match self {
             Self::InvalidBuffer => {
-                NettuError::BadClientData("The provided buffer was invalid, it should be netween 0 and 12 hours specified in minutes.".into())
+                NettuError::BadClientData("The provided buffer was invalid, it should be between 0 and 12 hours specified in minutes.".into())
             }
             Self::CalendarNotOwnedByUser(calendar_id) => NettuError::NotFound(format!("The calendar: {}, was not found among the calendars for the specified user", calendar_id)),
             Self::ScheduleNotOwnedByUser(schedule_id) => {
@@ -165,7 +170,7 @@ pub async fn update_resource_values(
 ) -> Result<(), UpdateServiceResourceError> {
     let user_calendars = ctx
         .repos
-        .calendar_repo
+        .calendars
         .find_by_user(&user_resource.user_id)
         .await
         .into_iter()
@@ -183,7 +188,7 @@ pub async fn update_resource_values(
         {
             let mut user = ctx
                 .repos
-                .user_repo
+                .users
                 .find(&user_resource.user_id)
                 .await
                 .expect("User to exist");
@@ -229,8 +234,8 @@ pub async fn update_resource_values(
         user_resource.set_busy(busy.clone());
     }
 
-    if let Some(availibility) = &update.availibility {
-        match availibility {
+    if let Some(availability) = &update.availability {
+        match availability {
             TimePlan::Calendar(id) => {
                 if !user_calendars.contains(id) {
                     return Err(UpdateServiceResourceError::CalendarNotOwnedByUser(
@@ -239,7 +244,7 @@ pub async fn update_resource_values(
                 }
             }
             TimePlan::Schedule(id) => {
-                let schedule = ctx.repos.schedule_repo.find(id).await;
+                let schedule = ctx.repos.schedules.find(id).await;
                 match schedule {
                     Some(schedule) if schedule.user_id == user_resource.user_id => {}
                     _ => {
@@ -251,11 +256,16 @@ pub async fn update_resource_values(
             }
             _ => (),
         };
-        user_resource.set_availibility(availibility.clone());
+        user_resource.set_availability(availability.clone());
     }
 
-    if let Some(buffer) = update.buffer {
-        if !user_resource.set_buffer(buffer) {
+    if let Some(buffer) = update.buffer_after {
+        if !user_resource.set_buffer_after(buffer) {
+            return Err(UpdateServiceResourceError::InvalidBuffer);
+        }
+    }
+    if let Some(buffer) = update.buffer_before {
+        if !user_resource.set_buffer_before(buffer) {
             return Err(UpdateServiceResourceError::InvalidBuffer);
         }
     }

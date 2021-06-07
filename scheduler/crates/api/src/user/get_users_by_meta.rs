@@ -19,6 +19,6 @@ pub async fn get_users_by_meta_controller(
         limit: query_params.0.limit.unwrap_or(20),
         skip: query_params.0.skip.unwrap_or(0),
     };
-    let users = ctx.repos.user_repo.find_by_metadata(query).await;
+    let users = ctx.repos.users.find_by_metadata(query).await;
     Ok(HttpResponse::Ok().json(APIResponse::new(users)))
 }

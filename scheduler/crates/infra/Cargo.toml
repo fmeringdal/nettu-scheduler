@@ -10,15 +10,16 @@ edition = "2018"
 nettu_scheduler_utils = { path = "../utils" }
 nettu_scheduler_domain = { path = "../domain" }
 serde = { version = "1.0", features = ["derive"] }
-futures = "0.3" # todo, only need stream feature for mongodb
+serde_json = "1"
 async-trait = "0.1.42"
 chrono = { version = "0.4.19", features = ["serde"] }
-mongodb = { version = "1.1.1", default-features = false, features = ["async-std-runtime"] }
 anyhow = "1.0.0"
-tokio = { version = "1", features = ["rt", "macros"] }
+tokio = { version = "0.2", features = ["macros"] }
 tracing = "0.1.25"
 tracing-futures = "0.2.5"
 reqwest = { version = "0.10.10", features = ["json"] }
+uuid = { version="0.8.2", features = ["serde"]}
+sqlx={version = "0.4.2", features = ["postgres", "runtime-actix-rustls", "uuid", "json"] }
 
 
 [dev-dependencies]

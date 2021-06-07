@@ -108,11 +108,11 @@ impl GetFreeBusyUseCase {
     ) -> Vec<EventInstance> {
         let calendar_ids = match &self.calendar_ids {
             Some(ids) if !ids.is_empty() => ids,
-            _ => return vec![],
+            _ => return Vec::new(),
         };
 
         // can probably make query to event repo instead
-        let mut calendars = ctx.repos.calendar_repo.find_by_user(&self.user_id).await;
+        let mut calendars = ctx.repos.calendars.find_by_user(&self.user_id).await;
 
         if !calendar_ids.is_empty() {
             calendars = calendars
@@ -128,7 +128,7 @@ impl GetFreeBusyUseCase {
 
         let all_events_futures = calendars.iter().map(|calendar| {
             ctx.repos
-                .event_repo
+                .events
                 .find_by_calendar(&calendar.id, Some(&timespan))
         });
 
@@ -157,14 +157,20 @@ impl GetFreeBusyUseCase {
 #[cfg(test)]
 mod test {
     use super::*;
-    use nettu_scheduler_domain::{Calendar, CalendarEvent, Entity, RRuleOptions, User};
+    use nettu_scheduler_domain::{Account, Calendar, CalendarEvent, Entity, RRuleOptions, User};
     use nettu_scheduler_infra::setup_context;
 
     #[test]
     fn it_parses_vec_query_params_correctly() {
         assert_eq!(parse_vec_query_value(&None), None);
-        assert_eq!(parse_vec_query_value(&Some("".to_string())), Some(vec![]));
-        assert_eq!(parse_vec_query_value(&Some("2".to_string())), Some(vec![]));
+        assert_eq!(
+            parse_vec_query_value(&Some("".to_string())),
+            Some(Vec::new())
+        );
+        assert_eq!(
+            parse_vec_query_value(&Some("2".to_string())),
+            Some(Vec::new())
+        );
         let ids = vec![ID::default(), ID::default()];
         assert_eq!(
             parse_vec_query_value(&Some(format!("{},{}", ids[0], ids[1]))),
@@ -176,11 +182,12 @@ mod test {
     #[test]
     async fn freebusy_works() {
         let ctx = setup_context().await;
-        let user = User::new(Default::default());
-
+        let account = Account::default();
+        ctx.repos.accounts.insert(&account).await.unwrap();
+        let user = User::new(account.id.clone());
+        ctx.repos.users.insert(&user).await.unwrap();
         let calendar = Calendar::new(&user.id(), &user.account_id);
-
-        ctx.repos.calendar_repo.insert(&calendar).await.unwrap();
+        ctx.repos.calendars.insert(&calendar).await.unwrap();
         let one_hour = 1000 * 60 * 60;
         let mut e1 = CalendarEvent {
             calendar_id: calendar.id.clone(),
@@ -189,12 +196,12 @@ mod test {
             busy: true,
             duration: one_hour,
             end_ts: CalendarEvent::get_max_timestamp(),
-            exdates: vec![],
+            exdates: Vec::new(),
             id: Default::default(),
             start_ts: 0,
             recurrence: None,
             reminder: None,
-            is_service: false,
+            service_id: None,
             metadata: Default::default(),
             updated: Default::default(),
             created: Default::default(),
@@ -213,12 +220,12 @@ mod test {
             busy: true,
             duration: one_hour,
             end_ts: CalendarEvent::get_max_timestamp(),
-            exdates: vec![],
+            exdates: Vec::new(),
             id: Default::default(),
             start_ts: one_hour * 4,
             recurrence: None,
             reminder: None,
-            is_service: false,
+            service_id: None,
             metadata: Default::default(),
             updated: Default::default(),
             created: Default::default(),
@@ -237,12 +244,12 @@ mod test {
             busy: true,
             duration: one_hour,
             end_ts: one_hour,
-            exdates: vec![],
+            exdates: Vec::new(),
             id: Default::default(),
             start_ts: 0,
             recurrence: None,
             reminder: None,
-            is_service: false,
+            service_id: None,
             metadata: Default::default(),
             updated: Default::default(),
             created: Default::default(),
@@ -255,9 +262,9 @@ mod test {
         };
         e3.set_recurrence(e3rr, &calendar.settings, true);
 
-        ctx.repos.event_repo.insert(&e1).await.unwrap();
-        ctx.repos.event_repo.insert(&e2).await.unwrap();
-        ctx.repos.event_repo.insert(&e3).await.unwrap();
+        ctx.repos.events.insert(&e1).await.unwrap();
+        ctx.repos.events.insert(&e2).await.unwrap();
+        ctx.repos.events.insert(&e3).await.unwrap();
 
         let mut usecase = GetFreeBusyUseCase {
             user_id: user.id().clone(),

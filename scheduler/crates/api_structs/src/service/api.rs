@@ -1,7 +1,9 @@
-use nettu_scheduler_domain::{BusyCalendar, Service, TimePlan, ID};
+use nettu_scheduler_domain::{
+    BusyCalendar, Service, ServiceResource, ServiceWithUsers, TimePlan, ID,
+};
 use serde::{Deserialize, Serialize};
 
-use crate::dtos::ServiceDTO;
+use crate::dtos::{ServiceDTO, ServiceResourceDTO, ServiceWithUsersDTO};
 
 #[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -13,6 +15,34 @@ impl ServiceResponse {
     pub fn new(service: Service) -> Self {
         Self {
             service: ServiceDTO::new(service),
+        }
+    }
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ServiceWithUsersResponse {
+    pub service: ServiceWithUsersDTO,
+}
+
+impl ServiceWithUsersResponse {
+    pub fn new(service: ServiceWithUsers) -> Self {
+        Self {
+            service: ServiceWithUsersDTO::new(service),
+        }
+    }
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ServiceResourceResponse {
+    pub user: ServiceResourceDTO,
+}
+
+impl ServiceResourceResponse {
+    pub fn new(user: ServiceResource) -> Self {
+        Self {
+            user: ServiceResourceDTO::new(user),
         }
     }
 }
@@ -29,15 +59,17 @@ pub mod add_user_to_service {
     #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
         pub user_id: ID,
-        pub availibility: Option<TimePlan>,
+        pub availability: Option<TimePlan>,
         pub busy: Option<Vec<BusyCalendar>>,
         #[serde(default)]
-        pub buffer: Option<i64>,
+        pub buffer_after: Option<i64>,
+        #[serde(default)]
+        pub buffer_before: Option<i64>,
         pub closest_booking_time: Option<i64>,
         pub furthest_booking_time: Option<i64>,
     }
 
-    pub type APIResponse = ServiceResponse;
+    pub type APIResponse = ServiceResourceDTO;
 }
 
 pub mod create_service {
@@ -161,10 +193,12 @@ pub mod get_service {
         pub service_id: ID,
     }
 
-    pub type APIResponse = ServiceResponse;
+    pub type APIResponse = ServiceWithUsersDTO;
 }
 
 pub mod get_services_by_meta {
+    use crate::dtos::ServiceDTO;
+
     use super::*;
 
     #[derive(Deserialize)]
@@ -211,7 +245,7 @@ pub mod remove_user_from_service {
         pub user_id: ID,
     }
 
-    pub type APIResponse = ServiceResponse;
+    pub type APIResponse = String;
 }
 
 pub mod update_service_user {
@@ -226,12 +260,13 @@ pub mod update_service_user {
     #[derive(Deserialize, Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
-        pub availibility: Option<TimePlan>,
+        pub availability: Option<TimePlan>,
         pub busy: Option<Vec<BusyCalendar>>,
-        pub buffer: Option<i64>,
+        pub buffer_after: Option<i64>,
+        pub buffer_before: Option<i64>,
         pub closest_booking_time: Option<i64>,
         pub furthest_booking_time: Option<i64>,
     }
 
-    pub type APIResponse = ServiceResponse;
+    pub type APIResponse = ServiceResourceDTO;
 }

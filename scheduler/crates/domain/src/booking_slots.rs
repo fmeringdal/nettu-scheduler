@@ -1,6 +1,5 @@
 use crate::{date, event_instance::EventInstance, CompatibleInstances, ID};
 use chrono::prelude::*;
-
 use chrono_tz::Tz;
 use date::format_date;
 use serde::Serialize;
@@ -55,7 +54,7 @@ pub struct ServiceBookingSlots {
 impl ServiceBookingSlots {
     pub fn new(slots: Vec<ServiceBookingSlot>, tz: Tz) -> Self {
         let mut slots = slots.into_iter().collect::<VecDeque<_>>();
-        let mut dates = vec![];
+        let mut dates = Vec::new();
 
         while !slots.is_empty() {
             dates.push(ServiceBookingSlotsDate::new(&mut slots, tz));
@@ -76,7 +75,7 @@ impl ServiceBookingSlotsDate {
         assert!(!slots.is_empty());
         let first_date = tz.timestamp_millis(slots[0].start);
         let date = format_date(&first_date);
-        let mut date_slots = vec![];
+        let mut date_slots = Vec::new();
 
         while let Some(current_date) = slots.get(0) {
             let current_date = format_date(&tz.timestamp_millis(current_date.start));
@@ -139,7 +138,7 @@ pub fn get_booking_slots(
     free_events: &CompatibleInstances,
     options: &BookingSlotsOptions,
 ) -> Vec<BookingSlot> {
-    let mut booking_slots = vec![];
+    let mut booking_slots = Vec::new();
     let &BookingSlotsOptions {
         start_ts,
         end_ts,
@@ -236,7 +235,7 @@ mod test {
     #[test]
     fn get_booking_slots_empty() {
         let slots = get_booking_slots(
-            &CompatibleInstances::new(vec![]),
+            &CompatibleInstances::new(Vec::new()),
             &BookingSlotsOptions {
                 start_ts: 0,
                 end_ts: 100,
@@ -438,10 +437,10 @@ mod test {
             start_ts: 140,
             end_ts: 160,
         };
-        let availibility = CompatibleInstances::new(vec![e1, e3, e4, e2, e6, e5]);
+        let availability = CompatibleInstances::new(vec![e1, e3, e4, e2, e6, e5]);
 
         let slots = get_booking_slots(
-            &availibility,
+            &availability,
             &BookingSlotsOptions {
                 start_ts: 0,
                 end_ts: 99,
@@ -520,7 +519,7 @@ mod test {
         assert_eq!(
             slots[0],
             BookingSlot {
-                available_until: 120, // consider wether this should be available_event.end_ts or bookingoptions.end_ts
+                available_until: 120, // consider whether this should be available_event.end_ts or bookingoptions.end_ts
                 duration: 10,
                 start: 90
             }
@@ -574,7 +573,7 @@ mod test {
 
         let user_id = ID::default();
 
-        let mut users_free = vec![];
+        let mut users_free = Vec::new();
         users_free.push(UserFreeEvents {
             free_events: CompatibleInstances::new(vec![e1]),
             user_id: user_id.clone(),
@@ -625,7 +624,7 @@ mod test {
 
         let user_id_1 = ID::default();
         let user_id_2 = ID::default();
-        let mut users_free = vec![];
+        let mut users_free = Vec::new();
         users_free.push(UserFreeEvents {
             free_events: CompatibleInstances::new(vec![e1.clone()]),
             user_id: user_id_1.clone(),

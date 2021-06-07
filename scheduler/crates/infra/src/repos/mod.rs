@@ -4,88 +4,61 @@ mod event;
 // mod kv;
 mod schedule;
 mod service;
+mod service_user;
 mod shared;
 mod user;
 
-use account::{IAccountRepo, InMemoryAccountRepo, MongoAccountRepo};
-use calendar::{ICalendarRepo, InMemoryCalendarRepo, MongoCalendarRepo};
+use account::{IAccountRepo, PostgresAccountRepo};
+use calendar::{ICalendarRepo, PostgresCalendarRepo};
 use event::{
     IEventRemindersExpansionJobsRepo, IEventRepo, IReminderRepo,
-    InMemoryEventRemindersExpansionJobsRepo, InMemoryEventRepo, InMemoryReminderRepo,
-    MongoEventRemindersExpansionsJobRepo, MongoEventRepo, MongoReminderRepo,
+    PostgresEventReminderExpansionJobsRepo, PostgresEventRepo, PostgresReminderRepo,
 };
-// use kv::{IKVRepo, InMemoryKVRepo, MongoKVRepo};
-use mongodb::{options::ClientOptions, Client};
-use schedule::{IScheduleRepo, InMemoryScheduleRepo, MongoScheduleRepo};
-use service::{IServiceRepo, InMemoryServiceRepo, MongoServiceRepo};
+use schedule::{IScheduleRepo, PostgresScheduleRepo};
+use service::{IServiceRepo, PostgresServiceRepo};
+use service_user::{IServiceUserRepo, PostgresServiceUserRepo};
+pub use shared::query_structs::*;
+use sqlx::postgres::PgPoolOptions;
 use std::sync::Arc;
 use tracing::info;
-use user::{IUserRepo, InMemoryUserRepo, MongoUserRepo};
-
-pub use mongodb::bson::oid::ObjectId;
-pub use shared::query_structs::*;
+use user::{IUserRepo, PostgresUserRepo};
 
 #[derive(Clone)]
 pub struct Repos {
-    pub event_repo: Arc<dyn IEventRepo>,
-    pub calendar_repo: Arc<dyn ICalendarRepo>,
-    pub account_repo: Arc<dyn IAccountRepo>,
-    pub user_repo: Arc<dyn IUserRepo>,
-    // pub key_value_repo: Arc<dyn IKVRepo>,
-    pub service_repo: Arc<dyn IServiceRepo>,
-    pub schedule_repo: Arc<dyn IScheduleRepo>,
-    pub reminder_repo: Arc<dyn IReminderRepo>,
-    pub event_reminders_expansion_jobs_repo: Arc<dyn IEventRemindersExpansionJobsRepo>,
+    pub events: Arc<dyn IEventRepo>,
+    pub calendars: Arc<dyn ICalendarRepo>,
+    pub accounts: Arc<dyn IAccountRepo>,
+    pub users: Arc<dyn IUserRepo>,
+    pub services: Arc<dyn IServiceRepo>,
+    pub service_users: Arc<dyn IServiceUserRepo>,
+    pub schedules: Arc<dyn IScheduleRepo>,
+    pub reminders: Arc<dyn IReminderRepo>,
+    pub event_reminders_expansion_jobs: Arc<dyn IEventRemindersExpansionJobsRepo>,
 }
 
 impl Repos {
-    pub async fn create_mongodb(
+    pub async fn create_postgres(
         connection_string: &str,
-        db_name: &str,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        let client_options = ClientOptions::parse(connection_string).await?;
-        let client = Client::with_options(client_options)?;
-        let db = client.database(db_name);
-
-        // This is needed to make sure that db is ready when opening server
         info!("DB CHECKING CONNECTION ...");
-        db.collection("server-start")
-            .insert_one(
-                mongodb::bson::doc! {
-                "server-start": 1
-                },
-                None,
-            )
-            .await?;
+        let pool = PgPoolOptions::new()
+            .max_connections(5)
+            .connect(connection_string)
+            .await
+            .expect("TO CONNECT TO POSTGRES");
         info!("DB CHECKING CONNECTION ... [done]");
         Ok(Self {
-            event_repo: Arc::new(MongoEventRepo::new(&db)),
-            calendar_repo: Arc::new(MongoCalendarRepo::new(&db)),
-            account_repo: Arc::new(MongoAccountRepo::new(&db)),
-            user_repo: Arc::new(MongoUserRepo::new(&db)),
-            // key_value_repo: Arc::new(MongoKVRepo::new(&db)),
-            service_repo: Arc::new(MongoServiceRepo::new(&db)),
-            schedule_repo: Arc::new(MongoScheduleRepo::new(&db)),
-            reminder_repo: Arc::new(MongoReminderRepo::new(&db)),
-            event_reminders_expansion_jobs_repo: Arc::new(
-                MongoEventRemindersExpansionsJobRepo::new(&db),
-            ),
+            accounts: Arc::new(PostgresAccountRepo::new(pool.clone())),
+            calendars: Arc::new(PostgresCalendarRepo::new(pool.clone())),
+            events: Arc::new(PostgresEventRepo::new(pool.clone())),
+            users: Arc::new(PostgresUserRepo::new(pool.clone())),
+            services: Arc::new(PostgresServiceRepo::new(pool.clone())),
+            service_users: Arc::new(PostgresServiceUserRepo::new(pool.clone())),
+            schedules: Arc::new(PostgresScheduleRepo::new(pool.clone())),
+            reminders: Arc::new(PostgresReminderRepo::new(pool.clone())),
+            event_reminders_expansion_jobs: Arc::new(PostgresEventReminderExpansionJobsRepo::new(
+                pool,
+            )),
         })
-    }
-
-    pub fn create_inmemory() -> Self {
-        Self {
-            event_repo: Arc::new(InMemoryEventRepo::new()),
-            calendar_repo: Arc::new(InMemoryCalendarRepo::new()),
-            account_repo: Arc::new(InMemoryAccountRepo::new()),
-            user_repo: Arc::new(InMemoryUserRepo::new()),
-            // key_value_repo: Arc::new(InMemoryKVRepo::new()),
-            service_repo: Arc::new(InMemoryServiceRepo::new()),
-            schedule_repo: Arc::new(InMemoryScheduleRepo::new()),
-            reminder_repo: Arc::new(InMemoryReminderRepo::new()),
-            event_reminders_expansion_jobs_repo: Arc::new(
-                InMemoryEventRemindersExpansionJobsRepo::new(),
-            ),
-        }
     }
 }

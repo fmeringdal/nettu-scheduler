@@ -66,7 +66,7 @@ async fn create_event_reminders(
                 };
                 if ctx
                     .repos
-                    .event_reminders_expansion_jobs_repo
+                    .event_reminders_expansion_jobs
                     .bulk_insert(&[job])
                     .await
                     .is_err()
@@ -99,13 +99,7 @@ async fn create_event_reminders(
     };
 
     // create reminders for the next `self.expansion_interval`
-    if ctx
-        .repos
-        .reminder_repo
-        .bulk_insert(&reminders)
-        .await
-        .is_err()
-    {
+    if ctx.repos.reminders.bulk_insert(&reminders).await.is_err() {
         return Err(UseCaseErrors::StorageError);
     }
 
@@ -126,7 +120,7 @@ impl<'a> UseCase for SyncEventRemindersUseCase<'a> {
                 // Delete event reminder expansion job if it exists
                 if ctx
                     .repos
-                    .event_reminders_expansion_jobs_repo
+                    .event_reminders_expansion_jobs
                     .delete_by_event(&calendar_event.id)
                     .await
                     .is_err()
@@ -140,12 +134,12 @@ impl<'a> UseCase for SyncEventRemindersUseCase<'a> {
 
                 // Delete existing reminders
                 match op {
-                    // There are no remidners if `CalendarEvent` was just created
+                    // There are no reminders if `CalendarEvent` was just created
                     EventOperation::Created => (),
                     _ => {
                         let delete_result = ctx
                             .repos
-                            .reminder_repo
+                            .reminders
                             .delete_by_events(&[calendar_event.id.clone()])
                             .await;
                         if delete_result.is_err() {
@@ -158,11 +152,7 @@ impl<'a> UseCase for SyncEventRemindersUseCase<'a> {
                 let calendar = match op {
                     EventOperation::Deleted => return Ok(()),
                     EventOperation::Created | EventOperation::Updated => {
-                        let calendar = ctx
-                            .repos
-                            .calendar_repo
-                            .find(&calendar_event.calendar_id)
-                            .await;
+                        let calendar = ctx.repos.calendars.find(&calendar_event.calendar_id).await;
                         match calendar {
                             Some(calendar) => calendar,
                             None => return Err(UseCaseErrors::CalendarNotFound),
@@ -175,7 +165,7 @@ impl<'a> UseCase for SyncEventRemindersUseCase<'a> {
             SyncEventRemindersTrigger::JobScheduler => {
                 let jobs = ctx
                     .repos
-                    .event_reminders_expansion_jobs_repo
+                    .event_reminders_expansion_jobs
                     .delete_all_before(ctx.sys.get_timestamp_millis())
                     .await;
 
@@ -186,7 +176,7 @@ impl<'a> UseCase for SyncEventRemindersUseCase<'a> {
 
                 if ctx
                     .repos
-                    .reminder_repo
+                    .reminders
                     .delete_by_events(&event_ids)
                     .await
                     .is_err()
@@ -194,13 +184,13 @@ impl<'a> UseCase for SyncEventRemindersUseCase<'a> {
                     return Err(UseCaseErrors::StorageError);
                 }
 
-                let events = match ctx.repos.event_repo.find_many(&event_ids).await {
+                let events = match ctx.repos.events.find_many(&event_ids).await {
                     Ok(events) => events,
                     Err(_) => return Err(UseCaseErrors::StorageError),
                 };
 
                 for event in events {
-                    let calendar = match ctx.repos.calendar_repo.find(&event.calendar_id).await {
+                    let calendar = match ctx.repos.calendars.find(&event.calendar_id).await {
                         Some(cal) => cal,
                         None => continue,
                     };

@@ -13,9 +13,10 @@ pub struct ServiceClient {
 pub struct AddServiceUserInput {
     pub service_id: ID,
     pub user_id: ID,
-    pub availibility: Option<TimePlan>,
     pub busy: Option<Vec<BusyCalendar>>,
-    pub buffer: Option<i64>,
+    pub availability: Option<TimePlan>,
+    pub buffer_after: Option<i64>,
+    pub buffer_before: Option<i64>,
     pub closest_booking_time: Option<i64>,
     pub furthest_booking_time: Option<i64>,
 }
@@ -23,9 +24,10 @@ pub struct AddServiceUserInput {
 pub struct UpdateServiceUserInput {
     pub service_id: ID,
     pub user_id: ID,
-    pub availibility: Option<TimePlan>,
     pub busy: Option<Vec<BusyCalendar>>,
-    pub buffer: Option<i64>,
+    pub availability: Option<TimePlan>,
+    pub buffer_after: Option<i64>,
+    pub buffer_before: Option<i64>,
     pub closest_booking_time: Option<i64>,
     pub furthest_booking_time: Option<i64>,
 }
@@ -35,7 +37,7 @@ pub struct RemoveServiceUserInput {
     pub user_id: ID,
 }
 
-pub struct GetSerivceBookingSlotsInput {
+pub struct GetServiceBookingSlotsInput {
     pub service_id: ID,
     pub iana_tz: Option<String>,
     pub duration: i64,
@@ -65,7 +67,7 @@ impl ServiceClient {
 
     pub async fn bookingslots(
         &self,
-        input: GetSerivceBookingSlotsInput,
+        input: GetServiceBookingSlotsInput,
     ) -> APIResponse<get_service_bookingslots::APIResponse> {
         let mut query_string = format!(
             "duration={}&interval={}&startDate={}&endDate={}",
@@ -143,8 +145,9 @@ impl ServiceClient {
         let user_id = input.user_id.clone();
         let service_id = input.service_id.clone();
         let body = update_service_user::RequestBody {
-            availibility: input.availibility,
-            buffer: input.buffer,
+            availability: input.availability,
+            buffer_after: input.buffer_after,
+            buffer_before: input.buffer_before,
             busy: input.busy,
             closest_booking_time: input.closest_booking_time,
             furthest_booking_time: input.furthest_booking_time,
@@ -166,8 +169,9 @@ impl ServiceClient {
         let service_id = input.service_id.clone();
         let body = add_user_to_service::RequestBody {
             user_id: input.user_id,
-            availibility: input.availibility,
-            buffer: input.buffer,
+            availability: input.availability,
+            buffer_after: input.buffer_after,
+            buffer_before: input.buffer_before,
             busy: input.busy,
             closest_booking_time: input.closest_booking_time,
             furthest_booking_time: input.furthest_booking_time,

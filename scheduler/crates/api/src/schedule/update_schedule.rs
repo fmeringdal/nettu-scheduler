@@ -108,7 +108,7 @@ impl UseCase for UpdateScheduleUseCase {
     const NAME: &'static str = "UpdateSchedule";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
-        let mut schedule = match ctx.repos.schedule_repo.find(&self.schedule_id).await {
+        let mut schedule = match ctx.repos.schedules.find(&self.schedule_id).await {
             Some(cal) if cal.user_id == self.user_id => cal,
             _ => return Err(UseCaseErrors::ScheduleNotFound(self.schedule_id.clone())),
         };
@@ -132,7 +132,7 @@ impl UseCase for UpdateScheduleUseCase {
             schedule.metadata = metadata.clone();
         }
 
-        let repo_res = ctx.repos.schedule_repo.save(&schedule).await;
+        let repo_res = ctx.repos.schedules.save(&schedule).await;
         match repo_res {
             Ok(_) => Ok(UseCaseRes { schedule }),
             Err(_) => Err(UseCaseErrors::StorageError),

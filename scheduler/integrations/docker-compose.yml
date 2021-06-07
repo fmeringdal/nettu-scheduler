@@ -1,34 +1,30 @@
 version: "3.7"
 services:
-  mongodb:
-    image: mongo:latest
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: rootpassword
-      MONGO_INITDB_DATABASE: nettuscheduler
-
+  postgres:
+    image: postgres:13
     ports:
-      - 27017:27017
+      - "5432:5432"
     volumes:
-      - mongodb_data_nettuscheduler_container:/data/nettuscheduler/db
-    logging:
-      driver: none
-
+      - postgresdata:/var/lib/postgresql/data
+      - ../crates/infra/migrations/dbinit.sql:/docker-entrypoint-initdb.d/dbinit.sql
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: nettuscheduler
   # app:
   #   build: ..
   #   ports:
   #     - "5000:5000"
   #   environment:
-  #     MONGODB_CONNECTION_STRING: mongodb://root:rootpassword@mongodb:27017
-  #     MONGODB_NAME: nettuscheduler
+  #     DATABASE_URL: postgresql://postgres:5432/nettuscheduler
   #   volumes:
   #     - ../:/var/application
   #   command: bash -c "cargo watch -x run"
   #   init: true
   #   entrypoint:
   #     - "integrations/wait-for.sh"
-  #     - "mongodb:27017"
+  #     - "postgres:5432"
   #     - "--"
-
 volumes:
-  mongodb_data_nettuscheduler_container:
+  postgresdata:

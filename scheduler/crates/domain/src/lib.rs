@@ -24,9 +24,9 @@ pub use event_instance::{
 };
 pub use reminder::{EventRemindersExpansionJob, Reminder};
 pub use schedule::{Schedule, ScheduleRule};
-pub use service::{BusyCalendar, Service, ServiceResource, TimePlan};
+pub use service::{BusyCalendar, Service, ServiceResource, ServiceWithUsers, TimePlan};
 pub use shared::entity::{Entity, ID};
 pub use shared::metadata::{Meta, Metadata};
-pub use shared::recurrence::{RRuleFrequenzy, RRuleOptions};
+pub use shared::recurrence::{RRuleFrequency, RRuleOptions};
 pub use timespan::TimeSpan;
 pub use user::{User, UserGoogleIntegrationData, UserIntegrationProvider};

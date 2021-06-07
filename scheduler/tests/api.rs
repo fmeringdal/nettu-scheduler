@@ -7,7 +7,7 @@ use nettu_scheduler_domain::PEMKey;
 use nettu_scheduler_sdk::{
     AddServiceUserInput, CreateCalendarInput, CreateEventInput, CreateScheduleInput,
     CreateUserInput, DeleteCalendarInput, DeleteEventInput, GetCalendarEventsInput,
-    GetCalendarInput, GetEventInput, GetEventsInstancesInput, GetSerivceBookingSlotsInput,
+    GetCalendarInput, GetEventInput, GetEventsInstancesInput, GetServiceBookingSlotsInput,
     KVMetadata, MetadataFindInput, NettuSDK, RemoveServiceUserInput, UpdateCalendarInput,
     UpdateEventInput, UpdateScheduleInput, UpdateServiceUserInput,
 };
@@ -102,7 +102,7 @@ async fn test_crud_user() {
         .user
         .delete(res.user.id.clone())
         .await
-        .expect("To delet euser")
+        .expect("To delete user")
         .user;
     assert_eq!(delete_user_res.id, res.user.id);
 
@@ -140,12 +140,12 @@ async fn test_crud_schedule() {
         .schedule;
     assert_eq!(schedule.user_id, create_user_res.user.id);
     assert_eq!(schedule.timezone, "UTC");
-    assert_eq!(schedule.rules.len(), 7); // mon-sun
+    assert_eq!(schedule.rules.len(), 7);
 
     let schedule = admin_client
         .schedule
         .update(UpdateScheduleInput {
-            rules: Some(vec![]),
+            rules: Some(Vec::new()),
             timezone: Some("Europe/Oslo".into()),
             schedule_id: schedule.id.clone(),
             metadata: None,
@@ -392,7 +392,7 @@ async fn test_crud_events() {
                 duration: 1000 * 60 * 60,
                 reminder: None,
                 recurrence: None,
-                is_service: None,
+                service_id: None,
                 start_ts: 0,
                 metadata: None,
             },
@@ -431,7 +431,7 @@ async fn test_crud_events() {
             duration: None,
             reminder: None,
             rrule_options: None,
-            is_service: None,
+            service_id: None,
             start_ts: None,
             metadata: None,
         })
@@ -487,56 +487,64 @@ async fn test_crud_service() {
 
     let service = admin_client.service.create().await.unwrap().service;
 
-    let service = admin_client
+    let add_user_res = admin_client
         .service
         .add_user(AddServiceUserInput {
             service_id: service.id.clone(),
             user_id: user.id.clone(),
-            availibility: None,
-            buffer: None,
+            availability: None,
+            buffer_after: None,
+            buffer_before: None,
             busy: None,
             closest_booking_time: None,
             furthest_booking_time: None,
         })
-        .await
-        .unwrap()
-        .service;
+        .await;
+    assert!(add_user_res.is_ok());
+    let added_service_resource = add_user_res.unwrap();
+    assert_eq!(added_service_resource.user_id, user.id.clone());
+    assert_eq!(added_service_resource.service_id, service.id.clone());
+
+    let service = admin_client.service.get(service.id.clone()).await.unwrap();
 
     assert_eq!(service.users.len(), 1);
     let new_closest_booking_time = service.users[0].closest_booking_time + 1000 * 60 * 60;
-    let service = admin_client
+
+    let service_resource = admin_client
         .service
         .update_user(UpdateServiceUserInput {
             service_id: service.id.clone(),
             user_id: user.id.clone(),
-            availibility: None,
-            buffer: None,
+            availability: None,
+            buffer_after: None,
+            buffer_before: None,
             busy: None,
             closest_booking_time: Some(new_closest_booking_time),
             furthest_booking_time: None,
         })
         .await
-        .unwrap()
-        .service;
+        .unwrap();
 
     assert_eq!(
-        service.users[0].closest_booking_time,
+        service_resource.closest_booking_time,
         new_closest_booking_time
     );
-    let service = admin_client
+    let remove_user_res = admin_client
         .service
         .remove_user(RemoveServiceUserInput {
             service_id: service.id.clone(),
             user_id: user.id.clone(),
         })
-        .await
-        .unwrap()
-        .service;
+        .await;
+    assert!(remove_user_res.is_ok());
+
+    let service = admin_client.service.get(service.id.clone()).await.unwrap();
+
     assert!(service.users.is_empty());
 
     let booking_slots = admin_client
         .service
-        .bookingslots(GetSerivceBookingSlotsInput {
+        .bookingslots(GetServiceBookingSlotsInput {
             start_date: "2030-1-1".to_string(),
             end_date: "2030-1-2".to_string(),
             duration: 1000 * 60 * 30,
@@ -552,7 +560,7 @@ async fn test_crud_service() {
     // About 100 days timespan
     let booking_slots = admin_client
         .service
-        .bookingslots(GetSerivceBookingSlotsInput {
+        .bookingslots(GetServiceBookingSlotsInput {
             start_date: "2030-1-1".to_string(),
             end_date: "2030-4-1".to_string(),
             duration: 1000 * 60 * 30,
