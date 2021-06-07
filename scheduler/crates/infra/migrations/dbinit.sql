@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS users (
     metadata text[] NOT NULL
 );
 CREATE INDEX IF NOT EXISTS metadata ON users USING GIN (metadata);
+
 CREATE TABLE IF NOT EXISTS calendars (
     calendar_uid uuid PRIMARY KEY DEFAULT uuid_generate_v4() NOT NULL,
     user_uid uuid NOT NULL REFERENCES users(user_uid) ON DELETE CASCADE,
@@ -21,6 +22,7 @@ CREATE TABLE IF NOT EXISTS calendars (
     settings JSON NOT NULL,
     metadata text[] NOT NULL
 );
+CREATE INDEX IF NOT EXISTS metadata ON calendars USING GIN (metadata);
 
 CREATE TABLE IF NOT EXISTS calendar_events (
     event_uid uuid PRIMARY KEY DEFAULT uuid_generate_v4() NOT NULL,
@@ -39,12 +41,14 @@ CREATE TABLE IF NOT EXISTS calendar_events (
     is_service boolean NOT NULL,
     metadata text[] NOT NULL
 );
+CREATE INDEX IF NOT EXISTS metadata ON calendar_events USING GIN (metadata);
 
 CREATE TABLE IF NOT EXISTS calendar_event_reminder_expansion_jobs (
     job_uid uuid PRIMARY KEY DEFAULT uuid_generate_v4() NOT NULL,
     event_uid uuid NOT NULL REFERENCES calendar_events(event_uid) ON DELETE CASCADE,
     "timestamp" BIGINT NOT NULL
 );
+
 CREATE TABLE IF NOT EXISTS reminders (
     reminder_uid uuid PRIMARY KEY DEFAULT uuid_generate_v4() NOT NULL,
     event_uid uuid NOT NULL REFERENCES calendar_events(event_uid) ON DELETE CASCADE,
@@ -52,6 +56,7 @@ CREATE TABLE IF NOT EXISTS reminders (
     remind_at BIGINT NOT NULL,
     "priority" SMALLINT NOT NULL
 );
+
 CREATE TABLE IF NOT EXISTS schedules (
     schedule_uid uuid PRIMARY KEY DEFAULT uuid_generate_v4() NOT NULL,
     user_uid uuid NOT NULL REFERENCES users(user_uid) ON DELETE CASCADE,
@@ -60,11 +65,15 @@ CREATE TABLE IF NOT EXISTS schedules (
     timezone varchar(128) NOT NULL,
     metadata text[] NOT NULL
 );
+CREATE INDEX IF NOT EXISTS metadata ON schedules USING GIN (metadata);
+
 CREATE TABLE IF NOT EXISTS services (
     service_uid uuid PRIMARY KEY DEFAULT uuid_generate_v4() NOT NULL,
     account_uid uuid NOT NULL REFERENCES accounts(account_uid) ON DELETE CASCADE,
     metadata text[] NOT NULL
 );
+CREATE INDEX IF NOT EXISTS metadata ON services USING GIN (metadata);
+
 CREATE TABLE IF NOT EXISTS service_users (
     service_uid uuid NOT NULL REFERENCES services(service_uid) ON DELETE CASCADE,
     user_uid uuid NOT NULL REFERENCES users(user_uid) ON DELETE CASCADE,
@@ -78,29 +87,10 @@ CREATE TABLE IF NOT EXISTS service_users (
         NOT (available_calendar_uid IS NOT NULL AND available_schedule_uid IS NOT NULL)
     )
 );
--- Maybe this can be created better ?
+
 CREATE TABLE IF NOT EXISTS service_user_busy_calendars (
     service_uid uuid NOT NULL REFERENCES services(service_uid) ON DELETE CASCADE,
     user_uid uuid NOT NULL REFERENCES users(user_uid) ON DELETE CASCADE,
     calendar_uid uuid NOT NULL REFERENCES calendars(calendar_uid) ON DELETE CASCADE,
 	PRIMARY KEY(service_uid, user_uid, calendar_uid)
 );
-
--- CREATE TABLE IF NOT EXISTS metadata (
---     metadata_id uuid PRIMARY KEY DEFAULT uuid_generate_v4() NOT NULL,
--- 	-- PRIMARY KEY(calendar_uid, event_uid, user_uid, schedule_uid, service_uid, "key"),
---     "key" varchar(255) NOT NULL,
---     "value" varchar(255) NOT NULL,
---     calendar_uid uuid REFERENCES calendars(calendar_uid) ON DELETE CASCADE,
---     event_uid uuid REFERENCES calendar_events(event_uid) ON DELETE CASCADE,
---     user_uid uuid REFERENCES users(user_uid) ON DELETE CASCADE,
---     schedule_uid uuid REFERENCES schedules(schedule_uid) ON DELETE CASCADE,
---     service_uid uuid REFERENCES services(service_uid) ON DELETE CASCADE,
---     CHECK (
---         (calendar_uid IS NOT NULL AND event_uid IS NULL AND user_uid IS NULL AND schedule_uid IS NULL AND service_uid IS NULL) OR 
---         (calendar_uid IS NULL AND event_uid IS NOT NULL AND user_uid IS NULL AND schedule_uid IS NULL AND service_uid IS NULL) OR 
---         (calendar_uid IS NULL AND event_uid IS NULL AND user_uid IS NOT NULL AND schedule_uid IS NULL AND service_uid IS NULL) OR 
---         (calendar_uid IS NULL AND event_uid IS NULL AND user_uid IS NULL AND schedule_uid IS NOT NULL AND service_uid IS NULL) OR 
---         (calendar_uid IS NULL AND event_uid IS NULL AND user_uid IS NULL AND schedule_uid IS NULL AND service_uid IS NOT NULL)
---     )
--- );
