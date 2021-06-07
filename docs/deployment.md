@@ -12,6 +12,6 @@ Then setup a postgres db with the init script specified [here](../scheduler/crat
 Lastly provide the following environment variables to the `nettu scheduler` server:
 ```bash
 # The connection string to the database
-NETTU_POSTGRES_CONNECTION_STRING
+DATABASE_URL
 ```
 

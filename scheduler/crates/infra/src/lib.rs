@@ -35,7 +35,7 @@ impl NettuContext {
 
 /// Will setup the infrastructure context given the environment
 pub async fn setup_context() -> NettuContext {
-    const PSQL_CONNECTION_STRING: &str = "NETTU_POSTGRES_CONNECTION_STRING";
+    const PSQL_CONNECTION_STRING: &str = "DATABASE_URL";
 
     let psql_connection_string = std::env::var(PSQL_CONNECTION_STRING).expect(&format!(
         "{} env var to be present.",

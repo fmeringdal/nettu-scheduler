@@ -17,7 +17,7 @@ services:
   #   ports:
   #     - "5000:5000"
   #   environment:
-  #     NETTU_POSTGRES_CONNECTION_STRING: postgresql://postgres:5432/nettuscheduler
+  #     DATABASE_URL: postgresql://postgres:5432/nettuscheduler
   #   volumes:
   #     - ../:/var/application
   #   command: bash -c "cargo watch -x run"
