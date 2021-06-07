@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PORT: 5000
-      MONGODB_CONNECTION_STRING: postgresql://postgres:postgres@localhost:5432/nettuscheduler
+      NETTU_POSTGRES_CONNECTION_STRING: postgresql://postgres:postgres@localhost:5432/nettuscheduler
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -15,7 +15,7 @@ jobs:
       - name: Build docker compose stack
         run: |
           cd scheduler
-          docker-compose -f ./integrations/docker-compose.yml up
+          docker-compose -f ./integrations/docker-compose.yml up -d
 
       - name: Generate code coverage
         run: |
