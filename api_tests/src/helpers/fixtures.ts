@@ -43,8 +43,8 @@ export const setupUserClientForAccount = (
     {
       nettuSchedulerUserId: userId,
       schedulerPolicy: {
-        allow: ["*"]
-      }
+        allow: ["*"],
+      },
     },
     privateKey,
     {
