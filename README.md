@@ -38,14 +38,14 @@ docker-compose -f integrations/docker-compose.yml up -d
 Now we are ready to start the `nettu-scheduler` server with `docker`
 ```bash
 docker run -p 5000:5000 ---e ACCOUNT_API_KEY="REPLACE_ME" \ 
-    -e DATABASE_URL="postgresql://localhost:5432/nettuscheduler" \ 
+    -e DATABASE_URL="postgresql://postgres:postgres@localhost:5432/nettuscheduler" \ 
     fmeringdal/nettu-scheduler:latest 
 ```
 or if you want to build it yourself with `cargo`:
 ```bash
 cd scheduler
 export ACCOUNT_API_KEY="REPLACE_ME"
-export DATABASE_URL="postgresql://localhost:5432/nettuscheduler"
+export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/nettuscheduler"
 cargo run inmemory
 ```
 
