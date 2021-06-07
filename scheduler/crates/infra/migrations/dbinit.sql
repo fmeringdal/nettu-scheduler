@@ -1,7 +1,5 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp"; 
 
--- https://github.com/launchbadge/sqlx/blob/master/examples/postgres/json/src/main.rs
-
 CREATE TABLE IF NOT EXISTS accounts (
     account_uid uuid PRIMARY KEY DEFAULT uuid_generate_v4() NOT NULL,
     secret_api_key varchar(255) NOT NULL UNIQUE,
