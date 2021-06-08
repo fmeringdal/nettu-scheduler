@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS calendars (
     calendar_uid uuid PRIMARY KEY DEFAULT uuid_generate_v4() NOT NULL,
     user_uid uuid NOT NULL REFERENCES users(user_uid) ON DELETE CASCADE,
     account_uid uuid NOT NULL REFERENCES accounts(account_uid) ON DELETE CASCADE,
+    synced JSON ,
     settings JSON NOT NULL,
     metadata text[] NOT NULL
 );
@@ -37,7 +38,7 @@ CREATE TABLE IF NOT EXISTS calendar_events (
     recurrence JSON,
     exdates BIGINT[] NOT NULL,
     reminder JSON,
-    synced JSON,
+    synced_events JSON,
     service_uid uuid REFERENCES services(service_uid) ON DELETE CASCADE,
     metadata text[] NOT NULL
 );
