@@ -1,6 +1,6 @@
 [package]
 name = "nettu_scheduler_domain"
-version = "0.1.3"
+version = "0.1.4"
 description = "Nettu scheduler domain"
 license = "MIT"
 authors = ["Fredrik Meringdal"]
@@ -11,7 +11,7 @@ edition = "2018"
 [dependencies]
 nettu_scheduler_utils = { path = "../utils", version = "0.1.0" }
 serde = { version = "1.0", features = ["derive"] }
-rrule = "0.5.7"
+rrule = "0.5.8"
 chrono = { version = "0.4.19", features = ["serde"] }
 chrono-tz = { version = "0.5.3", features = ["serde"] }
 anyhow = "1.0.0"
