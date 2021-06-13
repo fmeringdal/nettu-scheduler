@@ -30,7 +30,8 @@ pub struct GoogleCalendarEvent {
     pub end: GoogleCalendarEventDateTime,
     pub summary: String,
     pub description: String,
-    pub recurrence: Vec<String>,
+    #[serde(default)]
+    pub recurrence: Option<Vec<String>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

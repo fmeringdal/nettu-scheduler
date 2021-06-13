@@ -142,6 +142,7 @@ impl UseCase for CreateEventUseCase {
             metadata: self.metadata.clone(),
             synced_events: Default::default(),
         };
+        info!("Metadata got from event!: {:?}", e.metadata);
         if let Some(rrule_opts) = self.recurrence.clone() {
             if !e.set_recurrence(rrule_opts, &calendar.settings, true) {
                 return Err(UseCaseErrors::InvalidRecurrenceRule);
@@ -161,10 +162,6 @@ impl UseCase for CreateEventUseCase {
                 SyncedCalendar::Google(id) => id.clone(),
             })
             .collect::<Vec<_>>();
-        info!(
-            "Synced google calendar ids: {:?}",
-            synced_google_calendar_ids
-        );
         if !synced_google_calendar_ids.is_empty() {
             if let Ok(provider) = GoogleCalendarProvider::new(&mut self.user, ctx).await {
                 for synced_google_calendar_id in synced_google_calendar_ids {
@@ -182,6 +179,7 @@ impl UseCase for CreateEventUseCase {
             }
         }
 
+        println!("Created this event: {:?}", e);
         let repo_res = ctx.repos.events.insert(&e).await;
         if repo_res.is_err() {
             return Err(UseCaseErrors::StorageError);
