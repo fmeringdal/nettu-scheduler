@@ -12,7 +12,10 @@ mod user;
 use actix_cors::Cors;
 use actix_web::{dev::Server, middleware, web, App, HttpServer};
 use job_schedulers::{start_reminders_expansion_job_scheduler, start_send_reminders_job};
-use nettu_scheduler_domain::{Account, AccountGoogleIntegration, PEMKey, ID};
+use nettu_scheduler_api_structs::dtos::AccountWebhookSettingsDTO;
+use nettu_scheduler_domain::{
+    Account, AccountGoogleIntegration, AccountWebhookSettings, PEMKey, ID,
+};
 use nettu_scheduler_infra::NettuContext;
 use std::net::TcpListener;
 use tracing::warn;
@@ -103,6 +106,13 @@ impl Application {
                 .unwrap_or_default();
             account.id = account_id;
             account.secret_api_key = secret_api_key;
+            account.settings.webhook = match std::env::var("ACCOUNT_WEBHOOK_URL") {
+                Ok(url) => Some(AccountWebhookSettings {
+                    url,
+                    key: Default::default(),
+                }),
+                Err(_) => None,
+            };
 
             if let Ok(mut verification_key) = std::env::var("ACCOUNT_PUB_KEY") {
                 verification_key = verification_key.replace("\\n", "\n");
