@@ -52,10 +52,11 @@ impl UseCase for CreateServiceUseCase {
         let mut service = Service::new(self.account.id.clone());
         service.metadata = self.metadata.clone();
 
-        let res = ctx.repos.services.insert(&service).await;
-        match res {
-            Ok(_) => Ok(UseCaseRes { service }),
-            Err(_) => Err(UseCaseErrors::StorageError),
-        }
+        ctx.repos
+            .services
+            .insert(&service)
+            .await
+            .map(|_| UseCaseRes { service })
+            .map_err(|_| UseCaseErrors::StorageError)
     }
 }

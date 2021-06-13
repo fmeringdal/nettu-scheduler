@@ -126,6 +126,7 @@ impl UseCase for AddUserToServiceUseCase {
     }
 }
 
+#[derive(Debug)]
 pub struct ServiceResourceUpdate {
     pub availability: Option<TimePlan>,
     pub busy: Option<Vec<BusyCalendar>>,
