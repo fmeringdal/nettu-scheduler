@@ -8,7 +8,7 @@ USER root
 RUN chown -R rust:rust .
 USER rust
 
-ENV DATABASE_URL "postgresql://postgres:postgres@localhost:5432/nettuscheduler"
+ENV DATABASE_URL "postgresql://postgres:postgres@172.17.0.1:5432/nettuscheduler"
 
 # RUN cargo test
 RUN cargo build --release
