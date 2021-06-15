@@ -58,7 +58,6 @@ impl UseCase for GetServiceUseCase {
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         let res = ctx.repos.services.find_with_users(&self.service_id).await;
-        println!("Query returned service with users: {:?}", res);
         match res {
             Some(service) if service.account_id == self.account.id => Ok(UseCaseRes { service }),
             _ => Err(UseCaseErrors::NotFound),

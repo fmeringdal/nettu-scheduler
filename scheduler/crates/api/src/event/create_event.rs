@@ -179,7 +179,6 @@ impl UseCase for CreateEventUseCase {
             }
         }
 
-        println!("Created this event: {:?}", e);
         let repo_res = ctx.repos.events.insert(&e).await;
         if repo_res.is_err() {
             return Err(UseCaseErrors::StorageError);

@@ -46,6 +46,7 @@ impl Repos {
             .connect(connection_string)
             .await
             .expect("TO CONNECT TO POSTGRES");
+
         info!("DB CHECKING CONNECTION ... [done]");
         Ok(Self {
             accounts: Arc::new(PostgresAccountRepo::new(pool.clone())),

@@ -1444,7 +1444,6 @@ dependencies = [
  "nettu_scheduler_api_structs",
  "nettu_scheduler_domain",
  "nettu_scheduler_infra",
- "reqwest",
  "rrule",
  "serde",
  "serial_test",
