@@ -31,7 +31,13 @@ jobs:
           fail_ci_if_error: true
   docker:
     runs-on: ubuntu-latest
-    needs: test
+    # needs: test
+    env:
+      PORT: 5000
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nettuscheduler
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -44,6 +50,10 @@ jobs:
         with:
           username: fmeringdal
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build docker compose stack
+        run: |
+          cd scheduler
+          docker-compose -f ./integrations/docker-compose.yml up -d
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
