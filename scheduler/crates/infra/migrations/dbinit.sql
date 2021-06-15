@@ -14,6 +14,13 @@ CREATE TABLE IF NOT EXISTS users (
 );
 CREATE INDEX IF NOT EXISTS metadata ON users USING GIN (metadata);
 
+CREATE TABLE IF NOT EXISTS services (
+    service_uid uuid PRIMARY KEY DEFAULT uuid_generate_v4() NOT NULL,
+    account_uid uuid NOT NULL REFERENCES accounts(account_uid) ON DELETE CASCADE,
+    metadata text[] NOT NULL
+);
+CREATE INDEX IF NOT EXISTS metadata ON services USING GIN (metadata);
+
 CREATE TABLE IF NOT EXISTS calendars (
     calendar_uid uuid PRIMARY KEY DEFAULT uuid_generate_v4() NOT NULL,
     user_uid uuid NOT NULL REFERENCES users(user_uid) ON DELETE CASCADE,
@@ -68,12 +75,6 @@ CREATE TABLE IF NOT EXISTS schedules (
 );
 CREATE INDEX IF NOT EXISTS metadata ON schedules USING GIN (metadata);
 
-CREATE TABLE IF NOT EXISTS services (
-    service_uid uuid PRIMARY KEY DEFAULT uuid_generate_v4() NOT NULL,
-    account_uid uuid NOT NULL REFERENCES accounts(account_uid) ON DELETE CASCADE,
-    metadata text[] NOT NULL
-);
-CREATE INDEX IF NOT EXISTS metadata ON services USING GIN (metadata);
 
 CREATE TABLE IF NOT EXISTS service_users (
     service_uid uuid NOT NULL REFERENCES services(service_uid) ON DELETE CASCADE,
