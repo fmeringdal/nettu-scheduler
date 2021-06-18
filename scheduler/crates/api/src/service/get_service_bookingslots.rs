@@ -9,13 +9,39 @@ use nettu_scheduler_domain::{
         BookingQueryError, BookingSlotsOptions, BookingSlotsQuery, ServiceBookingSlots,
         UserFreeEvents,
     },
-    get_free_busy, BusyCalendar, Calendar, CompatibleInstances, EventInstance, ServiceResource,
-    TimePlan, TimeSpan, ID,
+    get_free_busy, BusyCalendar, Calendar, CompatibleInstances, EventInstance, Service,
+    ServiceResource, ServiceWithUsers, TimePlan, TimeSpan, ID,
 };
 use nettu_scheduler_infra::{
     google_calendar::GoogleCalendarProvider, FreeBusyProviderQuery, NettuContext,
 };
 use tracing::{info, warn};
+
+fn handle_error(e: UseCaseErrors) -> NettuError {
+    match e {
+        UseCaseErrors::InvalidDate(msg) => {
+            NettuError::BadClientData(format!(
+                "Invalid datetime: {}. Should be YYYY-MM-DD, e.g. January 1. 2020 => 2020-1-1",
+                msg
+            ))
+        }
+        UseCaseErrors::InvalidTimezone(msg) => {
+            NettuError::BadClientData(format!(
+                "Invalid timezone: {}. It should be a valid IANA TimeZone.",
+                msg
+            ))
+        }
+        UseCaseErrors::InvalidInterval => {
+            NettuError::BadClientData(
+                "Invalid interval specified. It should be between 10 - 60 minutes inclusively and be specified as milliseconds.".into()
+            )
+        }
+        UseCaseErrors::InvalidTimespan => {
+            NettuError::BadClientData("The provided start and end is invalid".into())
+        }
+        UseCaseErrors::ServiceNotFound => NettuError::NotFound("Service was not found".into())
+    }
+}
 
 pub async fn get_service_bookingslots_controller(
     _http_req: HttpRequest,
@@ -34,37 +60,14 @@ pub async fn get_service_bookingslots_controller(
         interval: query_params.interval,
     };
 
-    execute(usecase, &ctx).await
-        .map(|usecase_res| {
-            HttpResponse::Ok().json(APIResponse::new(usecase_res.booking_slots))
-        })
-        .map_err(|e| match e {
-            UseCaseErrors::InvalidDate(msg) => {
-                NettuError::BadClientData(format!(
-                    "Invalid datetime: {}. Should be YYYY-MM-DD, e.g. January 1. 2020 => 2020-1-1",
-                    msg
-                ))
-            }
-            UseCaseErrors::InvalidTimezone(msg) => {
-                NettuError::BadClientData(format!(
-                    "Invalid timezone: {}. It should be a valid IANA TimeZone.",
-                    msg
-                ))
-            }
-            UseCaseErrors::InvalidInterval => {
-                NettuError::BadClientData(
-                    "Invalid interval specified. It should be between 10 - 60 minutes inclusively and be specified as milliseconds.".into()
-                )
-            }
-            UseCaseErrors::InvalidTimespan => {
-                NettuError::BadClientData("The provided start and end is invalid".into())
-            }
-            UseCaseErrors::ServiceNotFound => NettuError::NotFound(format!("Service with id: {}, was not found.", service_id)),
-        })
+    execute(usecase, &ctx)
+        .await
+        .map(|usecase_res| HttpResponse::Ok().json(APIResponse::new(usecase_res.booking_slots)))
+        .map_err(handle_error)
 }
 
 #[derive(Debug)]
-struct GetServiceBookingSlotsUseCase {
+pub(crate) struct GetServiceBookingSlotsUseCase {
     pub service_id: ID,
     pub start_date: String,
     pub end_date: String,
@@ -73,13 +76,20 @@ struct GetServiceBookingSlotsUseCase {
     pub interval: i64,
 }
 
-#[derive(Debug)]
-struct UseCaseRes {
-    booking_slots: ServiceBookingSlots,
+impl Into<NettuError> for UseCaseErrors {
+    fn into(self) -> NettuError {
+        handle_error(self)
+    }
 }
 
 #[derive(Debug)]
-enum UseCaseErrors {
+pub(crate) struct UseCaseRes {
+    pub booking_slots: ServiceBookingSlots,
+    pub service: ServiceWithUsers,
+}
+
+#[derive(Debug)]
+pub(crate) enum UseCaseErrors {
     ServiceNotFound,
     InvalidInterval,
     InvalidTimespan,
@@ -155,6 +165,7 @@ impl UseCase for GetServiceBookingSlotsUseCase {
 
         Ok(UseCaseRes {
             booking_slots: ServiceBookingSlots::new(booking_slots, timezone),
+            service,
         })
     }
 }

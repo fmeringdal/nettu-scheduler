@@ -17,6 +17,7 @@ CREATE INDEX IF NOT EXISTS metadata ON users USING GIN (metadata);
 CREATE TABLE IF NOT EXISTS services (
     service_uid uuid PRIMARY KEY DEFAULT uuid_generate_v4() NOT NULL,
     account_uid uuid NOT NULL REFERENCES accounts(account_uid) ON DELETE CASCADE,
+    multi_person JSON NOT NULL,
     metadata text[] NOT NULL
 );
 CREATE INDEX IF NOT EXISTS metadata ON services USING GIN (metadata);

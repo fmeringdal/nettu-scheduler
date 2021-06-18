@@ -72,6 +72,41 @@ pub mod add_user_to_service {
     pub type APIResponse = ServiceResourceDTO;
 }
 
+pub mod create_service_event_intend {
+    use super::*;
+    use crate::dtos::UserDTO;
+    use nettu_scheduler_domain::User;
+
+    #[derive(Deserialize)]
+    pub struct PathParams {
+        pub service_id: ID,
+    }
+
+    #[derive(Deserialize, Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct RequestBody {
+        #[serde(default)]
+        pub host_user_id: Option<ID>,
+        pub timestamp: i64,
+        pub duration: i64,
+        pub interval: i64,
+    }
+
+    #[derive(Deserialize, Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct APIResponse {
+        selected_host: UserDTO,
+    }
+
+    impl APIResponse {
+        pub fn new(selected_host: User) -> Self {
+            Self {
+                selected_host: UserDTO::new(selected_host),
+            }
+        }
+    }
+}
+
 pub mod create_service {
     use nettu_scheduler_domain::Metadata;
 

@@ -1,7 +1,10 @@
 use super::IServiceRepo;
 use crate::repos::{service_user::ServiceUserRaw, shared::query_structs::MetadataFindQuery};
-use nettu_scheduler_domain::{Metadata, Service, ServiceWithUsers, ID};
-use sqlx::{types::Uuid, FromRow, PgPool};
+use nettu_scheduler_domain::{Metadata, Service, ServiceMultiPersonOptions, ServiceWithUsers, ID};
+use sqlx::{
+    types::{Json, Uuid},
+    FromRow, PgPool,
+};
 
 pub struct PostgresServiceRepo {
     pool: PgPool,
@@ -17,6 +20,7 @@ impl PostgresServiceRepo {
 struct ServiceRaw {
     service_uid: Uuid,
     account_uid: Uuid,
+    multi_person: serde_json::Value,
     metadata: Vec<String>,
 }
 
@@ -25,6 +29,7 @@ struct ServiceWithUsersRaw {
     service_uid: Uuid,
     account_uid: Uuid,
     users: Option<serde_json::Value>,
+    multi_person: serde_json::Value,
     metadata: Vec<String>,
 }
 
@@ -50,6 +55,7 @@ impl Into<Service> for ServiceRaw {
         Service {
             id: self.service_uid.into(),
             account_id: self.account_uid.into(),
+            multi_person: serde_json::from_value(self.multi_person).unwrap(),
             metadata: extract_metadata(self.metadata),
         }
     }
@@ -65,6 +71,7 @@ impl Into<ServiceWithUsers> for ServiceWithUsersRaw {
             id: self.service_uid.into(),
             account_id: self.account_uid.into(),
             users: users.into_iter().map(|u| u.into()).collect(),
+            multi_person: serde_json::from_value(self.multi_person).unwrap(),
             metadata: extract_metadata(self.metadata),
         }
     }
@@ -75,11 +82,12 @@ impl IServiceRepo for PostgresServiceRepo {
     async fn insert(&self, service: &Service) -> anyhow::Result<()> {
         sqlx::query!(
             r#"
-            INSERT INTO services(service_uid, account_uid, metadata)
-            VALUES($1, $2, $3)
+            INSERT INTO services(service_uid, account_uid, multi_person, metadata)
+            VALUES($1, $2, $3, $4)
             "#,
             service.id.inner_ref(),
             service.account_id.inner_ref(),
+            Json(&service.multi_person) as _,
             &to_metadata(&service.metadata)
         )
         .execute(&self.pool)
@@ -92,10 +100,12 @@ impl IServiceRepo for PostgresServiceRepo {
         sqlx::query!(
             r#"
             UPDATE services SET 
-                metadata = $2 
+                multi_person = $2,
+                metadata = $3
             WHERE service_uid = $1 
             "#,
             service.id.inner_ref(),
+            Json(&service.multi_person) as _,
             &to_metadata(&service.metadata)
         )
         .execute(&self.pool)

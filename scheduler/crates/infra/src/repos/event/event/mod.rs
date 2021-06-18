@@ -15,6 +15,17 @@ pub trait IEventRepo: Send + Sync {
         calendar_id: &ID,
         timespan: Option<&TimeSpan>,
     ) -> anyhow::Result<Vec<CalendarEvent>>;
+    async fn find_most_recent_service_event(
+        &self,
+        service_id: &ID,
+        user_id: &ID,
+    ) -> Option<CalendarEvent>;
+    async fn find_by_service(
+        &self,
+        service_id: &ID,
+        min_ts: i64,
+        max_ts: i64,
+    ) -> Vec<CalendarEvent>;
     async fn delete(&self, event_id: &ID) -> Option<CalendarEvent>;
     async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<CalendarEvent>;
 }

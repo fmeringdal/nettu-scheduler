@@ -1,4 +1,6 @@
-use crate::{shared::MetadataFindInput, APIResponse, BaseClient, TimePlan, ID};
+use crate::{
+    shared::MetadataFindInput, APIResponse, BaseClient, CreateScheduleInput, TimePlan, ID,
+};
 use nettu_scheduler_api_structs::*;
 use nettu_scheduler_domain::{BusyCalendar, Metadata};
 use reqwest::StatusCode;
@@ -30,6 +32,14 @@ pub struct UpdateServiceUserInput {
     pub buffer_before: Option<i64>,
     pub closest_booking_time: Option<i64>,
     pub furthest_booking_time: Option<i64>,
+}
+
+pub struct CreateBookingIntendInput {
+    pub service_id: ID,
+    pub host_user_id: Option<ID>,
+    pub timestamp: i64,
+    pub duration: i64,
+    pub interval: i64,
 }
 
 pub struct RemoveServiceUserInput {
@@ -80,6 +90,25 @@ impl ServiceClient {
         self.base
             .get(
                 format!("service/{}/booking?{}", input.service_id, query_string),
+                StatusCode::OK,
+            )
+            .await
+    }
+
+    pub async fn create_booking_intend(
+        &self,
+        input: CreateBookingIntendInput,
+    ) -> APIResponse<create_service_event_intend::APIResponse> {
+        let body = create_service_event_intend::RequestBody {
+            duration: input.duration,
+            host_user_id: input.host_user_id,
+            interval: input.interval,
+            timestamp: input.timestamp,
+        };
+        self.base
+            .post(
+                body,
+                format!("service/{}/booking-intend", input.service_id),
                 StatusCode::OK,
             )
             .await

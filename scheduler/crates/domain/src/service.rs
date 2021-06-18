@@ -34,8 +34,10 @@ pub struct ServiceResource {
     /// This `ServiceResource` will not be bookable this amount of *minutes*
     /// after a meeting. A `CalendarEvent` will be interpreted as a meeting
     /// if the attribute `services` on the `CalendarEvent` includes this
-    /// `Service` id or "*".
+    /// `Service` id.
     pub buffer_after: i64,
+    /// This `ServiceResource` will not be bookable this amount of *minutes*
+    /// before a meeting.
     pub buffer_before: i64,
     /// Minimum amount of time in minutes before this user could receive any
     /// booking requests. That means that if a bookingslots query is made at
@@ -167,9 +169,35 @@ pub struct Service {
     pub id: ID,
     pub account_id: ID,
     // interval: usize,
-    // allow_more_booking_requests_in_queue_than_resources
-    // pub users: Vec<ServiceResource>,
+    pub multi_person: ServiceMultiPersonOptions,
     pub metadata: Metadata,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(tag = "variant", content = "data", rename_all = "camelCase")]
+pub enum ServiceMultiPersonOptions {
+    RoundRobinAlgorithm(RoundRobinAlgorithm),
+    // Collective,
+    // Group,
+}
+
+impl Default for ServiceMultiPersonOptions {
+    fn default() -> Self {
+        Self::RoundRobinAlgorithm(RoundRobinAlgorithm::default())
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub enum RoundRobinAlgorithm {
+    Availability,
+    EqualDistribution,
+}
+
+impl Default for RoundRobinAlgorithm {
+    fn default() -> Self {
+        Self::Availability
+    }
 }
 
 impl Entity<ID> for Service {
@@ -192,31 +220,10 @@ impl Service {
         Self {
             id: Default::default(),
             account_id,
-            // users: Default::default(),
+            multi_person: Default::default(),
             metadata: Default::default(),
         }
     }
-
-    // pub fn add_user(&mut self, user: ServiceResource) {
-    //     self.users.push(user);
-    // }
-
-    // pub fn remove_user(&mut self, user_id: &ID) -> Option<ServiceResource> {
-    //     for (pos, user) in self.users.iter().enumerate() {
-    //         if user.user_id == *user_id {
-    //             return Some(self.users.remove(pos));
-    //         }
-    //     }
-    //     None
-    // }
-
-    // pub fn find_user(&self, user_id: &ID) -> Option<&ServiceResource> {
-    //     self.users.iter().find(|u| u.user_id == *user_id)
-    // }
-
-    // pub fn find_user_mut(&mut self, user_id: &ID) -> Option<&mut ServiceResource> {
-    //     self.users.iter_mut().find(|u| u.user_id == *user_id)
-    // }
 }
 
 #[derive(Debug)]
@@ -224,6 +231,7 @@ pub struct ServiceWithUsers {
     pub id: ID,
     pub account_id: ID,
     pub users: Vec<ServiceResource>,
+    pub multi_person: ServiceMultiPersonOptions,
     pub metadata: Metadata,
 }
 

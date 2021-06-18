@@ -16,6 +16,7 @@ pub use account::{
     Account, AccountGoogleIntegration, AccountSettings, AccountWebhookSettings, PEMKey,
 };
 pub use calendar::{Calendar, CalendarSettings, SyncedCalendar};
+pub use date::format_date;
 pub use event::{
     CalendarEvent, CalendarEventReminder, SyncedCalendarEvent, SyncedCalendarProvider,
 };
@@ -24,7 +25,10 @@ pub use event_instance::{
 };
 pub use reminder::{EventRemindersExpansionJob, Reminder};
 pub use schedule::{Schedule, ScheduleRule};
-pub use service::{BusyCalendar, Service, ServiceResource, ServiceWithUsers, TimePlan};
+pub use service::{
+    BusyCalendar, RoundRobinAlgorithm, Service, ServiceMultiPersonOptions, ServiceResource,
+    ServiceWithUsers, TimePlan,
+};
 pub use shared::entity::{Entity, ID};
 pub use shared::metadata::{Meta, Metadata};
 pub use shared::recurrence::{RRuleFrequency, RRuleOptions};
