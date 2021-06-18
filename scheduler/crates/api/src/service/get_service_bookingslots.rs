@@ -9,7 +9,7 @@ use nettu_scheduler_domain::{
         BookingQueryError, BookingSlotsOptions, BookingSlotsQuery, ServiceBookingSlots,
         UserFreeEvents,
     },
-    get_free_busy, BusyCalendar, Calendar, CompatibleInstances, EventInstance, Service,
+    get_free_busy, BusyCalendar, Calendar, CompatibleInstances, EventInstance,
     ServiceResource, ServiceWithUsers, TimePlan, TimeSpan, ID,
 };
 use nettu_scheduler_infra::{
@@ -50,7 +50,7 @@ pub async fn get_service_bookingslots_controller(
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let query_params = query_params.0;
-    let service_id = path_params.service_id.clone();
+    let _service_id = path_params.service_id.clone();
     let usecase = GetServiceBookingSlotsUseCase {
         service_id: path_params.0.service_id,
         iana_tz: query_params.iana_tz,

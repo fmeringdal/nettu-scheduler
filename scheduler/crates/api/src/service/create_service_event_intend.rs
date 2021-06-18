@@ -199,7 +199,7 @@ impl UseCase for CreateServiceEventIntendUseCase {
                                     .group_by(|e1| e1.user_id.clone())
                                     .into_iter()
                                     .map(|(id, events)| (id, events.count()))
-                                    .min_by_key(|(id, events_count)| *events_count)
+                                    .min_by_key(|(_id, events_count)| *events_count)
                                     .map(|(user_id, _)| user_id);
 
                                 match user_with_least_service_events {

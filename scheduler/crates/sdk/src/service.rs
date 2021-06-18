@@ -1,5 +1,5 @@
 use crate::{
-    shared::MetadataFindInput, APIResponse, BaseClient, CreateScheduleInput, TimePlan, ID,
+    shared::MetadataFindInput, APIResponse, BaseClient, TimePlan, ID,
 };
 use nettu_scheduler_api_structs::*;
 use nettu_scheduler_domain::{BusyCalendar, Metadata};

@@ -12,7 +12,7 @@ mod user;
 use actix_cors::Cors;
 use actix_web::{dev::Server, middleware, web, App, HttpServer};
 use job_schedulers::{start_reminders_expansion_job_scheduler, start_send_reminders_job};
-use nettu_scheduler_api_structs::dtos::AccountWebhookSettingsDTO;
+
 use nettu_scheduler_domain::{
     Account, AccountGoogleIntegration, AccountWebhookSettings, PEMKey, ID,
 };
