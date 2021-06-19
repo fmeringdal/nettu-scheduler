@@ -30,6 +30,7 @@ impl Default for RoundRobinAlgorithm {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct RoundRobinAvailabilityAssignment {
     /// List of members with a corresponding timestamp stating
     /// when the they were assigned a `Service Event` last time, if they have
@@ -42,7 +43,7 @@ impl RoundRobinAvailabilityAssignment {
         if self.members.is_empty() {
             return None;
         }
-        self.members.sort_by_key(|m| m.1.map(|ts| -1 * ts));
+        self.members.sort_by_key(|m| m.1);
         let mut least_recently_booked_members: Vec<(ID, Option<i64>)> = vec![];
         for member in self.members {
             if least_recently_booked_members.is_empty()
@@ -65,6 +66,7 @@ impl RoundRobinAvailabilityAssignment {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct RoundRobinEqualDistributionAssignment {
     /// List of upcoming `Service Event`s they are assigned for the given `Service`
     pub events: Vec<CalendarEvent>,
@@ -72,6 +74,7 @@ pub struct RoundRobinEqualDistributionAssignment {
     pub user_ids: Vec<ID>,
 }
 
+#[derive(Debug)]
 struct UserWithEvents {
     pub user_id: ID,
     pub event_count: usize,
@@ -88,16 +91,19 @@ impl RoundRobinEqualDistributionAssignment {
                 user_id: user_id.clone(),
             })
             .sorted_by_key(|u| u.event_count)
-            .take_while(|u| match prev {
-                Some(count) => {
-                    if count == u.event_count {
-                        prev = Some(u.event_count);
-                        true
-                    } else {
-                        false
+            .take_while(|u| {
+                let take = match prev {
+                    Some(count) => {
+                        if count == u.event_count {
+                            true
+                        } else {
+                            false
+                        }
                     }
-                }
-                None => true,
+                    None => true,
+                };
+                prev = Some(u.event_count);
+                take
             })
             .collect::<Vec<_>>();
 
@@ -120,14 +126,165 @@ impl RoundRobinEqualDistributionAssignment {
 
 #[cfg(test)]
 mod tests {
+    use rand::prelude::SliceRandom;
+
+    use super::*;
+
+    #[test]
+    fn round_robin_availability_assignment_without_members() {
+        let query = RoundRobinAvailabilityAssignment { members: vec![] };
+        assert!(query.assign().is_none());
+    }
 
     #[test]
     fn round_robin_availability_assignment() {
-        assert_eq!(2 + 2, 4);
+        let none_user_1 = ID::default();
+        let none_user_2 = ID::default();
+        let none_user_3 = ID::default();
+        let none_user_4 = ID::default();
+        let members = vec![
+            (none_user_4.clone(), None),
+            (ID::default(), Some(10)),
+            (none_user_1.clone(), None),
+            (ID::default(), Some(6)),
+            (ID::default(), Some(12)),
+            (ID::default(), Some(20)),
+            (ID::default(), Some(0)),
+            (ID::default(), Some(-28)),
+            (none_user_2.clone(), None),
+            (none_user_3.clone(), None),
+        ];
+        let none_user_ids = vec![none_user_1, none_user_2, none_user_3, none_user_4];
+        let query = RoundRobinAvailabilityAssignment { members };
+        assert!(query.clone().assign().is_some());
+        let selected_member = query.clone().assign().unwrap();
+        assert!(none_user_ids.contains(&selected_member));
+
+        // Check that random member is selected when there are multiple that are possible to select
+        let prev = selected_member;
+        let mut found_other = false;
+        for _ in 0..100 {
+            let selected_member = query.clone().assign().unwrap();
+            if selected_member != prev {
+                found_other = true;
+                break;
+            }
+        }
+        assert!(found_other)
+    }
+
+    #[test]
+    fn round_robin_availability_assignment_2() {
+        let user_1 = ID::default();
+        let members = vec![
+            (ID::default(), Some(10)),
+            (user_1.clone(), Some(4)),
+            (ID::default(), Some(6)),
+            (ID::default(), Some(12)),
+            (ID::default(), Some(20)),
+            (ID::default(), Some(100)),
+            (ID::default(), Some(28)),
+        ];
+        let query = RoundRobinAvailabilityAssignment { members };
+        assert!(query.clone().assign().is_some());
+        let selected_member = query.clone().assign().unwrap();
+        assert_eq!(selected_member, user_1);
+    }
+
+    #[test]
+    fn round_robin_eq_distribution_assignment_without_members() {
+        let query = RoundRobinEqualDistributionAssignment {
+            events: vec![],
+            user_ids: vec![],
+        };
+        assert!(query.assign().is_none());
+    }
+
+    fn generate_default_event(user_id: &ID) -> CalendarEvent {
+        CalendarEvent {
+            id: Default::default(),
+            start_ts: Default::default(),
+            duration: Default::default(),
+            busy: Default::default(),
+            end_ts: Default::default(),
+            created: Default::default(),
+            updated: Default::default(),
+            recurrence: Default::default(),
+            exdates: Default::default(),
+            calendar_id: Default::default(),
+            user_id: user_id.clone(),
+            account_id: Default::default(),
+            reminder: Default::default(),
+            service_id: Default::default(),
+            metadata: Default::default(),
+            synced_events: Default::default(),
+        }
+    }
+
+    struct UserWithEventsCount {
+        pub user_id: ID,
+        pub count: usize,
+    }
+
+    impl UserWithEventsCount {
+        pub fn new(count: usize) -> Self {
+            Self {
+                user_id: Default::default(),
+                count,
+            }
+        }
     }
 
     #[test]
     fn round_robin_eq_distribution_assignment() {
-        assert_eq!(2 + 2, 4);
+        let least_bookings = 1;
+        let user_with_events_count = vec![
+            UserWithEventsCount::new(least_bookings),
+            UserWithEventsCount::new(least_bookings + 100),
+            UserWithEventsCount::new(least_bookings + 1),
+            UserWithEventsCount::new(least_bookings),
+            UserWithEventsCount::new(least_bookings),
+            UserWithEventsCount::new(least_bookings + 12),
+            UserWithEventsCount::new(least_bookings),
+        ];
+        let users_with_least_upcoming_bookings = user_with_events_count
+            .iter()
+            .filter(|u| u.count == least_bookings)
+            .map(|u| u.user_id.clone())
+            .collect::<Vec<_>>();
+
+        let user_ids = user_with_events_count
+            .iter()
+            .map(|u| u.user_id.clone())
+            .collect::<Vec<_>>();
+        let mut events = user_with_events_count
+            .iter()
+            .map(|u| {
+                let mut user_events = Vec::with_capacity(u.count);
+                for _ in 0..u.count {
+                    user_events.push(generate_default_event(&u.user_id));
+                }
+                user_events
+            })
+            .flatten()
+            .collect::<Vec<_>>();
+        events.shuffle(&mut thread_rng());
+
+        let query = RoundRobinEqualDistributionAssignment { events, user_ids };
+        assert!(query.clone().assign().is_some());
+        let selected_member = query.clone().assign().unwrap();
+        assert!(users_with_least_upcoming_bookings.contains(&selected_member));
+
+        // Check that random member is selected when there are multiple that are possible to select
+        let prev = selected_member;
+        let mut found_other = false;
+        for _ in 0..100 {
+            let selected_member = query.clone().assign().unwrap();
+            if selected_member != prev {
+                found_other = true;
+                break;
+            }
+        }
+        assert!(found_other)
     }
 }
