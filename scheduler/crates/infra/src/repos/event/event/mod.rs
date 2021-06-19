@@ -39,7 +39,9 @@ pub trait IEventRepo: Send + Sync {
 #[cfg(test)]
 mod tests {
     use crate::{setup_context, NettuContext};
-    use nettu_scheduler_domain::{Account, Calendar, CalendarEvent, Entity, TimeSpan, User, ID};
+    use nettu_scheduler_domain::{
+        Account, Calendar, CalendarEvent, Entity, Service, TimeSpan, User, ID,
+    };
 
     fn generate_default_event(account_id: &ID, calendar_id: &ID, user_id: &ID) -> CalendarEvent {
         CalendarEvent {
@@ -195,6 +197,7 @@ mod tests {
         account_id: &ID,
         calendar_id: &ID,
         user_id: &ID,
+        service_id: Option<&ID>,
         start_ts: i64,
         end_ts: i64,
         ctx: &NettuContext,
@@ -203,6 +206,27 @@ mod tests {
         event.calendar_id = calendar_id.clone();
         event.start_ts = start_ts;
         event.end_ts = end_ts;
+        event.service_id = service_id.map(|id| id.clone());
+        ctx.repos
+            .events
+            .insert(&event)
+            .await
+            .expect("To insert event");
+        event
+    }
+
+    async fn generate_event_with_time_2(
+        account_id: &ID,
+        calendar_id: &ID,
+        user_id: &ID,
+        service_id: &ID,
+        created: i64,
+        ctx: &NettuContext,
+    ) -> CalendarEvent {
+        let mut event = generate_default_event(&account_id, &calendar_id, &user_id);
+        event.calendar_id = calendar_id.clone();
+        event.service_id = Some(service_id.clone());
+        event.created = created;
         ctx.repos
             .events
             .insert(&event)
@@ -226,6 +250,7 @@ mod tests {
             &account.id,
             &calendar.id,
             &user.id,
+            None,
             start_ts - 2,
             start_ts - 1,
             &ctx,
@@ -235,6 +260,7 @@ mod tests {
             &account.id,
             &calendar.id,
             &user.id,
+            None,
             start_ts - 1,
             start_ts,
             &ctx,
@@ -244,6 +270,7 @@ mod tests {
             &account.id,
             &calendar.id,
             &user.id,
+            None,
             start_ts - 1,
             start_ts + 1,
             &ctx,
@@ -253,6 +280,7 @@ mod tests {
             &account.id,
             &calendar.id,
             &user.id,
+            None,
             start_ts - 1,
             end_ts,
             &ctx,
@@ -262,6 +290,7 @@ mod tests {
             &account.id,
             &calendar.id,
             &user.id,
+            None,
             start_ts - 1,
             end_ts + 1,
             &ctx,
@@ -271,18 +300,27 @@ mod tests {
             &account.id,
             &calendar.id,
             &user.id,
+            None,
             start_ts,
             end_ts - 1,
             &ctx,
         )
         .await;
-        let event_7 =
-            generate_event_with_time(&account.id, &calendar.id, &user.id, start_ts, end_ts, &ctx)
-                .await;
+        let event_7 = generate_event_with_time(
+            &account.id,
+            &calendar.id,
+            &user.id,
+            None,
+            start_ts,
+            end_ts,
+            &ctx,
+        )
+        .await;
         let event_8 = generate_event_with_time(
             &account.id,
             &calendar.id,
             &user.id,
+            None,
             start_ts,
             end_ts + 1,
             &ctx,
@@ -292,6 +330,7 @@ mod tests {
             &account.id,
             &calendar.id,
             &user.id,
+            None,
             start_ts + 1,
             end_ts - 1,
             &ctx,
@@ -301,6 +340,7 @@ mod tests {
             &account.id,
             &calendar.id,
             &user.id,
+            None,
             start_ts + 1,
             end_ts,
             &ctx,
@@ -310,6 +350,7 @@ mod tests {
             &account.id,
             &calendar.id,
             &user.id,
+            None,
             start_ts + 1,
             end_ts + 1,
             &ctx,
@@ -319,6 +360,7 @@ mod tests {
             &account.id,
             &calendar.id,
             &user.id,
+            None,
             end_ts,
             end_ts + 1,
             &ctx,
@@ -328,6 +370,7 @@ mod tests {
             &account.id,
             &calendar.id,
             &user.id,
+            None,
             end_ts + 1,
             end_ts + 2,
             &ctx,
@@ -384,5 +427,315 @@ mod tests {
                 .find(|e| e.id() == actual_event.id())
                 .is_some());
         }
+    }
+
+    #[tokio::test]
+    async fn find_most_recently_created_service_events() {
+        let ctx = setup_context().await;
+        let account = Account::default();
+        ctx.repos.accounts.insert(&account).await.unwrap();
+
+        let service = Service::new(account.id.clone());
+        ctx.repos.services.insert(&service).await.unwrap();
+        let other_service = Service::new(account.id.clone());
+        ctx.repos.services.insert(&other_service).await.unwrap();
+
+        // User 1
+        let user1 = User::new(account.id.clone());
+        ctx.repos.users.insert(&user1).await.unwrap();
+        let calendar1 = Calendar::new(&user1.id, &account.id);
+        ctx.repos.calendars.insert(&calendar1).await.unwrap();
+
+        // User 2
+        let user2 = User::new(account.id.clone());
+        ctx.repos.users.insert(&user2).await.unwrap();
+        let calendar2 = Calendar::new(&user2.id, &account.id);
+        ctx.repos.calendars.insert(&calendar2).await.unwrap();
+
+        // User 3
+        let user3 = User::new(account.id.clone());
+        ctx.repos.users.insert(&user3).await.unwrap();
+        let calendar3 = Calendar::new(&user3.id, &account.id);
+        ctx.repos.calendars.insert(&calendar3).await.unwrap();
+
+        // User 1 has three events
+        let user_1_recent_created_event = 100;
+        generate_event_with_time_2(
+            &account.id,
+            &calendar1.id,
+            &user1.id,
+            &service.id,
+            user_1_recent_created_event - 10,
+            &ctx,
+        )
+        .await;
+        generate_event_with_time_2(
+            &account.id,
+            &calendar1.id,
+            &user1.id,
+            &service.id,
+            user_1_recent_created_event,
+            &ctx,
+        )
+        .await;
+        generate_event_with_time_2(
+            &account.id,
+            &calendar1.id,
+            &user1.id,
+            &service.id,
+            user_1_recent_created_event - 5,
+            &ctx,
+        )
+        .await;
+
+        // User 2 has one event on this service and one in another service
+        let user_2_recent_created_event = 70;
+        generate_event_with_time_2(
+            &account.id,
+            &calendar2.id,
+            &user2.id,
+            &service.id,
+            user_2_recent_created_event,
+            &ctx,
+        )
+        .await;
+        // Event on other service should not affect this query
+        generate_event_with_time_2(
+            &account.id,
+            &calendar1.id,
+            &user1.id,
+            &other_service.id,
+            user_2_recent_created_event + 5,
+            &ctx,
+        )
+        .await;
+
+        // User 3 has no events
+
+        let recent_service_events = ctx
+            .repos
+            .events
+            .find_most_recently_created_service_events(
+                &service.id,
+                &vec![user1.id.clone(), user2.id.clone(), user3.id.clone()],
+            )
+            .await;
+        assert_eq!(recent_service_events.len(), 3);
+        let user1_recent_service_events = recent_service_events
+            .iter()
+            .find(|e| e.user_id == user1.id)
+            .expect("User to be there");
+        assert_eq!(
+            user1_recent_service_events.created,
+            Some(user_1_recent_created_event)
+        );
+        let user2_recent_service_events = recent_service_events
+            .iter()
+            .find(|e| e.user_id == user2.id)
+            .expect("User to be there");
+        assert_eq!(
+            user2_recent_service_events.created,
+            Some(user_2_recent_created_event)
+        );
+        let user3_recent_service_events = recent_service_events
+            .iter()
+            .find(|e| e.user_id == user3.id)
+            .expect("User to be there");
+        assert_eq!(user3_recent_service_events.created, None);
+    }
+
+    #[tokio::test]
+    async fn find_by_service_and_timespan() {
+        let ctx = setup_context().await;
+        let account = Account::default();
+        ctx.repos.accounts.insert(&account).await.unwrap();
+
+        let service = Service::new(account.id.clone());
+        ctx.repos.services.insert(&service).await.unwrap();
+        let other_service = Service::new(account.id.clone());
+        ctx.repos.services.insert(&other_service).await.unwrap();
+
+        // User 1
+        let user1 = User::new(account.id.clone());
+        ctx.repos.users.insert(&user1).await.unwrap();
+        let calendar1 = Calendar::new(&user1.id, &account.id);
+        ctx.repos.calendars.insert(&calendar1).await.unwrap();
+
+        let start_ts = 100;
+        let end_ts = 200;
+        // All the possible combination of intervals
+        let event_1 = generate_event_with_time(
+            &account.id,
+            &calendar1.id,
+            &user1.id,
+            Some(&service.id),
+            start_ts - 2,
+            start_ts - 1,
+            &ctx,
+        )
+        .await;
+        let event_2 = generate_event_with_time(
+            &account.id,
+            &calendar1.id,
+            &user1.id,
+            Some(&service.id),
+            start_ts - 1,
+            start_ts,
+            &ctx,
+        )
+        .await;
+        let event_3 = generate_event_with_time(
+            &account.id,
+            &calendar1.id,
+            &user1.id,
+            Some(&service.id),
+            start_ts - 1,
+            start_ts + 1,
+            &ctx,
+        )
+        .await;
+        let event_4 = generate_event_with_time(
+            &account.id,
+            &calendar1.id,
+            &user1.id,
+            Some(&service.id),
+            start_ts - 1,
+            end_ts,
+            &ctx,
+        )
+        .await;
+        let event_5 = generate_event_with_time(
+            &account.id,
+            &calendar1.id,
+            &user1.id,
+            Some(&service.id),
+            start_ts - 1,
+            end_ts + 1,
+            &ctx,
+        )
+        .await;
+        let event_6 = generate_event_with_time(
+            &account.id,
+            &calendar1.id,
+            &user1.id,
+            Some(&service.id),
+            start_ts,
+            end_ts - 1,
+            &ctx,
+        )
+        .await;
+        let event_7 = generate_event_with_time(
+            &account.id,
+            &calendar1.id,
+            &user1.id,
+            Some(&service.id),
+            start_ts,
+            end_ts,
+            &ctx,
+        )
+        .await;
+        let event_8 = generate_event_with_time(
+            &account.id,
+            &calendar1.id,
+            &user1.id,
+            Some(&service.id),
+            start_ts,
+            end_ts + 1,
+            &ctx,
+        )
+        .await;
+        let event_9 = generate_event_with_time(
+            &account.id,
+            &calendar1.id,
+            &user1.id,
+            Some(&service.id),
+            start_ts + 1,
+            end_ts - 1,
+            &ctx,
+        )
+        .await;
+        let event_10 = generate_event_with_time(
+            &account.id,
+            &calendar1.id,
+            &user1.id,
+            Some(&service.id),
+            start_ts + 1,
+            end_ts,
+            &ctx,
+        )
+        .await;
+        let event_11 = generate_event_with_time(
+            &account.id,
+            &calendar1.id,
+            &user1.id,
+            Some(&service.id),
+            start_ts + 1,
+            end_ts + 1,
+            &ctx,
+        )
+        .await;
+        let event_12 = generate_event_with_time(
+            &account.id,
+            &calendar1.id,
+            &user1.id,
+            Some(&service.id),
+            end_ts,
+            end_ts + 1,
+            &ctx,
+        )
+        .await;
+        let event_13 = generate_event_with_time(
+            &account.id,
+            &calendar1.id,
+            &user1.id,
+            Some(&service.id),
+            end_ts + 1,
+            end_ts + 2,
+            &ctx,
+        )
+        .await;
+
+        let actual_events_in_timespan = vec![
+            event_2.clone(),
+            event_3.clone(),
+            event_4.clone(),
+            event_5.clone(),
+            event_6.clone(),
+            event_7.clone(),
+            event_8.clone(),
+            event_9.clone(),
+            event_10.clone(),
+            event_11.clone(),
+            event_12.clone(),
+        ];
+
+        let mut actual_events_in_service = actual_events_in_timespan.clone();
+        actual_events_in_service.push(event_1.clone());
+        actual_events_in_service.push(event_13.clone());
+
+        // Find
+        let events_in_service_and_timespan = ctx
+            .repos
+            .events
+            .find_by_service(&service.id, &vec![user1.id.clone()], start_ts, end_ts)
+            .await;
+
+        assert_eq!(
+            events_in_service_and_timespan.len(),
+            actual_events_in_timespan.len()
+        );
+        for actual_event in actual_events_in_timespan {
+            assert!(events_in_service_and_timespan
+                .iter()
+                .find(|e| e.id() == actual_event.id())
+                .is_some());
+        }
+
+        let events_in_service_with_no_users = ctx
+            .repos
+            .events
+            .find_by_service(&service.id, &vec![], start_ts, end_ts)
+            .await;
+        assert_eq!(events_in_service_with_no_users.len(), 0);
     }
 }

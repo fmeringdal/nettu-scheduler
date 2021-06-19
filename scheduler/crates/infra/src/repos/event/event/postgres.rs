@@ -265,12 +265,12 @@ impl IEventRepo for PostgresEventRepo {
             SELECT * FROM calendar_events AS e
             WHERE e.service_uid = $1 AND
             e.user_uid = ANY($2) AND
-            e.start_ts BETWEEN $3 AND $4
+            e.start_ts <= $3 AND e.end_ts >= $4
             "#,
             service_id.inner_ref(),
             &user_ids,
+            max_ts,
             min_ts,
-            max_ts
         )
         .fetch_all(&self.pool)
         .await
