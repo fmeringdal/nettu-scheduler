@@ -1,8 +1,6 @@
-use crate::{
-    shared::MetadataFindInput, APIResponse, BaseClient, TimePlan, ID,
-};
+use crate::{shared::MetadataFindInput, APIResponse, BaseClient, TimePlan, ID};
 use nettu_scheduler_api_structs::*;
-use nettu_scheduler_domain::{BusyCalendar, Metadata};
+use nettu_scheduler_domain::{BusyCalendar, Metadata, ServiceMultiPersonOptions};
 use reqwest::StatusCode;
 use serde::Serialize;
 use std::sync::Arc;
@@ -59,6 +57,12 @@ pub struct GetServiceBookingSlotsInput {
 pub struct UpdateServiceInput {
     pub service_id: ID,
     pub metadata: Option<Metadata>,
+    pub multi_person: Option<ServiceMultiPersonOptions>,
+}
+
+pub struct CreateServiceInput {
+    pub metadata: Option<Metadata>,
+    pub multi_person: Option<ServiceMultiPersonOptions>,
 }
 
 #[derive(Serialize)]
@@ -120,8 +124,14 @@ impl ServiceClient {
             .await
     }
 
-    pub async fn create(&self) -> APIResponse<create_service::APIResponse> {
-        let body = Empty {};
+    pub async fn create(
+        &self,
+        input: CreateServiceInput,
+    ) -> APIResponse<create_service::APIResponse> {
+        let body = create_service::RequestBody {
+            metadata: input.metadata,
+            multi_person: input.multi_person,
+        };
         self.base
             .post(body, "service".into(), StatusCode::CREATED)
             .await
@@ -133,6 +143,7 @@ impl ServiceClient {
     ) -> APIResponse<update_service::APIResponse> {
         let body = update_service::RequestBody {
             metadata: input.metadata,
+            multi_person: input.multi_person,
         };
         self.base
             .put(

@@ -95,7 +95,7 @@ pub mod create_service_event_intend {
     #[derive(Deserialize, Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct APIResponse {
-        selected_host: UserDTO,
+        pub selected_host: UserDTO,
     }
 
     impl APIResponse {
@@ -108,7 +108,7 @@ pub mod create_service_event_intend {
 }
 
 pub mod create_service {
-    use nettu_scheduler_domain::Metadata;
+    use nettu_scheduler_domain::{Metadata, ServiceMultiPersonOptions};
 
     use super::*;
 
@@ -117,13 +117,15 @@ pub mod create_service {
     pub struct RequestBody {
         #[serde(default)]
         pub metadata: Option<Metadata>,
+        #[serde(default)]
+        pub multi_person: Option<ServiceMultiPersonOptions>,
     }
 
     pub type APIResponse = ServiceResponse;
 }
 
 pub mod update_service {
-    use nettu_scheduler_domain::Metadata;
+    use nettu_scheduler_domain::{Metadata, ServiceMultiPersonOptions};
 
     use super::*;
 
@@ -132,6 +134,8 @@ pub mod update_service {
     pub struct RequestBody {
         #[serde(default)]
         pub metadata: Option<Metadata>,
+        #[serde(default)]
+        pub multi_person: Option<ServiceMultiPersonOptions>,
     }
 
     #[derive(Debug, Deserialize)]

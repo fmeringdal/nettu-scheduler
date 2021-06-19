@@ -1449,12 +1449,10 @@ dependencies = [
  "chrono-tz",
  "env_logger",
  "futures",
- "itertools",
  "jsonwebtoken",
  "nettu_scheduler_api_structs",
  "nettu_scheduler_domain",
  "nettu_scheduler_infra",
- "rand 0.8.4",
  "rrule",
  "serde",
  "serial_test",
@@ -1466,7 +1464,7 @@ dependencies = [
 
 [[package]]
 name = "nettu_scheduler_api_structs"
-version = "0.2.1"
+version = "0.2.4"
 dependencies = [
  "nettu_scheduler_domain",
  "serde",
@@ -1474,13 +1472,15 @@ dependencies = [
 
 [[package]]
 name = "nettu_scheduler_domain"
-version = "0.1.4"
+version = "0.1.6"
 dependencies = [
  "anyhow",
  "chrono",
  "chrono-tz",
+ "itertools",
  "jsonwebtoken",
  "nettu_scheduler_utils",
+ "rand 0.8.4",
  "rrule",
  "serde",
  "thiserror",
@@ -1510,7 +1510,7 @@ dependencies = [
 
 [[package]]
 name = "nettu_scheduler_sdk"
-version = "0.2.1"
+version = "0.2.5"
 dependencies = [
  "nettu_scheduler_api_structs",
  "nettu_scheduler_domain",

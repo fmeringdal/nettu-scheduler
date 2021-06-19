@@ -1,3 +1,4 @@
+use super::get_service_bookingslots;
 use crate::error::NettuError;
 use crate::shared::{
     auth::protect_account_route,
@@ -7,14 +8,17 @@ use actix_web::{web, HttpRequest, HttpResponse};
 use chrono::{Duration, TimeZone, Utc};
 use chrono_tz::UTC;
 use get_service_bookingslots::GetServiceBookingSlotsUseCase;
-use itertools::Itertools;
 use nettu_scheduler_api_structs::create_service_event_intend::*;
-use nettu_scheduler_domain::{format_date, RoundRobinAlgorithm, ServiceMultiPersonOptions, User};
+use nettu_scheduler_domain::{
+    format_date,
+    scheduling::{
+        RoundRobinAlgorithm, RoundRobinAvailabilityAssignment,
+        RoundRobinEqualDistributionAssignment,
+    },
+    ServiceMultiPersonOptions, User,
+};
 use nettu_scheduler_domain::{Account, ID};
 use nettu_scheduler_infra::NettuContext;
-use rand::{thread_rng, Rng};
-
-use super::get_service_bookingslots;
 
 pub async fn create_service_event_intend_controller(
     http_req: HttpRequest,
@@ -98,7 +102,7 @@ impl UseCase for CreateServiceEventIntendUseCase {
         let service = res.service;
         let booking_slots_dates = res.booking_slots.dates;
 
-        let selected_host = if let Some(host_user_id) = &self.host_user_id {
+        let selected_host_user_id = if let Some(host_user_id) = &self.host_user_id {
             let service_member = match service.users.iter().find(|u| u.user_id == *host_user_id) {
                 Some(e) => e,
                 None => return Err(UseCaseErrors::UserNotInService),
@@ -124,7 +128,7 @@ impl UseCase for CreateServiceEventIntendUseCase {
             if !found_slot {
                 return Err(UseCaseErrors::UserNotAvailable);
             }
-            service_member
+            service_member.user_id.clone()
         } else {
             let mut hosts_at_slot = vec![];
             for date in booking_slots_dates {
@@ -150,71 +154,56 @@ impl UseCase for CreateServiceEventIntendUseCase {
             if hosts_at_slot.is_empty() {
                 return Err(UseCaseErrors::UserNotAvailable);
             } else if hosts_at_slot.len() == 1 {
-                &hosts_at_slot[0]
+                hosts_at_slot[0].user_id.clone()
             } else {
+                let user_ids_at_slot = hosts_at_slot
+                    .iter()
+                    .map(|h| h.user_id.clone())
+                    .collect::<Vec<_>>();
                 // Do round robin to get host
                 match &service.multi_person {
                     ServiceMultiPersonOptions::RoundRobinAlgorithm(round_robin) => {
                         match round_robin {
                             RoundRobinAlgorithm::Availability => {
-                                // Availability
-                                // - least recently booked host for this service
-                                let mut least_recently_booked_member = hosts_at_slot[0];
-                                let mut least_recently_booked_time = None;
-                                for member in hosts_at_slot {
-                                    if let Some(service_event) = ctx
-                                        .repos
-                                        .events
-                                        .find_most_recent_service_event(
-                                            &service.id,
-                                            &member.user_id,
-                                        )
-                                        .await
-                                    {
-                                        if least_recently_booked_time.is_none()
-                                            || service_event.created
-                                                < least_recently_booked_time.unwrap()
-                                        {
-                                            least_recently_booked_time =
-                                                Some(service_event.created);
-                                            least_recently_booked_member = member;
-                                        }
-                                    }
-                                }
+                                let events = ctx
+                                    .repos
+                                    .events
+                                    .find_most_recently_created_service_events(
+                                        &service.id,
+                                        &user_ids_at_slot,
+                                    )
+                                    .await;
 
-                                least_recently_booked_member
+                                let query = RoundRobinAvailabilityAssignment {
+                                    members: events
+                                        .into_iter()
+                                        .map(|e| (e.user_id, e.created))
+                                        .collect(),
+                                };
+                                let selected_user_id = query.assign().expect("At least one host can be picked when there are at least one host available");
+                                selected_user_id
                             }
                             RoundRobinAlgorithm::EqualDistribution => {
-                                // Equal distribution
-                                // - check which user has the least number of service events for this service for the next two weeks
                                 let now = Utc::now().timestamp_millis();
                                 let timestamp_in_two_weeks = now + 1000 * 60 * 60 * 24 * 14;
 
-                                let user_with_least_service_events = ctx
+                                let service_events = ctx
                                     .repos
                                     .events
-                                    .find_by_service(&service.id, now, timestamp_in_two_weeks)
-                                    .await
-                                    .into_iter()
-                                    .group_by(|e1| e1.user_id.clone())
-                                    .into_iter()
-                                    .map(|(id, events)| (id, events.count()))
-                                    .min_by_key(|(_id, events_count)| *events_count)
-                                    .map(|(user_id, _)| user_id);
+                                    .find_by_service(
+                                        &service.id,
+                                        &user_ids_at_slot,
+                                        now,
+                                        timestamp_in_two_weeks,
+                                    )
+                                    .await;
 
-                                match user_with_least_service_events {
-                                    Some(selected_user_id) => service
-                                        .users
-                                        .iter()
-                                        .find(|member| member.user_id == selected_user_id)
-                                        .expect("User to be member of service"),
-                                    None => {
-                                        // Just pick random
-                                        let mut rng = thread_rng();
-                                        let rand_user_index = rng.gen_range(0..service.users.len());
-                                        &service.users[rand_user_index]
-                                    }
-                                }
+                                let query = RoundRobinEqualDistributionAssignment {
+                                    events: service_events,
+                                    user_ids: user_ids_at_slot,
+                                };
+                                let selected_user_id = query.assign().expect("At least one host can be picked when there are at least one host available");
+                                selected_user_id
                             }
                         }
                     }
@@ -224,7 +213,7 @@ impl UseCase for CreateServiceEventIntendUseCase {
         let selected_host = ctx
             .repos
             .users
-            .find(&selected_host.user_id)
+            .find(&selected_host_user_id)
             .await
             .expect("To find selected host user");
 

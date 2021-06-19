@@ -1,6 +1,6 @@
 [package]
 name = "nettu_scheduler_domain"
-version = "0.1.4"
+version = "0.1.6"
 description = "Nettu scheduler domain"
 license = "MIT"
 authors = ["Fredrik Meringdal"]
@@ -19,3 +19,5 @@ url = "2.2.0"
 uuid = { version="0.8.2", features = ["v4"]}
 jsonwebtoken = "7"
 thiserror = "1.0"
+itertools = "0.10.1"
+rand = "0.8.4"

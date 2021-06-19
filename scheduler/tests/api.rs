@@ -6,10 +6,10 @@ use helpers::setup::spawn_app;
 use nettu_scheduler_domain::PEMKey;
 use nettu_scheduler_sdk::{
     AddServiceUserInput, CreateCalendarInput, CreateEventInput, CreateScheduleInput,
-    CreateUserInput, DeleteCalendarInput, DeleteEventInput, GetCalendarEventsInput,
-    GetCalendarInput, GetEventInput, GetEventsInstancesInput, GetServiceBookingSlotsInput,
-    KVMetadata, MetadataFindInput, NettuSDK, RemoveServiceUserInput, UpdateCalendarInput,
-    UpdateEventInput, UpdateScheduleInput, UpdateServiceUserInput,
+    CreateServiceInput, CreateUserInput, DeleteCalendarInput, DeleteEventInput,
+    GetCalendarEventsInput, GetCalendarInput, GetEventInput, GetEventsInstancesInput,
+    GetServiceBookingSlotsInput, KVMetadata, MetadataFindInput, NettuSDK, RemoveServiceUserInput,
+    UpdateCalendarInput, UpdateEventInput, UpdateScheduleInput, UpdateServiceUserInput,
 };
 
 #[actix_web::main]
@@ -485,7 +485,16 @@ async fn test_crud_service() {
         .unwrap()
         .user;
 
-    let service = admin_client.service.create().await.unwrap().service;
+    let create_service_input = CreateServiceInput {
+        metadata: None,
+        multi_person: None,
+    };
+    let service = admin_client
+        .service
+        .create(create_service_input)
+        .await
+        .unwrap()
+        .service;
 
     let add_user_res = admin_client
         .service

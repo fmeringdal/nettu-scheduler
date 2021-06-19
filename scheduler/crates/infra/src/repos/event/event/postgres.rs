@@ -1,5 +1,5 @@
-use super::IEventRepo;
-use crate::repos::shared::query_structs::MetadataFindQuery;
+use super::{IEventRepo, MostRecentCreatedServiceEvents};
+use crate::repos::{shared::query_structs::MetadataFindQuery, user};
 use nettu_scheduler_domain::{CalendarEvent, CalendarEventReminder, Metadata, RRuleOptions, ID};
 use sqlx::{
     types::{Json, Uuid},
@@ -13,6 +13,21 @@ pub struct PostgresEventRepo {
 impl PostgresEventRepo {
     pub fn new(pool: PgPool) -> Self {
         Self { pool }
+    }
+}
+
+#[derive(Debug, FromRow)]
+struct MostRecentCreatedServiceEventsRaw {
+    user_uid: Uuid,
+    created: Option<i64>,
+}
+
+impl Into<MostRecentCreatedServiceEvents> for MostRecentCreatedServiceEventsRaw {
+    fn into(self) -> MostRecentCreatedServiceEvents {
+        MostRecentCreatedServiceEvents {
+            user_id: self.user_uid.into(),
+            created: self.created,
+        }
     }
 }
 
@@ -201,45 +216,59 @@ impl IEventRepo for PostgresEventRepo {
         Some(event.into())
     }
 
-    async fn find_most_recent_service_event(
+    async fn find_most_recently_created_service_events(
         &self,
         service_id: &ID,
-        user_id: &ID,
-    ) -> Option<CalendarEvent> {
-        let event: EventRaw = match sqlx::query_as!(
-            EventRaw,
+        user_ids: &[ID],
+    ) -> Vec<MostRecentCreatedServiceEvents> {
+        let user_ids = user_ids
+            .iter()
+            .map(|id| id.inner_ref().clone())
+            .collect::<Vec<_>>();
+        // https://github.com/launchbadge/sqlx/issues/367
+        let events: Vec<MostRecentCreatedServiceEventsRaw> = match sqlx::query_as(
             r#"
-            SELECT * FROM calendar_events AS e
-            WHERE e.service_uid = $1 AND
-            e.user_uid = $2 
-            ORDER BY e.created DESC
+            SELECT users.user_uid, events.created FROM users LEFT JOIN (
+                SELECT DISTINCT ON (user_uid) user_uid, created
+                FROM calendar_events 
+                WHERE service_uid = $1
+                ORDER BY user_uid, created DESC
+            ) AS events ON events.user_uid = users.user_uid
+            WHERE users.user_uid = ANY($2)
             "#,
-            service_id.inner_ref(),
-            user_id.inner_ref(),
         )
-        .fetch_one(&self.pool)
+        .bind(service_id.inner_ref())
+        .bind(&user_ids)
+        .fetch_all(&self.pool)
         .await
         {
-            Ok(event) => event,
-            Err(_e) => return None,
+            Ok(events) => events,
+            Err(_e) => return vec![],
         };
-        Some(event.into())
+        events.into_iter().map(|e| e.into()).collect()
     }
 
     async fn find_by_service(
         &self,
         service_id: &ID,
+        user_ids: &[ID],
         min_ts: i64,
         max_ts: i64,
     ) -> Vec<CalendarEvent> {
+        let user_ids = user_ids
+            .iter()
+            .map(|id| id.inner_ref().clone())
+            .collect::<Vec<_>>();
         let events: Vec<EventRaw> = match sqlx::query_as!(
             EventRaw,
             r#"
             SELECT * FROM calendar_events AS e
             WHERE e.service_uid = $1 AND
-            e.created BETWEEN $2 AND $3
+            e.user_uid = ANY($2) AND
+            e.start_ts BETWEEN $3 AND $4
             "#,
             service_id.inner_ref(),
+            &user_ids,
             min_ts,
             max_ts
         )

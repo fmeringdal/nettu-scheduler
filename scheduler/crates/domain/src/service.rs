@@ -1,3 +1,4 @@
+use crate::scheduling::RoundRobinAlgorithm;
 use crate::{
     shared::entity::{Entity, ID},
     Meta, Metadata,
@@ -184,19 +185,6 @@ pub enum ServiceMultiPersonOptions {
 impl Default for ServiceMultiPersonOptions {
     fn default() -> Self {
         Self::RoundRobinAlgorithm(RoundRobinAlgorithm::default())
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub enum RoundRobinAlgorithm {
-    Availability,
-    EqualDistribution,
-}
-
-impl Default for RoundRobinAlgorithm {
-    fn default() -> Self {
-        Self::Availability
     }
 }
 

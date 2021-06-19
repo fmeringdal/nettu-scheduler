@@ -27,13 +27,13 @@ pub use event::{
     CreateEventInput, DeleteEventInput, GetEventInput, GetEventsInstancesInput, UpdateEventInput,
 };
 pub use nettu_scheduler_domain::{
-    providers::google::*, BusyCalendar, CalendarEventReminder, RRuleOptions, ScheduleRule,
-    SyncedCalendar, SyncedCalendarProvider, TimePlan, ID,
+    providers::google::*, BusyCalendar, CalendarEventReminder, RRuleOptions, RoundRobinAlgorithm,
+    ScheduleRule, ServiceMultiPersonOptions, SyncedCalendar, SyncedCalendarProvider, TimePlan, ID,
 };
 pub use schedule::{CreateScheduleInput, UpdateScheduleInput};
 pub use service::{
-    AddServiceUserInput, CreateBookingIntendInput, GetServiceBookingSlotsInput,
-    RemoveServiceUserInput, UpdateServiceUserInput,
+    AddServiceUserInput, CreateBookingIntendInput, CreateServiceInput, GetServiceBookingSlotsInput,
+    RemoveServiceUserInput, UpdateServiceInput, UpdateServiceUserInput,
 };
 pub use shared::{KVMetadata, MetadataFindInput};
 pub use user::CreateUserInput;

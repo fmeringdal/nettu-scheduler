@@ -4,6 +4,11 @@ use crate::repos::shared::query_structs::MetadataFindQuery;
 use nettu_scheduler_domain::{CalendarEvent, TimeSpan, ID};
 pub use postgres::PostgresEventRepo;
 
+pub struct MostRecentCreatedServiceEvents {
+    pub user_id: ID,
+    pub created: Option<i64>,
+}
+
 #[async_trait::async_trait]
 pub trait IEventRepo: Send + Sync {
     async fn insert(&self, e: &CalendarEvent) -> anyhow::Result<()>;
@@ -15,14 +20,15 @@ pub trait IEventRepo: Send + Sync {
         calendar_id: &ID,
         timespan: Option<&TimeSpan>,
     ) -> anyhow::Result<Vec<CalendarEvent>>;
-    async fn find_most_recent_service_event(
+    async fn find_most_recently_created_service_events(
         &self,
         service_id: &ID,
-        user_id: &ID,
-    ) -> Option<CalendarEvent>;
+        user_ids: &[ID],
+    ) -> Vec<MostRecentCreatedServiceEvents>;
     async fn find_by_service(
         &self,
         service_id: &ID,
+        user_ids: &[ID],
         min_ts: i64,
         max_ts: i64,
     ) -> Vec<CalendarEvent>;

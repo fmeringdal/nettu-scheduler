@@ -2,7 +2,7 @@ use crate::shared::usecase::{execute, UseCase};
 use crate::{error::NettuError, shared::auth::protect_account_route};
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::create_service::*;
-use nettu_scheduler_domain::{Account, Metadata, Service};
+use nettu_scheduler_domain::{Account, Metadata, Service, ServiceMultiPersonOptions};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn create_service_controller(
@@ -12,9 +12,11 @@ pub async fn create_service_controller(
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
 
+    let body = body.0;
     let usecase = CreateServiceUseCase {
         account,
-        metadata: body.0.metadata.unwrap_or_default(),
+        metadata: body.metadata.unwrap_or_default(),
+        multi_person: body.multi_person.unwrap_or_default(),
     };
 
     execute(usecase, &ctx)
@@ -28,6 +30,7 @@ pub async fn create_service_controller(
 #[derive(Debug)]
 struct CreateServiceUseCase {
     account: Account,
+    multi_person: ServiceMultiPersonOptions,
     metadata: Metadata,
 }
 #[derive(Debug)]
@@ -51,6 +54,7 @@ impl UseCase for CreateServiceUseCase {
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         let mut service = Service::new(self.account.id.clone());
         service.metadata = self.metadata.clone();
+        service.multi_person = self.multi_person.clone();
 
         ctx.repos
             .services

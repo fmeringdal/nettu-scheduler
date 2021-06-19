@@ -2,7 +2,7 @@ use crate::shared::usecase::{execute, UseCase};
 use crate::{error::NettuError, shared::auth::protect_account_route};
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::update_service::*;
-use nettu_scheduler_domain::{Metadata, Service, ID};
+use nettu_scheduler_domain::{Metadata, Service, ServiceMultiPersonOptions, ID};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn update_service_controller(
@@ -13,10 +13,13 @@ pub async fn update_service_controller(
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
 
+    let body = body.0;
+    let path = path.0;
     let usecase = UpdateServiceUseCase {
         account_id: account.id,
-        service_id: path.0.service_id,
-        metadata: body.0.metadata,
+        service_id: path.service_id,
+        metadata: body.metadata,
+        multi_person: body.multi_person,
     };
 
     execute(usecase, &ctx)
@@ -35,6 +38,7 @@ struct UpdateServiceUseCase {
     account_id: ID,
     service_id: ID,
     metadata: Option<Metadata>,
+    multi_person: Option<ServiceMultiPersonOptions>,
 }
 #[derive(Debug)]
 struct UseCaseRes {
@@ -63,6 +67,9 @@ impl UseCase for UpdateServiceUseCase {
 
         if let Some(metadata) = &self.metadata {
             service.metadata = metadata.clone();
+        }
+        if let Some(opts) = &self.multi_person {
+            service.multi_person = opts.clone();
         }
 
         ctx.repos

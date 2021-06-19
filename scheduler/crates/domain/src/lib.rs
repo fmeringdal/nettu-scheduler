@@ -7,6 +7,7 @@ mod event_instance;
 pub mod providers;
 mod reminder;
 mod schedule;
+pub mod scheduling;
 mod service;
 mod shared;
 mod timespan;
@@ -26,8 +27,7 @@ pub use event_instance::{
 pub use reminder::{EventRemindersExpansionJob, Reminder};
 pub use schedule::{Schedule, ScheduleRule};
 pub use service::{
-    BusyCalendar, RoundRobinAlgorithm, Service, ServiceMultiPersonOptions, ServiceResource,
-    ServiceWithUsers, TimePlan,
+    BusyCalendar, Service, ServiceMultiPersonOptions, ServiceResource, ServiceWithUsers, TimePlan,
 };
 pub use shared::entity::{Entity, ID};
 pub use shared::metadata::{Meta, Metadata};
