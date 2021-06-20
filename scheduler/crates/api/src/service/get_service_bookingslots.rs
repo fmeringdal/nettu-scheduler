@@ -171,10 +171,12 @@ impl UseCase for GetServiceBookingSlotsUseCase {
         );
 
         booking_slots = match service.multi_person {
-            ServiceMultiPersonOptions::Collective => booking_slots
-                .into_iter()
-                .filter(|slot| slot.user_ids.len() == service.users.len())
-                .collect(),
+            ServiceMultiPersonOptions::Collective | ServiceMultiPersonOptions::Group(_) => {
+                booking_slots
+                    .into_iter()
+                    .filter(|slot| slot.user_ids.len() == service.users.len())
+                    .collect()
+            }
             _ => booking_slots,
         };
 
