@@ -74,7 +74,7 @@ pub mod add_user_to_service {
 
 pub mod create_service_event_intend {
     use super::*;
-    use crate::dtos::UserDTO;
+    use crate::{create_account, dtos::UserDTO};
     use nettu_scheduler_domain::User;
 
     #[derive(Deserialize)]
@@ -86,7 +86,7 @@ pub mod create_service_event_intend {
     #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
         #[serde(default)]
-        pub host_user_id: Option<ID>,
+        pub host_user_ids: Option<Vec<ID>>,
         pub timestamp: i64,
         pub duration: i64,
         pub interval: i64,
@@ -95,13 +95,15 @@ pub mod create_service_event_intend {
     #[derive(Deserialize, Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct APIResponse {
-        pub selected_host: UserDTO,
+        pub selected_hosts: Vec<UserDTO>,
+        pub create_event_for_hosts: bool,
     }
 
     impl APIResponse {
-        pub fn new(selected_host: User) -> Self {
+        pub fn new(selected_hosts: Vec<User>, create_event_for_hosts: bool) -> Self {
             Self {
-                selected_host: UserDTO::new(selected_host),
+                selected_hosts: selected_hosts.into_iter().map(UserDTO::new).collect(),
+                create_event_for_hosts,
             }
         }
     }

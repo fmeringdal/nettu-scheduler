@@ -33,6 +33,7 @@ pub trait IEventRepo: Send + Sync {
         max_ts: i64,
     ) -> Vec<CalendarEvent>;
     async fn delete(&self, event_id: &ID) -> Option<CalendarEvent>;
+    async fn delete_by_service(&self, service_id: &ID) -> anyhow::Result<()>;
     async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<CalendarEvent>;
 }
 

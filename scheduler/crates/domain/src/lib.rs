@@ -27,7 +27,8 @@ pub use event_instance::{
 pub use reminder::{EventRemindersExpansionJob, Reminder};
 pub use schedule::{Schedule, ScheduleRule};
 pub use service::{
-    BusyCalendar, Service, ServiceMultiPersonOptions, ServiceResource, ServiceWithUsers, TimePlan,
+    BusyCalendar, Service, ServiceMultiPersonOptions, ServiceReservation, ServiceResource,
+    ServiceWithUsers, TimePlan,
 };
 pub use shared::entity::{Entity, ID};
 pub use shared::metadata::{Meta, Metadata};

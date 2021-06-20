@@ -354,6 +354,19 @@ impl IEventRepo for PostgresEventRepo {
         }
     }
 
+    async fn delete_by_service(&self, service_id: &ID) -> anyhow::Result<()> {
+        sqlx::query!(
+            r#"
+            DELETE FROM calendar_events AS c
+            WHERE c.service_uid = $1
+            "#,
+            service_id.inner_ref(),
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
     async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<CalendarEvent> {
         let key = format!("{}_{}", query.metadata.key, query.metadata.value);
 

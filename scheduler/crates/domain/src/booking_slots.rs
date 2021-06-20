@@ -1,4 +1,6 @@
-use crate::{date, event_instance::EventInstance, CompatibleInstances, ID};
+use crate::{
+    date, event_instance::EventInstance, CompatibleInstances, ServiceMultiPersonOptions, ID,
+};
 use chrono::prelude::*;
 use chrono_tz::Tz;
 use date::format_date;

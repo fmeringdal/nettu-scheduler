@@ -15,7 +15,7 @@ use nettu_scheduler_domain::{
         RoundRobinAlgorithm, RoundRobinAvailabilityAssignment,
         RoundRobinEqualDistributionAssignment,
     },
-    ServiceMultiPersonOptions, User,
+    ServiceMultiPersonOptions, ServiceReservation, User,
 };
 use nettu_scheduler_domain::{Account, ID};
 use nettu_scheduler_infra::NettuContext;
@@ -32,7 +32,7 @@ pub async fn create_service_event_intend_controller(
     let usecase = CreateServiceEventIntendUseCase {
         account,
         service_id: path_params.service_id.to_owned(),
-        host_user_id: body.host_user_id,
+        host_user_ids: body.host_user_ids,
         duration: body.duration,
         timestamp: body.timestamp,
         interval: body.interval,
@@ -40,14 +40,17 @@ pub async fn create_service_event_intend_controller(
 
     execute(usecase, &ctx)
         .await
-        .map(|res| HttpResponse::Ok().json(APIResponse::new(res.selected_host)))
+        .map(|res| {
+            HttpResponse::Ok().json(APIResponse::new(
+                res.selected_hosts,
+                res.create_event_for_hosts,
+            ))
+        })
         .map_err(|e| match e {
             UseCaseErrors::UserNotAvailable => {
                 NettuError::BadClientData("The user is not available at the given time".into())
             }
-            UseCaseErrors::UserNotInService => {
-                NettuError::NotFound("The user is not in a member of the service".into())
-            }
+            UseCaseErrors::StorageError => NettuError::InternalError,
             UseCaseErrors::BookingSlotsQuery(e) => e.into(),
         })
 }
@@ -56,7 +59,7 @@ pub async fn create_service_event_intend_controller(
 struct CreateServiceEventIntendUseCase {
     pub account: Account,
     pub service_id: ID,
-    pub host_user_id: Option<ID>,
+    pub host_user_ids: Option<Vec<ID>>,
     pub timestamp: i64,
     pub duration: i64,
     pub interval: i64,
@@ -64,13 +67,14 @@ struct CreateServiceEventIntendUseCase {
 
 #[derive(Debug)]
 struct UseCaseRes {
-    pub selected_host: User,
+    pub selected_hosts: Vec<User>,
+    pub create_event_for_hosts: bool,
 }
 
 #[derive(Debug)]
 enum UseCaseErrors {
     UserNotAvailable,
-    UserNotInService,
+    StorageError,
     BookingSlotsQuery(get_service_bookingslots::UseCaseErrors),
 }
 
@@ -102,17 +106,17 @@ impl UseCase for CreateServiceEventIntendUseCase {
         let service = res.service;
         let booking_slots_dates = res.booking_slots.dates;
 
-        let selected_host_user_id = if let Some(host_user_id) = &self.host_user_id {
-            let service_member = match service.users.iter().find(|u| u.user_id == *host_user_id) {
-                Some(e) => e,
-                None => return Err(UseCaseErrors::UserNotInService),
-            };
+        let mut create_event_for_hosts = true;
+        let selected_host_user_ids = if let Some(host_user_ids) = &self.host_user_ids {
             let mut found_slot = false;
             for date in booking_slots_dates {
                 for slot in date.slots {
                     if slot.start == self.timestamp {
-                        if !slot.user_ids.contains(&service_member.user_id) {
-                            return Err(UseCaseErrors::UserNotAvailable);
+                        // Check that all host users are available
+                        for host_user_id in host_user_ids {
+                            if !slot.user_ids.contains(&host_user_id) {
+                                return Err(UseCaseErrors::UserNotAvailable);
+                            }
                         }
                         found_slot = true;
                         break;
@@ -128,7 +132,7 @@ impl UseCase for CreateServiceEventIntendUseCase {
             if !found_slot {
                 return Err(UseCaseErrors::UserNotAvailable);
             }
-            service_member.user_id.clone()
+            host_user_ids.clone()
         } else {
             let mut hosts_at_slot = vec![];
             for date in booking_slots_dates {
@@ -153,8 +157,6 @@ impl UseCase for CreateServiceEventIntendUseCase {
 
             if hosts_at_slot.is_empty() {
                 return Err(UseCaseErrors::UserNotAvailable);
-            } else if hosts_at_slot.len() == 1 {
-                hosts_at_slot[0].user_id.clone()
             } else {
                 let user_ids_at_slot = hosts_at_slot
                     .iter()
@@ -165,58 +167,107 @@ impl UseCase for CreateServiceEventIntendUseCase {
                     ServiceMultiPersonOptions::RoundRobinAlgorithm(round_robin) => {
                         match round_robin {
                             RoundRobinAlgorithm::Availability => {
-                                let events = ctx
-                                    .repos
-                                    .events
-                                    .find_most_recently_created_service_events(
-                                        &service.id,
-                                        &user_ids_at_slot,
-                                    )
-                                    .await;
+                                if hosts_at_slot.len() == 1 {
+                                    vec![hosts_at_slot[0].user_id.clone()]
+                                } else {
+                                    let events = ctx
+                                        .repos
+                                        .events
+                                        .find_most_recently_created_service_events(
+                                            &service.id,
+                                            &user_ids_at_slot,
+                                        )
+                                        .await;
 
-                                let query = RoundRobinAvailabilityAssignment {
-                                    members: events
-                                        .into_iter()
-                                        .map(|e| (e.user_id, e.created))
-                                        .collect(),
-                                };
-                                let selected_user_id = query.assign().expect("At least one host can be picked when there are at least one host available");
-                                selected_user_id
+                                    let query = RoundRobinAvailabilityAssignment {
+                                        members: events
+                                            .into_iter()
+                                            .map(|e| (e.user_id, e.created))
+                                            .collect(),
+                                    };
+                                    let selected_user_id = query.assign().expect("At least one host can be picked when there are at least one host available");
+                                    vec![selected_user_id]
+                                }
                             }
                             RoundRobinAlgorithm::EqualDistribution => {
-                                let now = Utc::now().timestamp_millis();
-                                let timestamp_in_two_weeks = now + 1000 * 60 * 60 * 24 * 14;
+                                if hosts_at_slot.len() == 1 {
+                                    vec![hosts_at_slot[0].user_id.clone()]
+                                } else {
+                                    let now = Utc::now().timestamp_millis();
+                                    let timestamp_in_two_weeks = now + 1000 * 60 * 60 * 24 * 14;
 
-                                let service_events = ctx
-                                    .repos
-                                    .events
-                                    .find_by_service(
-                                        &service.id,
-                                        &user_ids_at_slot,
-                                        now,
-                                        timestamp_in_two_weeks,
-                                    )
-                                    .await;
+                                    let service_events = ctx
+                                        .repos
+                                        .events
+                                        .find_by_service(
+                                            &service.id,
+                                            &user_ids_at_slot,
+                                            now,
+                                            timestamp_in_two_weeks,
+                                        )
+                                        .await;
 
-                                let query = RoundRobinEqualDistributionAssignment {
-                                    events: service_events,
-                                    user_ids: user_ids_at_slot,
-                                };
-                                let selected_user_id = query.assign().expect("At least one host can be picked when there are at least one host available");
-                                selected_user_id
+                                    let query = RoundRobinEqualDistributionAssignment {
+                                        events: service_events,
+                                        user_ids: user_ids_at_slot,
+                                    };
+                                    let selected_user_id = query.assign().expect("At least one host can be picked when there are at least one host available");
+                                    vec![selected_user_id]
+                                }
                             }
                         }
+                    }
+                    ServiceMultiPersonOptions::Collective => {
+                        let all_hosts_user_ids: Vec<_> = service
+                            .users
+                            .iter()
+                            .map(|resource| resource.user_id.clone())
+                            .collect();
+
+                        // Check that all the hosts are available
+                        if user_ids_at_slot.len() < all_hosts_user_ids.len() {
+                            return Err(UseCaseErrors::UserNotAvailable);
+                        }
+
+                        all_hosts_user_ids
+                    }
+                    ServiceMultiPersonOptions::Group(max_count) => {
+                        // This kind of Services are expected to have only one static duration
+                        // So all reservations that falls withing these two timestamps (not strict equal)
+                        // are reservation to the current service event
+                        let min_ts = self.timestamp - self.duration;
+                        let max_ts = self.timestamp + self.duration;
+
+                        let reservations = ctx
+                            .repos
+                            .reservations
+                            .find_in_range(&service.id, min_ts, max_ts)
+                            .await;
+                        if reservations.len() + 1 < *max_count {
+                            // Client do not need to create service event yet
+                            create_event_for_hosts = false;
+                        }
+                        let reservation = ServiceReservation {
+                            id: Default::default(),
+                            service_id: service.id.clone(),
+                            timestamp: self.timestamp,
+                        };
+                        if ctx.repos.reservations.insert(&reservation).await.is_err() {
+                            return Err(UseCaseErrors::StorageError);
+                        }
+
+                        // There should never be more than one user for group services
+                        vec![user_ids_at_slot[0].clone()]
                     }
                 }
             }
         };
-        let selected_host = ctx
-            .repos
-            .users
-            .find(&selected_host_user_id)
-            .await
-            .expect("To find selected host user");
 
-        Ok(UseCaseRes { selected_host })
+        let selected_hosts = ctx.repos.users.find_many(&selected_host_user_ids).await;
+
+        Ok(UseCaseRes {
+            selected_hosts,
+            create_event_for_hosts,
+        })
     }
 }

@@ -11,6 +11,7 @@ pub trait IUserRepo: Send + Sync {
     async fn save(&self, user: &User) -> anyhow::Result<()>;
     async fn delete(&self, user_id: &ID) -> Option<User>;
     async fn find(&self, user_id: &ID) -> Option<User>;
+    async fn find_many(&self, user_ids: &[ID]) -> Vec<User>;
     async fn revoke_google_integration(&self, account_id: &ID) -> anyhow::Result<()>;
     async fn find_by_account_id(&self, user_id: &ID, account_id: &ID) -> Option<User>;
     async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<User>;

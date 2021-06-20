@@ -178,8 +178,8 @@ pub struct Service {
 #[serde(tag = "variant", content = "data", rename_all = "camelCase")]
 pub enum ServiceMultiPersonOptions {
     RoundRobinAlgorithm(RoundRobinAlgorithm),
-    // Collective,
-    // Group,
+    Collective,
+    Group(usize),
 }
 
 impl Default for ServiceMultiPersonOptions {
@@ -228,4 +228,12 @@ pub struct ServiceWithUsers {
 pub enum BusyCalendar {
     Google(String),
     Nettu(ID),
+}
+
+/// Relevant for group services
+#[derive(Debug)]
+pub struct ServiceReservation {
+    pub id: ID,
+    pub timestamp: i64,
+    pub service_id: ID,
 }

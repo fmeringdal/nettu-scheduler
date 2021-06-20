@@ -132,6 +132,27 @@ impl IUserRepo for PostgresUserRepo {
         Some(user.into())
     }
 
+    async fn find_many(&self, user_ids: &[ID]) -> Vec<User> {
+        let user_ids = user_ids
+            .iter()
+            .map(|id| id.inner_ref().clone())
+            .collect::<Vec<_>>();
+
+        let users: Vec<UserRaw> = sqlx::query_as!(
+            UserRaw,
+            r#"
+            SELECT * FROM users AS u
+            WHERE u.user_uid = ANY($1)
+            "#,
+            &user_ids
+        )
+        .fetch_all(&self.pool)
+        .await
+        .unwrap_or(vec![]);
+
+        users.into_iter().map(|u| u.into()).collect()
+    }
+
     async fn find_by_account_id(&self, user_id: &ID, account_id: &ID) -> Option<User> {
         let user: UserRaw = match sqlx::query_as!(
             UserRaw,

@@ -10,7 +10,7 @@ use nettu_scheduler_domain::{
         UserFreeEvents,
     },
     get_free_busy, BusyCalendar, Calendar, CompatibleInstances, EventInstance,
-    ServiceResource, ServiceWithUsers, TimePlan, TimeSpan, ID,
+    ServiceMultiPersonOptions, ServiceResource, ServiceWithUsers, TimePlan, TimeSpan, ID,
 };
 use nettu_scheduler_infra::{
     google_calendar::GoogleCalendarProvider, FreeBusyProviderQuery, NettuContext,
@@ -153,7 +153,7 @@ impl UseCase for GetServiceBookingSlotsUseCase {
 
         let users_free_events = join_all(usecase_futures).await;
 
-        let booking_slots = get_service_bookingslots(
+        let mut booking_slots = get_service_bookingslots(
             users_free_events,
             &BookingSlotsOptions {
                 interval: self.interval,
@@ -162,6 +162,14 @@ impl UseCase for GetServiceBookingSlotsUseCase {
                 start_ts: booking_timespan.start_ts,
             },
         );
+
+        booking_slots = match service.multi_person {
+            ServiceMultiPersonOptions::Collective => booking_slots
+                .into_iter()
+                .filter(|slot| slot.user_ids.len() == service.users.len())
+                .collect(),
+            _ => booking_slots,
+        };
 
         Ok(UseCaseRes {
             booking_slots: ServiceBookingSlots::new(booking_slots, timezone),

@@ -99,3 +99,9 @@ CREATE TABLE IF NOT EXISTS service_user_busy_calendars (
     calendar_uid uuid NOT NULL REFERENCES calendars(calendar_uid) ON DELETE CASCADE,
 	PRIMARY KEY(service_uid, user_uid, calendar_uid)
 );
+
+CREATE TABLE IF NOT EXISTS service_reservations (
+    reservation_uid uuid PRIMARY KEY DEFAULT uuid_generate_v4() NOT NULL,
+    service_uid uuid NOT NULL REFERENCES services(service_uid) ON DELETE CASCADE,
+    "timestamp" BIGINT NOT NULL
+);

@@ -34,7 +34,7 @@ pub struct UpdateServiceUserInput {
 
 pub struct CreateBookingIntendInput {
     pub service_id: ID,
-    pub host_user_id: Option<ID>,
+    pub host_user_ids: Option<Vec<ID>>,
     pub timestamp: i64,
     pub duration: i64,
     pub interval: i64,
@@ -105,7 +105,7 @@ impl ServiceClient {
     ) -> APIResponse<create_service_event_intend::APIResponse> {
         let body = create_service_event_intend::RequestBody {
             duration: input.duration,
-            host_user_id: input.host_user_id,
+            host_user_ids: input.host_user_ids,
             interval: input.interval,
             timestamp: input.timestamp,
         };

@@ -69,6 +69,27 @@ impl UseCase for UpdateServiceUseCase {
             service.metadata = metadata.clone();
         }
         if let Some(opts) = &self.multi_person {
+            match opts {
+                ServiceMultiPersonOptions::Group(new_count) => match &service.multi_person {
+                    ServiceMultiPersonOptions::Group(old_count) => {
+                        if new_count > old_count {
+                            // Delete all calendar events for this service, because
+                            // then it should be possible for more perople to book
+                            if ctx
+                                .repos
+                                .events
+                                .delete_by_service(&service.id)
+                                .await
+                                .is_err()
+                            {
+                                return Err(UseCaseErrors::StorageError);
+                            }
+                        }
+                    }
+                    _ => (),
+                },
+                _ => (),
+            }
             service.multi_person = opts.clone();
         }
 

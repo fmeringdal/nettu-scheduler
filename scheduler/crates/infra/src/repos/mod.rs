@@ -2,6 +2,7 @@ mod account;
 mod calendar;
 mod event;
 // mod kv;
+mod reservation;
 mod schedule;
 mod service;
 mod service_user;
@@ -14,6 +15,7 @@ use event::{
     IEventRemindersExpansionJobsRepo, IEventRepo, IReminderRepo,
     PostgresEventReminderExpansionJobsRepo, PostgresEventRepo, PostgresReminderRepo,
 };
+use reservation::{IReservationRepo, PostgresReservationRepo};
 use schedule::{IScheduleRepo, PostgresScheduleRepo};
 use service::{IServiceRepo, PostgresServiceRepo};
 use service_user::{IServiceUserRepo, PostgresServiceUserRepo};
@@ -33,6 +35,7 @@ pub struct Repos {
     pub service_users: Arc<dyn IServiceUserRepo>,
     pub schedules: Arc<dyn IScheduleRepo>,
     pub reminders: Arc<dyn IReminderRepo>,
+    pub reservations: Arc<dyn IReservationRepo>,
     pub event_reminders_expansion_jobs: Arc<dyn IEventRemindersExpansionJobsRepo>,
 }
 
@@ -57,6 +60,7 @@ impl Repos {
             service_users: Arc::new(PostgresServiceUserRepo::new(pool.clone())),
             schedules: Arc::new(PostgresScheduleRepo::new(pool.clone())),
             reminders: Arc::new(PostgresReminderRepo::new(pool.clone())),
+            reservations: Arc::new(PostgresReservationRepo::new(pool.clone())),
             event_reminders_expansion_jobs: Arc::new(PostgresEventReminderExpansionJobsRepo::new(
                 pool,
             )),
