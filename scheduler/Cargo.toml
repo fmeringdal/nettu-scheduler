@@ -28,3 +28,4 @@ tracing-log = "0.1.1"
 
 [dev-dependencies]
 nettu_scheduler_sdk = { path = "./crates/sdk" }
+chrono = "0.4.19"

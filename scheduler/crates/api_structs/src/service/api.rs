@@ -74,7 +74,7 @@ pub mod add_user_to_service {
 
 pub mod create_service_event_intend {
     use super::*;
-    use crate::{create_account, dtos::UserDTO};
+    use crate::dtos::UserDTO;
     use nettu_scheduler_domain::User;
 
     #[derive(Deserialize)]
@@ -92,7 +92,7 @@ pub mod create_service_event_intend {
         pub interval: i64,
     }
 
-    #[derive(Deserialize, Serialize)]
+    #[derive(Deserialize, Serialize, Debug)]
     #[serde(rename_all = "camelCase")]
     pub struct APIResponse {
         pub selected_hosts: Vec<UserDTO>,
@@ -169,7 +169,7 @@ pub mod get_service_bookingslots {
         pub end_date: String,
     }
 
-    #[derive(Deserialize, Serialize)]
+    #[derive(Deserialize, Serialize, Debug)]
     #[serde(rename_all = "camelCase")]
     pub struct ServiceBookingSlotDTO {
         pub start: i64,
@@ -187,7 +187,7 @@ pub mod get_service_bookingslots {
         }
     }
 
-    #[derive(Deserialize, Serialize)]
+    #[derive(Deserialize, Serialize, Debug)]
     #[serde(rename_all = "camelCase")]
     pub struct ServiceBookingSlotsDateDTO {
         pub date: String,
@@ -207,7 +207,7 @@ pub mod get_service_bookingslots {
         }
     }
 
-    #[derive(Deserialize, Serialize)]
+    #[derive(Deserialize, Serialize, Debug)]
     #[serde(rename_all = "camelCase")]
     pub struct APIResponse {
         pub dates: Vec<ServiceBookingSlotsDateDTO>,

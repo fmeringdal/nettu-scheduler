@@ -1427,6 +1427,7 @@ name = "nettu_scheduler"
 version = "0.1.0"
 dependencies = [
  "actix-web",
+ "chrono",
  "nettu_scheduler_api",
  "nettu_scheduler_domain",
  "nettu_scheduler_infra",
