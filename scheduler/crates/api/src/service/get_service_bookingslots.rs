@@ -139,6 +139,13 @@ impl UseCase for GetServiceBookingSlotsUseCase {
             None => return Err(UseCaseErrors::ServiceNotFound),
         };
 
+        if ServiceMultiPersonOptions::Group(0) == service.multi_person {
+            return Ok(UseCaseRes {
+                booking_slots: ServiceBookingSlots { dates: vec![] },
+                service,
+            });
+        }
+
         let mut usecase_futures: Vec<_> = Vec::with_capacity(service.users.len());
 
         let timespan = TimeSpan::new(booking_timespan.start_ts, booking_timespan.end_ts);

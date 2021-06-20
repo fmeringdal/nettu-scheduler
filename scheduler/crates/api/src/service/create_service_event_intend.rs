@@ -232,6 +232,17 @@ impl UseCase for CreateServiceEventIntendUseCase {
                         all_hosts_user_ids
                     }
                     ServiceMultiPersonOptions::Group(max_count) => {
+                        let all_hosts_user_ids: Vec<_> = service
+                            .users
+                            .iter()
+                            .map(|resource| resource.user_id.clone())
+                            .collect();
+
+                        // Check that all the hosts are available
+                        if user_ids_at_slot.len() < all_hosts_user_ids.len() {
+                            return Err(UseCaseErrors::UserNotAvailable);
+                        }
+
                         // This kind of Services are expected to have only one static duration
                         // So all reservations that falls withing these two timestamps (not strict equal)
                         // are reservation to the current service event
@@ -256,8 +267,7 @@ impl UseCase for CreateServiceEventIntendUseCase {
                             return Err(UseCaseErrors::StorageError);
                         }
 
-                        // There should never be more than one user for group services
-                        vec![user_ids_at_slot[0].clone()]
+                        all_hosts_user_ids
                     }
                 }
             }
