@@ -203,7 +203,16 @@ async fn round_robin_equal_distribution_scheduling() {
 
     let admin_client = NettuSDK::new(address, res.secret_api_key);
 
-    let test_cases: Vec<Vec<usize>> = vec![vec![3, 0, 1, 5], vec![0], vec![]];
+    // Each test case is a list of upcoming service events for a host
+    let test_cases: Vec<Vec<usize>> = vec![
+        vec![3, 0, 1, 5],
+        vec![0],
+        vec![],
+        vec![2, 1, 1, 1, 1, 4],
+        vec![1, 1, 0],
+        vec![2, 7, 4],
+        vec![1, 1, 1],
+    ];
 
     for upcoming_service_events_per_host in test_cases {
         let input = CreateServiceInput {
@@ -253,27 +262,28 @@ async fn round_robin_equal_distribution_scheduling() {
         let available_slot = bookingslots[0].slots[0].start;
         let some_time_later = available_slot + 14 * 24 * 60 * 60 * 1000;
 
-        for (host, busy_calendar) in hosts_with_calendars {
-            // Create upcoming service_events
-            for upcoming_service_events in &upcoming_service_events_per_host {
-                for _ in 0..*upcoming_service_events {
-                    // Create service event
-                    let service_event = CreateEventInput {
-                        busy: Some(true),
-                        calendar_id: busy_calendar.id.clone(),
-                        duration,
-                        metadata: None,
-                        recurrence: None,
-                        reminder: None,
-                        service_id: Some(service.id.clone()),
-                        start_ts: some_time_later,
-                    };
-                    admin_client
-                        .event
-                        .create(host.id.clone(), service_event)
-                        .await
-                        .expect("To create service event");
-                }
+        // Create upcoming service_events
+        for (upcoming_service_events, (host, busy_calendar)) in upcoming_service_events_per_host
+            .iter()
+            .zip(&hosts_with_calendars)
+        {
+            for _ in 0..*upcoming_service_events {
+                // Create service event
+                let service_event = CreateEventInput {
+                    busy: Some(true),
+                    calendar_id: busy_calendar.id.clone(),
+                    duration,
+                    metadata: None,
+                    recurrence: None,
+                    reminder: None,
+                    service_id: Some(service.id.clone()),
+                    start_ts: some_time_later,
+                };
+                admin_client
+                    .event
+                    .create(host.id.clone(), service_event)
+                    .await
+                    .expect("To create service event");
             }
         }
 
@@ -281,7 +291,7 @@ async fn round_robin_equal_distribution_scheduling() {
         let mut hosts_with_min_upcoming_events = hosts
             .iter()
             .zip(&upcoming_service_events_per_host)
-            .filter(|(_, count)| *count != min_upcoming_events)
+            .filter(|(_, count)| *count == min_upcoming_events)
             .map(|(h, _)| h.id.clone())
             .collect::<Vec<_>>();
 
@@ -299,6 +309,7 @@ async fn round_robin_equal_distribution_scheduling() {
                 .create_booking_intend(input)
                 .await
                 .expect("To create booking intend");
+            assert!(booking_intend.create_event_for_hosts);
 
             assert_eq!(booking_intend.selected_hosts.len(), 1);
             assert!(hosts_with_min_upcoming_events.contains(&booking_intend.selected_hosts[0].id));
@@ -306,6 +317,27 @@ async fn round_robin_equal_distribution_scheduling() {
                 .into_iter()
                 .filter(|host_id| host_id != &booking_intend.selected_hosts[0].id)
                 .collect();
+
+            // Create service event for booking
+            let (host, busy_calendar) = hosts_with_calendars
+                .iter()
+                .find(|(h, _)| h.id == booking_intend.selected_hosts[0].id)
+                .expect("To find selected host");
+            let service_event = CreateEventInput {
+                busy: Some(true),
+                calendar_id: busy_calendar.id.clone(),
+                duration,
+                metadata: None,
+                recurrence: None,
+                reminder: None,
+                service_id: Some(service.id.clone()),
+                start_ts: some_time_later,
+            };
+            admin_client
+                .event
+                .create(host.id.clone(), service_event)
+                .await
+                .expect("To create service event");
         }
     }
 }
