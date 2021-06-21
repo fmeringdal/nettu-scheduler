@@ -45,6 +45,7 @@ pub struct RemoveServiceUserInput {
     pub user_id: ID,
 }
 
+#[derive(Debug, Clone)]
 pub struct GetServiceBookingSlotsInput {
     pub service_id: ID,
     pub iana_tz: Option<String>,

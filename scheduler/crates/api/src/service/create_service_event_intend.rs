@@ -194,7 +194,7 @@ impl UseCase for CreateServiceEventIntendUseCase {
                                     vec![hosts_at_slot[0].user_id.clone()]
                                 } else {
                                     let now = Utc::now().timestamp_millis();
-                                    let timestamp_in_two_weeks = now + 1000 * 60 * 60 * 24 * 14;
+                                    let timestamp_in_two_months = now + 1000 * 60 * 60 * 24 * 61;
 
                                     let service_events = ctx
                                         .repos
@@ -203,7 +203,7 @@ impl UseCase for CreateServiceEventIntendUseCase {
                                             &service.id,
                                             &user_ids_at_slot,
                                             now,
-                                            timestamp_in_two_weeks,
+                                            timestamp_in_two_months,
                                         )
                                         .await;
 

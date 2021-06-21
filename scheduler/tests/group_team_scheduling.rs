@@ -2,24 +2,13 @@ mod helpers;
 
 use chrono::{Duration, Utc};
 use helpers::setup::spawn_app;
-use helpers::utils::format_datetime;
+use helpers::utils::{assert_equal_user_lists, format_datetime};
 use nettu_scheduler_domain::{BusyCalendar, ServiceMultiPersonOptions, TimePlan, ID};
 use nettu_scheduler_sdk::{
     AddServiceUserInput, Calendar, CreateBookingIntendInput, CreateCalendarInput, CreateEventInput,
     CreateScheduleInput, CreateServiceInput, CreateUserInput, GetEventInput,
     GetServiceBookingSlotsInput, NettuSDK, UpdateServiceInput, User,
 };
-
-fn assert_equal_user_list(users1: &Vec<User>, users2: &Vec<User>) {
-    assert_eq!(users1.len(), users2.len());
-    let mut users1 = users1.clone();
-    users1.sort_by_key(|u| u.id.to_string());
-    let mut users2 = users2.clone();
-    users2.sort_by_key(|u| u.id.to_string());
-    for (user1, user2) in users1.iter().zip(users2) {
-        assert_eq!(user1.id, user2.id);
-    }
-}
 
 async fn create_default_service_host(admin_client: &NettuSDK, service_id: &ID) -> (User, Calendar) {
     let input = CreateUserInput { metadata: None };
@@ -146,7 +135,7 @@ async fn test_group_team_scheduling() {
                     .create_booking_intend(input)
                     .await
                     .expect("To create booking intend");
-                assert_equal_user_list(&booking_intend.selected_hosts, &hosts);
+                assert_equal_user_lists(&booking_intend.selected_hosts, &hosts);
                 assert_eq!(booking_intend.create_event_for_hosts, false);
             }
             // Last spot
@@ -162,7 +151,7 @@ async fn test_group_team_scheduling() {
                 .create_booking_intend(input)
                 .await
                 .expect("To create booking intend");
-            assert_equal_user_list(&booking_intend.selected_hosts, &hosts);
+            assert_equal_user_lists(&booking_intend.selected_hosts, &hosts);
             assert_eq!(booking_intend.create_event_for_hosts, true);
             for (host, calendar) in hosts_with_calendar {
                 let service_event = CreateEventInput {
