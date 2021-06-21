@@ -4,6 +4,7 @@ use crate::repos::shared::query_structs::MetadataFindQuery;
 use nettu_scheduler_domain::{CalendarEvent, TimeSpan, ID};
 pub use postgres::PostgresEventRepo;
 
+#[derive(Debug)]
 pub struct MostRecentCreatedServiceEvents {
     pub user_id: ID,
     pub created: Option<i64>,

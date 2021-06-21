@@ -1,9 +1,10 @@
 use nettu_scheduler_api::Application;
-use nettu_scheduler_infra::{setup_context, Config};
+use nettu_scheduler_infra::{setup_context, Config, NettuContext};
 use nettu_scheduler_sdk::NettuSDK;
 
 pub struct TestApp {
     pub config: Config,
+    pub ctx: NettuContext,
 }
 
 // Launch the application as a background task
@@ -12,6 +13,7 @@ pub async fn spawn_app() -> (TestApp, NettuSDK, String) {
     ctx.config.port = 0; // Random port
 
     let config = ctx.config.clone();
+    let context = ctx.clone();
     let application = Application::new(ctx)
         .await
         .expect("Failed to build application.");
@@ -24,7 +26,10 @@ pub async fn spawn_app() -> (TestApp, NettuSDK, String) {
             .expect("Expected application to start");
     });
 
-    let app = TestApp { config };
+    let app = TestApp {
+        config,
+        ctx: context,
+    };
     let sdk = NettuSDK::new(address.clone(), "");
     (app, sdk, address)
 }

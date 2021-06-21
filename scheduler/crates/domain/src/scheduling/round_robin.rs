@@ -1,7 +1,7 @@
 use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
 
-use crate::{CalendarEvent, ServiceResource, ID};
+use crate::{CalendarEvent, ID};
 use itertools::Itertools;
 
 /// Round robin algorithm to decide which member should be assigned a
