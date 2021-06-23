@@ -14,6 +14,7 @@ pub use postgres::PostgresReservationRepo;
 #[async_trait::async_trait]
 pub trait IReservationRepo: Send + Sync {
     async fn insert(&self, reservation: &ServiceReservation) -> anyhow::Result<()>;
+    async fn remove_one(&self, service_id: &ID, timestamp: i64) -> anyhow::Result<()>;
     async fn find_in_range(
         &self,
         service_id: &ID,
@@ -29,7 +30,7 @@ mod tests {
     use nettu_scheduler_domain::{Account, Service};
 
     #[tokio::test]
-    async fn test_metadata_query() {
+    async fn test_reservations_repo() {
         let ctx = setup_context().await;
 
         let account = Account::new();
@@ -82,5 +83,72 @@ mod tests {
             .await;
         assert_eq!(res_in_range.len(), 1);
         assert_eq!(res_in_range[0].id, reservation2.id);
+    }
+
+    #[tokio::test]
+    async fn test_delete_reservation() {
+        let ctx = setup_context().await;
+
+        let account = Account::new();
+        ctx.repos
+            .accounts
+            .insert(&account)
+            .await
+            .expect("To insert account");
+        let service = Service::new(account.id.clone());
+        ctx.repos
+            .services
+            .insert(&service)
+            .await
+            .expect("To insert service");
+
+        let timestamp = 10;
+        let reservation1 = ServiceReservation {
+            id: Default::default(),
+            service_id: service.id.clone(),
+            timestamp,
+        };
+        let reservation2 = ServiceReservation {
+            id: Default::default(),
+            service_id: service.id.clone(),
+            timestamp,
+        };
+        let reservation3 = ServiceReservation {
+            id: Default::default(),
+            service_id: service.id.clone(),
+            timestamp,
+        };
+        let reservation4 = ServiceReservation {
+            id: Default::default(),
+            service_id: service.id.clone(),
+            timestamp,
+        };
+        assert!(ctx.repos.reservations.insert(&reservation1).await.is_ok());
+        assert!(ctx.repos.reservations.insert(&reservation2).await.is_ok());
+        assert!(ctx.repos.reservations.insert(&reservation3).await.is_ok());
+        assert!(ctx.repos.reservations.insert(&reservation4).await.is_ok());
+        let res_in_range = ctx
+            .repos
+            .reservations
+            .find_in_range(&service.id, timestamp - 1, timestamp + 1)
+            .await;
+        assert_eq!(res_in_range.len(), 4);
+
+        // Delete one reservation
+        assert!(ctx
+            .repos
+            .reservations
+            .remove_one(&service.id, timestamp)
+            .await
+            .is_ok());
+
+        // Now there should only be three
+        let res_in_range = ctx
+            .repos
+            .reservations
+            .find_in_range(&service.id, timestamp - 1, timestamp + 1)
+            .await;
+
+        assert_eq!(res_in_range.len(), 3);
     }
 }

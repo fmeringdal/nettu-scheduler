@@ -30,6 +30,7 @@ pub struct GoogleCalendarEvent {
     pub end: GoogleCalendarEventDateTime,
     pub summary: String,
     pub description: String,
+    pub transparency: String,
     #[serde(default)]
     pub recurrence: Option<Vec<String>>,
 }
@@ -41,6 +42,7 @@ pub struct GoogleCalendarEventAttributes {
     pub end: GoogleCalendarEventDateTime,
     pub summary: String,
     pub description: String,
+    pub transparency: String,
     pub recurrence: Vec<String>,
 }
 
@@ -53,6 +55,11 @@ impl From<CalendarEvent> for GoogleCalendarEventAttributes {
             .get("google.description")
             .unwrap_or(&empty)
             .clone();
+        let transparency = if e.busy {
+            "opaque".to_string()
+        } else {
+            "transparent".to_string()
+        };
         Self {
             description,
             summary,
@@ -61,6 +68,8 @@ impl From<CalendarEvent> for GoogleCalendarEventAttributes {
             end: GoogleCalendarEventDateTime::new(e.start_ts + e.duration),
             // Recurrence sync not supported yet
             recurrence: vec![],
+            // Wheter it blocks calendar time or not
+            transparency,
         }
     }
 }

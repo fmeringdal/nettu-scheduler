@@ -72,6 +72,31 @@ pub mod add_user_to_service {
     pub type APIResponse = ServiceResourceDTO;
 }
 
+pub mod remove_service_event_intend {
+    use super::*;
+
+    #[derive(Deserialize)]
+    pub struct PathParams {
+        pub service_id: ID,
+    }
+
+    #[derive(Deserialize, Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct QueryParams {
+        pub timestamp: i64,
+    }
+
+    #[derive(Deserialize, Serialize, Debug)]
+    #[serde(rename_all = "camelCase")]
+    pub struct APIResponse {}
+
+    impl APIResponse {
+        pub fn new() -> Self {
+            Self {}
+        }
+    }
+}
+
 pub mod create_service_event_intend {
     use super::*;
     use crate::dtos::UserDTO;

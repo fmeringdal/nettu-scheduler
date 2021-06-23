@@ -1,6 +1,6 @@
 [package]
 name = "nettu_scheduler_api_structs"
-version = "0.2.5"
+version = "0.2.6"
 description = "Nettu scheduler api types"
 license = "MIT"
 authors = ["Fredrik Meringdal"]

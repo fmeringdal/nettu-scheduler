@@ -40,6 +40,11 @@ pub struct CreateBookingIntendInput {
     pub interval: i64,
 }
 
+pub struct RemoveBookingIntendInput {
+    pub service_id: ID,
+    pub timestamp: i64,
+}
+
 pub struct RemoveServiceUserInput {
     pub service_id: ID,
     pub user_id: ID,
@@ -114,6 +119,21 @@ impl ServiceClient {
             .post(
                 body,
                 format!("service/{}/booking-intend", input.service_id),
+                StatusCode::OK,
+            )
+            .await
+    }
+
+    pub async fn remove_booking_intend(
+        &self,
+        input: RemoveBookingIntendInput,
+    ) -> APIResponse<remove_service_event_intend::APIResponse> {
+        self.base
+            .delete(
+                format!(
+                    "service/{}/booking-intend?timestamp={}",
+                    input.service_id, input.timestamp
+                ),
                 StatusCode::OK,
             )
             .await

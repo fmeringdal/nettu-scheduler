@@ -72,4 +72,25 @@ impl IReservationRepo for PostgresReservationRepo {
         };
         reservations.into_iter().map(|r| r.into()).collect()
     }
+
+    async fn remove_one(&self, service_id: &ID, timestamp: i64) -> anyhow::Result<()> {
+        sqlx::query_as!(
+            ReservationRaw,
+            r#"
+            DELETE FROM service_reservations as r
+            WHERE r.reservation_uid IN
+            (
+                SELECT reservation_uid FROM service_reservations as r
+                WHERE r.service_uid = $1 AND
+                r.timestamp = $2
+                LIMIT 1
+            ) 
+            "#,
+            service_id.inner_ref(),
+            timestamp,
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
 }
