@@ -47,22 +47,16 @@ impl IReservationRepo for PostgresReservationRepo {
         Ok(())
     }
 
-    async fn find_in_range(
-        &self,
-        service_id: &ID,
-        min_ts: i64,
-        max_ts: i64,
-    ) -> Vec<ServiceReservation> {
+    async fn find(&self, service_id: &ID, timestamp: i64) -> Vec<ServiceReservation> {
         let reservations: Vec<ReservationRaw> = match sqlx::query_as!(
             ReservationRaw,
             r#"
             SELECT * FROM service_reservations as r
             WHERE r.service_uid = $1 AND
-            r.timestamp < $2 AND r.timestamp > $3
+            r.timestamp = $2
             "#,
             service_id.inner_ref(),
-            max_ts,
-            min_ts
+            timestamp,
         )
         .fetch_all(&self.pool)
         .await

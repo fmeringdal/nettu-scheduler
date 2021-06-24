@@ -897,3 +897,175 @@ async fn test_group_team_scheduling_decrease_max_count() {
             .expect_err("Booking should be fullbooked");
     }
 }
+
+// When a reservation is made in a group service it should still allow more bookings
+// to that service (if max invitees is more than one). But other services should then
+// not allow bookings at that time
+#[actix_web::main]
+#[test]
+async fn test_combination_of_services() {
+    let (app, sdk, address) = spawn_app().await;
+    let res = sdk
+        .account
+        .create(&app.config.create_account_secret_code)
+        .await
+        .expect("Expected to create account");
+
+    let admin_client = NettuSDK::new(address, res.secret_api_key);
+
+    let input = CreateServiceInput {
+        metadata: None,
+        multi_person: Some(ServiceMultiPersonOptions::Group(10)),
+    };
+    let group_service = admin_client
+        .service
+        .create(input)
+        .await
+        .expect("To create service")
+        .service;
+    let input = CreateServiceInput {
+        metadata: None,
+        multi_person: Some(ServiceMultiPersonOptions::RoundRobinAlgorithm(
+            Default::default(),
+        )),
+    };
+    let round_robin_service = admin_client
+        .service
+        .create(input)
+        .await
+        .expect("To create service")
+        .service;
+
+    let input = CreateUserInput { metadata: None };
+    let host = admin_client
+        .user
+        .create(input)
+        .await
+        .expect("To create user")
+        .user;
+
+    let input = CreateScheduleInput {
+        metadata: None,
+        rules: None,
+        timezone: "UTC".to_string(),
+        user_id: host.id.clone(),
+    };
+    let schedule = admin_client
+        .schedule
+        .create(input)
+        .await
+        .expect("To create schedule")
+        .schedule;
+    let input = CreateCalendarInput {
+        metadata: None,
+        synced: None,
+        timezone: "UTC".to_string(),
+        user_id: host.id.clone(),
+        week_start: 0,
+    };
+    let busy_calendar = admin_client
+        .calendar
+        .create(input)
+        .await
+        .expect("To create calendar")
+        .calendar;
+
+    // Add user to both services
+    for service_id in vec![round_robin_service.id.clone(), group_service.id.clone()] {
+        let input = AddServiceUserInput {
+            availability: Some(TimePlan::Schedule(schedule.id.clone())),
+            buffer_after: None,
+            buffer_before: None,
+            busy: Some(vec![BusyCalendar::Nettu(busy_calendar.id.clone())]),
+            closest_booking_time: None,
+            furthest_booking_time: None,
+            service_id,
+            user_id: host.id.clone(),
+        };
+        admin_client
+            .service
+            .add_user(input)
+            .await
+            .expect("To add host to service");
+    }
+
+    let tomorrow = Utc::now() + Duration::days(1);
+    let next_week = tomorrow + Duration::days(7);
+    let duration = 1000 * 60 * 30;
+    let interval = 1000 * 60 * 30;
+    let get_bookingslots_input = GetServiceBookingSlotsInput {
+        duration,
+        interval,
+        service_id: group_service.id.clone(),
+        iana_tz: Some("UTC".into()),
+        end_date: format_datetime(&next_week),
+        start_date: format_datetime(&tomorrow),
+    };
+    let bookingslots = admin_client
+        .service
+        .bookingslots(get_bookingslots_input.clone())
+        .await
+        .expect("to get bookingslots")
+        .dates;
+    let mut get_round_robin_bookingslots_input = get_bookingslots_input.clone();
+    get_round_robin_bookingslots_input.service_id = round_robin_service.id.clone();
+    let bookingslots_round_robin = admin_client
+        .service
+        .bookingslots(get_round_robin_bookingslots_input.clone())
+        .await
+        .expect("to get bookingslots")
+        .dates;
+
+    let available_slot = bookingslots[0].slots[0].start;
+    assert_eq!(available_slot, bookingslots_round_robin[0].slots[0].start);
+
+    // Create booking intend for the group service
+    let input = CreateBookingIntendInput {
+        service_id: group_service.id.clone(),
+        host_user_ids: None,
+        timestamp: available_slot,
+        duration,
+        interval,
+    };
+    admin_client
+        .service
+        .create_booking_intend(input)
+        .await
+        .expect("To create booking intend");
+
+    // And then create service event which is not busy
+    let service_event = CreateEventInput {
+        busy: Some(false),
+        calendar_id: busy_calendar.id.clone(),
+        duration,
+        metadata: None,
+        recurrence: None,
+        reminder: None,
+        service_id: Some(group_service.id.clone()),
+        start_ts: available_slot,
+    };
+    admin_client
+        .event
+        .create(host.id.clone(), service_event)
+        .await
+        .expect("To create service event");
+
+    // Check that round robin no longer returns slots that is booked by the group event
+    let bookingslots_round_robin = admin_client
+        .service
+        .bookingslots(get_round_robin_bookingslots_input.clone())
+        .await
+        .expect("to get bookingslots")
+        .dates;
+    assert!(available_slot < bookingslots_round_robin[0].slots[0].start);
+
+    // But group service still returns the same available slot because there
+    // are still more people that can book the group event
+    let bookingslots = admin_client
+        .service
+        .bookingslots(get_bookingslots_input.clone())
+        .await
+        .expect("to get bookingslots")
+        .dates;
+    assert_eq!(available_slot, bookingslots[0].slots[0].start);
+}

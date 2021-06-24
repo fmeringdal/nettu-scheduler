@@ -88,11 +88,15 @@ pub mod remove_service_event_intend {
 
     #[derive(Deserialize, Serialize, Debug)]
     #[serde(rename_all = "camelCase")]
-    pub struct APIResponse {}
+    pub struct APIResponse {
+        message: String,
+    }
 
     impl APIResponse {
         pub fn new() -> Self {
-            Self {}
+            Self {
+                message: "Deleted Booking Intend".into(),
+            }
         }
     }
 }

@@ -15,12 +15,7 @@ pub use postgres::PostgresReservationRepo;
 pub trait IReservationRepo: Send + Sync {
     async fn insert(&self, reservation: &ServiceReservation) -> anyhow::Result<()>;
     async fn remove_one(&self, service_id: &ID, timestamp: i64) -> anyhow::Result<()>;
-    async fn find_in_range(
-        &self,
-        service_id: &ID,
-        min_ts: i64,
-        max_ts: i64,
-    ) -> Vec<ServiceReservation>;
+    async fn find(&self, service_id: &ID, timestamp: i64) -> Vec<ServiceReservation>;
 }
 
 #[cfg(test)]
@@ -76,11 +71,7 @@ mod tests {
         assert!(ctx.repos.reservations.insert(&reservation2).await.is_ok());
         assert!(ctx.repos.reservations.insert(&reservation3).await.is_ok());
         assert!(ctx.repos.reservations.insert(&reservation4).await.is_ok());
-        let res_in_range = ctx
-            .repos
-            .reservations
-            .find_in_range(&service.id, 0, 2)
-            .await;
+        let res_in_range = ctx.repos.reservations.find(&service.id, 1).await;
         assert_eq!(res_in_range.len(), 1);
         assert_eq!(res_in_range[0].id, reservation2.id);
     }
@@ -127,11 +118,7 @@ mod tests {
         assert!(ctx.repos.reservations.insert(&reservation2).await.is_ok());
         assert!(ctx.repos.reservations.insert(&reservation3).await.is_ok());
         assert!(ctx.repos.reservations.insert(&reservation4).await.is_ok());
-        let res_in_range = ctx
-            .repos
-            .reservations
-            .find_in_range(&service.id, timestamp - 1, timestamp + 1)
-            .await;
+        let res_in_range = ctx.repos.reservations.find(&service.id, timestamp).await;
         assert_eq!(res_in_range.len(), 4);
 
         // Delete one reservation
@@ -143,11 +130,7 @@ mod tests {
             .is_ok());
 
         // Now there should only be three
-        let res_in_range = ctx
-            .repos
-            .reservations
-            .find_in_range(&service.id, timestamp - 1, timestamp + 1)
-            .await;
+        let res_in_range = ctx.repos.reservations.find(&service.id, timestamp).await;
 
         assert_eq!(res_in_range.len(), 3);
     }

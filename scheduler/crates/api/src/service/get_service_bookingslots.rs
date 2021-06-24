@@ -235,7 +235,27 @@ impl GetServiceBookingSlotsUseCase {
         ctx: &NettuContext,
     ) -> CompatibleInstances {
         let mut busy_events: Vec<EventInstance> = Vec::new();
+
         let all_service_resources = ctx.repos.service_users.find_by_user(&user.user_id).await;
+
+        let mut busy_service_events = ctx
+            .repos
+            .events
+            .find_user_service_events(&user.user_id, false, timespan.start(), timespan.end())
+            .await
+            .into_iter()
+            // Assuming all events of this type dont have a recurrence rule
+            .filter(|e| match &e.service_id {
+                Some(service_id) => service_id != &self.service_id,
+                _ => unreachable!("Queried only for events with a service id"),
+            })
+            .map(|e| EventInstance {
+                busy: true,
+                start_ts: e.start_ts,
+                end_ts: e.end_ts,
+            })
+            .collect::<Vec<_>>();
+        busy_events.append(&mut busy_service_events);
 
         for cal in busy_calendars {
             match ctx
@@ -253,18 +273,21 @@ impl GetServiceBookingSlotsUseCase {
 
                             // Add buffer to instances if event is a service event
                             if let Some(service_id) = e.service_id {
-                                let service_resource = all_service_resources
+                                match all_service_resources
                                     .iter()
-                                    .find(|s| s.service_id == service_id);
-                                if let Some(service_resource) = service_resource {
-                                    let buffer_after_in_millis =
-                                        service_resource.buffer_after * 60 * 1000;
-                                    let buffer_before_in_millis =
-                                        service_resource.buffer_before * 60 * 1000;
-                                    for instance in instances.iter_mut() {
-                                        instance.end_ts += buffer_after_in_millis;
-                                        instance.start_ts -= buffer_before_in_millis;
+                                    .find(|s| s.service_id == service_id)
+                                {
+                                    Some(service_resource) => {
+                                        let buffer_after_in_millis =
+                                            service_resource.buffer_after * 60 * 1000;
+                                        let buffer_before_in_millis =
+                                            service_resource.buffer_before * 60 * 1000;
+                                        for instance in instances.iter_mut() {
+                                            instance.end_ts += buffer_after_in_millis;
+                                            instance.start_ts -= buffer_before_in_millis;
+                                        }
                                     }
+                                    _ => (),
                                 }
                             }
 

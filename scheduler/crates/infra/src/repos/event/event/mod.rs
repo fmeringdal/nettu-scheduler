@@ -33,6 +33,13 @@ pub trait IEventRepo: Send + Sync {
         min_ts: i64,
         max_ts: i64,
     ) -> Vec<CalendarEvent>;
+    async fn find_user_service_events(
+        &self,
+        user_id: &ID,
+        busy: bool,
+        min_ts: i64,
+        max_ts: i64,
+    ) -> Vec<CalendarEvent>;
     async fn delete(&self, event_id: &ID) -> Option<CalendarEvent>;
     async fn delete_by_service(&self, service_id: &ID) -> anyhow::Result<()>;
     async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<CalendarEvent>;
@@ -44,6 +51,8 @@ mod tests {
     use nettu_scheduler_domain::{
         Account, Calendar, CalendarEvent, Entity, Service, TimeSpan, User, ID,
     };
+
+    use super::IEventRepo;
 
     fn generate_default_event(account_id: &ID, calendar_id: &ID, user_id: &ID) -> CalendarEvent {
         CalendarEvent {
@@ -739,5 +748,54 @@ mod tests {
             .find_by_service(&service.id, &vec![], start_ts, end_ts)
             .await;
         assert_eq!(events_in_service_with_no_users.len(), 0);
+    }
+
+    #[tokio::test]
+    async fn test_find_user_service_events() {
+        let TestContext {
+            ctx,
+            account,
+            calendar,
+            user,
+        } = setup().await;
+        let start_ts = 10;
+        let end_ts = 20;
+
+        let service = Service::new(account.id.clone());
+        ctx.repos
+            .services
+            .insert(&service)
+            .await
+            .expect("To create service");
+
+        let service_event = generate_event_with_time(
+            &account.id,
+            &calendar.id,
+            &user.id,
+            Some(&service.id),
+            start_ts,
+            end_ts,
+            &ctx,
+        )
+        .await;
+        let not_service_event = generate_event_with_time(
+            &account.id,
+            &calendar.id,
+            &user.id,
+            None,
+            start_ts,
+            end_ts,
+            &ctx,
+        )
+        .await;
+
+        let res = ctx
+            .repos
+            .events
+            .find_user_service_events(&user.id, false, start_ts, end_ts)
+            .await;
+
+        assert_eq!(res.len(), 1);
+        assert_eq!(res[0].id, service_event.id);
     }
 }

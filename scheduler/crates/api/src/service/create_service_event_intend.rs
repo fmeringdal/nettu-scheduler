@@ -243,16 +243,10 @@ impl UseCase for CreateServiceEventIntendUseCase {
                             return Err(UseCaseErrors::UserNotAvailable);
                         }
 
-                        // This kind of Services are expected to have only one static duration
-                        // So all reservations that falls withing these two timestamps (not strict equal)
-                        // are reservation to the current service event
-                        let min_ts = self.timestamp - self.duration;
-                        let max_ts = self.timestamp + self.duration;
-
                         let reservations = ctx
                             .repos
                             .reservations
-                            .find_in_range(&service.id, min_ts, max_ts)
+                            .find(&service.id, self.timestamp)
                             .await;
                         if reservations.len() + 1 < *max_count {
                             // Client do not need to create service event yet

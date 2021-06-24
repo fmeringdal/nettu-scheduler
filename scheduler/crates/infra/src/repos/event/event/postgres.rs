@@ -281,6 +281,36 @@ impl IEventRepo for PostgresEventRepo {
         events.into_iter().map(|e| e.into()).collect()
     }
 
+    async fn find_user_service_events(
+        &self,
+        user_id: &ID,
+        busy: bool,
+        min_ts: i64,
+        max_ts: i64,
+    ) -> Vec<CalendarEvent> {
+        let events: Vec<EventRaw> = match sqlx::query_as!(
+            EventRaw,
+            r#"
+            SELECT * FROM calendar_events AS e
+            WHERE e.user_uid = $1 AND
+            e.busy = $2 AND
+            e.service_uid IS NOT NULL AND
+            e.start_ts <= $3 AND e.end_ts >= $4
+            "#,
+            user_id.inner_ref(),
+            busy,
+            max_ts,
+            min_ts,
+        )
+        .fetch_all(&self.pool)
+        .await
+        {
+            Ok(events) => events,
+            Err(_e) => return vec![],
+        };
+        events.into_iter().map(|e| e.into()).collect()
+    }
+
     async fn find_many(&self, event_ids: &[ID]) -> anyhow::Result<Vec<CalendarEvent>> {
         let ids = event_ids
             .iter()
