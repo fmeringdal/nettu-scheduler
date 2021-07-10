@@ -1,4 +1,5 @@
 pub mod google_calendar;
+mod outlook_calendar;
 
 #[derive(Debug)]
 pub struct FreeBusyProviderQuery {

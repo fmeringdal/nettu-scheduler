@@ -34,4 +34,6 @@ pub use shared::entity::{Entity, ID};
 pub use shared::metadata::{Meta, Metadata};
 pub use shared::recurrence::{RRuleFrequency, RRuleOptions};
 pub use timespan::TimeSpan;
-pub use user::{User, UserGoogleIntegrationData, UserIntegrationProvider};
+pub use user::{
+    User, UserGoogleIntegrationData, UserIntegrationProvider, UserOutlookIntegrationData,
+};

@@ -42,10 +42,18 @@ impl Meta<ID> for User {
 #[serde(tag = "provider")]
 pub enum UserIntegrationProvider {
     Google(UserGoogleIntegrationData),
+    Outlook(UserOutlookIntegrationData),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserGoogleIntegrationData {
+    pub refresh_token: String,
+    pub access_token: String,
+    pub access_token_expires_ts: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UserOutlookIntegrationData {
     pub refresh_token: String,
     pub access_token: String,
     pub access_token_expires_ts: i64,

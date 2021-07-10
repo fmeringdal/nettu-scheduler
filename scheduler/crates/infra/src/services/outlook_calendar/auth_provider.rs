@@ -1,5 +1,5 @@
 use chrono::Utc;
-use nettu_scheduler_domain::{User, UserGoogleIntegrationData, UserIntegrationProvider};
+use nettu_scheduler_domain::{User, UserIntegrationProvider, UserOutlookIntegrationData};
 use tracing::log::warn;
 
 use crate::NettuContext;
@@ -7,18 +7,30 @@ use serde::Deserialize;
 
 // https://developers.google.com/identity/protocols/oauth2/web-server#httprest_3
 
-const TOKEN_REFETCH_ENDPOINT: &str = "https://www.googleapis.com/oauth2/v4/token";
-const CODE_TOKEN_EXHANGE_ENDPOINT: &str = "https://oauth2.googleapis.com/token";
-const REQUIRED_OAUTH_SCOPES: [&str; 1] = ["https://www.googleapis.com/auth/calendar"];
+const TOKEN_REFETCH_ENDPOINT: &str = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
+const CODE_TOKEN_EXHANGE_ENDPOINT: &str =
+    "https://login.microsoftonline.com/common/oauth2/v2.0/token";
+const REQUIRED_OAUTH_SCOPES: [&str; 2] = [
+    "https://graph.microsoft.com/calendars.readwrite",
+    "offline_access",
+];
+const API_ENDPOINT: &str = "https://graph.microsoft.com/v1.0/";
+const CLIENT_ID: &str = "";
+const CLIENT_SECRET: &str = "";
 
+// https://docs.microsoft.com/en-us/graph/auth-v2-user#request
 struct RefreshTokenRequest {
     client_id: String,
     client_secret: String,
+    redirect_uri: String,
     refresh_token: String,
+    scope: String,
 }
 
+// https://docs.microsoft.com/en-us/graph/auth-v2-user#response
 #[derive(Debug, Deserialize)]
 struct RefreshTokenResponse {
+    refresh_token: String,
     access_token: String,
     scope: String,
     token_type: String,
@@ -30,7 +42,9 @@ async fn refresh_access_token(req: RefreshTokenRequest) -> Result<RefreshTokenRe
     let params = [
         ("client_id", req.client_id.as_str()),
         ("client_secret", req.client_secret.as_str()),
+        ("redirect_uri", req.redirect_uri.as_str()),
         ("refresh_token", req.refresh_token.as_str()),
+        ("scope", req.scope.as_str()),
         ("grant_type", "refresh_token"),
     ];
     let client = reqwest::Client::new();
@@ -44,14 +58,16 @@ async fn refresh_access_token(req: RefreshTokenRequest) -> Result<RefreshTokenRe
     res.json::<RefreshTokenResponse>().await.map_err(|_| ())
 }
 
-// Google api actually returns snake case response
+// https://docs.microsoft.com/en-us/graph/auth-v2-user#token-request
 pub struct CodeTokenRequest {
     pub client_id: String,
     pub client_secret: String,
-    pub code: String,
     pub redirect_uri: String,
+    pub code: String,
+    pub scope: String,
 }
 
+// https://docs.microsoft.com/en-us/graph/auth-v2-user#token-response
 #[derive(Debug, Deserialize)]
 pub struct CodeTokenResponse {
     pub access_token: String,
@@ -67,9 +83,10 @@ pub async fn exchange_code_token(req: CodeTokenRequest) -> Result<CodeTokenRespo
         ("client_secret", req.client_secret.as_str()),
         ("redirect_uri", req.redirect_uri.as_str()),
         ("code", req.code.as_str()),
+        ("scope", req.scope.as_str()),
         ("grant_type", "authorization_code"),
     ];
-    // TODO: query params intead of body ??
+
     let client = reqwest::Client::new();
     let res = client
         .post(CODE_TOKEN_EXHANGE_ENDPOINT)
@@ -91,11 +108,11 @@ pub async fn exchange_code_token(req: CodeTokenRequest) -> Result<CodeTokenRespo
 }
 
 pub async fn get_access_token(user: &mut User, ctx: &NettuContext) -> Option<String> {
-    // Check if user has connected to google
-    let mut integration: Option<&mut UserGoogleIntegrationData> = None;
+    // Check if user has connected to outlook
+    let mut integration: Option<&mut UserOutlookIntegrationData> = None;
     for user_integration in &mut user.integrations {
         match user_integration {
-            UserIntegrationProvider::Google(data) => {
+            UserIntegrationProvider::Outlook(data) => {
                 integration = Some(data);
             }
             _ => (),
@@ -119,15 +136,17 @@ pub async fn get_access_token(user: &mut User, ctx: &NettuContext) -> Option<Str
         Some(a) => a,
         None => return None,
     };
-    let google_settings = match account.settings.google {
+    let outlook_settings = match account.settings.outlook {
         Some(settings) => settings,
         None => return None,
     };
 
     let refresh_token_req = RefreshTokenRequest {
-        client_id: google_settings.client_id,
-        client_secret: google_settings.client_secret,
+        client_id: outlook_settings.client_id,
+        client_secret: outlook_settings.client_secret,
         refresh_token: integration.refresh_token.clone(),
+        redirect_uri: outlook_settings.redirect_uri.clone(),
+        scope: REQUIRED_OAUTH_SCOPES.join(" "),
     };
     let data = refresh_access_token(refresh_token_req).await;
     match data {

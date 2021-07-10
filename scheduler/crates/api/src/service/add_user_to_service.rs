@@ -10,6 +10,7 @@ use nettu_scheduler_domain::{
     ID,
 };
 use nettu_scheduler_infra::{google_calendar::GoogleCalendarProvider, NettuContext};
+use tracing::info;
 
 pub async fn add_user_to_service_controller(
     http_req: HttpRequest,
