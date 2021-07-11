@@ -1,6 +1,7 @@
 use nettu_scheduler_api_structs::*;
 use nettu_scheduler_domain::{
-    providers::google::GoogleCalendarAccessRole, Metadata, SyncedCalendar, ID,
+    providers::{google::GoogleCalendarAccessRole, outlook::OutlookCalendarAccessRole},
+    Metadata, SyncedCalendar, ID,
 };
 use reqwest::StatusCode;
 use std::sync::Arc;
@@ -148,6 +149,22 @@ impl CalendarClient {
             .get(
                 format!(
                     "user/{:?}/calendar/provider/google?minAccessRole={:?}",
+                    user_id, min_access_role
+                ),
+                StatusCode::OK,
+            )
+            .await
+    }
+
+    pub async fn get_outlook(
+        &self,
+        user_id: ID,
+        min_access_role: OutlookCalendarAccessRole,
+    ) -> APIResponse<get_outlook_calendars::APIResponse> {
+        self.base
+            .get(
+                format!(
+                    "user/{:?}/calendar/provider/outlook?minAccessRole={:?}",
                     user_id, min_access_role
                 ),
                 StatusCode::OK,

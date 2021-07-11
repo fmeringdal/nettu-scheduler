@@ -62,6 +62,21 @@ impl UserClient {
             .await
     }
 
+    pub async fn oauth_outlook(
+        &self,
+        user_id: ID,
+        code: String,
+    ) -> APIResponse<oauth_outlook::APIResponse> {
+        let body = oauth_outlook::RequestBody { code };
+        self.base
+            .post(
+                body,
+                format!("user/{}/oauth/outlook", user_id.to_string()),
+                StatusCode::OK,
+            )
+            .await
+    }
+
     pub async fn get_by_meta(
         &self,
         input: MetadataFindInput,

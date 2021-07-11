@@ -162,6 +162,34 @@ pub mod get_google_calendars {
     }
 }
 
+pub mod get_outlook_calendars {
+    use nettu_scheduler_domain::providers::outlook::{OutlookCalendar, OutlookCalendarAccessRole};
+
+    use super::*;
+
+    #[derive(Deserialize)]
+    pub struct PathParams {
+        pub user_id: ID,
+    }
+
+    #[derive(Debug, Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct QueryParams {
+        pub min_access_role: OutlookCalendarAccessRole,
+    }
+
+    #[derive(Deserialize, Serialize)]
+    pub struct APIResponse {
+        pub calendars: Vec<OutlookCalendar>,
+    }
+
+    impl APIResponse {
+        pub fn new(calendars: Vec<OutlookCalendar>) -> Self {
+            Self { calendars }
+        }
+    }
+}
+
 pub mod get_user_freebusy {
     use super::*;
     use std::collections::VecDeque;
