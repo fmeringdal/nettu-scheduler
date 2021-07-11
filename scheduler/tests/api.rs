@@ -548,7 +548,6 @@ async fn test_crud_service() {
     assert!(remove_user_res.is_ok());
 
     let service = admin_client.service.get(service.id.clone()).await.unwrap();
-
     assert!(service.users.is_empty());
 
     let booking_slots = admin_client
