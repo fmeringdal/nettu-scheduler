@@ -61,7 +61,7 @@ pub struct OutlookCalendarEventOnlineMeeting {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OutlookCalendarEvent {
-    id: String,
+    pub id: String,
     start: OutlookCalendarEventTime,
     end: OutlookCalendarEventTime,
     subject: String,
@@ -150,7 +150,7 @@ pub struct ListCalendarsResponse {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OutlookCalendar {
-    id: String,
+    pub id: String,
     name: String,
     color: String,
     change_key: String,

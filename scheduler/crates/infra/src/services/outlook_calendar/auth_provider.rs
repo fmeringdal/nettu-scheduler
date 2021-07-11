@@ -64,7 +64,6 @@ pub struct CodeTokenRequest {
     pub client_secret: String,
     pub redirect_uri: String,
     pub code: String,
-    pub scope: String,
 }
 
 // https://docs.microsoft.com/en-us/graph/auth-v2-user#token-response
@@ -83,7 +82,7 @@ pub async fn exchange_code_token(req: CodeTokenRequest) -> Result<CodeTokenRespo
         ("client_secret", req.client_secret.as_str()),
         ("redirect_uri", req.redirect_uri.as_str()),
         ("code", req.code.as_str()),
-        ("scope", req.scope.as_str()),
+        ("scope", &REQUIRED_OAUTH_SCOPES.join(" ")),
         ("grant_type", "authorization_code"),
     ];
 

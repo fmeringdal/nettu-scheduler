@@ -31,6 +31,7 @@ impl Meta<ID> for Calendar {
 #[serde(tag = "provider", content = "id")]
 pub enum SyncedCalendar {
     Google(String),
+    Outlook(String),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -79,6 +80,26 @@ impl Calendar {
             metadata: Default::default(),
             synced: Default::default(),
         }
+    }
+
+    pub fn get_outlook_calendar_ids(&self) -> Vec<String> {
+        self.synced
+            .iter()
+            .filter_map(|cal| match cal {
+                SyncedCalendar::Outlook(id) => Some(id.clone()),
+                _ => None,
+            })
+            .collect::<Vec<_>>()
+    }
+
+    pub fn get_google_calendar_ids(&self) -> Vec<String> {
+        self.synced
+            .iter()
+            .filter_map(|cal| match cal {
+                SyncedCalendar::Google(id) => Some(id.clone()),
+                _ => None,
+            })
+            .collect::<Vec<_>>()
     }
 }
 

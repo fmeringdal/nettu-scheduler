@@ -33,6 +33,7 @@ pub struct CalendarEvent {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum SyncedCalendarProvider {
     Google,
+    Outlook,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -10,10 +10,13 @@ use crate::{
 use actix_web::{web, HttpResponse};
 use nettu_scheduler_api_structs::create_calendar::{APIResponse, PathParams, RequestBody};
 use nettu_scheduler_domain::{
-    providers::google::GoogleCalendarAccessRole, Calendar, CalendarSettings, Metadata,
-    SyncedCalendar, User, ID,
+    providers::{google::GoogleCalendarAccessRole, outlook::OutlookCalendarAccessRole},
+    Calendar, CalendarSettings, Metadata, SyncedCalendar, User, ID,
 };
-use nettu_scheduler_infra::{google_calendar::GoogleCalendarProvider, NettuContext};
+use nettu_scheduler_infra::{
+    google_calendar::GoogleCalendarProvider, outlook_calendar::OutlookCalendarProvider,
+    NettuContext,
+};
 
 fn error_handler(e: UseCaseErrors) -> NettuError {
     match e {
@@ -148,10 +151,12 @@ pub async fn update_synced_calendars(
 ) {
     let mut google_synced_calendar_ids = synced
         .iter()
-        .map(|cal| match cal {
-            SyncedCalendar::Google(id) => id.clone(),
+        .filter_map(|cal| match cal {
+            SyncedCalendar::Google(id) => Some(id.clone()),
+            _ => None,
         })
         .collect::<Vec<_>>();
+    let mut google_synced = vec![];
     if !google_synced_calendar_ids.is_empty() {
         if let Ok(provider) = GoogleCalendarProvider::new(user, ctx).await {
             let google_calendar_ids = provider
@@ -165,10 +170,41 @@ pub async fn update_synced_calendars(
                 })
                 .unwrap_or_default();
             google_synced_calendar_ids.retain(|cal_id| google_calendar_ids.contains(cal_id));
-            calendar.synced = google_synced_calendar_ids
+            google_synced = google_synced_calendar_ids
                 .into_iter()
                 .map(|cal_id| SyncedCalendar::Google(cal_id))
                 .collect();
         }
     }
+    let mut outlook_synced_calendar_ids = synced
+        .iter()
+        .filter_map(|cal| match cal {
+            SyncedCalendar::Outlook(id) => Some(id.clone()),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    let mut outlook_synced = vec![];
+    if !outlook_synced_calendar_ids.is_empty() {
+        if let Ok(provider) = OutlookCalendarProvider::new(user, ctx).await {
+            let outlook_calendar_ids = provider
+                .list(OutlookCalendarAccessRole::Writer)
+                .await
+                .map(|res| {
+                    res.value
+                        .into_iter()
+                        .map(|cal| cal.id)
+                        .collect::<Vec<String>>()
+                })
+                .unwrap_or_default();
+            outlook_synced_calendar_ids.retain(|cal_id| outlook_calendar_ids.contains(cal_id));
+            outlook_synced = outlook_synced_calendar_ids
+                .into_iter()
+                .map(|cal_id| SyncedCalendar::Outlook(cal_id))
+                .collect();
+        }
+    }
+    let mut synced = vec![];
+    synced.extend(google_synced.into_iter());
+    synced.extend(outlook_synced.into_iter());
+    calendar.synced = synced;
 }

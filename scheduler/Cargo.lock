@@ -1497,6 +1497,7 @@ dependencies = [
  "async-trait",
  "chrono",
  "chrono-tz",
+ "futures",
  "nettu_scheduler_domain",
  "nettu_scheduler_utils",
  "reqwest",

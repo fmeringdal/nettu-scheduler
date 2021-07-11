@@ -87,6 +87,7 @@ CREATE TABLE IF NOT EXISTS service_users (
     closest_booking_time BIGINT NOT NULL, 
     furthest_booking_time BIGINT, 
     google_busy_calendars text[] NOT NULL,
+    outlook_busy_calendars text[] NOT NULL,
 	PRIMARY KEY(service_uid, user_uid),
     CHECK (
         NOT (available_calendar_uid IS NOT NULL AND available_schedule_uid IS NOT NULL)

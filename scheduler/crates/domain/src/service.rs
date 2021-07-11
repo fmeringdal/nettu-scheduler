@@ -142,6 +142,7 @@ impl ServiceResource {
         self.busy.retain(|busy_cal| match busy_cal {
             BusyCalendar::Nettu(cal_id) => cal_id.to_string() != calendar_id,
             BusyCalendar::Google(cal_id) => cal_id != calendar_id,
+            BusyCalendar::Outlook(cal_id) => cal_id != calendar_id,
         });
     }
 
@@ -227,6 +228,7 @@ pub struct ServiceWithUsers {
 #[serde(tag = "provider", content = "id")]
 pub enum BusyCalendar {
     Google(String),
+    Outlook(String),
     Nettu(ID),
 }
 

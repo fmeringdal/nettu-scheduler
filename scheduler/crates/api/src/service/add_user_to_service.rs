@@ -6,10 +6,13 @@ use crate::shared::{
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::add_user_to_service::*;
 use nettu_scheduler_domain::{
-    providers::google::GoogleCalendarAccessRole, Account, BusyCalendar, ServiceResource, TimePlan,
-    ID,
+    providers::{google::GoogleCalendarAccessRole, outlook::OutlookCalendarAccessRole},
+    Account, BusyCalendar, ServiceResource, TimePlan, ID,
 };
-use nettu_scheduler_infra::{google_calendar::GoogleCalendarProvider, NettuContext};
+use nettu_scheduler_infra::{
+    google_calendar::GoogleCalendarProvider, outlook_calendar::OutlookCalendarProvider,
+    NettuContext,
+};
 use tracing::info;
 
 pub async fn add_user_to_service_controller(
@@ -184,7 +187,7 @@ pub async fn update_resource_values(
             .iter()
             .find(|busy_cal| match busy_cal {
                 BusyCalendar::Google(_) => true,
-                BusyCalendar::Nettu(_) => false,
+                _ => false,
             })
             .is_some()
         {
@@ -213,6 +216,37 @@ pub async fn update_resource_values(
     } else {
         vec![]
     };
+    let busy_outlook_calendars: Vec<String> = if let Some(busy) = &update.busy {
+        if busy
+            .iter()
+            .find(|busy_cal| match busy_cal {
+                BusyCalendar::Outlook(_) => true,
+                _ => false,
+            })
+            .is_some()
+        {
+            let mut user = ctx
+                .repos
+                .users
+                .find(&user_resource.user_id)
+                .await
+                .expect("User to exist");
+
+            match OutlookCalendarProvider::new(&mut user, ctx).await {
+                Ok(provider) => match provider.list(OutlookCalendarAccessRole::Reader).await {
+                    Ok(calendar_list) => {
+                        calendar_list.value.into_iter().map(|cal| cal.id).collect()
+                    }
+                    Err(_) => vec![],
+                },
+                Err(_) => vec![],
+            }
+        } else {
+            vec![]
+        }
+    } else {
+        vec![]
+    };
 
     if let Some(busy) = &update.busy {
         for busy_cal in busy {
@@ -226,6 +260,13 @@ pub async fn update_resource_values(
                 }
                 BusyCalendar::Google(id) => {
                     if !busy_google_calendars.contains(id) {
+                        return Err(UpdateServiceResourceError::CalendarNotOwnedByUser(
+                            id.to_string(),
+                        ));
+                    }
+                }
+                BusyCalendar::Outlook(id) => {
+                    if !busy_outlook_calendars.contains(id) {
                         return Err(UpdateServiceResourceError::CalendarNotOwnedByUser(
                             id.to_string(),
                         ));

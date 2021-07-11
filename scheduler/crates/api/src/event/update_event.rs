@@ -18,7 +18,10 @@ use nettu_scheduler_api_structs::update_event::*;
 use nettu_scheduler_domain::{
     CalendarEvent, CalendarEventReminder, Metadata, RRuleOptions, SyncedCalendarProvider, User, ID,
 };
-use nettu_scheduler_infra::{google_calendar::GoogleCalendarProvider, NettuContext};
+use nettu_scheduler_infra::{
+    google_calendar::GoogleCalendarProvider, outlook_calendar::OutlookCalendarProvider,
+    NettuContext,
+};
 
 fn handle_error(e: UseCaseErrors) -> NettuError {
     match e {
@@ -229,6 +232,24 @@ impl UseCase for UpdateEventUseCase {
                         .update_event(
                             synced_google_event.calendar_id.clone(),
                             synced_google_event.event_id.clone(),
+                            e.clone(),
+                        )
+                        .await;
+                }
+            }
+        }
+        let synced_outlook_events = e
+            .synced_events
+            .iter()
+            .filter(|synced_event| synced_event.provider == SyncedCalendarProvider::Outlook)
+            .collect::<Vec<_>>();
+        if !synced_outlook_events.is_empty() {
+            if let Ok(provider) = OutlookCalendarProvider::new(&mut self.user, ctx).await {
+                for synced_outlook_event in synced_outlook_events {
+                    let _ = provider
+                        .update_event(
+                            synced_outlook_event.calendar_id.clone(),
+                            synced_outlook_event.event_id.clone(),
                             e.clone(),
                         )
                         .await;

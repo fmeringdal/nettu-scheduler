@@ -55,6 +55,23 @@ pub mod oauth_google {
     pub type APIResponse = UserResponse;
 }
 
+pub mod oauth_outlook {
+    use super::*;
+
+    #[derive(Debug, Deserialize, Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct RequestBody {
+        pub code: String,
+    }
+
+    #[derive(Debug, Deserialize, Serialize)]
+    pub struct PathParams {
+        pub user_id: ID,
+    }
+
+    pub type APIResponse = UserResponse;
+}
+
 pub mod update_user {
     use super::*;
     use nettu_scheduler_domain::Metadata;

@@ -13,7 +13,8 @@ use nettu_scheduler_domain::{
     ServiceMultiPersonOptions, ServiceResource, ServiceWithUsers, TimePlan, TimeSpan, ID,
 };
 use nettu_scheduler_infra::{
-    google_calendar::GoogleCalendarProvider, FreeBusyProviderQuery, NettuContext,
+    google_calendar::GoogleCalendarProvider, outlook_calendar::OutlookCalendarProvider,
+    FreeBusyProviderQuery, NettuContext,
 };
 use tracing::warn;
 
@@ -304,16 +305,16 @@ impl GetServiceBookingSlotsUseCase {
             }
         }
 
-        let google_busy_calendars = user
+        let google_busy_calendar_ids = user
             .busy
             .iter()
-            .filter(|busy_cal| match busy_cal {
-                BusyCalendar::Google(_) => true,
-                _ => false,
+            .filter_map(|busy_cal| match busy_cal {
+                BusyCalendar::Google(id) => Some(id.clone()),
+                _ => None,
             })
             .collect::<Vec<_>>();
 
-        if !google_busy_calendars.is_empty() {
+        if !google_busy_calendar_ids.is_empty() {
             // TODO: no unwrap
             let mut user = ctx
                 .repos
@@ -324,19 +325,46 @@ impl GetServiceBookingSlotsUseCase {
             match GoogleCalendarProvider::new(&mut user, ctx).await {
                 Ok(google_calendar_provider) => {
                     let query = FreeBusyProviderQuery {
-                        calendar_ids: google_busy_calendars
-                            .iter()
-                            .map(|cal| match cal {
-                                BusyCalendar::Google(id) => id.clone(),
-                                _ => unreachable!("Nettu calendars should be filtered away"),
-                            })
-                            .collect(),
+                        calendar_ids: google_busy_calendar_ids,
                         end: timespan.end(),
                         start: timespan.start(),
                     };
                     let google_busy = google_calendar_provider.freebusy(query).await;
                     for google_busy_event in google_busy.inner() {
                         busy_events.push(google_busy_event);
+                    }
+                }
+                Err(_) => {}
+            }
+        }
+
+        let outlook_busy_calendar_ids = user
+            .busy
+            .iter()
+            .filter_map(|busy_cal| match busy_cal {
+                BusyCalendar::Outlook(id) => Some(id.clone()),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+
+        if !outlook_busy_calendar_ids.is_empty() {
+            // TODO: no unwrap
+            let mut user = ctx
+                .repos
+                .users
+                .find(&user.user_id)
+                .await
+                .expect("User to be found");
+            match OutlookCalendarProvider::new(&mut user, ctx).await {
+                Ok(provider) => {
+                    let query = FreeBusyProviderQuery {
+                        calendar_ids: outlook_busy_calendar_ids,
+                        end: timespan.end(),
+                        start: timespan.start(),
+                    };
+                    let outlook_busy = provider.freebusy(query).await;
+                    for outlook_busy_event in outlook_busy.inner() {
+                        busy_events.push(outlook_busy_event);
                     }
                 }
                 Err(_) => {}

@@ -12,7 +12,10 @@ use crate::{
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::delete_event::*;
 use nettu_scheduler_domain::{CalendarEvent, SyncedCalendarProvider, User, ID};
-use nettu_scheduler_infra::{google_calendar::GoogleCalendarProvider, NettuContext};
+use nettu_scheduler_infra::{
+    google_calendar::GoogleCalendarProvider, outlook_calendar::OutlookCalendarProvider,
+    NettuContext,
+};
 
 use super::subscribers::DeleteRemindersOnEventDeleted;
 
@@ -104,6 +107,23 @@ impl UseCase for DeleteEventUseCase {
                         .delete_event(
                             synced_google_event.calendar_id.clone(),
                             synced_google_event.event_id.clone(),
+                        )
+                        .await;
+                }
+            }
+        }
+        let synced_outlook_events = e
+            .synced_events
+            .iter()
+            .filter(|synced_event| synced_event.provider == SyncedCalendarProvider::Outlook)
+            .collect::<Vec<_>>();
+        if !synced_outlook_events.is_empty() {
+            if let Ok(provider) = OutlookCalendarProvider::new(&mut self.user, ctx).await {
+                for synced_outlook_event in synced_outlook_events {
+                    let _ = provider
+                        .delete_event(
+                            synced_outlook_event.calendar_id.clone(),
+                            synced_outlook_event.event_id.clone(),
                         )
                         .await;
                 }

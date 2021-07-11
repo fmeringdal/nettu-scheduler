@@ -13,7 +13,10 @@ use nettu_scheduler_domain::{
     CalendarEvent, CalendarEventReminder, Metadata, RRuleOptions, SyncedCalendar,
     SyncedCalendarEvent, SyncedCalendarProvider, User, ID,
 };
-use nettu_scheduler_infra::{google_calendar::GoogleCalendarProvider, NettuContext};
+use nettu_scheduler_infra::{
+    google_calendar::GoogleCalendarProvider, outlook_calendar::OutlookCalendarProvider,
+    NettuContext,
+};
 use tracing::info;
 
 fn handle_error(e: UseCaseErrors) -> NettuError {
@@ -155,13 +158,7 @@ impl UseCase for CreateEventUseCase {
             }
         }
 
-        let synced_google_calendar_ids = calendar
-            .synced
-            .iter()
-            .map(|synced| match synced {
-                SyncedCalendar::Google(id) => id.clone(),
-            })
-            .collect::<Vec<_>>();
+        let synced_google_calendar_ids = calendar.get_google_calendar_ids();
         if !synced_google_calendar_ids.is_empty() {
             if let Ok(provider) = GoogleCalendarProvider::new(&mut self.user, ctx).await {
                 for synced_google_calendar_id in synced_google_calendar_ids {
@@ -173,6 +170,23 @@ impl UseCase for CreateEventUseCase {
                             calendar_id: synced_google_calendar_id,
                             event_id: google_event.id,
                             provider: SyncedCalendarProvider::Google,
+                        })
+                    }
+                }
+            }
+        }
+        let synced_outlook_calendar_ids = calendar.get_outlook_calendar_ids();
+        if !synced_outlook_calendar_ids.is_empty() {
+            if let Ok(provider) = OutlookCalendarProvider::new(&mut self.user, ctx).await {
+                for synced_outlook_calendar_id in synced_outlook_calendar_ids {
+                    if let Ok(outlook_event) = provider
+                        .create_event(synced_outlook_calendar_id.clone(), e.clone())
+                        .await
+                    {
+                        e.synced_events.push(SyncedCalendarEvent {
+                            calendar_id: synced_outlook_calendar_id,
+                            event_id: outlook_event.id,
+                            provider: SyncedCalendarProvider::Outlook,
                         })
                     }
                 }
