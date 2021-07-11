@@ -14,7 +14,7 @@ pub struct EventInstance {
 /// This type contains a list of `EventInstance`s that are guaranteed to be
 /// compatible and sorted by lowest `start_ts` first.
 /// Two `EventInstance`s are compatible if they do not overlap.
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Default)]
 pub struct CompatibleInstances {
     events: VecDeque<EventInstance>,
 }

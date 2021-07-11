@@ -1,5 +1,7 @@
 use chrono::{TimeZone, Utc};
-use nettu_scheduler_domain::CalendarEvent;
+use chrono_tz::{Tz, UTC};
+use futures::future::join_all;
+use nettu_scheduler_domain::{CalendarEvent, CompatibleInstances, EventInstance};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use tracing::warn;
@@ -13,6 +15,22 @@ pub struct OutlookCalendarEventTime {
     /// A single point of time in a combined date and time representation ({date}T{time}; for example, 2017-08-29T04:00:00.0000000).
     date_time: String,
     time_zone: String,
+}
+
+impl OutlookCalendarEventTime {
+    pub fn get_timestamp_millis(&self) -> i64 {
+        self.time_zone
+            .parse::<Tz>()
+            .unwrap_or(UTC)
+            .datetime_from_str(&self.date_time, "%")
+            .map_err(|err| {
+                println!("Outlook parse error : {:?}", err);
+                println!("Value: {:?}", self);
+                err
+            })
+            .unwrap_or(UTC.timestamp(0, 0))
+            .timestamp_millis()
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -104,11 +122,11 @@ impl Into<OutlookCalendarEventAttributes> for CalendarEvent {
         OutlookCalendarEventAttributes {
             start: OutlookCalendarEventTime {
                 time_zone: "UTC".to_string(),
-                date_time: format!("{:?}", Utc.timestamp_millis(self.start_ts)),
+                date_time: format!("{}", Utc.timestamp_millis(self.start_ts).format("%+")),
             },
             end: OutlookCalendarEventTime {
                 time_zone: "UTC".to_string(),
-                date_time: format!("{:?}", Utc.timestamp_millis(self.end_ts)),
+                date_time: format!("{}", Utc.timestamp_millis(self.end_ts).format("%+")),
             },
             is_online_meeting: false,
             body: OutlookCalendarEventBody {
@@ -125,13 +143,13 @@ impl Into<OutlookCalendarEventAttributes> for CalendarEvent {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct ListCalendarsResponse {
-    value: Vec<OutlookCalendar>,
+pub struct ListCalendarsResponse {
+    pub value: Vec<OutlookCalendar>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct OutlookCalendar {
+pub struct OutlookCalendar {
     id: String,
     name: String,
     color: String,
@@ -139,7 +157,7 @@ struct OutlookCalendar {
     can_share: bool,
     can_view_private_items: bool,
     hex_color: String,
-    can_edit: bool,
+    pub can_edit: bool,
     allowed_online_meeting_providers: Vec<OutlookOnlineMeetingProvider>,
     default_online_meeting_provider: OutlookOnlineMeetingProvider,
     is_tallying_responses: bool,
@@ -157,6 +175,21 @@ struct OutlookCalendarOwner {
 pub struct OutlookCalendarRestApi {
     client: Client,
     access_token: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FreeBusyRequest {
+    pub time_min: i64,
+    pub time_max: i64,
+    pub time_zone: String,
+    pub calendars: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CalendarViewResponse {
+    pub value: Vec<OutlookCalendarEvent>,
 }
 
 impl OutlookCalendarRestApi {
@@ -284,7 +317,39 @@ impl OutlookCalendarRestApi {
             .await
     }
 
-    pub async fn freebusy(&self, body: &FreeBusyRequest) -> Result<FreeBusyResponse, ()> {
-        self.post(body, "me/calendar/getSchedule".into()).await
+    pub async fn freebusy(&self, body: &FreeBusyRequest) -> Result<CompatibleInstances, ()> {
+        let cal_futures = body
+            .calendars
+            .iter()
+            .map(|calendar_id| {
+                self.get::<CalendarViewResponse>(format!(
+                    "me/calendars/{}/calendarView?startDateTime={}&endDateTime={}",
+                    calendar_id,
+                    format!("{}", Utc.timestamp_millis(body.time_min).format("%+")),
+                    format!("{}", Utc.timestamp_millis(body.time_max).format("%+"))
+                ))
+            })
+            .collect::<Vec<_>>();
+        let calendar_views = join_all(cal_futures)
+            .await
+            .into_iter()
+            .filter_map(|res| res.ok())
+            .map(|view| {
+                view.value
+                    .into_iter()
+                    .filter(|e| match e.show_as {
+                        OutlookCalendarEventShowAs::Busy => true,
+                        _ => false,
+                    })
+                    .map(|e| EventInstance {
+                        busy: true,
+                        start_ts: e.start.get_timestamp_millis(),
+                        end_ts: e.end.get_timestamp_millis(),
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .flatten()
+            .collect::<Vec<_>>();
+        Ok(CompatibleInstances::new(calendar_views))
     }
 }
