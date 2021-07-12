@@ -37,6 +37,12 @@ impl OutlookCalendarEventTime {
 pub enum OutlookOnlineMeetingProvider {
     #[serde(rename = "teamsForBusiness")]
     BusinessTeams,
+    #[serde(rename = "skypeForConsumer")]
+    ConsumerSkype,
+    #[serde(rename = "skypeForBusiness")]
+    BusinessSkype,
+    #[serde(rename = "unknown")]
+    Unknown,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

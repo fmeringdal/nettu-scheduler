@@ -1,6 +1,6 @@
 use chrono::Utc;
 use nettu_scheduler_domain::{User, UserIntegrationProvider, UserOutlookIntegrationData};
-use tracing::log::warn;
+use tracing::{info, log::warn};
 
 use crate::NettuContext;
 use serde::Deserialize;
@@ -82,20 +82,42 @@ pub async fn exchange_code_token(req: CodeTokenRequest) -> Result<CodeTokenRespo
         ("scope", &REQUIRED_OAUTH_SCOPES.join(" ")),
         ("grant_type", "authorization_code"),
     ];
+    println!("Params : {:?}", params);
 
     let client = reqwest::Client::new();
+
     let res = client
         .post(CODE_TOKEN_EXHANGE_ENDPOINT)
         .form(&params)
         .send()
         .await
-        .map_err(|_| ())?;
+        .map_err(|e| {
+            println!("------------------------------------------------------");
+            println!("Error got : {:?}", e);
+            ()
+        })?;
 
-    let res = res.json::<CodeTokenResponse>().await.map_err(|_| ())?;
+    let res = res.json::<CodeTokenResponse>().await.map_err(|e| {
+        println!("------------------------------------------------------");
+        println!("2. Error got : {:?}", e);
 
-    let scopes = res.scope.split(" ").collect::<Vec<_>>();
+        ()
+    })?;
+
+    let scopes = res
+        .scope
+        .split(" ")
+        .into_iter()
+        .map(|scope| scope.to_lowercase())
+        .collect::<Vec<_>>();
     for required_scope in REQUIRED_OAUTH_SCOPES.iter() {
-        if !scopes.contains(&required_scope) {
+        if required_scope == &"offline_access" {
+            continue;
+        }
+        if !scopes.contains(&required_scope.to_string()) {
+            println!("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            println!("Scopes : {:?}", scopes);
+
             return Err(());
         }
     }

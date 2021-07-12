@@ -178,17 +178,16 @@ impl OutlookCalendarRestApi {
             .await
         {
             Ok(res) => res.json::<T>().await.map_err(|e| {
-                warn!("Outlook calendar api GET deserialize error: {:?}", e);
+                println!("Outlook calendar api GET deserialize error: {:?}", e);
                 ()
             }),
             Err(e) => {
-                warn!("Outlook calendar api get error: {:?}", e);
+                println!("Outlook calendar api get error: {:?}", e);
                 Err(())
             }
         }
     }
 
-    // TODO: add access role her
     pub async fn list(&self) -> Result<ListCalendarsResponse, ()> {
         self.get(format!("me/calendars")).await
     }
