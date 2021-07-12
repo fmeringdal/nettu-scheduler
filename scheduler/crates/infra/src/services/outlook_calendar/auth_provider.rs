@@ -14,9 +14,6 @@ const REQUIRED_OAUTH_SCOPES: [&str; 2] = [
     "https://graph.microsoft.com/calendars.readwrite",
     "offline_access",
 ];
-const API_ENDPOINT: &str = "https://graph.microsoft.com/v1.0/";
-const CLIENT_ID: &str = "";
-const CLIENT_SECRET: &str = "";
 
 // https://docs.microsoft.com/en-us/graph/auth-v2-user#request
 struct RefreshTokenRequest {

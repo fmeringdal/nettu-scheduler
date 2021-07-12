@@ -14,7 +14,8 @@ mod timespan;
 mod user;
 
 pub use account::{
-    Account, AccountGoogleIntegration, AccountSettings, AccountWebhookSettings, PEMKey,
+    Account, AccountGoogleIntegration, AccountOutlookIntegration, AccountSettings,
+    AccountWebhookSettings, PEMKey,
 };
 pub use calendar::{Calendar, CalendarSettings, SyncedCalendar};
 pub use date::format_date;
