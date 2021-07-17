@@ -95,6 +95,7 @@ CREATE TABLE IF NOT EXISTS service_users (
 );
 
 CREATE TABLE IF NOT EXISTS service_user_busy_calendars (
+    -- maybe add service_user_id here ?? 
     service_uid uuid NOT NULL REFERENCES services(service_uid) ON DELETE CASCADE,
     user_uid uuid NOT NULL REFERENCES users(user_uid) ON DELETE CASCADE,
     calendar_uid uuid NOT NULL REFERENCES calendars(calendar_uid) ON DELETE CASCADE,

@@ -1,5 +1,6 @@
 use chrono::TimeZone;
 use chrono_tz::{Tz, UTC};
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -22,7 +23,11 @@ impl OutlookCalendarEventTime {
         self.time_zone
             .parse::<Tz>()
             .unwrap_or(UTC)
-            .datetime_from_str(&self.date_time, "%")
+            // This is so weird formatting, but it works
+            .datetime_from_str(
+                &self.date_time[..self.date_time.find(".").unwrap()],
+                "%FT%T",
+            )
             .map_err(|err| {
                 println!("Outlook parse error : {:?}", err);
                 println!("Value: {:?}", self);
@@ -81,7 +86,7 @@ pub struct OutlookCalendarEvent {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum OutlookCalendarEventBodyContentType {
-    #[serde(rename = "HTML")]
+    #[serde(rename = "html")]
     HTML,
 }
 

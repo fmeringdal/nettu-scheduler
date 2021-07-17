@@ -1,4 +1,4 @@
-use chrono::{TimeZone, Utc};
+use chrono::{SecondsFormat, TimeZone, Utc};
 use futures::future::join_all;
 use nettu_scheduler_domain::{
     providers::outlook::{
@@ -220,6 +220,12 @@ impl OutlookCalendarRestApi {
     }
 
     pub async fn freebusy(&self, body: &FreeBusyRequest) -> Result<CompatibleInstances, ()> {
+        println!("Free busy query params");
+        println!(
+            "{}",
+            Utc.timestamp_millis(body.time_min)
+                .to_rfc3339_opts(SecondsFormat::Secs, true)
+        );
         let cal_futures = body
             .calendars
             .iter()
@@ -227,14 +233,28 @@ impl OutlookCalendarRestApi {
                 self.get::<CalendarViewResponse>(format!(
                     "me/calendars/{}/calendarView?startDateTime={}&endDateTime={}",
                     calendar_id,
-                    format!("{}", Utc.timestamp_millis(body.time_min).format("%+")),
-                    format!("{}", Utc.timestamp_millis(body.time_max).format("%+"))
+                    // format!("{}", Utc.timestamp_millis(body.time_min).format("%+")),
+                    // format!("{}", Utc.timestamp_millis(body.time_max).format("%+"))
+                    format!(
+                        "{}",
+                        Utc.timestamp_millis(body.time_min)
+                            .to_rfc3339_opts(SecondsFormat::Secs, true)
+                    ),
+                    format!(
+                        "{}",
+                        Utc.timestamp_millis(body.time_max)
+                            .to_rfc3339_opts(SecondsFormat::Secs, true)
+                    )
                 ))
             })
             .collect::<Vec<_>>();
         let calendar_views = join_all(cal_futures)
             .await
             .into_iter()
+            .map(|res| {
+                println!("Response from view: {:?}", res);
+                res
+            })
             .filter_map(|res| res.ok())
             .map(|view| {
                 view.value

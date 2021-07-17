@@ -1465,7 +1465,7 @@ dependencies = [
 
 [[package]]
 name = "nettu_scheduler_api_structs"
-version = "0.2.6"
+version = "0.2.7"
 dependencies = [
  "nettu_scheduler_domain",
  "serde",
@@ -1473,7 +1473,7 @@ dependencies = [
 
 [[package]]
 name = "nettu_scheduler_domain"
-version = "0.1.7"
+version = "0.1.8"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1512,7 +1512,7 @@ dependencies = [
 
 [[package]]
 name = "nettu_scheduler_sdk"
-version = "0.2.8"
+version = "0.2.9"
 dependencies = [
  "nettu_scheduler_api_structs",
  "nettu_scheduler_domain",

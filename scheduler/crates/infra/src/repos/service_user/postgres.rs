@@ -26,6 +26,7 @@ pub struct ServiceUserRaw {
     closest_booking_time: i64,
     furthest_booking_time: Option<i64>,
     google_busy_calendars: Vec<String>,
+    outlook_busy_calendars: Vec<String>,
 }
 
 impl Into<ServiceResource> for ServiceUserRaw {
@@ -43,6 +44,11 @@ impl Into<ServiceResource> for ServiceUserRaw {
             .into_iter()
             .map(|id| BusyCalendar::Google(id))
             .collect();
+        let mut outlook_busy_calendars = self
+            .outlook_busy_calendars
+            .into_iter()
+            .map(|id| BusyCalendar::Outlook(id))
+            .collect();
         let mut nettu_busy_calendars: Vec<BusyCalendar> = self
             .busy
             .unwrap_or_default()
@@ -51,6 +57,7 @@ impl Into<ServiceResource> for ServiceUserRaw {
             .map(|id| BusyCalendar::Nettu(ID::from(id.unwrap())))
             .collect();
         nettu_busy_calendars.append(&mut google_busy_calendars);
+        nettu_busy_calendars.append(&mut outlook_busy_calendars);
 
         ServiceResource {
             user_id: self.user_uid.into(),
@@ -240,6 +247,18 @@ impl IServiceUserRepo for PostgresServiceUserRepo {
     }
 
     async fn delete(&self, service_id: &ID, user_id: &ID) -> anyhow::Result<()> {
+        sqlx::query!(
+            r#"
+            DELETE FROM service_user_busy_calendars AS busy
+            WHERE busy.service_uid = $1 AND
+            busy.user_uid = $2
+            "#,
+            service_id.inner_ref(),
+            user_id.inner_ref()
+        )
+        .execute(&self.pool)
+        .await?;
+
         sqlx::query!(
             r#"
             DELETE FROM service_users AS s
