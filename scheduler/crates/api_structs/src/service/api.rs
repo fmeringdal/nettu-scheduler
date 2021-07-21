@@ -196,6 +196,8 @@ pub mod get_service_bookingslots {
         pub interval: i64,
         pub start_date: String,
         pub end_date: String,
+        #[serde(default)]
+        pub host_user_ids: Option<String>,
     }
 
     #[derive(Deserialize, Serialize, Debug)]

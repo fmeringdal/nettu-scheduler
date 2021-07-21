@@ -99,6 +99,7 @@ impl UseCase for CreateServiceEventIntendUseCase {
             start_date,
             iana_tz: Some("UTC".to_string()),
             interval: self.interval,
+            host_user_ids: self.host_user_ids.clone(),
         };
         let res = execute(get_bookingslots_usecase, ctx)
             .await

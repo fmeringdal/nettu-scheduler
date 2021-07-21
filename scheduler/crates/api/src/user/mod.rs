@@ -19,6 +19,8 @@ use oauth_google::*;
 use oauth_outlook::{oauth_outlook_admin_controller, oauth_outlook_controller};
 use update_user::update_user_controller;
 
+pub use get_user_freebusy::parse_vec_query_value;
+
 pub fn configure_routes(cfg: &mut web::ServiceConfig) {
     cfg.route("/user", web::post().to(create_user_controller));
     cfg.route("/me", web::get().to(get_me_controller));

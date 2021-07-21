@@ -1,5 +1,5 @@
-use crate::error::NettuError;
 use crate::shared::usecase::{execute, UseCase};
+use crate::{error::NettuError, user::parse_vec_query_value};
 use actix_web::{web, HttpRequest, HttpResponse};
 use futures::future::join_all;
 use nettu_scheduler_api_structs::get_service_bookingslots::*;
@@ -52,6 +52,8 @@ pub async fn get_service_bookingslots_controller(
 ) -> Result<HttpResponse, NettuError> {
     let query_params = query_params.0;
     let _service_id = path_params.service_id.clone();
+
+    let host_user_ids = parse_vec_query_value(&query_params.host_user_ids);
     let usecase = GetServiceBookingSlotsUseCase {
         service_id: path_params.0.service_id,
         iana_tz: query_params.iana_tz,
@@ -59,6 +61,7 @@ pub async fn get_service_bookingslots_controller(
         end_date: query_params.end_date,
         duration: query_params.duration,
         interval: query_params.interval,
+        host_user_ids,
     };
 
     execute(usecase, &ctx)
@@ -75,6 +78,7 @@ pub(crate) struct GetServiceBookingSlotsUseCase {
     pub iana_tz: Option<String>,
     pub duration: i64,
     pub interval: i64,
+    pub host_user_ids: Option<Vec<ID>>,
 }
 
 impl Into<NettuError> for UseCaseErrors {
@@ -616,6 +620,7 @@ mod test {
             iana_tz: Utc.to_string().into(),
             interval: 1000 * 60 * 15,
             service_id: service.id,
+            host_user_ids: None,
         };
 
         let res = usecase.execute(&ctx).await;
@@ -640,6 +645,7 @@ mod test {
             iana_tz: Utc.to_string().into(),
             interval: 1000 * 60 * 15,
             service_id: service.id.clone(),
+            host_user_ids: None,
         };
 
         let res = usecase.execute(&ctx).await;
@@ -667,6 +673,7 @@ mod test {
             iana_tz: Utc.to_string().into(),
             interval: 1000 * 60 * 15,
             service_id: service.id,
+            host_user_ids: None,
         };
 
         let res = usecase.execute(&ctx).await;

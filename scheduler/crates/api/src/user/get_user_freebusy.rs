@@ -8,7 +8,7 @@ use nettu_scheduler_infra::NettuContext;
 use std::collections::HashMap;
 
 /// "1,2,3" -> Vec<1,2,3>
-fn parse_vec_query_value(val: &Option<String>) -> Option<Vec<ID>> {
+pub fn parse_vec_query_value(val: &Option<String>) -> Option<Vec<ID>> {
     val.as_ref().map(|ids| {
         ids.split(',')
             .map(String::from)
