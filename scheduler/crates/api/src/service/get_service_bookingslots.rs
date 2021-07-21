@@ -158,9 +158,22 @@ impl UseCase for GetServiceBookingSlotsUseCase {
             return Err(UseCaseErrors::InvalidTimespan);
         }
 
-        for user in &service.users {
-            let timespan = timespan.clone();
-            usecase_futures.push(self.get_bookable_times(user, timespan, ctx));
+        match &self.host_user_ids {
+            Some(host_user_ids) => {
+                for user_id in host_user_ids {
+                    let user = service.users.iter().find(|u| u.user_id == *user_id);
+                    if let Some(user) = user {
+                        let timespan = timespan.clone();
+                        usecase_futures.push(self.get_bookable_times(user, timespan, ctx));
+                    }
+                }
+            }
+            None => {
+                for user in &service.users {
+                    let timespan = timespan.clone();
+                    usecase_futures.push(self.get_bookable_times(user, timespan, ctx));
+                }
+            }
         }
 
         let users_free_events = join_all(usecase_futures).await;
