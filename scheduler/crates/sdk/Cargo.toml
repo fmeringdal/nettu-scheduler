@@ -1,6 +1,6 @@
 [package]
 name = "nettu_scheduler_sdk"
-version = "0.3.0"
+version = "0.3.2"
 description = "Nettu scheduler sdk"
 license = "MIT"
 authors = ["Fredrik Meringdal"]

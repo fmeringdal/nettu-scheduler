@@ -58,6 +58,7 @@ pub struct GetServiceBookingSlotsInput {
     pub interval: i64,
     pub start_date: String,
     pub end_date: String,
+    pub host_user_ids: Option<Vec<ID>>,
 }
 
 pub struct UpdateServiceInput {
@@ -93,8 +94,20 @@ impl ServiceClient {
             "duration={}&interval={}&startDate={}&endDate={}",
             input.duration, input.interval, input.start_date, input.end_date
         );
+
         if let Some(timezone) = input.iana_tz {
             query_string = format!("{}&ianaTz={}", query_string, timezone);
+        }
+        if let Some(host_user_ids) = input.host_user_ids {
+            query_string = format!(
+                "{}&hostUserIds={}",
+                query_string,
+                host_user_ids
+                    .into_iter()
+                    .map(|id| id.to_string())
+                    .collect::<Vec<_>>()
+                    .join(",")
+            );
         }
 
         self.base

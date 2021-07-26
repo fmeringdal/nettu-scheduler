@@ -1,6 +1,6 @@
 use chrono::Utc;
 use nettu_scheduler_domain::{User, UserGoogleIntegrationData, UserIntegrationProvider};
-use tracing::log::warn;
+use tracing::{error, log::warn};
 
 use crate::NettuContext;
 use serde::Deserialize;
@@ -76,13 +76,23 @@ pub async fn exchange_code_token(req: CodeTokenRequest) -> Result<CodeTokenRespo
         .form(&params)
         .send()
         .await
-        .map_err(|_| ())?;
+        .map_err(|e| {
+            error!("1. Unable to exchange code token: {:?}", e);
+            ()
+        })?;
 
-    let res = res.json::<CodeTokenResponse>().await.map_err(|_| ())?;
+    let res = res.json::<CodeTokenResponse>().await.map_err(|e| {
+        error!("2. Unable to exchange code token: {:?}", e);
+        ()
+    })?;
 
     let scopes = res.scope.split(" ").collect::<Vec<_>>();
     for required_scope in REQUIRED_OAUTH_SCOPES.iter() {
         if !scopes.contains(&required_scope) {
+            error!(
+                "Missing scope: {:?} got scopes: {:?}",
+                required_scope, scopes
+            );
             return Err(());
         }
     }
