@@ -25,6 +25,8 @@ tracing = "0.1.19"
 tracing-subscriber = { version = "0.2.12", features = ["registry", "env-filter"] }
 tracing-bunyan-formatter = "0.2.4"
 tracing-log = "0.1.1"
+openssl-probe = "0.1.2"
+
 
 [dev-dependencies]
 nettu_scheduler_sdk = { path = "./crates/sdk" }
