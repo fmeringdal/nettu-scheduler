@@ -1,11 +1,12 @@
 name: Docker deploy
 
-on:
-  workflow_run:
-    workflows: ["Test"]
-    branches: [master]
-    types:
-      - completed
+on: [push]
+# on:
+#   workflow_run:
+#     workflows: ["Test"]
+#     branches: [master]
+#     types:
+#       - completed
 jobs:
   docker:
     runs-on: ubuntu-latest
