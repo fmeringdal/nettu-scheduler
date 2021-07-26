@@ -107,6 +107,7 @@ async fn test_collective_team_scheduling() {
             iana_tz: Some("UTC".into()),
             end_date: format_datetime(&next_week),
             start_date: format_datetime(&tomorrow),
+            host_user_ids: None,
         };
         let bookingslots = admin_client
             .service
@@ -175,6 +176,7 @@ async fn test_collective_team_scheduling() {
             iana_tz: Some("UTC".into()),
             end_date: format_datetime(&next_week),
             start_date: format_datetime(&tomorrow),
+            host_user_ids: None,
         };
         let bookingslots = admin_client
             .service
@@ -283,6 +285,7 @@ async fn test_collective_team_scheduling_is_collective() {
         iana_tz: Some("UTC".into()),
         end_date: format_datetime(&next_week),
         start_date: format_datetime(&tomorrow),
+        host_user_ids: None,
     };
     let bookingslots = admin_client
         .service

@@ -109,6 +109,7 @@ async fn test_group_team_scheduling() {
                 iana_tz: Some("UTC".into()),
                 end_date: format_datetime(&next_week),
                 start_date: format_datetime(&tomorrow),
+                host_user_ids: None,
             };
             let bookingslots = admin_client
                 .service
@@ -193,6 +194,7 @@ async fn test_group_team_scheduling() {
                 iana_tz: Some("UTC".into()),
                 end_date: format_datetime(&next_week),
                 start_date: format_datetime(&tomorrow),
+                host_user_ids: None,
             };
             let bookingslots = admin_client
                 .service
@@ -303,6 +305,7 @@ async fn test_group_team_scheduling_is_collective() {
         iana_tz: Some("UTC".into()),
         end_date: format_datetime(&next_week),
         start_date: format_datetime(&tomorrow),
+        host_user_ids: None,
     };
     let bookingslots = admin_client
         .service
@@ -401,6 +404,7 @@ async fn test_group_team_scheduling_increase_max_count() {
             iana_tz: Some("UTC".into()),
             end_date: format_datetime(&next_week),
             start_date: format_datetime(&tomorrow),
+            host_user_ids: None,
         };
         let bookingslots = admin_client
             .service
@@ -616,6 +620,7 @@ async fn test_group_team_scheduling_increase_max_count() {
             iana_tz: Some("UTC".into()),
             end_date: format_datetime(&next_week),
             start_date: format_datetime(&tomorrow),
+            host_user_ids: None,
         };
         let bookingslots = admin_client
             .service
@@ -648,6 +653,7 @@ async fn test_group_team_scheduling_increase_max_count() {
             iana_tz: Some("UTC".into()),
             end_date: format_datetime(&next_week),
             start_date: format_datetime(&tomorrow),
+            host_user_ids: None,
         };
         let bookingslots = admin_client
             .service
@@ -791,6 +797,7 @@ async fn test_group_team_scheduling_decrease_max_count() {
             iana_tz: Some("UTC".into()),
             end_date: format_datetime(&next_week),
             start_date: format_datetime(&tomorrow),
+            host_user_ids: None,
         };
         let bookingslots = admin_client
             .service
@@ -1000,6 +1007,7 @@ async fn test_combination_of_services() {
         iana_tz: Some("UTC".into()),
         end_date: format_datetime(&next_week),
         start_date: format_datetime(&tomorrow),
+        host_user_ids: None,
     };
     let bookingslots = admin_client
         .service

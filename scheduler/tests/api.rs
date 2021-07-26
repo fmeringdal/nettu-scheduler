@@ -558,6 +558,7 @@ async fn test_crud_service() {
             duration: 1000 * 60 * 30,
             iana_tz: Some("UTC".to_string()),
             interval: 1000 * 60 * 15,
+            host_user_ids: None,
             service_id: service.id.clone(),
         })
         .await
@@ -574,6 +575,7 @@ async fn test_crud_service() {
             duration: 1000 * 60 * 30,
             iana_tz: Some("UTC".to_string()),
             interval: 1000 * 60 * 15,
+            host_user_ids: None,
             service_id: service.id.clone(),
         })
         .await
