@@ -18,7 +18,7 @@ anyhow = "1.0.0"
 tokio = { version = "0.2", features = ["macros"] }
 tracing = "0.1.25"
 tracing-futures = "0.2.5"
-reqwest = { version = "0.10.10", features = ["json", "native-tls"] }
+reqwest = { version = "0.10.10", features = ["json"] }
 uuid = { version="0.8.2", features = ["serde"]}
 futures = "0.3" 
 sqlx={version = "0.4.2", features = ["postgres", "runtime-actix-rustls", "uuid", "json"] }

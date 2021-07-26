@@ -20,4 +20,7 @@ RUN strip target/x86_64-unknown-linux-musl/release/nettu_scheduler
 FROM scratch
 WORKDIR /home/rust/
 COPY --from=builder /home/rust/target/x86_64-unknown-linux-musl/release/nettu_scheduler .
+
+RUN apk add --no-cache ca-certificates
+
 ENTRYPOINT ["./nettu_scheduler"]
