@@ -21,8 +21,6 @@ RUN apt-get update
 # Get Rust
 RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
 
-# RUN echo 'source $HOME/.cargo/env' >> $HOME/.bashrc
-# Add .cargo/bin to PATH
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 WORKDIR /home/rust/
@@ -35,10 +33,7 @@ COPY . .
 
 ENV DATABASE_URL "postgresql://postgres:postgres@172.17.0.1:5432/nettuscheduler"
 
-# RUN cargo test
-# RUN cargo build 
 RUN cargo build --release
-RUN echo $(ls -1 ./target)
 RUN cp /home/rust/target/release/nettu_scheduler .
 
 ENTRYPOINT ["./nettu_scheduler"]
