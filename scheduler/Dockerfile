@@ -36,7 +36,9 @@ COPY . .
 ENV DATABASE_URL "postgresql://postgres:postgres@172.17.0.1:5432/nettuscheduler"
 
 # RUN cargo test
-RUN cargo build 
-# RUN cargo build --release
+# RUN cargo build 
+RUN cargo build --release
 RUN echo $(ls -1 ./target)
-RUN exit 1
+COPY /home/rust/target/release/nettu_scheduler .
+
+ENTRYPOINT ["./nettu_scheduler"]
