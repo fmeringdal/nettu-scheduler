@@ -9,6 +9,8 @@ RUN apt-get install -y \
 	curl \
 	pkg-config \
 	libssl-dev
+RUN apt-get dist-upgrade
+
 
 
 # Update new packages
@@ -27,6 +29,7 @@ COPY . .
 
 # USER root
 # RUN chown -R rust:rust .
+
 # USER rust
 
 ENV DATABASE_URL "postgresql://postgres:postgres@172.17.0.1:5432/nettuscheduler"
