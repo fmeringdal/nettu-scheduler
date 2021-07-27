@@ -6,7 +6,10 @@ RUN apt-get update
 # Get Ubuntu packages
 RUN apt-get install -y \
 	build-essential \
-	curl
+	curl \
+	pkg-config \
+	libssl-dev
+
 
 # Update new packages
 RUN apt-get update
