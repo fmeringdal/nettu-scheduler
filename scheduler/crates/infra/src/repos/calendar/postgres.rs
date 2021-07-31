@@ -1,5 +1,5 @@
 use super::ICalendarRepo;
-use crate::repos::shared::query_structs::MetadataFindQuery;
+use crate::repos::shared::query_structs::{extract_metadata, to_metadata, MetadataFindQuery};
 use nettu_scheduler_domain::{Calendar, Metadata, ID};
 use sqlx::{
     types::{Json, Uuid},
@@ -22,40 +22,16 @@ struct CalendarRaw {
     user_uid: Uuid,
     account_uid: Uuid,
     settings: serde_json::Value,
-    synced: Option<serde_json::Value>,
     metadata: Vec<String>,
-}
-
-fn extract_metadata(entries: Vec<String>) -> Metadata {
-    entries
-        .into_iter()
-        .map(|row| {
-            let key_value = row.splitn(2, "_").collect::<Vec<_>>();
-            (key_value[0].to_string(), key_value[1].to_string())
-        })
-        .collect()
-}
-
-fn to_metadata(metadata: Metadata) -> Vec<String> {
-    metadata
-        .into_iter()
-        .map(|row| format!("{}_{}", row.0, row.1))
-        .collect()
 }
 
 impl Into<Calendar> for CalendarRaw {
     fn into(self) -> Calendar {
-        let synced = match self.synced {
-            Some(json) => serde_json::from_value(json).unwrap(),
-            None => vec![],
-        };
-
         Calendar {
             id: self.calendar_uid.into(),
             user_id: self.user_uid.into(),
             account_id: self.account_uid.into(),
             settings: serde_json::from_value(self.settings).unwrap(),
-            synced,
             metadata: extract_metadata(self.metadata),
         }
     }
@@ -67,14 +43,13 @@ impl ICalendarRepo for PostgresCalendarRepo {
         let metadata = to_metadata(calendar.metadata.clone());
         sqlx::query!(
             r#"
-            INSERT INTO calendars(calendar_uid, user_uid, account_uid, settings, synced, metadata)
-            VALUES($1, $2, $3, $4, $5, $6)
+            INSERT INTO calendars(calendar_uid, user_uid, account_uid, settings, metadata)
+            VALUES($1, $2, $3, $4, $5)
             "#,
             calendar.id.inner_ref(),
             calendar.user_id.inner_ref(),
             calendar.account_id.inner_ref(),
             Json(&calendar.settings) as _,
-            Json(&calendar.synced) as _,
             &metadata
         )
         .execute(&self.pool)
@@ -91,15 +66,13 @@ impl ICalendarRepo for PostgresCalendarRepo {
             SET user_uid = $2,
             account_uid = $3,
             settings = $4,
-            synced = $5,
-            metadata = $6
+            metadata = $5
             WHERE calendar_uid = $1
             "#,
             calendar.id.inner_ref(),
             calendar.user_id.inner_ref(),
             calendar.account_id.inner_ref(),
             Json(&calendar.settings) as _,
-            Json(&calendar.synced) as _,
             &metadata
         )
         .execute(&self.pool)

@@ -9,7 +9,6 @@ pub struct User {
     pub id: ID,
     pub account_id: ID,
     pub metadata: Metadata,
-    pub integrations: Vec<UserIntegrationProvider>,
 }
 
 impl User {
@@ -18,7 +17,6 @@ impl User {
             id: Default::default(),
             account_id,
             metadata: Default::default(),
-            integrations: Default::default(),
         }
     }
 }
@@ -39,22 +37,51 @@ impl Meta<ID> for User {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "provider")]
+pub struct UserIntegration {
+    pub user_id: ID,
+    pub account_id: ID,
+    pub provider: UserIntegrationProvider,
+    pub refresh_token: String,
+    pub access_token: String,
+    pub access_token_expires_ts: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub enum UserIntegrationProvider {
-    Google(UserGoogleIntegrationData),
-    Outlook(UserOutlookIntegrationData),
+    Google,
+    Outlook,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct UserGoogleIntegrationData {
-    pub refresh_token: String,
-    pub access_token: String,
-    pub access_token_expires_ts: i64,
+impl Into<String> for UserIntegrationProvider {
+    fn into(self) -> String {
+        match self {
+            Self::Google => "google".into(),
+            Self::Outlook => "outlook".into(),
+        }
+    }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct UserOutlookIntegrationData {
-    pub refresh_token: String,
-    pub access_token: String,
-    pub access_token_expires_ts: i64,
+impl Into<UserIntegrationProvider> for String {
+    fn into(self) -> UserIntegrationProvider {
+        match &self[..] {
+            "google" => UserIntegrationProvider::Google,
+            "outlook" => UserIntegrationProvider::Outlook,
+            _ => unreachable!("Invalid provider"),
+        }
+    }
 }
+
+// #[derive(Debug, Clone, Serialize, Deserialize)]
+// pub struct UserGoogleIntegrationData {
+//     pub refresh_token: String,
+//     pub access_token: String,
+//     pub access_token_expires_ts: i64,
+// }
+
+// #[derive(Debug, Clone, Serialize, Deserialize)]
+// pub struct UserOutlookIntegrationData {
+//     pub refresh_token: String,
+//     pub access_token: String,
+//     pub access_token_expires_ts: i64,
+// }

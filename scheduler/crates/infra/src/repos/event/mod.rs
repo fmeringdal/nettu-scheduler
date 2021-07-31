@@ -1,5 +1,6 @@
 mod event;
 mod event_reminders_expansion_jobs;
+mod event_synced;
 mod reminder;
 
 pub use event::IEventRepo;

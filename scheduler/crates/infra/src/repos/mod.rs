@@ -1,13 +1,17 @@
 mod account;
+mod account_integrations;
 mod calendar;
+mod calendar_synced;
 mod event;
 // mod kv;
 mod reservation;
 mod schedule;
 mod service;
 mod service_user;
+mod service_user_busy_calendars;
 mod shared;
-mod user;
+pub(crate) mod user;
+mod user_integrations;
 
 use account::{IAccountRepo, PostgresAccountRepo};
 use calendar::{ICalendarRepo, PostgresCalendarRepo};

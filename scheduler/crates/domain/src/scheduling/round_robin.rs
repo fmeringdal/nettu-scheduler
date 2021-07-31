@@ -217,7 +217,6 @@ mod tests {
             reminder: Default::default(),
             service_id: Default::default(),
             metadata: Default::default(),
-            synced_events: Default::default(),
         }
     }
 

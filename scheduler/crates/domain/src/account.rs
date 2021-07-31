@@ -1,4 +1,7 @@
-use crate::shared::entity::{Entity, ID};
+use crate::{
+    shared::entity::{Entity, ID},
+    UserIntegrationProvider,
+};
 use nettu_scheduler_utils::create_random_secret;
 use serde::{Deserialize, Serialize};
 
@@ -36,8 +39,6 @@ impl PEMKey {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AccountSettings {
     pub webhook: Option<AccountWebhookSettings>,
-    pub google: Option<AccountGoogleIntegration>,
-    pub outlook: Option<AccountOutlookIntegration>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -78,25 +79,17 @@ impl AccountSettings {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct AccountGoogleIntegration {
+pub struct AccountIntegration {
+    pub account_id: ID,
     pub client_id: String,
     pub client_secret: String,
     pub redirect_uri: String,
-}
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct AccountOutlookIntegration {
-    pub client_id: String,
-    pub client_secret: String,
-    pub redirect_uri: String,
+    pub provider: UserIntegrationProvider,
 }
 
 impl Default for AccountSettings {
     fn default() -> Self {
-        Self {
-            webhook: None,
-            google: None,
-            outlook: None,
-        }
+        Self { webhook: None }
     }
 }
 

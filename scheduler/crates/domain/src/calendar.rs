@@ -3,7 +3,7 @@ use crate::{
         entity::{Entity, ID},
         metadata::Metadata,
     },
-    Meta,
+    Meta, UserIntegrationProvider,
 };
 use chrono_tz::{Tz, UTC};
 use serde::{Deserialize, Serialize};
@@ -14,7 +14,6 @@ pub struct Calendar {
     pub user_id: ID,
     pub account_id: ID,
     pub settings: CalendarSettings,
-    pub synced: Vec<SyncedCalendar>,
     pub metadata: Metadata,
 }
 
@@ -28,10 +27,11 @@ impl Meta<ID> for Calendar {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(tag = "provider", content = "id")]
-pub enum SyncedCalendar {
-    Google(String),
-    Outlook(String),
+pub struct SyncedCalendar {
+    pub provider: UserIntegrationProvider,
+    pub calendar_id: ID,
+    pub user_id: ID,
+    pub ext_calendar_id: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -78,28 +78,7 @@ impl Calendar {
             account_id: account_id.clone(),
             settings: Default::default(),
             metadata: Default::default(),
-            synced: Default::default(),
         }
-    }
-
-    pub fn get_outlook_calendar_ids(&self) -> Vec<String> {
-        self.synced
-            .iter()
-            .filter_map(|cal| match cal {
-                SyncedCalendar::Outlook(id) => Some(id.clone()),
-                _ => None,
-            })
-            .collect::<Vec<_>>()
-    }
-
-    pub fn get_google_calendar_ids(&self) -> Vec<String> {
-        self.synced
-            .iter()
-            .filter_map(|cal| match cal {
-                SyncedCalendar::Google(id) => Some(id.clone()),
-                _ => None,
-            })
-            .collect::<Vec<_>>()
     }
 }
 

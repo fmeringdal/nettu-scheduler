@@ -6,6 +6,7 @@ mod get_user_freebusy;
 mod get_users_by_meta;
 mod oauth_google;
 mod oauth_outlook;
+mod remove_google_integration;
 mod update_user;
 
 use actix_web::web;

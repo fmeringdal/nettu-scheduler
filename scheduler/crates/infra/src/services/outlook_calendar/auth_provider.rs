@@ -1,5 +1,6 @@
+use crate::repos::user::UserWithIntegrations;
 use chrono::Utc;
-use nettu_scheduler_domain::{User, UserIntegrationProvider, UserOutlookIntegrationData};
+use nettu_scheduler_domain::{User, UserIntegration, UserIntegrationProvider};
 use tracing::{info, log::warn};
 
 use crate::NettuContext;
@@ -125,17 +126,15 @@ pub async fn exchange_code_token(req: CodeTokenRequest) -> Result<CodeTokenRespo
     Ok(res)
 }
 
-pub async fn get_access_token(user: &mut User, ctx: &NettuContext) -> Option<String> {
+pub async fn get_access_token(
+    user: &mut UserWithIntegrations,
+    ctx: &NettuContext,
+) -> Option<String> {
     // Check if user has connected to outlook
-    let mut integration: Option<&mut UserOutlookIntegrationData> = None;
-    for user_integration in &mut user.integrations {
-        match user_integration {
-            UserIntegrationProvider::Outlook(data) => {
-                integration = Some(data);
-            }
-            _ => (),
-        }
-    }
+    let integration = user.integrations.iter_mut().find(|i| match i.provider {
+        UserIntegrationProvider::Outlook => true,
+        _ => false,
+    });
     if integration.is_none() {
         return None;
     }
@@ -176,9 +175,14 @@ pub async fn get_access_token(user: &mut User, ctx: &NettuContext) -> Option<Str
             let access_token = integration.access_token.clone();
 
             // Update user with updated google tokens
-            if let Err(e) = ctx.repos.users.save(&user).await {
+            if let Err(e) = ctx
+                .repos
+                .users
+                .save_integration(&user.id, &integration)
+                .await
+            {
                 warn!(
-                    "Unable to save updated google credentials for user. Error: {:?}",
+                    "Unable to save updated outlook credentials for user. Error: {:?}",
                     e
                 );
             }

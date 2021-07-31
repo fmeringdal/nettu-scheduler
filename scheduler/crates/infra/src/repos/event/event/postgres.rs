@@ -1,5 +1,5 @@
 use super::{IEventRepo, MostRecentCreatedServiceEvents};
-use crate::repos::{shared::query_structs::MetadataFindQuery, user};
+use crate::repos::{extract_metadata, shared::query_structs::MetadataFindQuery, to_metadata};
 use nettu_scheduler_domain::{CalendarEvent, CalendarEventReminder, Metadata, RRuleOptions, ID};
 use sqlx::{
     types::{Json, Uuid},
@@ -46,26 +46,8 @@ struct EventRaw {
     recurrence: Option<serde_json::Value>,
     exdates: Vec<i64>,
     reminder: Option<serde_json::Value>,
-    synced_events: Option<serde_json::Value>,
     service_uid: Option<Uuid>,
     metadata: Vec<String>,
-}
-
-fn extract_metadata(entries: Vec<String>) -> Metadata {
-    entries
-        .into_iter()
-        .map(|row| {
-            let key_value = row.splitn(2, "_").collect::<Vec<_>>();
-            (key_value[0].to_string(), key_value[1].to_string())
-        })
-        .collect()
-}
-
-fn to_metadata(metadata: Metadata) -> Vec<String> {
-    metadata
-        .into_iter()
-        .map(|row| format!("{}_{}", row.0, row.1))
-        .collect()
 }
 
 impl Into<CalendarEvent> for EventRaw {
@@ -77,10 +59,6 @@ impl Into<CalendarEvent> for EventRaw {
         let reminder: Option<CalendarEventReminder> = match self.reminder {
             Some(json) => serde_json::from_value(json).unwrap(),
             None => None,
-        };
-        let synced_events = match self.synced_events {
-            Some(json) => serde_json::from_value(json).unwrap(),
-            None => vec![],
         };
 
         CalendarEvent {
@@ -98,7 +76,6 @@ impl Into<CalendarEvent> for EventRaw {
             exdates: self.exdates,
             reminder,
             service_id: self.service_uid.map(|id| id.into()),
-            synced_events,
             metadata: extract_metadata(self.metadata),
         }
     }
@@ -125,10 +102,9 @@ impl IEventRepo for PostgresEventRepo {
                 exdates,
                 reminder,
                 service_uid,
-                synced_events,
                 metadata
             )
-            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
             "#,
             e.id.inner_ref(),
             e.calendar_id.inner_ref(),
@@ -144,7 +120,6 @@ impl IEventRepo for PostgresEventRepo {
             &e.exdates,
             Json(&e.reminder) as _,
             e.service_id.as_ref().map(|id| id.inner_ref()),
-            Json(&e.synced_events) as _,
             &metadata
         )
         .execute(&self.pool)
@@ -171,8 +146,7 @@ impl IEventRepo for PostgresEventRepo {
                 exdates = $12,
                 reminder = $13,
                 service_uid = $14,
-                synced_events = $15,
-                metadata = $16
+                metadata = $15
             WHERE event_uid = $1
             "#,
             e.id.inner_ref(),
@@ -189,7 +163,6 @@ impl IEventRepo for PostgresEventRepo {
             &e.exdates,
             Json(&e.reminder) as _,
             e.service_id.as_ref().map(|id| id.inner_ref()),
-            Json(&e.synced_events) as _,
             &metadata
         )
         .execute(&self.pool)

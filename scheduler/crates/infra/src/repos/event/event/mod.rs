@@ -70,7 +70,6 @@ mod tests {
             reminder: Default::default(),
             start_ts: Default::default(),
             updated: Default::default(),
-            synced_events: Default::default(),
             user_id: user_id.clone(),
         }
     }

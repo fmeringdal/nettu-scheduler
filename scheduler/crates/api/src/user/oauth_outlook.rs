@@ -6,7 +6,7 @@ use crate::{error::NettuError, shared::auth::protect_account_route};
 use actix_web::{web, HttpRequest, HttpResponse};
 use chrono::Utc;
 use nettu_scheduler_api_structs::oauth_outlook::*;
-use nettu_scheduler_domain::{User, UserIntegrationProvider, UserOutlookIntegrationData};
+use nettu_scheduler_domain::{User, UserIntegration, UserOutlookIntegrationData};
 use nettu_scheduler_infra::{outlook_calendar::auth_provider, NettuContext};
 
 fn handle_error(e: UseCaseErrors) -> NettuError {
@@ -114,7 +114,7 @@ impl UseCase for OAuthOutlookUseCase {
                 .integrations
                 .iter_mut()
                 .find_map(|integration| match integration {
-                    UserIntegrationProvider::Outlook(data) => Some(data),
+                    UserIntegration::Outlook(data) => Some(data),
                     _ => None,
                 })
         {
@@ -125,7 +125,7 @@ impl UseCase for OAuthOutlookUseCase {
         } else {
             self.user
                 .integrations
-                .push(UserIntegrationProvider::Outlook(user_integration));
+                .push(UserIntegration::Outlook(user_integration));
         }
 
         ctx.repos

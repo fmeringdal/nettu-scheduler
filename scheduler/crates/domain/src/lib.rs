@@ -13,15 +13,10 @@ mod shared;
 mod timespan;
 mod user;
 
-pub use account::{
-    Account, AccountGoogleIntegration, AccountOutlookIntegration, AccountSettings,
-    AccountWebhookSettings, PEMKey,
-};
+pub use account::{Account, AccountIntegration, AccountSettings, AccountWebhookSettings, PEMKey};
 pub use calendar::{Calendar, CalendarSettings, SyncedCalendar};
 pub use date::format_date;
-pub use event::{
-    CalendarEvent, CalendarEventReminder, SyncedCalendarEvent, SyncedCalendarProvider,
-};
+pub use event::{CalendarEvent, CalendarEventReminder, SyncedCalendarEvent};
 pub use event_instance::{
     get_free_busy, CompatibleInstances, EventInstance, EventWithInstances, FreeBusy,
 };
@@ -35,6 +30,4 @@ pub use shared::entity::{Entity, ID};
 pub use shared::metadata::{Meta, Metadata};
 pub use shared::recurrence::{RRuleFrequency, RRuleOptions};
 pub use timespan::TimeSpan;
-pub use user::{
-    User, UserGoogleIntegrationData, UserIntegrationProvider, UserOutlookIntegrationData,
-};
+pub use user::{User, UserIntegration, UserIntegrationProvider};

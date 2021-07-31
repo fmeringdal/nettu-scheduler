@@ -7,7 +7,6 @@ pub struct CalendarDTO {
     pub id: ID,
     pub user_id: ID,
     pub settings: CalendarSettingsDTO,
-    pub synced: Vec<SyncedCalendar>,
     pub metadata: Metadata,
 }
 
@@ -24,7 +23,6 @@ impl CalendarDTO {
             id: calendar.id.clone(),
             user_id: calendar.user_id.clone(),
             settings: CalendarSettingsDTO::new(&calendar.settings),
-            synced: calendar.synced,
             metadata: calendar.metadata,
         }
     }

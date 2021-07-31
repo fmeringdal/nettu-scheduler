@@ -6,7 +6,7 @@ use crate::{error::NettuError, shared::auth::protect_account_route};
 use actix_web::{web, HttpRequest, HttpResponse};
 use chrono::Utc;
 use nettu_scheduler_api_structs::oauth_google::*;
-use nettu_scheduler_domain::{User, UserGoogleIntegrationData, UserIntegrationProvider};
+use nettu_scheduler_domain::{User, UserGoogleIntegrationData, UserIntegration};
 use nettu_scheduler_infra::{google_calendar::auth_provider, NettuContext};
 
 fn handle_error(e: UseCaseErrors) -> NettuError {
@@ -114,7 +114,7 @@ impl UseCase for OAuthGoogleUseCase {
                 .integrations
                 .iter_mut()
                 .find_map(|integration| match integration {
-                    UserIntegrationProvider::Google(data) => Some(data),
+                    UserIntegration::Google(data) => Some(data),
                     _ => None,
                 })
         {
@@ -125,7 +125,7 @@ impl UseCase for OAuthGoogleUseCase {
         } else {
             self.user
                 .integrations
-                .push(UserIntegrationProvider::Google(user_integration));
+                .push(UserIntegration::Google(user_integration));
         }
 
         ctx.repos

@@ -1,5 +1,8 @@
 use super::IServiceRepo;
-use crate::repos::{service_user::ServiceUserRaw, shared::query_structs::MetadataFindQuery};
+use crate::repos::{
+    extract_metadata, service_user::ServiceUserRaw, shared::query_structs::MetadataFindQuery,
+    to_metadata,
+};
 use nettu_scheduler_domain::{Metadata, Service, ServiceWithUsers, ID};
 use sqlx::{
     types::{Json, Uuid},
@@ -31,23 +34,6 @@ struct ServiceWithUsersRaw {
     users: Option<serde_json::Value>,
     multi_person: serde_json::Value,
     metadata: Vec<String>,
-}
-
-fn extract_metadata(entries: Vec<String>) -> Metadata {
-    entries
-        .into_iter()
-        .map(|row| {
-            let key_value = row.splitn(2, "_").collect::<Vec<_>>();
-            (key_value[0].to_string(), key_value[1].to_string())
-        })
-        .collect()
-}
-
-fn to_metadata(metadata: &Metadata) -> Vec<String> {
-    metadata
-        .into_iter()
-        .map(|row| format!("{}_{}", row.0, row.1))
-        .collect()
 }
 
 impl Into<Service> for ServiceRaw {
@@ -88,7 +74,7 @@ impl IServiceRepo for PostgresServiceRepo {
             service.id.inner_ref(),
             service.account_id.inner_ref(),
             Json(&service.multi_person) as _,
-            &to_metadata(&service.metadata)
+            &to_metadata(service.metadata.clone())
         )
         .execute(&self.pool)
         .await?;
@@ -106,7 +92,7 @@ impl IServiceRepo for PostgresServiceRepo {
             "#,
             service.id.inner_ref(),
             Json(&service.multi_person) as _,
-            &to_metadata(&service.metadata)
+            &to_metadata(service.metadata.clone())
         )
         .execute(&self.pool)
         .await?;
@@ -137,11 +123,13 @@ impl IServiceRepo for PostgresServiceRepo {
             r#"
             SELECT s.*, jsonb_agg((u.*)) AS users FROM services AS s 
             LEFT JOIN (
-                SELECT su.*, array_agg(c.calendar_uid) AS busy FROM service_users AS su 
+                SELECT su.*, array_agg(c.calendar_uid) AS busy, jsonb_agg(json_build_object('provider', ext_c.provider, 'busy_calendars', ext_c.busy_calendars)) as busy_ext FROM service_users AS su 
                 LEFT JOIN service_user_busy_calendars as c
                 ON su.service_uid = c.service_uid AND su.user_uid = c.user_uid
+                LEFT JOIN service_user_external_busy_calendars as ext_c
+                ON su.service_uid = ext_c.service_uid AND su.user_uid = ext_c.user_uid
                 GROUP BY su.service_uid, su.user_uid
-            ) as u
+            ) AS u
             ON u.service_uid = s.service_uid 
             WHERE s.service_uid = $1
             GROUP BY s.service_uid

@@ -1,23 +1,77 @@
--- insert into accounts (account_uid, secret_api_key, public_jwt_key, settings) values ('510ae4e5-3fa5-4ab4-8f87-fe33c2c9205c', 'GDPOE7N7', '1SacOWlj', '{}');
--- insert into users (user_uid, account_uid, metadata) values ('a6b512cf-c4d8-49ac-9103-c9d8e9453bf2', '510ae4e5-3fa5-4ab4-8f87-fe33c2c9205c', '{}');
--- insert into users (user_uid, account_uid, metadata) values ('7b89f555-f728-409d-b06a-896063b38462', '510ae4e5-3fa5-4ab4-8f87-fe33c2c9205c', '{}');
--- insert into services (service_uid, account_uid, metadata) values ('6d469137-9b66-40fe-a314-3c07a1200415', '510ae4e5-3fa5-4ab4-8f87-fe33c2c9205c', '{}');
--- insert into service_users (service_uid, user_uid, "buffer", closest_booking_time) values ('6d469137-9b66-40fe-a314-3c07a1200415', 'a6b512cf-c4d8-49ac-9103-c9d8e9453bf2', 0, 0);
--- insert into service_users (service_uid, user_uid, "buffer", closest_booking_time) values ('6d469137-9b66-40fe-a314-3c07a1200415', '7b89f555-f728-409d-b06a-896063b38462', 0, 0);
--- insert into calendars (calendar_uid, user_uid, account_uid, settings, metadata) values ('f5444e78-b224-46ef-b75b-deed50790838', '7b89f555-f728-409d-b06a-896063b38462', '510ae4e5-3fa5-4ab4-8f87-fe33c2c9205c', '{}', '{}');
--- insert into service_user_busy_calendars (service_uid, user_uid, calendar_uid) values ('6d469137-9b66-40fe-a314-3c07a1200415', '7b89f555-f728-409d-b06a-896063b38462', 'f5444e78-b224-46ef-b75b-deed50790838');
+insert into accounts (account_uid, secret_api_key, public_jwt_key, settings) values 
+	('510ae4e5-3fa5-4ab4-8f87-fe33c2c9205c', 'GDPOE7N7', '1SacOWlj', '{}');
+insert into users (user_uid, account_uid, metadata) values 
+	('a6b512cf-c4d8-49ac-9103-c9d8e9453bf2', '510ae4e5-3fa5-4ab4-8f87-fe33c2c9205c', '{}');
+insert into user_integrations (user_uid, refresh_token, access_token, access_token_expires_ts, "provider") values 
+	('a6b512cf-c4d8-49ac-9103-c9d8e9453bf2', 'ref_123', 'acc_1231', 1232131, 'google');
+insert into user_integrations (user_uid, refresh_token, access_token, access_token_expires_ts, "provider") values 
+	('a6b512cf-c4d8-49ac-9103-c9d8e9453bf2', 'ref_123_o', 'acc_1231_o', 1232131, 'outlook');
+insert into services (service_uid, account_uid, multi_person, metadata) values 
+	('6d469137-9b66-40fe-a314-3c07a1200415', '510ae4e5-3fa5-4ab4-8f87-fe33c2c9205c', '{}', '{}');
+insert into service_users (service_uid, user_uid, buffer_before, buffer_after, closest_booking_time) values 
+	('6d469137-9b66-40fe-a314-3c07a1200415', 'a6b512cf-c4d8-49ac-9103-c9d8e9453bf2', 0, 0, 0);
+insert into calendars (calendar_uid, user_uid, account_uid, settings, metadata) values 
+	('f5444e78-b224-46ef-b75b-deed50790838', 'a6b512cf-c4d8-49ac-9103-c9d8e9453bf2', '510ae4e5-3fa5-4ab4-8f87-fe33c2c9205c', '{}', '{}');
+insert into calendars (calendar_uid, user_uid, account_uid, settings, metadata) values 
+	('5688e62f-cee2-466e-b2f2-5b0717558a11', 'a6b512cf-c4d8-49ac-9103-c9d8e9453bf2', '510ae4e5-3fa5-4ab4-8f87-fe33c2c9205c', '{}', '{}');
+insert into service_user_busy_calendars (service_uid, user_uid, calendar_uid) values 
+	('6d469137-9b66-40fe-a314-3c07a1200415', 'a6b512cf-c4d8-49ac-9103-c9d8e9453bf2', 'f5444e78-b224-46ef-b75b-deed50790838');
+insert into service_user_busy_calendars (service_uid, user_uid, calendar_uid) values 
+	('6d469137-9b66-40fe-a314-3c07a1200415', 'a6b512cf-c4d8-49ac-9103-c9d8e9453bf2', '5688e62f-cee2-466e-b2f2-5b0717558a11');
+insert into service_user_external_busy_calendars (service_uid, user_uid, busy_calendars, "provider") values 
+	('6d469137-9b66-40fe-a314-3c07a1200415', 'a6b512cf-c4d8-49ac-9103-c9d8e9453bf2', '{busy_1, busy_2}', 'google');
+insert into service_user_external_busy_calendars (service_uid, user_uid, busy_calendars, "provider") values 
+	('6d469137-9b66-40fe-a314-3c07a1200415', 'a6b512cf-c4d8-49ac-9103-c9d8e9453bf2', '{busy_1, busy_2, busy_3}', 'outlook');
 
--- ALTER TABLE service_users 
--- DROP COLUMN "buffer";
--- ALTER TABLE service_users
--- ADD COLUMN buffer_after BIGINT NOT NULL;
--- ALTER TABLE service_users
--- ADD COLUMN buffer_before BIGINT NOT NULL;
--- ALTER TABLE users
--- ADD COLUMN integrations JSON;
--- ALTER TABLE calendars
--- ADD COLUMN synced JSON;
--- ALTER TABLE calendar_events
--- ADD COLUMN synced_events JSON;
-ALTER TABLE service_users
-ADD COLUMN google_busy_calendars text[] NOT NULL;
+
+
+SELECT jsonb_agg((u.*)) AS users FROM services AS s 
+LEFT JOIN (
+    SELECT su.*, array_agg(c.calendar_uid) AS busy, jsonb_agg(json_build_object('provider', ext_c.provider, 'busy_calendars', ext_c.busy_calendars)) as busy_ext FROM service_users AS su 
+    LEFT JOIN service_user_busy_calendars as c
+    ON su.service_uid = c.service_uid AND su.user_uid = c.user_uid
+    LEFT JOIN service_user_external_busy_calendars as ext_c
+    ON su.service_uid = ext_c.service_uid AND su.user_uid = ext_c.user_uid
+    GROUP BY su.service_uid, su.user_uid
+) as u
+ON u.service_uid = s.service_uid 
+GROUP BY s.service_uid;
+
+
+SELECT jsonb_agg((u.*)) AS users FROM services AS s 
+LEFT JOIN (
+    SELECT su.*, array_agg(c.calendar_uid) AS busy, jsonb_agg(json_build_object('provider', ext_c.provider, 'busy_calendars', ext_c.busy_calendars)) as busy_ext FROM service_users AS su 
+    LEFT JOIN service_user_busy_calendars as c
+    ON su.service_uid = c.service_uid AND su.user_uid = c.user_uid
+    LEFT JOIN service_user_external_busy_calendars as ext_c
+    ON su.service_uid = ext_c.service_uid AND su.user_uid = ext_c.user_uid
+    GROUP BY su.service_uid, su.user_uid
+) as u
+ON u.service_uid = s.service_uid 
+GROUP BY s.service_uid;
+
+SELECT jsonb_agg((u.*)) AS users FROM services AS s 
+LEFT JOIN (
+    SELECT su.*, array_agg(c.calendar_uid) AS busy, jsonb_agg(json_build_object('provider', ext_c.provider, 'busy_calendars', ext_c.busy_calendars)) as busy_ext FROM service_users AS su 
+    LEFT JOIN service_user_busy_calendars as c
+    ON su.service_uid = c.service_uid AND su.user_uid = c.user_uid
+    LEFT JOIN service_user_external_busy_calendars as ext_c
+    ON su.service_uid = ext_c.service_uid AND su.user_uid = ext_c.user_uid
+    GROUP BY su.service_uid, su.user_uid, busy_ext #>> '{provider}'
+) as u
+ON u.service_uid = s.service_uid 
+GROUP BY s.service_uid;
+
+CREATE VIEW service_users_info AS
+	SELECT su.*, array_agg(c.calendar_uid) AS busy, jsonb_agg(json_build_object('provider', ext_c.provider, 'busy_calendars', ext_c.busy_calendars)) as busy_ext FROM service_users AS su 
+	LEFT JOIN service_user_busy_calendars as c
+	ON su.service_uid = c.service_uid AND su.user_uid = c.user_uid
+	LEFT JOIN service_user_external_busy_calendars as ext_c
+	ON su.service_uid = ext_c.service_uid AND su.user_uid = ext_c.user_uid
+	GROUP BY su.service_uid, su.user_uid;
+
+
+SELECT s.*, jsonb_agg((u.*)) AS users FROM services AS s 
+LEFT JOIN service_users_info AS u
+ON u.service_uid = s.service_uid 
+GROUP BY s.service_uid;

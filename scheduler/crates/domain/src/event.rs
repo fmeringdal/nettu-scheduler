@@ -3,7 +3,7 @@ use crate::{
     shared::entity::Entity,
     shared::{metadata::Metadata, recurrence::RRuleOptions},
     timespan::TimeSpan,
-    Meta,
+    Meta, UserIntegrationProvider,
 };
 use crate::{event_instance::EventInstance, shared::entity::ID};
 use chrono::{prelude::*, Duration};
@@ -27,20 +27,16 @@ pub struct CalendarEvent {
     pub reminder: Option<CalendarEventReminder>,
     pub service_id: Option<ID>,
     pub metadata: Metadata,
-    pub synced_events: Vec<SyncedCalendarEvent>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum SyncedCalendarProvider {
-    Google,
-    Outlook,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SyncedCalendarEvent {
-    pub event_id: String,
-    pub calendar_id: String,
-    pub provider: SyncedCalendarProvider,
+    pub event_id: ID,
+    pub calendar_id: ID,
+    pub user_id: ID,
+    pub ext_event_id: String,
+    pub ext_calendar_id: String,
+    pub provider: UserIntegrationProvider,
 }
 
 impl Entity<ID> for CalendarEvent {
@@ -217,7 +213,6 @@ mod test {
             metadata: Default::default(),
             created: Default::default(),
             updated: Default::default(),
-            synced_events: Default::default(),
         };
 
         let oc = event.expand(None, &settings);
@@ -246,7 +241,6 @@ mod test {
             metadata: Default::default(),
             created: Default::default(),
             updated: Default::default(),
-            synced_events: Default::default(),
         };
 
         let oc = event.expand(None, &settings);
@@ -296,7 +290,6 @@ mod test {
                 metadata: Default::default(),
                 created: Default::default(),
                 updated: Default::default(),
-                synced_events: Default::default(),
             };
 
             assert!(!event.set_recurrence(rrule, &settings, true));
@@ -346,7 +339,6 @@ mod test {
                 metadata: Default::default(),
                 created: Default::default(),
                 updated: Default::default(),
-                synced_events: Default::default(),
             };
 
             assert!(event.set_recurrence(rrule, &settings, true));

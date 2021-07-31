@@ -41,7 +41,6 @@ mod tests {
             user_id: user.id.clone(),
             reminder: None,
             service_id: None,
-            synced_events: vec![],
             metadata: Default::default(),
             updated: Default::default(),
             created: Default::default(),

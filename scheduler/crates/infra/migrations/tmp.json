@@ -1,0 +1,44 @@
+[
+  {
+    "busy": [
+      "5688e62f-cee2-466e-b2f2-5b0717558a11",
+      "5688e62f-cee2-466e-b2f2-5b0717558a11",
+      "f5444e78-b224-46ef-b75b-deed50790838",
+      "f5444e78-b224-46ef-b75b-deed50790838"
+    ],
+    "busy_ext": [
+      {
+        "provider": "google",
+        "user_uid": "a6b512cf-c4d8-49ac-9103-c9d8e9453bf2",
+        "service_uid": "6d469137-9b66-40fe-a314-3c07a1200415",
+        "busy_calendars": ["busy_1", "busy_2"]
+      },
+      {
+        "provider": "outlook",
+        "user_uid": "a6b512cf-c4d8-49ac-9103-c9d8e9453bf2",
+        "service_uid": "6d469137-9b66-40fe-a314-3c07a1200415",
+        "busy_calendars": ["busy_1", "busy_2", "busy_3"]
+      },
+      {
+        "provider": "google",
+        "user_uid": "a6b512cf-c4d8-49ac-9103-c9d8e9453bf2",
+        "service_uid": "6d469137-9b66-40fe-a314-3c07a1200415",
+        "busy_calendars": ["busy_1", "busy_2"]
+      },
+      {
+        "provider": "outlook",
+        "user_uid": "a6b512cf-c4d8-49ac-9103-c9d8e9453bf2",
+        "service_uid": "6d469137-9b66-40fe-a314-3c07a1200415",
+        "busy_calendars": ["busy_1", "busy_2", "busy_3"]
+      }
+    ],
+    "user_uid": "a6b512cf-c4d8-49ac-9103-c9d8e9453bf2",
+    "service_uid": "6d469137-9b66-40fe-a314-3c07a1200415",
+    "buffer_after": 0,
+    "buffer_before": 0,
+    "closest_booking_time": 0,
+    "furthest_booking_time": null,
+    "available_calendar_uid": null,
+    "available_schedule_uid": null
+  }
+]
