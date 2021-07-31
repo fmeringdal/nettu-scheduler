@@ -1,6 +1,6 @@
 use super::IServiceUserRepo;
 
-use nettu_scheduler_domain::{BusyCalendar, ServiceResource, TimePlan, ID};
+use nettu_scheduler_domain::{ServiceResource, TimePlan, ID};
 use serde::Deserialize;
 use sqlx::{types::Uuid, FromRow, PgPool};
 
@@ -20,12 +20,11 @@ pub struct ServiceUserRaw {
     user_uid: Uuid,
     available_calendar_uid: Option<Uuid>,
     available_schedule_uid: Option<Uuid>,
-    busy: Option<Vec<Option<Uuid>>>,
     buffer_after: i64,
     buffer_before: i64,
     closest_booking_time: i64,
     furthest_booking_time: Option<i64>,
-    google_busy_calendars: Vec<String>,
+    google_busy_calendarss: Vec<String>,
     outlook_busy_calendars: Vec<String>,
 }
 
@@ -39,33 +38,12 @@ impl Into<ServiceResource> for ServiceUserRaw {
             TimePlan::Empty
         };
 
-        let mut google_busy_calendars = self
-            .google_busy_calendars
-            .into_iter()
-            .map(|id| BusyCalendar::Google(id))
-            .collect();
-        let mut outlook_busy_calendars = self
-            .outlook_busy_calendars
-            .into_iter()
-            .map(|id| BusyCalendar::Outlook(id))
-            .collect();
-        let mut nettu_busy_calendars: Vec<BusyCalendar> = self
-            .busy
-            .unwrap_or_default()
-            .into_iter()
-            .filter(|id| id.is_some())
-            .map(|id| BusyCalendar::Nettu(ID::from(id.unwrap())))
-            .collect();
-        nettu_busy_calendars.append(&mut google_busy_calendars);
-        nettu_busy_calendars.append(&mut outlook_busy_calendars);
-
         ServiceResource {
             user_id: self.user_uid.into(),
             service_id: self.service_uid.into(),
             availability,
             buffer_after: self.buffer_after,
             buffer_before: self.buffer_before,
-            busy: nettu_busy_calendars,
             closest_booking_time: self.closest_booking_time,
             furthest_booking_time: self.furthest_booking_time,
         }
@@ -136,7 +114,7 @@ impl IServiceUserRepo for PostgresServiceUserRepo {
 
     async fn find(&self, service_id: &ID, user_id: &ID) -> Option<ServiceResource> {
         // https://github.com/launchbadge/sqlx/issues/367
-        let schedule: ServiceUserRaw = match sqlx::query_as(
+        let service_user: ServiceUserRaw = match sqlx::query_as(
             r#"
             SELECT su.*, array_agg(c.calendar_uid) AS busy FROM service_users as su 
             LEFT JOIN service_user_busy_calendars AS c
@@ -153,12 +131,12 @@ impl IServiceUserRepo for PostgresServiceUserRepo {
             Ok(s) => s,
             Err(_e) => return None,
         };
-        Some(schedule.into())
+        Some(service_user.into())
     }
 
     async fn find_by_user(&self, user_id: &ID) -> Vec<ServiceResource> {
         // https://github.com/launchbadge/sqlx/issues/367
-        let schedules: Vec<ServiceUserRaw> = match sqlx::query_as(
+        let service_users: Vec<ServiceUserRaw> = match sqlx::query_as(
             r#"
             SELECT su.*, array_agg(c.calendar_uid) AS busy FROM service_users as su 
             LEFT JOIN service_user_busy_calendars AS c
@@ -174,7 +152,7 @@ impl IServiceUserRepo for PostgresServiceUserRepo {
             Ok(s) => s,
             Err(_e) => return vec![],
         };
-        schedules.into_iter().map(|s| s.into()).collect()
+        service_users.into_iter().map(|u| u.into()).collect()
     }
 
     async fn delete(&self, service_id: &ID, user_id: &ID) -> anyhow::Result<()> {

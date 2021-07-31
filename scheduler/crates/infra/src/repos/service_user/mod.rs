@@ -17,7 +17,7 @@ pub trait IServiceUserRepo: Send + Sync {
 mod tests {
     use crate::setup_context;
     use nettu_scheduler_domain::{
-        Account, BusyCalendar, Calendar, Entity, Service, ServiceResource, TimePlan, User,
+        Account, Calendar, Entity, Service, ServiceResource, TimePlan, User,
     };
 
     #[tokio::test]
@@ -31,7 +31,7 @@ mod tests {
         ctx.repos.services.insert(&service).await.unwrap();
 
         let service_user =
-            ServiceResource::new(user.id.clone(), service.id.clone(), TimePlan::Empty, vec![]);
+            ServiceResource::new(user.id.clone(), service.id.clone(), TimePlan::Empty);
         // Insert
         assert!(ctx.repos.service_users.insert(&service_user).await.is_ok());
 
@@ -56,7 +56,6 @@ mod tests {
         let mut service_user = res;
         service_user.buffer_after = 60;
         service_user.availability = TimePlan::Calendar(calendar.id.clone());
-        service_user.busy = vec![BusyCalendar::Nettu(calendar.id.clone())];
         assert!(ctx.repos.service_users.save(&service_user).await.is_ok());
 
         let updated_service_user = ctx
@@ -66,7 +65,6 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(updated_service_user.buffer_after, service_user.buffer_after);
-        assert_eq!(updated_service_user.busy, service_user.busy);
         assert_eq!(updated_service_user.user_id, service_user.user_id);
         assert_eq!(updated_service_user.service_id, service_user.service_id);
 

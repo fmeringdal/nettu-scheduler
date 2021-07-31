@@ -47,16 +47,8 @@ mod tests {
         let user = User::new(account.id.clone());
         ctx.repos.users.insert(&user).await.unwrap();
 
-        let calendar = Calendar::new(&user.id, &account.id);
-        ctx.repos.calendars.insert(&calendar).await.unwrap();
-
         let timeplan = TimePlan::Empty;
-        let resource = ServiceResource::new(
-            user.id.clone(),
-            service.id.clone(),
-            timeplan,
-            vec![BusyCalendar::Nettu(calendar.id.clone())],
-        );
+        let resource = ServiceResource::new(user.id.clone(), service.id.clone(), timeplan);
         assert!(ctx.repos.service_users.insert(&resource).await.is_ok());
 
         let mut metadata = Metadata::new();
@@ -76,25 +68,6 @@ mod tests {
             .expect("To get service");
         assert_eq!(*service.metadata.get("foo").unwrap(), "bar".to_string());
         assert_eq!(service.users.len(), 1);
-        assert_eq!(
-            service.users[0].busy,
-            vec![BusyCalendar::Nettu(calendar.id.clone())]
-        );
-
-        ctx.repos
-            .calendars
-            .delete(&calendar.id)
-            .await
-            .expect("To delete calendar ");
-
-        let service = ctx
-            .repos
-            .services
-            .find_with_users(&service.id)
-            .await
-            .expect("To get service");
-        assert_eq!(service.users.len(), 1);
-        assert!(service.users[0].busy.is_empty());
 
         ctx.repos
             .users
