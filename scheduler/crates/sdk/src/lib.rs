@@ -29,7 +29,7 @@ pub use event::{
 pub use nettu_scheduler_domain::{
     providers::google::*, providers::outlook::*, scheduling::RoundRobinAlgorithm, BusyCalendar,
     CalendarEventReminder, RRuleOptions, ScheduleRule, ServiceMultiPersonOptions, SyncedCalendar,
-    SyncedCalendarProvider, TimePlan, ID,
+    TimePlan, UserIntegrationProvider, ID,
 };
 pub use schedule::{CreateScheduleInput, UpdateScheduleInput};
 pub use service::{

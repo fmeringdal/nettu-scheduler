@@ -29,9 +29,9 @@ pub struct ServiceResource {
     /// Note: If there are busy `CalendarEvent`s in the `Calendar` then the user
     /// will not be bookable during that time.
     pub availability: TimePlan,
-    /// List of `Calendar` ids that should be subtracted from the availability
-    /// time plan.
-    pub busy: Vec<BusyCalendar>,
+    // /// List of `Calendar` ids that should be subtracted from the availability
+    // /// time plan.
+    // pub busy: Vec<BusyCalendar>,
     /// This `ServiceResource` will not be bookable this amount of *minutes*
     /// after a meeting. A `CalendarEvent` will be interpreted as a meeting
     /// if the attribute `services` on the `CalendarEvent` includes this
@@ -54,17 +54,11 @@ pub struct ServiceResource {
 }
 
 impl ServiceResource {
-    pub fn new(
-        user_id: ID,
-        service_id: ID,
-        availability: TimePlan,
-        busy: Vec<BusyCalendar>,
-    ) -> Self {
+    pub fn new(user_id: ID, service_id: ID, availability: TimePlan) -> Self {
         Self {
             service_id,
             user_id,
             availability,
-            busy,
             buffer_after: 0,
             buffer_before: 0,
             closest_booking_time: 0,
@@ -74,10 +68,6 @@ impl ServiceResource {
 
     pub fn set_availability(&mut self, availability: TimePlan) {
         self.availability = availability;
-    }
-
-    pub fn set_busy(&mut self, busy: Vec<BusyCalendar>) {
-        self.busy = busy;
     }
 
     fn valid_buffer(&self, buffer: i64) -> bool {
@@ -109,53 +99,6 @@ impl ServiceResource {
         match &self.availability {
             TimePlan::Schedule(id) => Some(id.clone()),
             _ => None,
-        }
-    }
-
-    pub fn contains_calendar(&self, calendar_id: &str) -> bool {
-        match &self.availability {
-            TimePlan::Calendar(id) if id.to_string() == calendar_id => {
-                return true;
-            }
-            _ => (),
-        }
-
-        for busy in &self.busy {
-            match busy {
-                BusyCalendar::Nettu(id) if id.to_string() == calendar_id => return true,
-                BusyCalendar::Google(id) if id == calendar_id => return true,
-                _ => (),
-            }
-        }
-
-        false
-    }
-
-    pub fn remove_calendar(&mut self, calendar_id: &str) {
-        match &self.availability {
-            TimePlan::Calendar(id) if id.to_string() == calendar_id => {
-                self.availability = TimePlan::Empty;
-            }
-            _ => (),
-        }
-
-        self.busy.retain(|busy_cal| match busy_cal {
-            BusyCalendar::Nettu(cal_id) => cal_id.to_string() != calendar_id,
-            BusyCalendar::Google(cal_id) => cal_id != calendar_id,
-            BusyCalendar::Outlook(cal_id) => cal_id != calendar_id,
-        });
-    }
-
-    pub fn contains_schedule(&self, schedule_id: &ID) -> bool {
-        matches!(&self.availability, TimePlan::Schedule(id) if id == schedule_id)
-    }
-
-    pub fn remove_schedule(&mut self, schedule_id: &ID) {
-        match &self.availability {
-            TimePlan::Schedule(id) if id == schedule_id => {
-                self.availability = TimePlan::Empty;
-            }
-            _ => (),
         }
     }
 }

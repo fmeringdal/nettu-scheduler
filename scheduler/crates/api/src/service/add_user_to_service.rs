@@ -13,7 +13,6 @@ use nettu_scheduler_infra::{
     google_calendar::GoogleCalendarProvider, outlook_calendar::OutlookCalendarProvider,
     NettuContext,
 };
-use tracing::info;
 
 pub async fn add_user_to_service_controller(
     http_req: HttpRequest,
@@ -97,12 +96,8 @@ impl UseCase for AddUserToServiceUseCase {
             _ => return Err(UseCaseErrors::ServiceNotFound),
         };
 
-        let mut user_resource = ServiceResource::new(
-            self.user_id.clone(),
-            service.id.clone(),
-            TimePlan::Empty,
-            Vec::new(),
-        );
+        let mut user_resource =
+            ServiceResource::new(self.user_id.clone(), service.id.clone(), TimePlan::Empty);
 
         update_resource_values(
             &mut user_resource,
