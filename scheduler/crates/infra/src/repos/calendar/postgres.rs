@@ -1,6 +1,6 @@
 use super::ICalendarRepo;
 use crate::repos::shared::query_structs::{extract_metadata, to_metadata, MetadataFindQuery};
-use nettu_scheduler_domain::{Calendar, Metadata, ID};
+use nettu_scheduler_domain::{Calendar, ID};
 use sqlx::{
     types::{Json, Uuid},
     Done, FromRow, PgPool,

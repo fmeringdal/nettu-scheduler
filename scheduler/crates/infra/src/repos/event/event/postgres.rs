@@ -1,6 +1,6 @@
 use super::{IEventRepo, MostRecentCreatedServiceEvents};
 use crate::repos::{extract_metadata, shared::query_structs::MetadataFindQuery, to_metadata};
-use nettu_scheduler_domain::{CalendarEvent, CalendarEventReminder, Metadata, RRuleOptions, ID};
+use nettu_scheduler_domain::{CalendarEvent, CalendarEventReminder, RRuleOptions, ID};
 use sqlx::{
     types::{Json, Uuid},
     FromRow, PgPool,

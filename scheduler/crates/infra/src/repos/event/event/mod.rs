@@ -777,7 +777,7 @@ mod tests {
             &ctx,
         )
         .await;
-        let not_service_event = generate_event_with_time(
+        let _not_service_event = generate_event_with_time(
             &account.id,
             &calendar.id,
             &user.id,

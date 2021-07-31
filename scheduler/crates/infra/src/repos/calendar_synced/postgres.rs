@@ -1,7 +1,7 @@
 use super::ICalendarSyncedRepo;
 use nettu_scheduler_domain::{SyncedCalendar, ID};
 use sqlx::{
-    types::{Json, Uuid},
+    types::{Uuid},
     FromRow, PgPool,
 };
 

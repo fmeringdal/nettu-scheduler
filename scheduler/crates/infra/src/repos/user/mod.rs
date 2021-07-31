@@ -1,6 +1,6 @@
 mod postgres;
 
-use nettu_scheduler_domain::{Metadata, User, UserIntegration, UserIntegrationProvider, ID};
+use nettu_scheduler_domain::{Metadata, User, UserIntegration, ID};
 pub use postgres::PostgresUserRepo;
 
 use super::shared::query_structs::MetadataFindQuery;

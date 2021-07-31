@@ -3,7 +3,7 @@ use crate::repos::{
     extract_metadata, service_user::ServiceUserRaw, shared::query_structs::MetadataFindQuery,
     to_metadata,
 };
-use nettu_scheduler_domain::{Metadata, Service, ServiceWithUsers, ID};
+use nettu_scheduler_domain::{Service, ServiceWithUsers, ID};
 use sqlx::{
     types::{Json, Uuid},
     FromRow, PgPool,

@@ -1,7 +1,7 @@
 use super::{BusyCalendarIdentifier, ExternalBusyCalendarIdentifier, IServiceUserBusyCalendarRepo};
 
-use serde::Deserialize;
-use sqlx::{types::Uuid, FromRow, PgPool};
+
+use sqlx::{PgPool};
 
 pub struct PostgresServiceUseBusyCalendarRepo {
     pool: PgPool,

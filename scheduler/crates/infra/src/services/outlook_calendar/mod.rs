@@ -8,7 +8,7 @@ use crate::repos::user::UserWithIntegrations;
 use calendar_api::OutlookCalendarRestApi;
 use nettu_scheduler_domain::{
     providers::outlook::{OutlookCalendarAccessRole, OutlookCalendarEvent},
-    CalendarEvent, CompatibleInstances, User,
+    CalendarEvent, CompatibleInstances,
 };
 
 // https://docs.microsoft.com/en-us/graph/api/resources/event?view=graph-rest-1.0
