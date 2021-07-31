@@ -36,7 +36,7 @@ impl Into<AccountIntegration> for AccountIntegrationRaw {
 #[async_trait::async_trait]
 impl IAccountIntegrationRepo for PostgresAccountIntegrationRepo {
     async fn insert(&self, integration: &AccountIntegration) -> anyhow::Result<()> {
-        let provider: String = integration.provider.into();
+        let provider: String = integration.provider.clone().into();
         sqlx::query!(
             r#"
             INSERT INTO account_integrations(account_uid, client_id, client_secret, redirect_uri, provider)
@@ -72,12 +72,15 @@ impl IAccountIntegrationRepo for PostgresAccountIntegrationRepo {
         account_id: &ID,
         provider: UserIntegrationProvider,
     ) -> anyhow::Result<()> {
+        let provider: String = provider.into();
         match sqlx::query!(
             "
             DELETE FROM account_integrations
-            WHERE account_uid = $1
+            WHERE account_uid = $1 AND
+            provider = $2
             ",
-            account_id.inner_ref()
+            account_id.inner_ref(),
+            provider
         )
         .execute(&self.pool)
         .await

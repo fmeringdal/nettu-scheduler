@@ -1,7 +1,7 @@
 use crate::repos::user::UserWithIntegrations;
 use chrono::Utc;
-use nettu_scheduler_domain::{User, UserIntegration, UserIntegrationProvider};
-use tracing::{info, log::warn};
+use nettu_scheduler_domain::UserIntegrationProvider;
+use tracing::error;
 
 use crate::NettuContext;
 use serde::Deserialize;
@@ -149,14 +149,14 @@ pub async fn get_access_token(
     // Access token has or will expire soon, now renew it
 
     // The account contains the google client id and secret
-    let account = match ctx.repos.accounts.find(&user.account_id).await {
-        Some(a) => a,
-        None => return None,
+    let acc_integrations = match ctx.repos.account_integrations.find(&user.account_id).await {
+        Ok(acc_integrations) => acc_integrations,
+        Err(_) => return None,
     };
-    let outlook_settings = match account.settings.outlook {
-        Some(settings) => settings,
-        None => return None,
-    };
+    let outlook_settings = acc_integrations.into_iter().find(|i| match i.provider {
+        UserIntegrationProvider::Outlook => true,
+        _ => false,
+    })?;
 
     let refresh_token_req = RefreshTokenRequest {
         client_id: outlook_settings.client_id,
@@ -175,13 +175,8 @@ pub async fn get_access_token(
             let access_token = integration.access_token.clone();
 
             // Update user with updated google tokens
-            if let Err(e) = ctx
-                .repos
-                .users
-                .save_integration(&user.id, &integration)
-                .await
-            {
-                warn!(
+            if let Err(e) = ctx.repos.user_integrations.save(&integration).await {
+                error!(
                     "Unable to save updated outlook credentials for user. Error: {:?}",
                     e
                 );
@@ -191,7 +186,7 @@ pub async fn get_access_token(
             Some(access_token)
         }
         Err(e) => {
-            warn!("Unable to refresh access token for user. Error: {:?}", e);
+            error!("Unable to refresh access token for user. Error: {:?}", e);
             None
         }
     }

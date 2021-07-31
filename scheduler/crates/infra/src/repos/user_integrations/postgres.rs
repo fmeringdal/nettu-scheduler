@@ -39,7 +39,7 @@ impl Into<UserIntegration> for UserIntegrationRaw {
 #[async_trait::async_trait]
 impl IUserIntegrationRepo for PostgresUserIntegrationRepo {
     async fn insert(&self, integration: &UserIntegration) -> anyhow::Result<()> {
-        let provider: String = integration.provider.into();
+        let provider: String = integration.provider.clone().into();
         sqlx::query!(
             r#"
             INSERT INTO user_integrations(user_uid, provider, refresh_token, access_token, access_token_expires_ts)
@@ -94,12 +94,15 @@ impl IUserIntegrationRepo for PostgresUserIntegrationRepo {
     }
 
     async fn delete(&self, user_id: &ID, provider: UserIntegrationProvider) -> anyhow::Result<()> {
+        let provider: String = provider.into();
         match sqlx::query!(
             "
             DELETE FROM user_integrations
-            WHERE user_uid = $1
+            WHERE user_uid = $1 AND 
+            provider = $2
             ",
-            user_id.inner_ref()
+            user_id.inner_ref(),
+            provider
         )
         .execute(&self.pool)
         .await
