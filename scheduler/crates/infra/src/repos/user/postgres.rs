@@ -2,7 +2,6 @@ use super::{IUserRepo, UserWithIntegrations};
 use crate::repos::user_integrations::UserIntegrationRaw;
 use crate::repos::{extract_metadata, shared::query_structs::MetadataFindQuery, to_metadata};
 use nettu_scheduler_domain::{User, UserIntegration, UserIntegrationProvider, ID};
-use serde::{Deserialize, Serialize};
 use sqlx::{
     types::{Json, Uuid},
     FromRow, PgPool,
