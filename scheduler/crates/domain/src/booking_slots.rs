@@ -1,5 +1,5 @@
 use crate::{
-    date, event_instance::EventInstance, CompatibleInstances, ServiceMultiPersonOptions, ID,
+    date, event_instance::EventInstance, CompatibleInstances, ID,
 };
 use chrono::prelude::*;
 use chrono_tz::Tz;
