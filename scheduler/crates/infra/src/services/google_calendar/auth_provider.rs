@@ -1,9 +1,8 @@
-use crate::repos::user::UserWithIntegrations;
 use chrono::Utc;
-use nettu_scheduler_domain::UserIntegrationProvider;
+use nettu_scheduler_domain::{IntegrationProvider, User};
 use tracing::error;
 
-use crate::NettuContext;
+use crate::{CodeTokenRequest, CodeTokenResponse, NettuContext};
 use serde::Deserialize;
 
 // https://developers.google.com/identity/protocols/oauth2/web-server#httprest_3
@@ -45,23 +44,6 @@ async fn refresh_access_token(req: RefreshTokenRequest) -> Result<RefreshTokenRe
     res.json::<RefreshTokenResponse>().await.map_err(|_| ())
 }
 
-// Google api actually returns snake case response
-pub struct CodeTokenRequest {
-    pub client_id: String,
-    pub client_secret: String,
-    pub code: String,
-    pub redirect_uri: String,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct CodeTokenResponse {
-    pub access_token: String,
-    pub scope: String,
-    pub token_type: String,
-    pub expires_in: i64,
-    pub refresh_token: String,
-}
-
 pub async fn exchange_code_token(req: CodeTokenRequest) -> Result<CodeTokenResponse, ()> {
     let params = [
         ("client_id", req.client_id.as_str()),
@@ -101,19 +83,13 @@ pub async fn exchange_code_token(req: CodeTokenRequest) -> Result<CodeTokenRespo
     Ok(res)
 }
 
-pub async fn get_access_token(
-    user: &mut UserWithIntegrations,
-    ctx: &NettuContext,
-) -> Option<String> {
+pub async fn get_access_token(user: &User, ctx: &NettuContext) -> Option<String> {
     // Check if user has connected to google
-    let integration = user.integrations.iter_mut().find(|i| match i.provider {
-        UserIntegrationProvider::Google => true,
+    let mut integrations = ctx.repos.user_integrations.find(&user.id).await.ok()?;
+    let integration = integrations.iter_mut().find(|i| match i.provider {
+        IntegrationProvider::Google => true,
         _ => false,
-    });
-    if integration.is_none() {
-        return None;
-    }
-    let integration = integration.unwrap();
+    })?;
 
     let now = Utc::now().timestamp_millis();
     let one_minute_in_millis = 1000 * 60;
@@ -129,7 +105,7 @@ pub async fn get_access_token(
         Err(_) => return None,
     };
     let google_settings = acc_integrations.into_iter().find(|i| match i.provider {
-        UserIntegrationProvider::Google => true,
+        IntegrationProvider::Google => true,
         _ => false,
     })?;
 

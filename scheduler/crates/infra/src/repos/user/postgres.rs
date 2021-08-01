@@ -1,11 +1,7 @@
-use super::{IUserRepo, UserWithIntegrations};
-use crate::repos::user_integrations::UserIntegrationRaw;
+use super::IUserRepo;
 use crate::repos::{extract_metadata, shared::query_structs::MetadataFindQuery, to_metadata};
 use nettu_scheduler_domain::{User, ID};
-use sqlx::{
-    types::{Uuid},
-    FromRow, PgPool,
-};
+use sqlx::{types::Uuid, FromRow, PgPool};
 
 pub struct PostgresUserRepo {
     pool: PgPool,
@@ -22,29 +18,6 @@ struct UserRaw {
     user_uid: Uuid,
     account_uid: Uuid,
     metadata: Vec<String>,
-}
-
-#[derive(Debug, FromRow)]
-struct UserWithIntegrationsRaw {
-    user_uid: Uuid,
-    account_uid: Uuid,
-    integrations: Option<serde_json::Value>,
-    metadata: Vec<String>,
-}
-
-impl Into<UserWithIntegrations> for UserWithIntegrationsRaw {
-    fn into(self) -> UserWithIntegrations {
-        let integrations: Vec<UserIntegrationRaw> = match self.integrations {
-            Some(json) => serde_json::from_value(json).unwrap(),
-            None => vec![],
-        };
-        UserWithIntegrations {
-            id: self.user_uid.into(),
-            account_id: self.account_uid.into(),
-            integrations: integrations.into_iter().map(|i| i.into()).collect(),
-            metadata: extract_metadata(self.metadata),
-        }
-    }
 }
 
 impl Into<User> for UserRaw {
@@ -112,14 +85,12 @@ impl IUserRepo for PostgresUserRepo {
         }
     }
 
-    async fn find(&self, user_id: &ID) -> Option<UserWithIntegrations> {
-        let user: UserWithIntegrationsRaw = match sqlx::query_as!(
-            UserWithIntegrationsRaw,
+    async fn find(&self, user_id: &ID) -> Option<User> {
+        let user: UserRaw = match sqlx::query_as!(
+            UserRaw,
             r#"
-            SELECT u.*, json_agg((ui.*)) AS integrations  FROM users AS u
-            LEFT JOIN user_integrations AS ui ON ui.user_uid = u.user_uid
+            SELECT * FROM users AS u
             WHERE u.user_uid = $1
-            GROUP BY u.user_uid
             "#,
             user_id.inner_ref(),
         )
@@ -132,19 +103,17 @@ impl IUserRepo for PostgresUserRepo {
         Some(user.into())
     }
 
-    async fn find_many(&self, user_ids: &[ID]) -> Vec<UserWithIntegrations> {
+    async fn find_many(&self, user_ids: &[ID]) -> Vec<User> {
         let user_ids = user_ids
             .iter()
             .map(|id| id.inner_ref().clone())
             .collect::<Vec<_>>();
 
-        let users: Vec<UserWithIntegrationsRaw> = sqlx::query_as!(
-            UserWithIntegrationsRaw,
+        let users: Vec<UserRaw> = sqlx::query_as!(
+            UserRaw,
             r#"
-            SELECT u.*, json_agg((ui.*)) AS integrations  FROM users AS u
-            LEFT JOIN user_integrations AS ui ON ui.user_uid = u.user_uid
+            SELECT * FROM users AS u
             WHERE u.user_uid = ANY($1)
-            GROUP BY u.user_uid
             "#,
             &user_ids
         )
@@ -155,19 +124,13 @@ impl IUserRepo for PostgresUserRepo {
         users.into_iter().map(|u| u.into()).collect()
     }
 
-    async fn find_by_account_id(
-        &self,
-        user_id: &ID,
-        account_id: &ID,
-    ) -> Option<UserWithIntegrations> {
-        let user: UserWithIntegrationsRaw = match sqlx::query_as!(
-            UserWithIntegrationsRaw,
+    async fn find_by_account_id(&self, user_id: &ID, account_id: &ID) -> Option<User> {
+        let user: UserRaw = match sqlx::query_as!(
+            UserRaw,
             r#"
-            SELECT u.*, json_agg((ui.*)) AS integrations  FROM users AS u
-            LEFT JOIN user_integrations AS ui ON ui.user_uid = u.user_uid
+            SELECT * FROM users AS u
             WHERE u.user_uid = $1 AND
             u.account_uid = $2
-            GROUP BY u.user_uid
             "#,
             user_id.inner_ref(),
             account_id.inner_ref()
@@ -181,16 +144,14 @@ impl IUserRepo for PostgresUserRepo {
         Some(user.into())
     }
 
-    async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<UserWithIntegrations> {
+    async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<User> {
         let key = format!("{}_{}", query.metadata.key, query.metadata.value);
 
-        let users: Vec<UserWithIntegrationsRaw> = sqlx::query_as!(
-            UserWithIntegrationsRaw,
+        let users: Vec<UserRaw> = sqlx::query_as!(
+            UserRaw,
             r#"
-            SELECT u.*, json_agg((ui.*)) AS integrations  FROM users AS u
-            LEFT JOIN user_integrations AS ui ON ui.user_uid = u.user_uid
+            SELECT * FROM users AS u
             WHERE u.account_uid = $1 AND metadata @> ARRAY[$2]
-            GROUP BY u.user_uid
             LIMIT $3
             OFFSET $4
             "#,

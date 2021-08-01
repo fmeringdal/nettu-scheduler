@@ -1,5 +1,5 @@
 use super::IAccountIntegrationRepo;
-use nettu_scheduler_domain::{AccountIntegration, UserIntegrationProvider, ID};
+use nettu_scheduler_domain::{AccountIntegration, IntegrationProvider, ID};
 use sqlx::{types::Uuid, Done, FromRow, PgPool};
 
 pub struct PostgresAccountIntegrationRepo {
@@ -67,11 +67,7 @@ impl IAccountIntegrationRepo for PostgresAccountIntegrationRepo {
         Ok(integrations.into_iter().map(|i| i.into()).collect())
     }
 
-    async fn delete(
-        &self,
-        account_id: &ID,
-        provider: UserIntegrationProvider,
-    ) -> anyhow::Result<()> {
+    async fn delete(&self, account_id: &ID, provider: IntegrationProvider) -> anyhow::Result<()> {
         let provider: String = provider.into();
         match sqlx::query!(
             "

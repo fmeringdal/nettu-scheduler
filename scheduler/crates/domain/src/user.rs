@@ -40,20 +40,20 @@ impl Meta<ID> for User {
 pub struct UserIntegration {
     pub user_id: ID,
     pub account_id: ID,
-    pub provider: UserIntegrationProvider,
+    pub provider: IntegrationProvider,
     pub refresh_token: String,
     pub access_token: String,
     pub access_token_expires_ts: i64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub enum UserIntegrationProvider {
+pub enum IntegrationProvider {
     Google,
     Outlook,
 }
 
-impl Into<String> for UserIntegrationProvider {
+impl Into<String> for IntegrationProvider {
     fn into(self) -> String {
         match self {
             Self::Google => "google".into(),
@@ -62,11 +62,11 @@ impl Into<String> for UserIntegrationProvider {
     }
 }
 
-impl Into<UserIntegrationProvider> for String {
-    fn into(self) -> UserIntegrationProvider {
+impl Into<IntegrationProvider> for String {
+    fn into(self) -> IntegrationProvider {
         match &self[..] {
-            "google" => UserIntegrationProvider::Google,
-            "outlook" => UserIntegrationProvider::Outlook,
+            "google" => IntegrationProvider::Google,
+            "outlook" => IntegrationProvider::Outlook,
             _ => unreachable!("Invalid provider"),
         }
     }

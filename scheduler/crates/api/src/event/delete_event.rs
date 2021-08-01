@@ -11,13 +11,12 @@ use crate::{
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::delete_event::*;
-use nettu_scheduler_domain::{CalendarEvent, SyncedCalendarProvider, User, ID};
+use nettu_scheduler_domain::{CalendarEvent, IntegrationProvider, User, ID};
 use nettu_scheduler_infra::{
     google_calendar::GoogleCalendarProvider, outlook_calendar::OutlookCalendarProvider,
     NettuContext,
 };
-
-use super::subscribers::DeleteRemindersOnEventDeleted;
+use tracing::error;
 
 fn handle_error(e: UseCaseErrors) -> NettuError {
     match e {
@@ -95,53 +94,87 @@ impl UseCase for DeleteEventUseCase {
             _ => return Err(UseCaseErrors::NotFound(self.event_id.clone())),
         };
 
-        let synced_google_events = e
-            .synced_events
-            .iter()
-            .filter(|synced_event| synced_event.provider == SyncedCalendarProvider::Google)
-            .collect::<Vec<_>>();
-        if !synced_google_events.is_empty() {
-            if let Ok(provider) = GoogleCalendarProvider::new(&mut self.user, ctx).await {
-                for synced_google_event in synced_google_events {
-                    let _ = provider
-                        .delete_event(
-                            synced_google_event.calendar_id.clone(),
-                            synced_google_event.event_id.clone(),
-                        )
-                        .await;
-                }
-            }
-        }
-        let synced_outlook_events = e
-            .synced_events
-            .iter()
-            .filter(|synced_event| synced_event.provider == SyncedCalendarProvider::Outlook)
-            .collect::<Vec<_>>();
-        if !synced_outlook_events.is_empty() {
-            if let Ok(provider) = OutlookCalendarProvider::new(&mut self.user, ctx).await {
-                for synced_outlook_event in synced_outlook_events {
-                    let _ = provider
-                        .delete_event(
-                            synced_outlook_event.calendar_id.clone(),
-                            synced_outlook_event.event_id.clone(),
-                        )
-                        .await;
-                }
-            }
-        }
+        self.delete_synced_events(&e, ctx).await;
 
         ctx.repos.events.delete(&e.id).await;
 
         Ok(e)
-    }
-
-    fn subscribers() -> Vec<Box<dyn Subscriber<Self>>> {
-        vec![Box::new(DeleteRemindersOnEventDeleted)]
     }
 }
 
 impl PermissionBoundary for DeleteEventUseCase {
     fn permissions(&self) -> Vec<Permission> {
         vec![Permission::DeleteCalendarEvent]
+    }
+}
+
+impl DeleteEventUseCase {
+    pub async fn delete_synced_events(&self, e: &CalendarEvent, ctx: &NettuContext) {
+        let synced_events = match ctx.repos.event_synced.find_by_event(&e.id).await {
+            Ok(synced_events) => synced_events,
+            Err(e) => {
+                error!("Unable to query synced events from repo: {:?}", e);
+                return;
+            }
+        };
+
+        let synced_outlook_events = synced_events
+            .iter()
+            .filter(|o_event| o_event.provider == IntegrationProvider::Outlook)
+            .collect::<Vec<_>>();
+        let synced_google_events = synced_events
+            .iter()
+            .filter(|g_event| g_event.provider == IntegrationProvider::Google)
+            .collect::<Vec<_>>();
+
+        if synced_google_events.is_empty() && synced_outlook_events.is_empty() {
+            return;
+        }
+
+        let user = match ctx.repos.users.find(&e.user_id).await {
+            Some(u) => u,
+            None => {
+                error!("Unable to find user when deleting sync events");
+                return;
+            }
+        };
+
+        if !synced_outlook_events.is_empty() {
+            let provider = match OutlookCalendarProvider::new(&user, ctx).await {
+                Ok(p) => p,
+                Err(_) => {
+                    error!("Unable to create outlook calendar provider");
+                    return;
+                }
+            };
+            for cal in synced_outlook_events {
+                if provider
+                    .delete_event(cal.ext_calendar_id.clone(), cal.ext_event_id.clone())
+                    .await
+                    .is_err()
+                {
+                    error!("Unable to delete external outlook calendar event");
+                };
+            }
+        }
+
+        if !synced_google_events.is_empty() {
+            let provider = match GoogleCalendarProvider::new(&user, ctx).await {
+                Ok(p) => p,
+                Err(_) => {
+                    error!("Unable to create google calendar provider");
+                    return;
+                }
+            };
+            for cal in synced_google_events {
+                if provider
+                    .delete_event(cal.ext_calendar_id.clone(), cal.ext_event_id.clone())
+                    .await
+                    .is_err()
+                {
+                    error!("Unable to delete google external calendar event");
+                };
+            }
+        }
     }
 }

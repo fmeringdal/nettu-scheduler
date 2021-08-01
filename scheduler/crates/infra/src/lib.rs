@@ -5,7 +5,9 @@ mod system;
 
 pub use config::Config;
 use repos::Repos;
-pub use repos::{KVMetadata, MetadataFindQuery};
+pub use repos::{
+    BusyCalendarIdentifier, ExternalBusyCalendarIdentifier, KVMetadata, MetadataFindQuery,
+};
 use std::sync::Arc;
 pub use system::ISys;
 use system::RealSys;

@@ -4,9 +4,8 @@ mod get_me;
 mod get_user;
 mod get_user_freebusy;
 mod get_users_by_meta;
-mod oauth_google;
-mod oauth_outlook;
-mod remove_google_integration;
+mod oauth_integration;
+mod remove_integration;
 mod update_user;
 
 use actix_web::web;
@@ -16,8 +15,8 @@ use get_me::get_me_controller;
 use get_user::get_user_controller;
 use get_user_freebusy::get_freebusy_controller;
 use get_users_by_meta::get_users_by_meta_controller;
-use oauth_google::*;
-use oauth_outlook::{oauth_outlook_admin_controller, oauth_outlook_controller};
+use oauth_integration::*;
+use remove_integration::{remove_integration_admin_controller, remove_integration_controller};
 use update_user::update_user_controller;
 
 pub use get_user_freebusy::parse_vec_query_value;
@@ -34,19 +33,18 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
         web::get().to(get_freebusy_controller),
     );
 
-    // Oauth google
-    cfg.route("/me/oauth/google", web::post().to(oauth_google_controller));
+    // Oauth
+    cfg.route("/me/oauth", web::post().to(oauth_integration_controller));
     cfg.route(
-        "/user/{user_id}/oauth/google",
-        web::post().to(oauth_google_admin_controller),
-    );
-    // Oauth outlook
-    cfg.route(
-        "/me/oauth/outlook",
-        web::post().to(oauth_outlook_controller),
+        "/me/oauth/{provider}",
+        web::delete().to(remove_integration_controller),
     );
     cfg.route(
-        "/user/{user_id}/oauth/outlook",
-        web::post().to(oauth_outlook_admin_controller),
+        "/user/{user_id}/oauth",
+        web::post().to(oauth_integration_admin_controller),
+    );
+    cfg.route(
+        "/user/{user_id}/oauth/{provider}",
+        web::delete().to(remove_integration_admin_controller),
     );
 }

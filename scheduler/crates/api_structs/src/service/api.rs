@@ -60,7 +60,6 @@ pub mod add_user_to_service {
     pub struct RequestBody {
         pub user_id: ID,
         pub availability: Option<TimePlan>,
-        pub busy: Option<Vec<BusyCalendar>>,
         #[serde(default)]
         pub buffer_after: Option<i64>,
         #[serde(default)]
@@ -70,6 +69,42 @@ pub mod add_user_to_service {
     }
 
     pub type APIResponse = ServiceResourceDTO;
+}
+
+pub mod add_busy_calendar {
+    use super::*;
+
+    #[derive(Deserialize)]
+    pub struct PathParams {
+        pub service_id: ID,
+        pub user_id: ID,
+    }
+
+    #[derive(Deserialize, Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct RequestBody {
+        pub busy: BusyCalendar,
+    }
+
+    pub type APIResponse = String;
+}
+
+pub mod remove_busy_calendar {
+    use super::*;
+
+    #[derive(Deserialize)]
+    pub struct PathParams {
+        pub service_id: ID,
+        pub user_id: ID,
+    }
+
+    #[derive(Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct RequestBody {
+        pub busy: BusyCalendar,
+    }
+
+    pub type APIResponse = String;
 }
 
 pub mod remove_service_event_intend {
@@ -333,7 +368,6 @@ pub mod update_service_user {
     #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
         pub availability: Option<TimePlan>,
-        pub busy: Option<Vec<BusyCalendar>>,
         pub buffer_after: Option<i64>,
         pub buffer_before: Option<i64>,
         pub closest_booking_time: Option<i64>,

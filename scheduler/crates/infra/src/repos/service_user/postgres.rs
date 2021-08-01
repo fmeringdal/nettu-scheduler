@@ -24,8 +24,6 @@ pub struct ServiceUserRaw {
     buffer_before: i64,
     closest_booking_time: i64,
     furthest_booking_time: Option<i64>,
-    google_busy_calendarss: Vec<String>,
-    outlook_busy_calendars: Vec<String>,
 }
 
 impl Into<ServiceResource> for ServiceUserRaw {

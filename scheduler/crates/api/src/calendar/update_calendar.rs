@@ -7,10 +7,8 @@ use crate::shared::{
 use crate::{error::NettuError, shared::auth::protect_route};
 use actix_web::{web, HttpResponse};
 use nettu_scheduler_api_structs::update_calendar::{APIResponse, PathParams, RequestBody};
-use nettu_scheduler_domain::{Calendar, Metadata, SyncedCalendar, User, ID};
+use nettu_scheduler_domain::{Calendar, Metadata, User, ID};
 use nettu_scheduler_infra::NettuContext;
-
-use super::create_calendar::update_synced_calendars;
 
 fn handle_errors(e: UseCaseErrors) -> NettuError {
     match e {
@@ -40,7 +38,6 @@ pub async fn update_calendar_admin_controller(
         calendar_id: cal.id,
         week_start: body.0.settings.week_start,
         timezone: body.0.settings.timezone,
-        synced: body.0.synced,
         metadata: body.0.metadata,
     };
 
@@ -63,7 +60,6 @@ pub async fn update_calendar_controller(
         calendar_id: path.0.calendar_id,
         week_start: body.0.settings.week_start,
         timezone: body.0.settings.timezone,
-        synced: body.0.synced,
         metadata: body.0.metadata,
     };
 
@@ -82,7 +78,6 @@ struct UpdateCalendarUseCase {
     pub calendar_id: ID,
     pub week_start: Option<isize>,
     pub timezone: Option<String>,
-    pub synced: Option<Vec<SyncedCalendar>>,
     pub metadata: Option<Metadata>,
 }
 
@@ -128,9 +123,6 @@ impl UseCase for UpdateCalendarUseCase {
         if let Some(metadata) = &self.metadata {
             calendar.metadata = metadata.clone();
         }
-        if let Some(synced) = &self.synced {
-            update_synced_calendars(&mut self.user, &mut calendar, synced, ctx).await;
-        }
 
         ctx.repos
             .calendars
@@ -172,7 +164,6 @@ mod test {
             calendar_id: calendar.id.into(),
             week_start: Some(20),
             timezone: None,
-            synced: None,
             metadata: None,
         };
         let res = usecase.execute(&ctx).await;
@@ -197,7 +188,6 @@ mod test {
             calendar_id: calendar.id.clone(),
             week_start: Some(new_wkst),
             timezone: None,
-            synced: None,
             metadata: Some(HashMap::new()),
         };
         let res = usecase.execute(&ctx).await;

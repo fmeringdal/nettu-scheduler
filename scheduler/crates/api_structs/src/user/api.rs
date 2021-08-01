@@ -38,17 +38,33 @@ pub mod create_user {
     pub type APIResponse = UserResponse;
 }
 
-pub mod oauth_google {
+pub mod oauth_integration {
+    use nettu_scheduler_domain::IntegrationProvider;
+
     use super::*;
 
     #[derive(Debug, Deserialize, Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
         pub code: String,
+        pub provider: IntegrationProvider,
     }
 
     #[derive(Debug, Deserialize, Serialize)]
     pub struct PathParams {
+        pub user_id: ID,
+    }
+
+    pub type APIResponse = UserResponse;
+}
+
+pub mod remove_integration {
+    use super::*;
+    use nettu_scheduler_domain::IntegrationProvider;
+
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct PathParams {
+        pub provider: IntegrationProvider,
         pub user_id: ID,
     }
 

@@ -6,7 +6,7 @@ use mongodb::{
     bson::{doc, oid::ObjectId, Document},
     Collection, Database,
 };
-use nettu_scheduler_domain::{User, UserIntegrationProvider, ID};
+use nettu_scheduler_domain::{User, IntegrationProvider, ID};
 use serde::{Deserialize, Serialize};
 
 pub struct MongoKVRepo {
@@ -59,7 +59,7 @@ struct UserMongo {
     _id: ObjectId,
     account_id: ObjectId,
     metadata: Vec<KVMetadata>,
-    integrations: Vec<UserIntegrationProvider>,
+    integrations: Vec<IntegrationProvider>,
 }
 
 impl MongoDocument<User> for UserMongo {

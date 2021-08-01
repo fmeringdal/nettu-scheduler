@@ -1,6 +1,6 @@
 mod postgres;
 
-use nettu_scheduler_domain::{UserIntegrationProvider, ID};
+use nettu_scheduler_domain::{IntegrationProvider, ID};
 pub use postgres::PostgresServiceUseBusyCalendarRepo;
 
 pub struct BusyCalendarIdentifier {
@@ -13,7 +13,7 @@ pub struct ExternalBusyCalendarIdentifier {
     service_id: ID,
     user_id: ID,
     ext_calendar_id: String,
-    provider: UserIntegrationProvider,
+    provider: IntegrationProvider,
 }
 
 #[async_trait::async_trait]

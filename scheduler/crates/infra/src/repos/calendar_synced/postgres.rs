@@ -1,9 +1,6 @@
 use super::ICalendarSyncedRepo;
 use nettu_scheduler_domain::{SyncedCalendar, ID};
-use sqlx::{
-    types::{Uuid},
-    FromRow, PgPool,
-};
+use sqlx::{types::Uuid, FromRow, PgPool};
 
 pub struct PostgresCalendarSyncedRepo {
     pool: PgPool,
@@ -36,8 +33,8 @@ impl Into<SyncedCalendar> for SyncedCalendarRaw {
 
 #[async_trait::async_trait]
 impl ICalendarSyncedRepo for PostgresCalendarSyncedRepo {
-    async fn insert(&self, e: &SyncedCalendar) -> anyhow::Result<()> {
-        let provider: String = e.provider.clone().into();
+    async fn insert(&self, c: &SyncedCalendar) -> anyhow::Result<()> {
+        let provider: String = c.provider.clone().into();
         sqlx::query!(
             r#"
             INSERT INTO calendar_ext_synced_calendars (
@@ -48,9 +45,30 @@ impl ICalendarSyncedRepo for PostgresCalendarSyncedRepo {
             )
             VALUES($1, $2, $3, $4)
             "#,
-            e.calendar_id.inner_ref(),
-            e.user_id.inner_ref(),
-            e.ext_calendar_id,
+            c.calendar_id.inner_ref(),
+            c.user_id.inner_ref(),
+            c.ext_calendar_id,
+            provider as _
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    async fn delete(&self, c: &SyncedCalendar) -> anyhow::Result<()> {
+        let provider: String = c.provider.clone().into();
+        sqlx::query!(
+            r#"
+            DELETE FROM calendar_ext_synced_calendars
+            WHERE calendar_uid = $1 AND
+                user_uid = $2 AND
+                ext_calendar_id = $3 AND
+                provider = $4
+            "#,
+            c.calendar_id.inner_ref(),
+            c.user_id.inner_ref(),
+            c.ext_calendar_id,
             provider as _
         )
         .execute(&self.pool)

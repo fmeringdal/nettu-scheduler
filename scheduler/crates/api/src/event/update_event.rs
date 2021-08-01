@@ -1,6 +1,6 @@
 use crate::{
     error::NettuError,
-    event,
+    event::{self, subscribers::UpdateSyncedEventsOnEventUpdated},
     shared::auth::protect_route,
     shared::{
         auth::{
@@ -16,12 +16,9 @@ use actix_web::{web, HttpRequest, HttpResponse};
 use event::subscribers::SyncRemindersOnEventUpdated;
 use nettu_scheduler_api_structs::update_event::*;
 use nettu_scheduler_domain::{
-    CalendarEvent, CalendarEventReminder, Metadata, RRuleOptions, SyncedCalendarProvider, User, ID,
+    CalendarEvent, CalendarEventReminder, Metadata, RRuleOptions, User, ID,
 };
-use nettu_scheduler_infra::{
-    google_calendar::GoogleCalendarProvider, outlook_calendar::OutlookCalendarProvider,
-    NettuContext,
-};
+use nettu_scheduler_infra::NettuContext;
 
 fn handle_error(e: UseCaseErrors) -> NettuError {
     match e {
@@ -214,54 +211,19 @@ impl UseCase for UpdateEventUseCase {
 
         e.updated = ctx.sys.get_timestamp_millis();
 
-        let repo_res = ctx.repos.events.save(&e).await;
-        if repo_res.is_err() {
-            return Err(UseCaseErrors::StorageError);
-        }
-
-        // Update synced calendar events
-        let synced_google_events = e
-            .synced_events
-            .iter()
-            .filter(|synced_event| synced_event.provider == SyncedCalendarProvider::Google)
-            .collect::<Vec<_>>();
-        if !synced_google_events.is_empty() {
-            if let Ok(provider) = GoogleCalendarProvider::new(&mut self.user, ctx).await {
-                for synced_google_event in synced_google_events {
-                    let _ = provider
-                        .update_event(
-                            synced_google_event.calendar_id.clone(),
-                            synced_google_event.event_id.clone(),
-                            e.clone(),
-                        )
-                        .await;
-                }
-            }
-        }
-        let synced_outlook_events = e
-            .synced_events
-            .iter()
-            .filter(|synced_event| synced_event.provider == SyncedCalendarProvider::Outlook)
-            .collect::<Vec<_>>();
-        if !synced_outlook_events.is_empty() {
-            if let Ok(provider) = OutlookCalendarProvider::new(&mut self.user, ctx).await {
-                for synced_outlook_event in synced_outlook_events {
-                    let _ = provider
-                        .update_event(
-                            synced_outlook_event.calendar_id.clone(),
-                            synced_outlook_event.event_id.clone(),
-                            e.clone(),
-                        )
-                        .await;
-                }
-            }
-        }
-
-        Ok(e)
+        ctx.repos
+            .events
+            .save(&e)
+            .await
+            .map(|_| e.clone())
+            .map_err(|_| UseCaseErrors::StorageError)
     }
 
     fn subscribers() -> Vec<Box<dyn Subscriber<Self>>> {
-        vec![Box::new(SyncRemindersOnEventUpdated)]
+        vec![
+            Box::new(SyncRemindersOnEventUpdated),
+            Box::new(UpdateSyncedEventsOnEventUpdated),
+        ]
     }
 }
 

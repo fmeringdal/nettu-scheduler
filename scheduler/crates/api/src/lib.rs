@@ -14,8 +14,7 @@ use actix_web::{dev::Server, middleware, web, App, HttpServer};
 use job_schedulers::{start_reminders_expansion_job_scheduler, start_send_reminders_job};
 
 use nettu_scheduler_domain::{
-    Account, AccountGoogleIntegration, AccountOutlookIntegration, AccountWebhookSettings, PEMKey,
-    ID,
+    Account, AccountIntegration, AccountWebhookSettings, IntegrationProvider, PEMKey, ID,
 };
 use nettu_scheduler_infra::NettuContext;
 use std::net::TcpListener;
@@ -137,11 +136,18 @@ impl Application {
                         "{} should be specified also when {} is specified.",
                         account_google_redirect_uri_env, account_google_client_id_env
                     ));
-                account.settings.google = Some(AccountGoogleIntegration {
-                    client_id: google_client_id,
-                    client_secret: google_client_secret,
-                    redirect_uri: google_redirect_uri,
-                })
+                self.context
+                    .repos
+                    .account_integrations
+                    .insert(&AccountIntegration {
+                        account_id: account.id.clone(),
+                        client_id: google_client_id,
+                        client_secret: google_client_secret,
+                        redirect_uri: google_redirect_uri,
+                        provider: IntegrationProvider::Google,
+                    })
+                    .await
+                    .expect("To insert google account integration");
             }
             let account_outlook_client_id_env = "ACCOUNT_OUTLOOK_CLIENT_ID";
             let account_outlook_client_sercret_env = "ACCOUNT_OUTLOOK_CLIENT_SERCRET";
@@ -157,11 +163,18 @@ impl Application {
                         "{} should be specified also when {} is specified.",
                         account_outlook_redirect_uri_env, account_outlook_client_id_env
                     ));
-                account.settings.outlook = Some(AccountOutlookIntegration {
-                    client_id: outlook_client_id,
-                    client_secret: outlook_client_secret,
-                    redirect_uri: outlook_redirect_uri,
-                })
+                self.context
+                    .repos
+                    .account_integrations
+                    .insert(&AccountIntegration {
+                        account_id: account.id.clone(),
+                        client_id: outlook_client_id,
+                        client_secret: outlook_client_secret,
+                        redirect_uri: outlook_redirect_uri,
+                        provider: IntegrationProvider::Outlook,
+                    })
+                    .await
+                    .expect("To insert outlook account integration");
             }
 
             self.context

@@ -26,6 +26,7 @@ use reservation::{IReservationRepo, PostgresReservationRepo};
 use schedule::{IScheduleRepo, PostgresScheduleRepo};
 use service::{IServiceRepo, PostgresServiceRepo};
 use service_user::{IServiceUserRepo, PostgresServiceUserRepo};
+pub use service_user_busy_calendars::{BusyCalendarIdentifier, ExternalBusyCalendarIdentifier};
 use service_user_busy_calendars::{
     IServiceUserBusyCalendarRepo, PostgresServiceUseBusyCalendarRepo,
 };

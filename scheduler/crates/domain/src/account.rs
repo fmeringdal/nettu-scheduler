@@ -1,6 +1,6 @@
 use crate::{
     shared::entity::{Entity, ID},
-    UserIntegrationProvider,
+    IntegrationProvider,
 };
 use nettu_scheduler_utils::create_random_secret;
 use serde::{Deserialize, Serialize};
@@ -84,7 +84,7 @@ pub struct AccountIntegration {
     pub client_id: String,
     pub client_secret: String,
     pub redirect_uri: String,
-    pub provider: UserIntegrationProvider,
+    pub provider: IntegrationProvider,
 }
 
 impl Default for AccountSettings {

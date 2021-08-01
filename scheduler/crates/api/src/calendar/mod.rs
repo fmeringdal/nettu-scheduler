@@ -1,5 +1,6 @@
 use actix_web::web;
 
+mod add_sync_calendar;
 mod create_calendar;
 mod delete_calendar;
 mod get_calendar;
@@ -7,6 +8,7 @@ mod get_calendar_events;
 mod get_calendars_by_meta;
 mod get_google_calendars;
 mod get_outlook_calendars;
+mod remove_sync_calendar;
 mod update_calendar;
 
 use create_calendar::{create_calendar_admin_controller, create_calendar_controller};

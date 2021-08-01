@@ -1,3 +1,4 @@
+mod add_busy_calendar;
 mod add_user_to_service;
 mod create_service;
 mod create_service_event_intend;
@@ -5,6 +6,7 @@ mod delete_service;
 mod get_service;
 mod get_service_bookingslots;
 mod get_services_by_meta;
+mod remove_busy_calendar;
 mod remove_service_event_intend;
 mod remove_user_from_service;
 mod update_service;

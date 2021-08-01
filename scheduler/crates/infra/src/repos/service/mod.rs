@@ -18,9 +18,7 @@ pub trait IServiceRepo: Send + Sync {
 #[cfg(test)]
 mod tests {
     use crate::setup_context;
-    use nettu_scheduler_domain::{
-        Account, BusyCalendar, Calendar, Metadata, Service, ServiceResource, TimePlan, User,
-    };
+    use nettu_scheduler_domain::{Account, Metadata, Service, ServiceResource, TimePlan, User};
 
     #[tokio::test]
     async fn create_and_delete() {

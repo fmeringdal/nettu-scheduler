@@ -52,8 +52,6 @@ mod tests {
         Account, Calendar, CalendarEvent, Entity, Service, TimeSpan, User, ID,
     };
 
-    use super::IEventRepo;
-
     fn generate_default_event(account_id: &ID, calendar_id: &ID, user_id: &ID) -> CalendarEvent {
         CalendarEvent {
             account_id: account_id.clone(),

@@ -4,11 +4,10 @@ mod calendar_api;
 
 use self::calendar_api::{FreeBusyRequest, ListCalendarsResponse, OutlookCalendarEventAttributes};
 use super::FreeBusyProviderQuery;
-use crate::repos::user::UserWithIntegrations;
 use calendar_api::OutlookCalendarRestApi;
 use nettu_scheduler_domain::{
     providers::outlook::{OutlookCalendarAccessRole, OutlookCalendarEvent},
-    CalendarEvent, CompatibleInstances,
+    CalendarEvent, CompatibleInstances, User,
 };
 
 // https://docs.microsoft.com/en-us/graph/api/resources/event?view=graph-rest-1.0
@@ -18,7 +17,7 @@ pub struct OutlookCalendarProvider {
 }
 
 impl OutlookCalendarProvider {
-    pub async fn new(user: &mut UserWithIntegrations, ctx: &NettuContext) -> Result<Self, ()> {
+    pub async fn new(user: &User, ctx: &NettuContext) -> Result<Self, ()> {
         let access_token = match auth_provider::get_access_token(user, ctx).await {
             Some(token) => token,
             None => return Err(()),

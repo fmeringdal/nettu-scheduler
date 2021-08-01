@@ -3,7 +3,7 @@ use crate::{
     shared::entity::Entity,
     shared::{metadata::Metadata, recurrence::RRuleOptions},
     timespan::TimeSpan,
-    Meta, UserIntegrationProvider,
+    IntegrationProvider, Meta,
 };
 use crate::{event_instance::EventInstance, shared::entity::ID};
 use chrono::{prelude::*, Duration};
@@ -36,7 +36,7 @@ pub struct SyncedCalendarEvent {
     pub user_id: ID,
     pub ext_event_id: String,
     pub ext_calendar_id: String,
-    pub provider: UserIntegrationProvider,
+    pub provider: IntegrationProvider,
 }
 
 impl Entity<ID> for CalendarEvent {

@@ -1,31 +1,19 @@
 mod postgres;
 
-use nettu_scheduler_domain::{Metadata, User, UserIntegration, ID};
+use nettu_scheduler_domain::{User, ID};
 pub use postgres::PostgresUserRepo;
 
 use super::shared::query_structs::MetadataFindQuery;
-
-#[derive(Debug, Clone)]
-pub struct UserWithIntegrations {
-    pub id: ID,
-    pub account_id: ID,
-    pub metadata: Metadata,
-    pub integrations: Vec<UserIntegration>,
-}
 
 #[async_trait::async_trait]
 pub trait IUserRepo: Send + Sync {
     async fn insert(&self, user: &User) -> anyhow::Result<()>;
     async fn save(&self, user: &User) -> anyhow::Result<()>;
     async fn delete(&self, user_id: &ID) -> Option<User>;
-    async fn find(&self, user_id: &ID) -> Option<UserWithIntegrations>;
-    async fn find_many(&self, user_ids: &[ID]) -> Vec<UserWithIntegrations>;
-    async fn find_by_account_id(
-        &self,
-        user_id: &ID,
-        account_id: &ID,
-    ) -> Option<UserWithIntegrations>;
-    async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<UserWithIntegrations>;
+    async fn find(&self, user_id: &ID) -> Option<User>;
+    async fn find_many(&self, user_ids: &[ID]) -> Vec<User>;
+    async fn find_by_account_id(&self, user_id: &ID, account_id: &ID) -> Option<User>;
+    async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<User>;
 }
 
 #[cfg(test)]
@@ -85,7 +73,7 @@ mod tests {
     //     let ctx = setup_context().await;
     //     let account_id = ID::default();
     //     let mut user = User::new(account_id.clone());
-    //     user.integrations = vec![UserIntegrationProvider::Google(UserGoogleIntegrationData {
+    //     user.integrations = vec![IntegrationProvider::Google(UserGoogleIntegrationData {
     //         access_token: "1".into(),
     //         refresh_token: "1".into(),
     //         access_token_expires_ts: 1,

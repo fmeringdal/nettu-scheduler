@@ -30,4 +30,4 @@ pub use shared::entity::{Entity, ID};
 pub use shared::metadata::{Meta, Metadata};
 pub use shared::recurrence::{RRuleFrequency, RRuleOptions};
 pub use timespan::TimeSpan;
-pub use user::{User, UserIntegration, UserIntegrationProvider};
+pub use user::{IntegrationProvider, User, UserIntegration};

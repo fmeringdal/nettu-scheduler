@@ -5,14 +5,8 @@ use crate::shared::{
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::add_user_to_service::*;
-use nettu_scheduler_domain::{
-    providers::{google::GoogleCalendarAccessRole, outlook::OutlookCalendarAccessRole},
-    Account, BusyCalendar, ServiceResource, TimePlan, ID,
-};
-use nettu_scheduler_infra::{
-    google_calendar::GoogleCalendarProvider, outlook_calendar::OutlookCalendarProvider,
-    NettuContext,
-};
+use nettu_scheduler_domain::{Account, ServiceResource, TimePlan, ID};
+use nettu_scheduler_infra::NettuContext;
 
 pub async fn add_user_to_service_controller(
     http_req: HttpRequest,
@@ -27,7 +21,6 @@ pub async fn add_user_to_service_controller(
         service_id: path_params.service_id.to_owned(),
         user_id: body.user_id.to_owned(),
         availability: body.availability.to_owned(),
-        busy: body.busy.to_owned(),
         buffer_before: body.buffer_before,
         buffer_after: body.buffer_after,
         closest_booking_time: body.closest_booking_time,
@@ -51,7 +44,6 @@ struct AddUserToServiceUseCase {
     pub service_id: ID,
     pub user_id: ID,
     pub availability: Option<TimePlan>,
-    pub busy: Option<Vec<BusyCalendar>>,
     pub buffer_before: Option<i64>,
     pub buffer_after: Option<i64>,
     pub closest_booking_time: Option<i64>,
@@ -103,7 +95,6 @@ impl UseCase for AddUserToServiceUseCase {
             &mut user_resource,
             &ServiceResourceUpdate {
                 availability: self.availability.clone(),
-                busy: self.busy.clone(),
                 buffer_after: self.buffer_after,
                 buffer_before: self.buffer_before,
                 closest_booking_time: self.closest_booking_time,
@@ -128,7 +119,6 @@ impl UseCase for AddUserToServiceUseCase {
 #[derive(Debug)]
 pub struct ServiceResourceUpdate {
     pub availability: Option<TimePlan>,
-    pub busy: Option<Vec<BusyCalendar>>,
     pub buffer_after: Option<i64>,
     pub buffer_before: Option<i64>,
     pub closest_booking_time: Option<i64>,
@@ -177,121 +167,26 @@ pub async fn update_resource_values(
         .map(|cal| cal.id)
         .collect::<Vec<_>>();
 
-    let busy_google_calendars: Vec<String> = if let Some(busy) = &update.busy {
-        if busy
-            .iter()
-            .find(|busy_cal| match busy_cal {
-                BusyCalendar::Google(_) => true,
-                _ => false,
-            })
-            .is_some()
-        {
-            let mut user = ctx
-                .repos
-                .users
-                .find(&user_resource.user_id)
-                .await
-                .expect("User to exist");
-
-            match GoogleCalendarProvider::new(&mut user, ctx).await {
-                Ok(provider) => match provider
-                    .list(GoogleCalendarAccessRole::FreeBusyReader)
-                    .await
-                {
-                    Ok(calendar_list) => {
-                        calendar_list.items.into_iter().map(|cal| cal.id).collect()
-                    }
-                    Err(_) => vec![],
-                },
-                Err(_) => vec![],
-            }
-        } else {
-            vec![]
-        }
-    } else {
-        vec![]
-    };
-    let busy_outlook_calendars: Vec<String> = if let Some(busy) = &update.busy {
-        if busy
-            .iter()
-            .find(|busy_cal| match busy_cal {
-                BusyCalendar::Outlook(_) => true,
-                _ => false,
-            })
-            .is_some()
-        {
-            let mut user = ctx
-                .repos
-                .users
-                .find(&user_resource.user_id)
-                .await
-                .expect("User to exist");
-
-            match OutlookCalendarProvider::new(&mut user, ctx).await {
-                Ok(provider) => match provider.list(OutlookCalendarAccessRole::Reader).await {
-                    Ok(calendar_list) => {
-                        calendar_list.value.into_iter().map(|cal| cal.id).collect()
-                    }
-                    Err(_) => vec![],
-                },
-                Err(_) => vec![],
-            }
-        } else {
-            vec![]
-        }
-    } else {
-        vec![]
-    };
-
-    if let Some(busy) = &update.busy {
-        for busy_cal in busy {
-            match busy_cal {
-                BusyCalendar::Nettu(calendar_id) => {
-                    if !user_calendars.contains(calendar_id) {
-                        return Err(UpdateServiceResourceError::CalendarNotOwnedByUser(
-                            calendar_id.to_string(),
-                        ));
-                    }
-                }
-                BusyCalendar::Google(id) => {
-                    if !busy_google_calendars.contains(id) {
-                        return Err(UpdateServiceResourceError::CalendarNotOwnedByUser(
-                            id.to_string(),
-                        ));
-                    }
-                }
-                BusyCalendar::Outlook(id) => {
-                    if !busy_outlook_calendars.contains(id) {
-                        return Err(UpdateServiceResourceError::CalendarNotOwnedByUser(
-                            id.to_string(),
-                        ));
-                    }
-                }
-            }
-        }
-        user_resource.set_busy(busy.clone());
-    }
-
     if let Some(availability) = &update.availability {
         match availability {
             TimePlan::Calendar(id) => {
-                if !user_calendars.contains(id) {
-                    return Err(UpdateServiceResourceError::CalendarNotOwnedByUser(
-                        id.to_string(),
-                    ));
-                }
-            }
-            TimePlan::Schedule(id) => {
-                let schedule = ctx.repos.schedules.find(id).await;
-                match schedule {
-                    Some(schedule) if schedule.user_id == user_resource.user_id => {}
+                match ctx.repos.calendars.find(id).await {
+                    Some(cal) if cal.user_id == user_resource.user_id => {}
                     _ => {
-                        return Err(UpdateServiceResourceError::ScheduleNotOwnedByUser(
+                        return Err(UpdateServiceResourceError::CalendarNotOwnedByUser(
                             id.to_string(),
-                        ))
+                        ));
                     }
-                }
+                };
             }
+            TimePlan::Schedule(id) => match ctx.repos.schedules.find(id).await {
+                Some(schedule) if schedule.user_id == user_resource.user_id => {}
+                _ => {
+                    return Err(UpdateServiceResourceError::ScheduleNotOwnedByUser(
+                        id.to_string(),
+                    ))
+                }
+            },
             _ => (),
         };
         user_resource.set_availability(availability.clone());

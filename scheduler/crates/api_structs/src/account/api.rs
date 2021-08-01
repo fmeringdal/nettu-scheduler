@@ -79,7 +79,9 @@ pub mod delete_account_webhook {
     pub type APIResponse = AccountResponse;
 }
 
-pub mod set_account_google_integration {
+pub mod add_account_integration {
+    use nettu_scheduler_domain::IntegrationProvider;
+
     use super::*;
 
     #[derive(Debug, Deserialize, Serialize)]
@@ -88,7 +90,20 @@ pub mod set_account_google_integration {
         pub client_id: String,
         pub client_secret: String,
         pub redirect_uri: String,
+        pub provider: IntegrationProvider,
     }
 
-    pub type APIResponse = AccountResponse;
+    pub type APIResponse = String;
+}
+
+pub mod remove_account_integration {
+    use super::*;
+    use nettu_scheduler_domain::IntegrationProvider;
+
+    #[derive(Debug, Deserialize, Serialize)]
+    pub struct PathParams {
+        pub provider: IntegrationProvider,
+    }
+
+    pub type APIResponse = String;
 }

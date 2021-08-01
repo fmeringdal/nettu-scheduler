@@ -205,7 +205,6 @@ mod test {
             metadata: Default::default(),
             updated: Default::default(),
             created: Default::default(),
-            synced_events: Default::default(),
         };
         let e1rr = RRuleOptions {
             count: Some(100),
@@ -229,7 +228,6 @@ mod test {
             metadata: Default::default(),
             updated: Default::default(),
             created: Default::default(),
-            synced_events: Default::default(),
         };
         let e2rr = RRuleOptions {
             count: Some(100),
@@ -253,7 +251,6 @@ mod test {
             metadata: Default::default(),
             updated: Default::default(),
             created: Default::default(),
-            synced_events: Default::default(),
         };
         let e3rr = RRuleOptions {
             count: Some(100),

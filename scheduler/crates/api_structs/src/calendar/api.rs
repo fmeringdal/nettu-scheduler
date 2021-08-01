@@ -19,7 +19,7 @@ impl CalendarResponse {
 
 pub mod create_calendar {
     use super::*;
-    use nettu_scheduler_domain::{Metadata, SyncedCalendar};
+    use nettu_scheduler_domain::Metadata;
 
     #[derive(Deserialize)]
     pub struct PathParams {
@@ -33,12 +33,50 @@ pub mod create_calendar {
         #[serde(default)]
         pub week_start: isize,
         #[serde(default)]
-        pub synced: Option<Vec<SyncedCalendar>>,
-        #[serde(default)]
         pub metadata: Option<Metadata>,
     }
 
     pub type APIResponse = CalendarResponse;
+}
+
+pub mod add_sync_calendar {
+    use super::*;
+    use nettu_scheduler_domain::IntegrationProvider;
+
+    #[derive(Deserialize)]
+    pub struct PathParams {
+        pub user_id: ID,
+    }
+
+    #[derive(Deserialize, Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct RequestBody {
+        pub provider: IntegrationProvider,
+        pub calendar_id: ID,
+        pub ext_calendar_id: String,
+    }
+
+    pub type APIResponse = String;
+}
+
+pub mod remove_sync_calendar {
+    use super::*;
+    use nettu_scheduler_domain::IntegrationProvider;
+
+    #[derive(Deserialize)]
+    pub struct PathParams {
+        pub user_id: ID,
+    }
+
+    #[derive(Deserialize, Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct RequestBody {
+        pub provider: IntegrationProvider,
+        pub calendar_id: ID,
+        pub ext_calendar_id: String,
+    }
+
+    pub type APIResponse = String;
 }
 
 pub mod delete_calendar {
@@ -218,7 +256,7 @@ pub mod get_user_freebusy {
 
 pub mod update_calendar {
     use super::*;
-    use nettu_scheduler_domain::{Metadata, SyncedCalendar};
+    use nettu_scheduler_domain::Metadata;
 
     #[derive(Deserialize)]
     pub struct PathParams {
@@ -239,8 +277,6 @@ pub mod update_calendar {
         pub settings: CalendarSettings,
         #[serde(default)]
         pub metadata: Option<Metadata>,
-        #[serde(default)]
-        pub synced: Option<Vec<SyncedCalendar>>,
     }
 
     pub type APIResponse = CalendarResponse;

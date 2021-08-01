@@ -3,7 +3,7 @@ use crate::{
         entity::{Entity, ID},
         metadata::Metadata,
     },
-    Meta, UserIntegrationProvider,
+    IntegrationProvider, Meta,
 };
 use chrono_tz::{Tz, UTC};
 use serde::{Deserialize, Serialize};
@@ -28,7 +28,7 @@ impl Meta<ID> for Calendar {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct SyncedCalendar {
-    pub provider: UserIntegrationProvider,
+    pub provider: IntegrationProvider,
     pub calendar_id: ID,
     pub user_id: ID,
     pub ext_calendar_id: String,

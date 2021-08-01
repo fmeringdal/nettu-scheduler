@@ -10,7 +10,6 @@ use tracing::error;
 pub enum EventOperation {
     Created,
     Updated,
-    Deleted,
 }
 
 /// Synchronizes the upcoming `Reminders` for a `CalendarEvent`
@@ -132,11 +131,11 @@ impl<'a> UseCase for SyncEventRemindersUseCase<'a> {
                     return Err(UseCaseErrors::StorageError);
                 }
 
-                // Delete existing reminders
                 match op {
                     // There are no reminders if `CalendarEvent` was just created
                     EventOperation::Created => (),
-                    _ => {
+                    // Delete existing reminders
+                    &EventOperation::Updated => {
                         let delete_result = ctx
                             .repos
                             .reminders
@@ -148,17 +147,13 @@ impl<'a> UseCase for SyncEventRemindersUseCase<'a> {
                     }
                 }
 
-                // Create new ones if op != delete
-                let calendar = match op {
-                    EventOperation::Deleted => return Ok(()),
-                    EventOperation::Created | EventOperation::Updated => {
-                        let calendar = ctx.repos.calendars.find(&calendar_event.calendar_id).await;
-                        match calendar {
-                            Some(calendar) => calendar,
-                            None => return Err(UseCaseErrors::CalendarNotFound),
-                        }
-                    }
-                };
+                // Create new reminders
+                let calendar = ctx
+                    .repos
+                    .calendars
+                    .find(&calendar_event.calendar_id)
+                    .await
+                    .ok_or(UseCaseErrors::CalendarNotFound)?;
 
                 create_event_reminders(calendar_event, &calendar, 1, ctx).await
             }

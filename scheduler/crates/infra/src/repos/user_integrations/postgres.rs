@@ -1,5 +1,5 @@
 use super::IUserIntegrationRepo;
-use nettu_scheduler_domain::{UserIntegration, UserIntegrationProvider, ID};
+use nettu_scheduler_domain::{IntegrationProvider, UserIntegration, ID};
 use serde::Deserialize;
 use sqlx::{types::Uuid, Done, FromRow, PgPool};
 
@@ -93,7 +93,7 @@ impl IUserIntegrationRepo for PostgresUserIntegrationRepo {
         Ok(integrations.into_iter().map(|i| i.into()).collect())
     }
 
-    async fn delete(&self, user_id: &ID, provider: UserIntegrationProvider) -> anyhow::Result<()> {
+    async fn delete(&self, user_id: &ID, provider: IntegrationProvider) -> anyhow::Result<()> {
         let provider: String = provider.into();
         match sqlx::query!(
             "

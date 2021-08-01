@@ -5,13 +5,12 @@ mod calendar_api;
 use crate::NettuContext;
 
 use super::FreeBusyProviderQuery;
-use crate::repos::user::UserWithIntegrations;
 use calendar_api::{
     FreeBusyCalendar, FreeBusyRequest, GoogleCalendarEvent, GoogleCalendarEventAttributes,
     GoogleCalendarRestApi, GoogleDateTime, ListCalendarsResponse,
 };
 use nettu_scheduler_domain::providers::google::GoogleCalendarAccessRole;
-use nettu_scheduler_domain::{CalendarEvent, CompatibleInstances, EventInstance};
+use nettu_scheduler_domain::{CalendarEvent, CompatibleInstances, EventInstance, User};
 
 // https://developers.google.com/calendar/v3/reference/events
 // `https://accounts.google.com/o/oauth2/v2/auth?access_type=offline&include_granted_scopes=true&prompt=consent&client_id=${CLIENT_ID}&redirect_uri=${redirect_uri}&response_type=code&scope=https://www.googleapis.com/auth/calendar&state=${state}`;
@@ -21,7 +20,7 @@ pub struct GoogleCalendarProvider {
 }
 
 impl GoogleCalendarProvider {
-    pub async fn new(user: &mut UserWithIntegrations, ctx: &NettuContext) -> Result<Self, ()> {
+    pub async fn new(user: &User, ctx: &NettuContext) -> Result<Self, ()> {
         let access_token = match auth_provider::get_access_token(user, ctx).await {
             Some(token) => token,
             None => return Err(()),

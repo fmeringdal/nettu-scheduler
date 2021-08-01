@@ -1,5 +1,6 @@
 use super::subscribers::CreateRemindersOnEventCreated;
 use crate::error::NettuError;
+use crate::event::subscribers::CreateSyncedEventsOnEventCreated;
 use crate::shared::{
     auth::{account_can_modify_user, protect_account_route, protect_route, Permission},
     usecase::{
@@ -10,14 +11,9 @@ use crate::shared::{
 use actix_web::{web, HttpResponse};
 use nettu_scheduler_api_structs::create_event::*;
 use nettu_scheduler_domain::{
-    CalendarEvent, CalendarEventReminder, Metadata, RRuleOptions, SyncedCalendar,
-    SyncedCalendarEvent, SyncedCalendarProvider, User, ID,
+    CalendarEvent, CalendarEventReminder, Metadata, RRuleOptions, User, ID,
 };
-use nettu_scheduler_infra::{
-    google_calendar::GoogleCalendarProvider, outlook_calendar::OutlookCalendarProvider,
-    NettuContext,
-};
-use tracing::info;
+use nettu_scheduler_infra::NettuContext;
 
 fn handle_error(e: UseCaseErrors) -> NettuError {
     match e {
@@ -143,9 +139,8 @@ impl UseCase for CreateEventUseCase {
             reminder: self.reminder.clone(),
             service_id: self.service_id.clone(),
             metadata: self.metadata.clone(),
-            synced_events: Default::default(),
         };
-        info!("Metadata got from event!: {:?}", e.metadata);
+
         if let Some(rrule_opts) = self.recurrence.clone() {
             if !e.set_recurrence(rrule_opts, &calendar.settings, true) {
                 return Err(UseCaseErrors::InvalidRecurrenceRule);
@@ -158,41 +153,6 @@ impl UseCase for CreateEventUseCase {
             }
         }
 
-        let synced_google_calendar_ids = calendar.get_google_calendar_ids();
-        if !synced_google_calendar_ids.is_empty() {
-            if let Ok(provider) = GoogleCalendarProvider::new(&mut self.user, ctx).await {
-                for synced_google_calendar_id in synced_google_calendar_ids {
-                    if let Ok(google_event) = provider
-                        .create_event(synced_google_calendar_id.clone(), e.clone())
-                        .await
-                    {
-                        e.synced_events.push(SyncedCalendarEvent {
-                            calendar_id: synced_google_calendar_id,
-                            event_id: google_event.id,
-                            provider: SyncedCalendarProvider::Google,
-                        })
-                    }
-                }
-            }
-        }
-        let synced_outlook_calendar_ids = calendar.get_outlook_calendar_ids();
-        if !synced_outlook_calendar_ids.is_empty() {
-            if let Ok(provider) = OutlookCalendarProvider::new(&mut self.user, ctx).await {
-                for synced_outlook_calendar_id in synced_outlook_calendar_ids {
-                    if let Ok(outlook_event) = provider
-                        .create_event(synced_outlook_calendar_id.clone(), e.clone())
-                        .await
-                    {
-                        e.synced_events.push(SyncedCalendarEvent {
-                            calendar_id: synced_outlook_calendar_id,
-                            event_id: outlook_event.id,
-                            provider: SyncedCalendarProvider::Outlook,
-                        })
-                    }
-                }
-            }
-        }
-
         let repo_res = ctx.repos.events.insert(&e).await;
         if repo_res.is_err() {
             return Err(UseCaseErrors::StorageError);
@@ -202,7 +162,10 @@ impl UseCase for CreateEventUseCase {
     }
 
     fn subscribers() -> Vec<Box<dyn Subscriber<Self>>> {
-        vec![Box::new(CreateRemindersOnEventCreated)]
+        vec![
+            Box::new(CreateRemindersOnEventCreated),
+            Box::new(CreateSyncedEventsOnEventCreated),
+        ]
     }
 }
 

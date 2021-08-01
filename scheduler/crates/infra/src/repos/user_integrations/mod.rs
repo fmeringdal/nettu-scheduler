@@ -1,6 +1,6 @@
 mod postgres;
 
-use nettu_scheduler_domain::{UserIntegration, UserIntegrationProvider};
+use nettu_scheduler_domain::{IntegrationProvider, UserIntegration};
 pub use postgres::{PostgresUserIntegrationRepo, UserIntegrationRaw};
 
 use nettu_scheduler_domain::ID;
@@ -10,7 +10,7 @@ pub trait IUserIntegrationRepo: Send + Sync {
     async fn insert(&self, integration: &UserIntegration) -> anyhow::Result<()>;
     async fn save(&self, integration: &UserIntegration) -> anyhow::Result<()>;
     async fn find(&self, user_id: &ID) -> anyhow::Result<Vec<UserIntegration>>;
-    async fn delete(&self, user_id: &ID, provider: UserIntegrationProvider) -> anyhow::Result<()>;
+    async fn delete(&self, user_id: &ID, provider: IntegrationProvider) -> anyhow::Result<()>;
 }
 
 #[cfg(test)]
