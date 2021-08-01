@@ -33,8 +33,9 @@ pub use nettu_scheduler_domain::{
 };
 pub use schedule::{CreateScheduleInput, UpdateScheduleInput};
 pub use service::{
-    AddServiceUserInput, CreateBookingIntendInput, CreateServiceInput, GetServiceBookingSlotsInput,
-    RemoveBookingIntendInput, RemoveServiceUserInput, UpdateServiceInput, UpdateServiceUserInput,
+    AddBusyCalendar, AddServiceUserInput, CreateBookingIntendInput, CreateServiceInput,
+    GetServiceBookingSlotsInput, RemoveBookingIntendInput, RemoveBusyCalendar,
+    RemoveServiceUserInput, UpdateServiceInput, UpdateServiceUserInput,
 };
 pub use shared::{KVMetadata, MetadataFindInput};
 pub use user::CreateUserInput;

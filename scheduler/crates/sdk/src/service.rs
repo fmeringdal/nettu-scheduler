@@ -20,6 +20,18 @@ pub struct AddServiceUserInput {
     pub furthest_booking_time: Option<i64>,
 }
 
+pub struct AddBusyCalendar {
+    pub service_id: ID,
+    pub user_id: ID,
+    pub calendar: BusyCalendar,
+}
+
+pub struct RemoveBusyCalendar {
+    pub service_id: ID,
+    pub user_id: ID,
+    pub calendar: BusyCalendar,
+}
+
 pub struct UpdateServiceUserInput {
     pub service_id: ID,
     pub user_id: ID,
@@ -251,6 +263,40 @@ impl ServiceClient {
             .post(
                 body,
                 format!("service/{}/users", service_id),
+                StatusCode::OK,
+            )
+            .await
+    }
+
+    pub async fn add_busy_calendar(
+        &self,
+        input: AddBusyCalendar,
+    ) -> APIResponse<add_busy_calendar::APIResponse> {
+        let body = add_busy_calendar::RequestBody {
+            busy: input.calendar,
+        };
+
+        self.base
+            .put(
+                body,
+                format!("service/{}/users/{}/busy", input.service_id, input.user_id),
+                StatusCode::OK,
+            )
+            .await
+    }
+
+    pub async fn remove_busy_calendar(
+        &self,
+        input: AddBusyCalendar,
+    ) -> APIResponse<remove_busy_calendar::APIResponse> {
+        let body = remove_busy_calendar::RequestBody {
+            busy: input.calendar,
+        };
+
+        self.base
+            .delete_with_body(
+                body,
+                format!("service/{}/users/{}/busy", input.service_id, input.user_id),
                 StatusCode::OK,
             )
             .await

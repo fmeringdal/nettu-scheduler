@@ -121,16 +121,9 @@ impl IServiceRepo for PostgresServiceRepo {
     async fn find_with_users(&self, service_id: &ID) -> Option<ServiceWithUsers> {
         let service: ServiceWithUsersRaw = match sqlx::query_as(
             r#"
-            SELECT s.*, jsonb_agg((u.*)) AS users FROM services AS s 
-            LEFT JOIN (
-                SELECT su.*, array_agg(c.calendar_uid) AS busy, jsonb_agg(json_build_object('provider', ext_c.provider, 'busy_calendars', ext_c.busy_calendars)) as busy_ext FROM service_users AS su 
-                LEFT JOIN service_user_busy_calendars as c
-                ON su.service_uid = c.service_uid AND su.user_uid = c.user_uid
-                LEFT JOIN service_user_external_busy_calendars as ext_c
-                ON su.service_uid = ext_c.service_uid AND su.user_uid = ext_c.user_uid
-                GROUP BY su.service_uid, su.user_uid
-            ) AS u
-            ON u.service_uid = s.service_uid 
+            SELECT s.*, jsonb_agg((su.*)) AS users FROM services AS s 
+            LEFT JOIN service_users AS su 
+            ON su.service_uid = s.service_uid 
             WHERE s.service_uid = $1
             GROUP BY s.service_uid
             "#,

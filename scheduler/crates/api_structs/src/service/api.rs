@@ -80,7 +80,7 @@ pub mod add_busy_calendar {
         pub user_id: ID,
     }
 
-    #[derive(Deserialize, Serialize)]
+    #[derive(Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
         pub busy: BusyCalendar,
@@ -98,7 +98,7 @@ pub mod remove_busy_calendar {
         pub user_id: ID,
     }
 
-    #[derive(Deserialize)]
+    #[derive(Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
         pub busy: BusyCalendar,

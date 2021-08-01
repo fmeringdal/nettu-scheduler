@@ -5,9 +5,9 @@ use helpers::setup::spawn_app;
 use helpers::utils::{assert_equal_user_lists, format_datetime};
 use nettu_scheduler_domain::{BusyCalendar, ServiceMultiPersonOptions, TimePlan, ID};
 use nettu_scheduler_sdk::{
-    AddServiceUserInput, Calendar, CreateBookingIntendInput, CreateCalendarInput, CreateEventInput,
-    CreateScheduleInput, CreateServiceInput, CreateUserInput, GetServiceBookingSlotsInput,
-    NettuSDK, RoundRobinAlgorithm, User,
+    AddBusyCalendar, AddServiceUserInput, Calendar, CreateBookingIntendInput, CreateCalendarInput,
+    CreateEventInput, CreateScheduleInput, CreateServiceInput, CreateUserInput,
+    GetServiceBookingSlotsInput, NettuSDK, RoundRobinAlgorithm, User,
 };
 
 async fn create_default_service_host(admin_client: &NettuSDK, service_id: &ID) -> (User, Calendar) {
@@ -33,7 +33,6 @@ async fn create_default_service_host(admin_client: &NettuSDK, service_id: &ID) -
         .schedule;
     let input = CreateCalendarInput {
         metadata: None,
-        synced: None,
         timezone: "UTC".to_string(),
         user_id: host.id.clone(),
         week_start: 0,
@@ -49,7 +48,6 @@ async fn create_default_service_host(admin_client: &NettuSDK, service_id: &ID) -
         availability: Some(TimePlan::Schedule(schedule.id.clone())),
         buffer_after: None,
         buffer_before: None,
-        busy: Some(vec![BusyCalendar::Nettu(busy_calendar.id.clone())]),
         closest_booking_time: None,
         furthest_booking_time: None,
         service_id: service_id.clone(),
@@ -60,6 +58,16 @@ async fn create_default_service_host(admin_client: &NettuSDK, service_id: &ID) -
         .add_user(input)
         .await
         .expect("To add host to service");
+    let input = AddBusyCalendar {
+        user_id: host.id.clone(),
+        service_id: service_id.clone(),
+        calendar: BusyCalendar::Nettu(busy_calendar.id.clone()),
+    };
+    admin_client
+        .service
+        .add_busy_calendar(input)
+        .await
+        .expect("To add busy calendar to service user");
     (host, busy_calendar)
 }
 

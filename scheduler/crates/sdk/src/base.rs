@@ -126,6 +126,24 @@ impl BaseClient {
         self.handle_api_response(res, expected_status_code).await
     }
 
+    pub async fn delete_with_body<T: for<'de> Deserialize<'de>, S: Serialize>(
+        &self,
+        body: S,
+        path: String,
+        expected_status_code: StatusCode,
+    ) -> APIResponse<T> {
+        let res = match self
+            .get_client(Method::DELETE, path)
+            .json(&body)
+            .send()
+            .await
+        {
+            Ok(res) => res,
+            Err(_) => return Err(self.network_error()),
+        };
+        self.handle_api_response(res, expected_status_code).await
+    }
+
     pub async fn put<T: for<'de> Deserialize<'de>, S: Serialize>(
         &self,
         body: S,

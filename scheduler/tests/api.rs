@@ -289,7 +289,6 @@ async fn test_crud_calendars() {
             timezone: "UTC".into(),
             week_start: 0,
             metadata: None,
-            synced: None,
         })
         .await
         .unwrap()
@@ -325,7 +324,6 @@ async fn test_crud_calendars() {
             calendar_id: calendar.id.clone(),
             timezone: None,
             week_start: Some(week_start.clone()),
-            synced: None,
             metadata: None,
         })
         .await
@@ -375,7 +373,6 @@ async fn test_crud_events() {
             user_id: user.id.clone(),
             timezone: "UTC".into(),
             week_start: 0,
-            synced: None,
             metadata: None,
         })
         .await
@@ -388,9 +385,9 @@ async fn test_crud_events() {
             user.id.clone(),
             CreateEventInput {
                 calendar_id: calendar.id.clone(),
-                busy: None,
                 duration: 1000 * 60 * 60,
                 reminder: None,
+                busy: None,
                 recurrence: None,
                 service_id: None,
                 start_ts: 0,
@@ -504,7 +501,6 @@ async fn test_crud_service() {
             availability: None,
             buffer_after: None,
             buffer_before: None,
-            busy: None,
             closest_booking_time: None,
             furthest_booking_time: None,
         })
@@ -527,7 +523,6 @@ async fn test_crud_service() {
             availability: None,
             buffer_after: None,
             buffer_before: None,
-            busy: None,
             closest_booking_time: Some(new_closest_booking_time),
             furthest_booking_time: None,
         })
