@@ -10,7 +10,7 @@ use crate::{
 };
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::update_service_user::*;
-use nettu_scheduler_domain::{Account, BusyCalendar, ServiceResource, TimePlan, ID};
+use nettu_scheduler_domain::{Account, ServiceResource, TimePlan, ID};
 use nettu_scheduler_infra::NettuContext;
 
 pub async fn update_service_user_controller(

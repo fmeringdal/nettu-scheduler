@@ -1,6 +1,6 @@
 use crate::{shared::MetadataFindInput, APIResponse, BaseClient, ID};
 use nettu_scheduler_api_structs::*;
-use nettu_scheduler_domain::Metadata;
+use nettu_scheduler_domain::{IntegrationProvider, Metadata};
 use reqwest::StatusCode;
 use std::sync::Arc;
 
@@ -47,31 +47,17 @@ impl UserClient {
             .await
     }
 
-    pub async fn oauth_google(
+    pub async fn oauth(
         &self,
         user_id: ID,
         code: String,
-    ) -> APIResponse<oauth_google::APIResponse> {
-        let body = oauth_google::RequestBody { code };
+        provider: IntegrationProvider,
+    ) -> APIResponse<oauth_integration::APIResponse> {
+        let body = oauth_integration::RequestBody { code, provider };
         self.base
             .post(
                 body,
-                format!("user/{}/oauth/google", user_id.to_string()),
-                StatusCode::OK,
-            )
-            .await
-    }
-
-    pub async fn oauth_outlook(
-        &self,
-        user_id: ID,
-        code: String,
-    ) -> APIResponse<oauth_outlook::APIResponse> {
-        let body = oauth_outlook::RequestBody { code };
-        self.base
-            .post(
-                body,
-                format!("user/{}/oauth/outlook", user_id.to_string()),
+                format!("user/{}/oauth", user_id.to_string()),
                 StatusCode::OK,
             )
             .await

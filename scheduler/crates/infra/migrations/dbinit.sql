@@ -154,7 +154,7 @@ CREATE TABLE IF NOT EXISTS service_user_external_busy_calendars (
     user_uid uuid NOT NULL REFERENCES users(user_uid) ON DELETE CASCADE,
     ext_calendar_id text NOT NULL,
     "provider" varchar(128) NOT NULL,
-	PRIMARY KEY(service_uid, user_uid, "provider"),
+	PRIMARY KEY(service_uid, user_uid, "provider", ext_calendar_id),
     FOREIGN KEY(service_uid, user_uid) REFERENCES service_users (service_uid, user_uid) ON DELETE CASCADE,
     FOREIGN KEY(user_uid, "provider") REFERENCES user_integrations (user_uid, "provider") ON DELETE CASCADE
 );

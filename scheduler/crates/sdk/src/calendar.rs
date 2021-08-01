@@ -20,7 +20,6 @@ pub struct CreateCalendarInput {
     pub user_id: ID,
     pub timezone: String,
     pub week_start: isize,
-    pub synced: Option<Vec<SyncedCalendar>>,
     pub metadata: Option<Metadata>,
 }
 
@@ -42,7 +41,6 @@ pub struct UpdateCalendarInput {
     pub calendar_id: ID,
     pub week_start: Option<isize>,
     pub timezone: Option<String>,
-    pub synced: Option<Vec<SyncedCalendar>>,
     pub metadata: Option<Metadata>,
 }
 
@@ -61,7 +59,6 @@ impl CalendarClient {
         };
         let body = update_calendar::RequestBody {
             settings,
-            synced: input.synced,
             metadata: input.metadata,
         };
         self.base
@@ -128,7 +125,6 @@ impl CalendarClient {
         let body = create_calendar::RequestBody {
             timezone: input.timezone.clone(),
             week_start: input.week_start,
-            synced: input.synced,
             metadata: input.metadata,
         };
         self.base

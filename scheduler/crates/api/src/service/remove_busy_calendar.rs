@@ -74,7 +74,7 @@ impl UseCase for RemoveBusyCalendarUseCase {
             .ok_or(UseCaseErrors::UserNotFound)?;
 
         // Check if busy calendar exists
-        match self.busy {
+        match &self.busy {
             BusyCalendar::Google(g_cal_id) => {
                 let identifier = ExternalBusyCalendarIdentifier {
                     ext_calendar_id: g_cal_id.clone(),
@@ -128,7 +128,7 @@ impl UseCase for RemoveBusyCalendarUseCase {
         }
 
         // Delete busy calendar
-        match self.busy {
+        match &self.busy {
             BusyCalendar::Google(g_cal_id) => {
                 let identifier = ExternalBusyCalendarIdentifier {
                     ext_calendar_id: g_cal_id.clone(),

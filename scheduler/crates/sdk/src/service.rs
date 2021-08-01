@@ -13,7 +13,6 @@ pub struct ServiceClient {
 pub struct AddServiceUserInput {
     pub service_id: ID,
     pub user_id: ID,
-    pub busy: Option<Vec<BusyCalendar>>,
     pub availability: Option<TimePlan>,
     pub buffer_after: Option<i64>,
     pub buffer_before: Option<i64>,
@@ -24,7 +23,6 @@ pub struct AddServiceUserInput {
 pub struct UpdateServiceUserInput {
     pub service_id: ID,
     pub user_id: ID,
-    pub busy: Option<Vec<BusyCalendar>>,
     pub availability: Option<TimePlan>,
     pub buffer_after: Option<i64>,
     pub buffer_before: Option<i64>,
@@ -222,7 +220,6 @@ impl ServiceClient {
             availability: input.availability,
             buffer_after: input.buffer_after,
             buffer_before: input.buffer_before,
-            busy: input.busy,
             closest_booking_time: input.closest_booking_time,
             furthest_booking_time: input.furthest_booking_time,
         };
@@ -246,7 +243,6 @@ impl ServiceClient {
             availability: input.availability,
             buffer_after: input.buffer_after,
             buffer_before: input.buffer_before,
-            busy: input.busy,
             closest_booking_time: input.closest_booking_time,
             furthest_booking_time: input.furthest_booking_time,
         };

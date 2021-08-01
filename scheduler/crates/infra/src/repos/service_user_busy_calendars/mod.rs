@@ -1,19 +1,19 @@
 mod postgres;
 
-use nettu_scheduler_domain::{IntegrationProvider, ID};
+use nettu_scheduler_domain::{BusyCalendar, IntegrationProvider, ID};
 pub use postgres::PostgresServiceUseBusyCalendarRepo;
 
 pub struct BusyCalendarIdentifier {
-    service_id: ID,
-    user_id: ID,
-    calendar_id: ID,
+    pub service_id: ID,
+    pub user_id: ID,
+    pub calendar_id: ID,
 }
 
 pub struct ExternalBusyCalendarIdentifier {
-    service_id: ID,
-    user_id: ID,
-    ext_calendar_id: String,
-    provider: IntegrationProvider,
+    pub service_id: ID,
+    pub user_id: ID,
+    pub ext_calendar_id: String,
+    pub provider: IntegrationProvider,
 }
 
 #[async_trait::async_trait]
@@ -24,6 +24,7 @@ pub trait IServiceUserBusyCalendarRepo: Send + Sync {
     async fn insert_ext(&self, input: ExternalBusyCalendarIdentifier) -> anyhow::Result<()>;
     async fn delete(&self, input: BusyCalendarIdentifier) -> anyhow::Result<()>;
     async fn delete_ext(&self, input: ExternalBusyCalendarIdentifier) -> anyhow::Result<()>;
+    async fn find(&self, service_id: &ID, user_id: &ID) -> anyhow::Result<Vec<BusyCalendar>>;
 }
 
 #[cfg(test)]

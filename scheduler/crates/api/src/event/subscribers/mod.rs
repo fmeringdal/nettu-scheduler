@@ -86,7 +86,7 @@ impl Subscriber<CreateEventUseCase> for CreateSyncedEventsOnEventCreated {
             };
             for synced_o_cal in synced_outlook_calendars {
                 let ext_event = match provider
-                    .create_event(synced_o_cal.ext_calendar_id, e.clone())
+                    .create_event(synced_o_cal.ext_calendar_id.clone(), e.clone())
                     .await
                 {
                     Ok(e) => e,
@@ -99,7 +99,7 @@ impl Subscriber<CreateEventUseCase> for CreateSyncedEventsOnEventCreated {
                 let synced_event = SyncedCalendarEvent {
                     calendar_id: e.calendar_id.clone(),
                     event_id: e.id.clone(),
-                    ext_calendar_id: synced_o_cal.ext_calendar_id,
+                    ext_calendar_id: synced_o_cal.ext_calendar_id.clone(),
                     ext_event_id: ext_event.id,
                     provider: synced_o_cal.provider.clone(),
                     user_id: user.id.clone(),
@@ -120,7 +120,7 @@ impl Subscriber<CreateEventUseCase> for CreateSyncedEventsOnEventCreated {
             };
             for synced_g_cal in synced_google_calendars {
                 let ext_event = match provider
-                    .create_event(synced_g_cal.ext_calendar_id, e.clone())
+                    .create_event(synced_g_cal.ext_calendar_id.clone(), e.clone())
                     .await
                 {
                     Ok(e) => e,
@@ -133,7 +133,7 @@ impl Subscriber<CreateEventUseCase> for CreateSyncedEventsOnEventCreated {
                 let synced_event = SyncedCalendarEvent {
                     calendar_id: e.calendar_id.clone(),
                     event_id: e.id.clone(),
-                    ext_calendar_id: synced_g_cal.ext_calendar_id,
+                    ext_calendar_id: synced_g_cal.ext_calendar_id.clone(),
                     ext_event_id: ext_event.id,
                     provider: synced_g_cal.provider.clone(),
                     user_id: user.id.clone(),
@@ -190,8 +190,8 @@ impl Subscriber<UpdateEventUseCase> for UpdateSyncedEventsOnEventUpdated {
             for synced_o_event in synced_outlook_events {
                 if provider
                     .update_event(
-                        synced_o_event.ext_calendar_id,
-                        synced_o_event.ext_event_id,
+                        synced_o_event.ext_calendar_id.clone(),
+                        synced_o_event.ext_event_id.clone(),
                         e.clone(),
                     )
                     .await
@@ -213,8 +213,8 @@ impl Subscriber<UpdateEventUseCase> for UpdateSyncedEventsOnEventUpdated {
             for synced_g_event in synced_google_events {
                 if provider
                     .update_event(
-                        synced_g_event.ext_calendar_id,
-                        synced_g_event.ext_event_id,
+                        synced_g_event.ext_calendar_id.clone(),
+                        synced_g_event.ext_event_id.clone(),
                         e.clone(),
                     )
                     .await

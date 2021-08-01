@@ -83,7 +83,7 @@ impl UseCase for AddBusyCalendarUseCase {
             .ok_or(UseCaseErrors::UserNotFound)?;
 
         // Check if busy calendar already exists
-        match self.busy {
+        match &self.busy {
             BusyCalendar::Google(g_cal_id) => {
                 let identifier = ExternalBusyCalendarIdentifier {
                     ext_calendar_id: g_cal_id.clone(),
@@ -137,7 +137,7 @@ impl UseCase for AddBusyCalendarUseCase {
         }
 
         // Validate calendar permissions
-        match self.busy {
+        match &self.busy {
             BusyCalendar::Google(g_cal_id) => {
                 let provider = GoogleCalendarProvider::new(&user, ctx)
                     .await
@@ -151,7 +151,7 @@ impl UseCase for AddBusyCalendarUseCase {
                 if g_calendars
                     .items
                     .into_iter()
-                    .find(|g_calendar| g_calendar.id == g_cal_id)
+                    .find(|g_calendar| g_calendar.id == *g_cal_id)
                     .is_none()
                 {
                     return Err(UseCaseErrors::CalendarNotFound);
@@ -170,7 +170,7 @@ impl UseCase for AddBusyCalendarUseCase {
                 if o_calendars
                     .value
                     .into_iter()
-                    .find(|o_calendar| o_calendar.id == o_cal_id)
+                    .find(|o_calendar| o_calendar.id == *o_cal_id)
                     .is_none()
                 {
                     return Err(UseCaseErrors::CalendarNotFound);
@@ -183,7 +183,7 @@ impl UseCase for AddBusyCalendarUseCase {
         }
 
         // Insert busy calendar
-        match self.busy {
+        match &self.busy {
             BusyCalendar::Google(g_cal_id) => {
                 let identifier = ExternalBusyCalendarIdentifier {
                     ext_calendar_id: g_cal_id.clone(),
