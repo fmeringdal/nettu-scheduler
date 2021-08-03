@@ -3,14 +3,6 @@ mod postgres;
 use nettu_scheduler_domain::{ServiceReservation, ID};
 pub use postgres::PostgresReservationRepo;
 
-// On create booking intent when service is group
-// - Get number of reservations overlapping with that
-// - Insert reservation
-// - Return if service event needs to be created -> when reserveations == max count with the newly created
-// On update max count
-// - If less than do nothing ?
-// - If more then delete all service events
-
 #[async_trait::async_trait]
 pub trait IReservationRepo: Send + Sync {
     async fn insert(&self, reservation: &ServiceReservation) -> anyhow::Result<()>;

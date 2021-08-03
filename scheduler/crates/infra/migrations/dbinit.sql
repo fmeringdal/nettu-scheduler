@@ -4,9 +4,9 @@
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp"; 
 
+-- TODO: The unique constraints are REALLY stupid, find out how to get rid of them
 -- TODO: Better indexing strategy
 -- TODO: Have external calendars and events relations for better normalization / consistency
--- TODO: The UNIQUE constraints are REALLY stupid, find out how to remove them
 -- TODO: Split schema into multiple files
 
 ------------------ DOMAIN
@@ -20,7 +20,7 @@ CREATE DOMAIN entity_version AS BIGINT
    VALUE > 0
   );
 COMMENT ON DOMAIN entity_version IS
-'standard column for row version';
+'standard column for entity version';
 
 
 
@@ -344,7 +344,6 @@ before
 update on service_user_busy_calendars
     for each row execute procedure immutable_columns('service_uid', 'user_uid', 'calendar_uid');
 
--- TODO: maybe just add a count column ?
 CREATE TABLE IF NOT EXISTS service_reservations (
     reservation_uid uuid PRIMARY KEY DEFAULT uuid_generate_v4() NOT NULL,
     service_uid uuid NOT NULL REFERENCES services(service_uid) ON DELETE CASCADE,
