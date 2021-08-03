@@ -4,6 +4,7 @@
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp"; 
 
+-- TODO: Better docs and comments on schema
 -- TODO: The unique constraints are REALLY stupid, find out how to get rid of them
 -- TODO: Better indexing strategy
 -- TODO: Have external calendars and events relations for better normalization / consistency
@@ -12,6 +13,8 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 ------------------ DOMAIN
 CREATE DOMAIN ext_calendar_provider AS TEXT 
     CHECK (VALUE in ('google', 'outlook'));
+COMMENT ON DOMAIN ext_calendar_provider IS
+'external calendar provider names that are supported by nettu scheduler';
 
 CREATE DOMAIN entity_version AS BIGINT
   DEFAULT 1
@@ -231,11 +234,12 @@ update on event_reminder_versions
     for each row execute procedure immutable_columns('event_uid', 'version');
 
 COMMENT ON TABLE event_reminder_versions IS 
-'There are three usecases which can generate event reminders. The first is an 
-api call to create an event with reminders. The second is an api call
-from to update an existing event. The third is a scheduled job from the 
-calendar_event_reminder_generation_jobs table. If the update event and
-scheduled job happens at the same time it is possible that the scheduled job
+'There are three usecases which can generate event reminders. 
+1. API call to create an event with reminders. 
+2. API call to update an existing event. 
+3. A scheduled job from the calendar_event_reminder_generation_jobs table. 
+
+If the update event and scheduled job happens at the same time it is possible that the scheduled job
 generates reminders for an outdated calendar event. Therefore the update event usecase
 will increment the version number for the calendar event and the scheduled job
 will not be able to generate reminders for the old version which no longer will be
