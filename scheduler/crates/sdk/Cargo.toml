@@ -1,6 +1,6 @@
 [package]
 name = "nettu_scheduler_sdk"
-version = "0.3.2"
+version = "0.3.6"
 description = "Nettu scheduler sdk"
 license = "MIT"
 authors = ["Fredrik Meringdal"]
@@ -9,7 +9,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-nettu_scheduler_api_structs = { path = "../api_structs", version = "0.2.8" }
-nettu_scheduler_domain = { path = "../domain", version = "0.1.8" }
+nettu_scheduler_api_structs = { path = "../api_structs", version = "0.2.9" }
+nettu_scheduler_domain = { path = "../domain", version = "0.1.9" }
 reqwest = { version = "0.10.10", features = ["json"] }
 serde = "1.0.123"

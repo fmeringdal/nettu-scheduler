@@ -2,6 +2,7 @@ use super::IUserIntegrationRepo;
 use nettu_scheduler_domain::{IntegrationProvider, UserIntegration, ID};
 use serde::Deserialize;
 use sqlx::{types::Uuid, Done, FromRow, PgPool};
+use tracing::error;
 
 pub struct PostgresUserIntegrationRepo {
     pool: PgPool,
@@ -42,9 +43,10 @@ impl IUserIntegrationRepo for PostgresUserIntegrationRepo {
         let provider: String = integration.provider.clone().into();
         sqlx::query!(
             r#"
-            INSERT INTO user_integrations(user_uid, provider, refresh_token, access_token, access_token_expires_ts)
-            VALUES($1, $2, $3, $4, $5)
+            INSERT INTO user_integrations(account_uid, user_uid, provider, refresh_token, access_token, access_token_expires_ts)
+            VALUES($1, $2, $3, $4, $5, $6)
             "#,
+            integration.account_id.inner_ref(),
             integration.user_id.inner_ref(),
             provider,
             integration.refresh_token,
@@ -52,7 +54,11 @@ impl IUserIntegrationRepo for PostgresUserIntegrationRepo {
             integration.access_token_expires_ts
         )
         .execute(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!("Unable to insert user integration : {:?}", e);
+            e
+        })?;
         Ok(())
     }
 
@@ -74,7 +80,11 @@ impl IUserIntegrationRepo for PostgresUserIntegrationRepo {
             provider as _
         )
         .execute(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!("Unable to save user integration : {:?}", e);
+            e
+        })?;
 
         Ok(())
     }

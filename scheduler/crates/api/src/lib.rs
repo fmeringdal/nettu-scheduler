@@ -122,6 +122,13 @@ impl Application {
                 };
             }
 
+            self.context
+                .repos
+                .accounts
+                .insert(&account)
+                .await
+                .expect("To insert default account");
+
             let account_google_client_id_env = "ACCOUNT_GOOGLE_CLIENT_ID";
             let account_google_client_sercret_env = "ACCOUNT_GOOGLE_CLIENT_SERCRET";
             let account_google_redirect_uri_env = "ACCOUNT_GOOGLE_REDIRECT_URI";
@@ -176,13 +183,6 @@ impl Application {
                     .await
                     .expect("To insert outlook account integration");
             }
-
-            self.context
-                .repos
-                .accounts
-                .insert(&account)
-                .await
-                .expect("To create default account");
         }
     }
 }

@@ -63,6 +63,20 @@ impl UserClient {
             .await
     }
 
+    pub async fn remove_integration(
+        &self,
+        user_id: ID,
+        provider: IntegrationProvider,
+    ) -> APIResponse<remove_integration::APIResponse> {
+        let provider: String = provider.into();
+        self.base
+            .delete(
+                format!("user/{}/oauth/{}", user_id.to_string(), provider),
+                StatusCode::OK,
+            )
+            .await
+    }
+
     pub async fn get_by_meta(
         &self,
         input: MetadataFindInput,

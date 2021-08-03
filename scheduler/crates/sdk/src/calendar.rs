@@ -1,7 +1,7 @@
 use nettu_scheduler_api_structs::*;
 use nettu_scheduler_domain::{
     providers::{google::GoogleCalendarAccessRole, outlook::OutlookCalendarAccessRole},
-    Metadata, SyncedCalendar, ID,
+    IntegrationProvider, Metadata, ID,
 };
 use reqwest::StatusCode;
 use std::sync::Arc;
@@ -21,6 +21,19 @@ pub struct CreateCalendarInput {
     pub timezone: String,
     pub week_start: isize,
     pub metadata: Option<Metadata>,
+}
+pub struct SyncCalendarInput {
+    pub user_id: ID,
+    pub calendar_id: ID,
+    pub ext_calendar_id: String,
+    pub provider: IntegrationProvider,
+}
+
+pub struct StopCalendarSyncInput {
+    pub user_id: ID,
+    pub calendar_id: ID,
+    pub ext_calendar_id: String,
+    pub provider: IntegrationProvider,
 }
 
 pub struct GetCalendarInput {
@@ -132,6 +145,42 @@ impl CalendarClient {
                 body,
                 format!("user/{}/calendar", input.user_id),
                 StatusCode::CREATED,
+            )
+            .await
+    }
+
+    pub async fn sync_calendar(
+        &self,
+        input: SyncCalendarInput,
+    ) -> APIResponse<add_sync_calendar::APIResponse> {
+        let body = add_sync_calendar::RequestBody {
+            calendar_id: input.calendar_id,
+            ext_calendar_id: input.ext_calendar_id,
+            provider: input.provider,
+        };
+        self.base
+            .put(
+                body,
+                format!("user/{}/calendar/sync", input.user_id),
+                StatusCode::OK,
+            )
+            .await
+    }
+
+    pub async fn stop_calendar_sync(
+        &self,
+        input: StopCalendarSyncInput,
+    ) -> APIResponse<remove_sync_calendar::APIResponse> {
+        let body = remove_sync_calendar::RequestBody {
+            calendar_id: input.calendar_id,
+            ext_calendar_id: input.ext_calendar_id,
+            provider: input.provider,
+        };
+        self.base
+            .delete_with_body(
+                body,
+                format!("user/{}/calendar/sync", input.user_id),
+                StatusCode::OK,
             )
             .await
     }

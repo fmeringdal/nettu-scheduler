@@ -1,9 +1,10 @@
-DROP SCHEMA public CASCADE;
-CREATE SCHEMA public;
+-- DROP SCHEMA public CASCADE;
+-- CREATE SCHEMA public;
 -- \i ~/Projects/nettu-scheduler/scheduler/crates/infra/migrations/dbinit.sql;
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp"; 
 
+-- TODO: Create domain types and do type casting in queries
 -- TODO: better naming conventions
 -- TODO: immutable triggers
 -- TODO: Create views
@@ -13,8 +14,8 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE IF NOT EXISTS accounts (
     account_uid uuid PRIMARY KEY DEFAULT uuid_generate_v4() NOT NULL,
-    secret_api_key varchar(255) NOT NULL UNIQUE,
-    public_jwt_key varchar(1024),
+    secret_api_key text NOT NULL UNIQUE,
+    public_jwt_key text,
     settings JSONB NOT NULL
 );
 CREATE TABLE IF NOT EXISTS account_integrations (
@@ -22,7 +23,7 @@ CREATE TABLE IF NOT EXISTS account_integrations (
     client_id text NOT NULL,
     client_secret text NOT NULL,
     redirect_uri text NOT NULL,
-    "provider" varchar(128) NOT NULL,
+    "provider" text NOT NULL,
     -- Account can only have one intergration per provider
     PRIMARY KEY(account_uid, "provider")
 );
@@ -40,7 +41,7 @@ CREATE TABLE IF NOT EXISTS user_integrations (
     refresh_token text NOT NULL,
     access_token text NOT NULL,
     access_token_expires_ts BIGINT NOT NULL,
-    "provider" varchar(128) NOT NULL,
+    "provider" text NOT NULL,
     -- User cannot have multiple integrations to the same provider
     PRIMARY KEY(user_uid, "provider"),
     FOREIGN KEY(account_uid, "provider") REFERENCES account_integrations(account_uid, "provider") ON DELETE CASCADE
@@ -68,7 +69,7 @@ CREATE TABLE IF NOT EXISTS calendar_ext_synced_calendars (
     calendar_uid uuid NOT NULL REFERENCES calendars(calendar_uid) ON DELETE CASCADE,
     user_uid uuid NOT NULL REFERENCES users(user_uid) ON DELETE CASCADE,
     ext_calendar_id text NOT NULL,
-    "provider" varchar(128) NOT NULL,
+    "provider" text NOT NULL,
 	PRIMARY KEY(calendar_uid, "provider", ext_calendar_id),
     FOREIGN KEY(user_uid, "provider") REFERENCES user_integrations (user_uid, "provider") ON DELETE CASCADE
 );
@@ -99,7 +100,7 @@ CREATE TABLE IF NOT EXISTS calendar_ext_synced_events (
     user_uid uuid NOT NULL REFERENCES users(user_uid) ON DELETE CASCADE,
     ext_calendar_id text NOT NULL,
     ext_calendar_event_id text NOT NULL,
-    "provider" varchar(128) NOT NULL,
+    "provider" text NOT NULL,
 	PRIMARY KEY(event_uid, "provider", ext_calendar_id, ext_calendar_event_id),
     FOREIGN KEY(calendar_uid, "provider", ext_calendar_id) REFERENCES calendar_ext_synced_calendars (calendar_uid, "provider", ext_calendar_id) ON DELETE CASCADE
 );
@@ -125,7 +126,7 @@ CREATE TABLE IF NOT EXISTS schedules (
     user_uid uuid NOT NULL REFERENCES users(user_uid) ON DELETE CASCADE,
     account_uid uuid NOT NULL REFERENCES accounts(account_uid) ON DELETE CASCADE,
     rules JSON NOT NULL,
-    timezone varchar(128) NOT NULL,
+    timezone text NOT NULL,
     metadata text[] NOT NULL
 );
 CREATE INDEX IF NOT EXISTS schedule_metadata ON schedules USING GIN (metadata);
@@ -153,7 +154,7 @@ CREATE TABLE IF NOT EXISTS service_user_external_busy_calendars (
     service_uid uuid NOT NULL REFERENCES services(service_uid) ON DELETE CASCADE,
     user_uid uuid NOT NULL REFERENCES users(user_uid) ON DELETE CASCADE,
     ext_calendar_id text NOT NULL,
-    "provider" varchar(128) NOT NULL,
+    "provider" text NOT NULL,
 	PRIMARY KEY(service_uid, user_uid, "provider", ext_calendar_id),
     FOREIGN KEY(service_uid, user_uid) REFERENCES service_users (service_uid, user_uid) ON DELETE CASCADE,
     FOREIGN KEY(user_uid, "provider") REFERENCES user_integrations (user_uid, "provider") ON DELETE CASCADE
@@ -173,13 +174,3 @@ CREATE TABLE IF NOT EXISTS service_reservations (
     service_uid uuid NOT NULL REFERENCES services(service_uid) ON DELETE CASCADE,
     "timestamp" BIGINT NOT NULL
 );
-
-
----- VIEWS ------
--- CREATE VIEW service_users_info AS
--- 	SELECT su.*, array_agg(c.calendar_uid) AS busy, jsonb_agg(json_build_object('provider', ext_c.provider, 'busy_calendars', ext_c.busy_calendars)) as busy_ext FROM service_users AS su 
--- 	LEFT JOIN service_user_busy_calendars as c
--- 	ON su.service_uid = c.service_uid AND su.user_uid = c.user_uid
--- 	LEFT JOIN service_user_external_busy_calendars as ext_c
--- 	ON su.service_uid = ext_c.service_uid AND su.user_uid = ext_c.user_uid
--- 	GROUP BY su.service_uid, su.user_uid;

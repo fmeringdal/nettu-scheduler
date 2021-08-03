@@ -1,6 +1,6 @@
 [package]
 name = "nettu_scheduler_domain"
-version = "0.1.8"
+version = "0.1.9"
 description = "Nettu scheduler domain"
 license = "MIT"
 authors = ["Fredrik Meringdal"]

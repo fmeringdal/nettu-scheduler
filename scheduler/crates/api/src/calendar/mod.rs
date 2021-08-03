@@ -11,6 +11,7 @@ mod get_outlook_calendars;
 mod remove_sync_calendar;
 mod update_calendar;
 
+use add_sync_calendar::add_sync_calendar_admin_controller;
 use create_calendar::{create_calendar_admin_controller, create_calendar_controller};
 use delete_calendar::{delete_calendar_admin_controller, delete_calendar_controller};
 use get_calendar::{get_calendar_admin_controller, get_calendar_controller};
@@ -22,6 +23,7 @@ use get_google_calendars::{
 use get_outlook_calendars::{
     get_outlook_calendars_admin_controller, get_outlook_calendars_controller,
 };
+use remove_sync_calendar::remove_sync_calendar_admin_controller;
 use update_calendar::{update_calendar_admin_controller, update_calendar_controller};
 
 pub fn configure_routes(cfg: &mut web::ServiceConfig) {
@@ -88,5 +90,21 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
     cfg.route(
         "/user/{user_id}/calendar/provider/outlook",
         web::get().to(get_outlook_calendars_admin_controller),
+    );
+    // cfg.route(
+    //     "/calendar/sync/",
+    //     web::put().to(add_sync_calendar_controller),
+    // );
+    cfg.route(
+        "/user/{user_id}/calendar/sync",
+        web::put().to(add_sync_calendar_admin_controller),
+    );
+    // cfg.route(
+    //     "/calendar/sync",
+    //     web::delete().to(remove_sync_calendar_controller),
+    // );
+    cfg.route(
+        "/user/{user_id}/calendar/sync",
+        web::delete().to(remove_sync_calendar_admin_controller),
     );
 }

@@ -1,9 +1,7 @@
 use super::IEventSyncedRepo;
 use nettu_scheduler_domain::{SyncedCalendarEvent, ID};
-use sqlx::{
-    types::{Uuid},
-    FromRow, PgPool,
-};
+use sqlx::{types::Uuid, FromRow, PgPool};
+use tracing::error;
 
 pub struct PostgresEventSyncedRepo {
     pool: PgPool,
@@ -62,7 +60,12 @@ impl IEventSyncedRepo for PostgresEventSyncedRepo {
             provider as _
         )
         .execute(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            println!("Unable to insert synced calendar event : {:?}", e);
+            error!("Unable to insert synced calendar event : {:?}", e);
+            e
+        })?;
 
         Ok(())
     }

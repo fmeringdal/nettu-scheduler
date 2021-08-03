@@ -378,7 +378,12 @@ impl GetServiceBookingSlotsUseCase {
                         busy_events.push(google_busy_event);
                     }
                 }
-                Err(_) => {}
+                Err(_) => {
+                    error!(
+                        "Unable to initialize google calendar provider for user : {:?}",
+                        user
+                    );
+                }
             }
         }
 

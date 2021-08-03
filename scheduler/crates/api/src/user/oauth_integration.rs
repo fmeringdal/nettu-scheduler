@@ -123,6 +123,11 @@ impl UseCase for OAuthIntegrationUseCase {
             redirect_uri: acc_provider_integration.redirect_uri,
             code: self.code.clone(),
         };
+        println!("---------------");
+        println!("---------------");
+        println!("---------------");
+        println!("---------------");
+        println!("{:?}", self.provider);
         let res = self
             .provider
             .exchange_code_token(req)
@@ -142,7 +147,7 @@ impl UseCase for OAuthIntegrationUseCase {
 
         ctx.repos
             .user_integrations
-            .save(&user_integration)
+            .insert(&user_integration)
             .await
             .map(|_| UseCaseRes {
                 user: self.user.clone(),

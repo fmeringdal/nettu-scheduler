@@ -30,7 +30,8 @@ pub struct GoogleCalendarEvent {
     pub end: GoogleCalendarEventDateTime,
     pub summary: String,
     pub description: String,
-    pub transparency: String,
+    #[serde(default)]
+    pub transparency: Option<String>,
     #[serde(default)]
     pub recurrence: Option<Vec<String>>,
 }
@@ -199,10 +200,12 @@ impl GoogleCalendarRestApi {
             .await
         {
             Ok(res) => res.json::<T>().await.map_err(|e| {
+                println!("Google calendar api POST deserialize error: {:?}", e);
                 warn!("Google calendar api POST deserialize error: {:?}", e);
                 ()
             }),
             Err(e) => {
+                println!("Google calendar api POST error: {:?}", e);
                 warn!("Google calendar api POST error: {:?}", e);
                 Err(())
             }

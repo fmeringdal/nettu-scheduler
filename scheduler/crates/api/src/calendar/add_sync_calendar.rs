@@ -51,30 +51,30 @@ pub async fn add_sync_calendar_admin_controller(
         .map_err(error_handler)
 }
 
-pub async fn add_sync_calendar_controller(
-    http_req: web::HttpRequest,
-    body: web::Json<RequestBody>,
-    ctx: web::Data<NettuContext>,
-) -> Result<HttpResponse, NettuError> {
-    let (user, policy) = protect_route(&http_req, &ctx).await?;
+// pub async fn add_sync_calendar_controller(
+//     http_req: web::HttpRequest,
+//     body: web::Json<RequestBody>,
+//     ctx: web::Data<NettuContext>,
+// ) -> Result<HttpResponse, NettuError> {
+//     let (user, policy) = protect_route(&http_req, &ctx).await?;
 
-    let body = body.0;
+//     let body = body.0;
 
-    let usecase = AddSyncCalendarUseCase {
-        user,
-        calendar_id: body.calendar_id,
-        ext_calendar_id: body.ext_calendar_id,
-        provider: body.provider,
-    };
+//     let usecase = AddSyncCalendarUseCase {
+//         user,
+//         calendar_id: body.calendar_id,
+//         ext_calendar_id: body.ext_calendar_id,
+//         provider: body.provider,
+//     };
 
-    execute_with_policy(usecase, &policy, &ctx)
-        .await
-        .map(|_| HttpResponse::Ok().json(APIResponse::from("Calendar sync created")))
-        .map_err(|e| match e {
-            UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
-            UseCaseErrorContainer::UseCase(e) => error_handler(e),
-        })
-}
+//     execute_with_policy(usecase, &policy, &ctx)
+//         .await
+//         .map(|_| HttpResponse::Ok().json(APIResponse::from("Calendar sync created")))
+//         .map_err(|e| match e {
+//             UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
+//             UseCaseErrorContainer::UseCase(e) => error_handler(e),
+//         })
+// }
 
 #[derive(Debug)]
 struct AddSyncCalendarUseCase {

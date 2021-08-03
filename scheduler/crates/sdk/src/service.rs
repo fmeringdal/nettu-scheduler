@@ -287,7 +287,7 @@ impl ServiceClient {
 
     pub async fn remove_busy_calendar(
         &self,
-        input: AddBusyCalendar,
+        input: RemoveBusyCalendar,
     ) -> APIResponse<remove_busy_calendar::APIResponse> {
         let body = remove_busy_calendar::RequestBody {
             busy: input.calendar,

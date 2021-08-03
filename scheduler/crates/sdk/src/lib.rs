@@ -21,7 +21,7 @@ pub(crate) use base::{APIResponse, BaseClient};
 
 pub use calendar::{
     CreateCalendarInput, DeleteCalendarInput, GetCalendarEventsInput, GetCalendarInput,
-    UpdateCalendarInput,
+    StopCalendarSyncInput, SyncCalendarInput, UpdateCalendarInput,
 };
 pub use event::{
     CreateEventInput, DeleteEventInput, GetEventInput, GetEventsInstancesInput, UpdateEventInput,

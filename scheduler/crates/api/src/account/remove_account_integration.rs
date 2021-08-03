@@ -19,7 +19,7 @@ pub async fn remove_account_integration_controller(
 
     execute(usecase, &ctx)
         .await
-        .map(|res| {
+        .map(|_| {
             HttpResponse::Ok().json(APIResponse::from(
                 "Provider integration removed from account",
             ))
