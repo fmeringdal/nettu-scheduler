@@ -48,7 +48,7 @@ impl IUserIntegrationRepo for PostgresUserIntegrationRepo {
             "#,
             integration.account_id.inner_ref(),
             integration.user_id.inner_ref(),
-            provider,
+            provider as _,
             integration.refresh_token,
             integration.access_token,
             integration.access_token_expires_ts

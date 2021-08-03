@@ -42,7 +42,7 @@ impl IEventSyncedRepo for PostgresEventSyncedRepo {
         let provider: String = e.provider.clone().into();
         sqlx::query!(
             r#"
-            INSERT INTO calendar_ext_synced_events(
+            INSERT INTO externally_synced_calendar_events(
                 event_uid,
                 calendar_uid, 
                 user_uid, 
@@ -74,7 +74,7 @@ impl IEventSyncedRepo for PostgresEventSyncedRepo {
         let synced_events: Vec<SyncedEventRaw> = sqlx::query_as!(
             SyncedEventRaw,
             r#"
-            SELECT * FROM calendar_ext_synced_events AS e
+            SELECT * FROM externally_synced_calendar_events AS e
             WHERE e.event_uid = $1
             "#,
             event_id.inner_ref(),

@@ -18,8 +18,8 @@ use account_integrations::{IAccountIntegrationRepo, PostgresAccountIntegrationRe
 use calendar::{ICalendarRepo, PostgresCalendarRepo};
 use calendar_synced::{ICalendarSyncedRepo, PostgresCalendarSyncedRepo};
 use event::{
-    IEventRemindersExpansionJobsRepo, IEventRepo, IEventSyncedRepo, IReminderRepo,
-    PostgresEventReminderExpansionJobsRepo, PostgresEventRepo, PostgresEventSyncedRepo,
+    IEventRemindersGenerationJobsRepo, IEventRepo, IEventSyncedRepo, IReminderRepo,
+    PostgresEventReminderGenerationJobsRepo, PostgresEventRepo, PostgresEventSyncedRepo,
     PostgresReminderRepo,
 };
 use reservation::{IReservationRepo, PostgresReservationRepo};
@@ -44,7 +44,7 @@ pub struct Repos {
     pub calendars: Arc<dyn ICalendarRepo>,
     pub calendar_synced: Arc<dyn ICalendarSyncedRepo>,
     pub events: Arc<dyn IEventRepo>,
-    pub event_reminders_expansion_jobs: Arc<dyn IEventRemindersExpansionJobsRepo>,
+    pub event_reminders_generation_jobs: Arc<dyn IEventRemindersGenerationJobsRepo>,
     pub event_synced: Arc<dyn IEventSyncedRepo>,
     pub schedules: Arc<dyn IScheduleRepo>,
     pub reminders: Arc<dyn IReminderRepo>,
@@ -85,9 +85,9 @@ impl Repos {
             schedules: Arc::new(PostgresScheduleRepo::new(pool.clone())),
             reminders: Arc::new(PostgresReminderRepo::new(pool.clone())),
             reservations: Arc::new(PostgresReservationRepo::new(pool.clone())),
-            event_reminders_expansion_jobs: Arc::new(PostgresEventReminderExpansionJobsRepo::new(
-                pool,
-            )),
+            event_reminders_generation_jobs: Arc::new(
+                PostgresEventReminderGenerationJobsRepo::new(pool),
+            ),
         })
     }
 }

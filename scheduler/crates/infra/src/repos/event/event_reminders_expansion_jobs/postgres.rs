@@ -1,13 +1,13 @@
-use super::IEventRemindersExpansionJobsRepo;
+use super::IEventRemindersGenerationJobsRepo;
 
-use nettu_scheduler_domain::{EventRemindersExpansionJob};
+use nettu_scheduler_domain::EventRemindersExpansionJob;
 use sqlx::{types::Uuid, FromRow, PgPool};
 
-pub struct PostgresEventReminderExpansionJobsRepo {
+pub struct PostgresEventReminderGenerationJobsRepo {
     pool: PgPool,
 }
 
-impl PostgresEventReminderExpansionJobsRepo {
+impl PostgresEventReminderGenerationJobsRepo {
     pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
@@ -31,18 +31,18 @@ impl Into<EventRemindersExpansionJob> for JobRaw {
 }
 
 #[async_trait::async_trait]
-impl IEventRemindersExpansionJobsRepo for PostgresEventReminderExpansionJobsRepo {
+impl IEventRemindersGenerationJobsRepo for PostgresEventReminderGenerationJobsRepo {
     async fn bulk_insert(&self, jobs: &[EventRemindersExpansionJob]) -> anyhow::Result<()> {
         for job in jobs {
             sqlx::query!(
                 r#"
-            INSERT INTO calendar_event_reminder_expansion_jobs 
+            INSERT INTO calendar_event_reminder_generation_jobs 
             (event_uid, timestamp, version)
             VALUES($1, $2, $3)
             "#,
                 job.event_id.inner_ref(),
                 job.timestamp,
-                job.version
+                job.version as _
             )
             .execute(&self.pool)
             .await?;
@@ -54,7 +54,7 @@ impl IEventRemindersExpansionJobsRepo for PostgresEventReminderExpansionJobsRepo
         sqlx::query_as!(
             JobRaw,
             r#"
-            DELETE FROM calendar_event_reminder_expansion_jobs AS j
+            DELETE FROM calendar_event_reminder_generation_jobs AS j
             WHERE j.timestamp <= $1
             RETURNING *
             "#,

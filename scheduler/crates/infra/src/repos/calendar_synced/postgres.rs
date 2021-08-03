@@ -38,7 +38,7 @@ impl ICalendarSyncedRepo for PostgresCalendarSyncedRepo {
         let provider: String = c.provider.clone().into();
         sqlx::query!(
             r#"
-            INSERT INTO calendar_ext_synced_calendars (
+            INSERT INTO externally_synced_calendars (
                 calendar_uid, 
                 user_uid, 
                 ext_calendar_id, 
@@ -66,7 +66,7 @@ impl ICalendarSyncedRepo for PostgresCalendarSyncedRepo {
         let provider: String = c.provider.clone().into();
         sqlx::query!(
             r#"
-            DELETE FROM calendar_ext_synced_calendars
+            DELETE FROM externally_synced_calendars
             WHERE calendar_uid = $1 AND
                 user_uid = $2 AND
                 ext_calendar_id = $3 AND
@@ -87,7 +87,7 @@ impl ICalendarSyncedRepo for PostgresCalendarSyncedRepo {
         let synced_calendars: Vec<SyncedCalendarRaw> = sqlx::query_as!(
             SyncedCalendarRaw,
             r#"
-            SELECT * FROM calendar_ext_synced_calendars AS c
+            SELECT * FROM externally_synced_calendars AS c
             WHERE c.calendar_uid = $1
             "#,
             calendar_id.inner_ref(),

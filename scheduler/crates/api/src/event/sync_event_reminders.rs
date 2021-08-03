@@ -63,7 +63,7 @@ async fn create_event_reminders(
                 };
                 if ctx
                     .repos
-                    .event_reminders_expansion_jobs
+                    .event_reminders_generation_jobs
                     .bulk_insert(&[job])
                     .await
                     .is_err()
@@ -179,7 +179,7 @@ impl<'a> UseCase for SyncEventRemindersUseCase<'a> {
             SyncEventRemindersTrigger::JobScheduler => {
                 let jobs = ctx
                     .repos
-                    .event_reminders_expansion_jobs
+                    .event_reminders_generation_jobs
                     .delete_all_before(ctx.sys.get_timestamp_millis())
                     .await;
 

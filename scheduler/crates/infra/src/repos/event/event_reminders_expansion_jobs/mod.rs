@@ -1,10 +1,10 @@
 mod postgres;
 
 use nettu_scheduler_domain::EventRemindersExpansionJob;
-pub use postgres::PostgresEventReminderExpansionJobsRepo;
+pub use postgres::PostgresEventReminderGenerationJobsRepo;
 
 #[async_trait::async_trait]
-pub trait IEventRemindersExpansionJobsRepo: Send + Sync {
+pub trait IEventRemindersGenerationJobsRepo: Send + Sync {
     async fn bulk_insert(&self, jobs: &[EventRemindersExpansionJob]) -> anyhow::Result<()>;
     async fn delete_all_before(&self, before: i64) -> Vec<EventRemindersExpansionJob>;
 }
@@ -118,7 +118,7 @@ mod tests {
         ];
         assert!(ctx
             .repos
-            .event_reminders_expansion_jobs
+            .event_reminders_generation_jobs
             .bulk_insert(&jobs)
             .await
             .map_err(|e| println!("Err: {:?}", e))
@@ -127,7 +127,7 @@ mod tests {
         // Delete before timestamp
         let delete_res = ctx
             .repos
-            .event_reminders_expansion_jobs
+            .event_reminders_generation_jobs
             .delete_all_before(jobs[1].timestamp)
             .await;
         assert_eq!(delete_res.len(), 2);

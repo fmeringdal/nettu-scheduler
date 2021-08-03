@@ -92,5 +92,21 @@ mod tests {
         assert_eq!(delete_res.len(), 2);
         assert_eq!(delete_res[0], reminders[0]);
         assert_eq!(delete_res[1], reminders[1]);
+
+        // Inc version number
+        let new_e3_v = ctx
+            .repos
+            .reminders
+            .inc_version(&reminders[2].event_id)
+            .await
+            .expect("To increment reminder version");
+        assert_eq!(new_e3_v, reminders[2].version + 1);
+        let delete_res = ctx
+            .repos
+            .reminders
+            .delete_all_before(reminders[3].remind_at)
+            .await;
+        // Reminders has been deleted because there is a new version now
+        assert_eq!(delete_res.len(), 0);
     }
 }

@@ -615,7 +615,7 @@ mod test {
             exdates: Vec::new(),
             recurrence: None,
             start_ts: 1000 * 60 * 60 * 4,
-            user_id: resource1.user_id.to_owned(),
+            user_id: resource2.user_id.to_owned(),
             reminders: vec![],
             service_id: None,
             metadata: Default::default(),

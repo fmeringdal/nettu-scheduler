@@ -46,7 +46,7 @@ impl IAccountIntegrationRepo for PostgresAccountIntegrationRepo {
             integration.client_id,
             integration.client_secret,
             integration.redirect_uri,
-            provider
+            provider as _
         )
         .execute(&self.pool)
         .await?;

@@ -53,7 +53,7 @@ impl IReminderRepo for PostgresReminderRepo {
                 reminder.event_id.inner_ref(),
                 reminder.account_id.inner_ref(),
                 reminder.remind_at,
-                reminder.version,
+                reminder.version as _,
                 reminder.identifier,
             )
             .execute(&self.pool)
@@ -85,13 +85,12 @@ impl IReminderRepo for PostgresReminderRepo {
             ReminderVersionRaw,
             r#"
             INSERT INTO event_reminder_versions
-                (event_uid, version)
+                (event_uid)
             VALUES
-                ($1, $2)
+                ($1)
             RETURNING *
             "#,
             event_id.inner_ref(),
-            0
         )
         .fetch_one(&self.pool)
         .await?;
@@ -103,9 +102,14 @@ impl IReminderRepo for PostgresReminderRepo {
         let r_version = sqlx::query_as!(
             ReminderVersionRaw,
             r#"
-            UPDATE event_reminder_versions
-                SET version = version + 1
-            WHERE event_uid = $1 
+            WITH prev_v AS (
+                DELETE FROM event_reminder_versions
+                WHERE event_uid = $1
+                RETURNING *
+            )
+            INSERT INTO event_reminder_versions
+                (event_uid, version)
+            SELECT $1, version + 1 from prev_v
             RETURNING *
             "#,
             event_id.inner_ref(),
