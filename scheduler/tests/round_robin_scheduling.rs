@@ -174,7 +174,7 @@ async fn test_round_robin_scheduling_simple_test() {
                     duration,
                     metadata: None,
                     recurrence: None,
-                    reminder: None,
+                    reminders: vec![],
                     service_id: Some(service.id.clone()),
                     start_ts: available_slot,
                 };
@@ -285,7 +285,7 @@ async fn test_round_robin_equal_distribution_scheduling() {
                     duration,
                     metadata: None,
                     recurrence: None,
-                    reminder: None,
+                    reminders: vec![],
                     service_id: Some(service.id.clone()),
                     start_ts: some_time_later,
                 };
@@ -339,7 +339,7 @@ async fn test_round_robin_equal_distribution_scheduling() {
                 duration,
                 metadata: None,
                 recurrence: None,
-                reminder: None,
+                reminders: vec![],
                 service_id: Some(service.id.clone()),
                 start_ts: available_slot,
             };
@@ -436,7 +436,7 @@ async fn test_round_robin_availability_scheduling() {
                 duration,
                 metadata: None,
                 recurrence: None,
-                reminder: None,
+                reminders: vec![],
                 service_id: Some(service.id.clone()),
                 start_ts: 0,
             };
@@ -508,7 +508,7 @@ async fn test_round_robin_availability_scheduling() {
                 duration,
                 metadata: None,
                 recurrence: None,
-                reminder: None,
+                reminders: vec![],
                 service_id: Some(service.id.clone()),
                 start_ts: available_slot,
             };

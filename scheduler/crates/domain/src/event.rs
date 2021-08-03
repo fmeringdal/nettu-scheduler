@@ -24,7 +24,7 @@ pub struct CalendarEvent {
     pub calendar_id: ID,
     pub user_id: ID,
     pub account_id: ID,
-    pub reminder: Option<CalendarEventReminder>,
+    pub reminders: Vec<CalendarEventReminder>,
     pub service_id: Option<ID>,
     pub metadata: Metadata,
 }
@@ -57,14 +57,16 @@ impl Meta<ID> for CalendarEvent {
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CalendarEventReminder {
-    pub minutes_before: i64,
+    pub delta: i64, // In minutes
+    pub identifier: String,
 }
 
 impl CalendarEventReminder {
     // This isn't ideal at all, shouldn't be possible to construct
     // this type of it is not valid, but for now it is good enough
     pub fn is_valid(&self) -> bool {
-        self.minutes_before >= 0 && self.minutes_before <= 60 * 24
+        let max_delta = 60 * 24 * 31 * 12; // More than one year in minutes
+        self.delta >= -max_delta && self.delta <= max_delta
     }
 }
 
@@ -208,7 +210,7 @@ mod test {
             calendar_id: Default::default(),
             user_id: Default::default(),
             account_id: Default::default(),
-            reminder: None,
+            reminders: Default::default(),
             service_id: None,
             metadata: Default::default(),
             created: Default::default(),
@@ -236,7 +238,7 @@ mod test {
             calendar_id: Default::default(),
             user_id: Default::default(),
             account_id: Default::default(),
-            reminder: None,
+            reminders: Default::default(),
             service_id: None,
             metadata: Default::default(),
             created: Default::default(),
@@ -285,7 +287,7 @@ mod test {
                 user_id: Default::default(),
                 account_id: Default::default(),
                 recurrence: None,
-                reminder: None,
+                reminders: Default::default(),
                 service_id: None,
                 metadata: Default::default(),
                 created: Default::default(),
@@ -334,7 +336,7 @@ mod test {
                 account_id: Default::default(),
                 user_id: Default::default(),
                 recurrence: None,
-                reminder: None,
+                reminders: Default::default(),
                 service_id: None,
                 metadata: Default::default(),
                 created: Default::default(),

@@ -52,7 +52,7 @@ pub async fn update_event_admin_controller(
         event_id: e.id,
         duration: body.duration,
         start_ts: body.start_ts,
-        reminder: body.reminder,
+        reminders: body.reminders,
         recurrence: body.recurrence,
         busy: body.busy,
         service_id: body.service_id,
@@ -80,7 +80,7 @@ pub async fn update_event_controller(
         event_id: path_params.event_id.clone(),
         duration: body.duration,
         start_ts: body.start_ts,
-        reminder: body.reminder,
+        reminders: body.reminders,
         recurrence: body.recurrence,
         busy: body.busy,
         service_id: body.service_id,
@@ -104,7 +104,7 @@ pub struct UpdateEventUseCase {
     pub start_ts: Option<i64>,
     pub busy: Option<bool>,
     pub duration: Option<i64>,
-    pub reminder: Option<CalendarEventReminder>,
+    pub reminders: Option<Vec<CalendarEventReminder>>,
     pub recurrence: Option<RRuleOptions>,
     pub service_id: Option<ID>,
     pub exdates: Option<Vec<i64>>,
@@ -136,7 +136,7 @@ impl UseCase for UpdateEventUseCase {
             duration,
             recurrence,
             exdates,
-            reminder,
+            reminders,
             service_id,
             metadata,
         } = self;
@@ -160,12 +160,14 @@ impl UseCase for UpdateEventUseCase {
             e.metadata = metadata.clone();
         }
 
-        if let Some(reminder) = &e.reminder {
-            if !reminder.is_valid() {
-                return Err(UseCaseErrors::InvalidReminder);
+        if let Some(reminders) = &self.reminders {
+            for reminder in reminders {
+                if !reminder.is_valid() {
+                    return Err(UseCaseErrors::InvalidReminder);
+                }
             }
+            e.reminders = reminders.clone();
         }
-        e.reminder = reminder.clone();
 
         let calendar = match ctx.repos.calendars.find(&e.calendar_id).await {
             Some(cal) => cal,
@@ -247,7 +249,7 @@ mod test {
             event_id: Default::default(),
             start_ts: Some(500),
             duration: Some(800),
-            reminder: None,
+            reminders: None,
             recurrence: None,
             busy: Some(false),
             service_id: None,

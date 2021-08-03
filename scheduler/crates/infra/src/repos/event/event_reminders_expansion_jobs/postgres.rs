@@ -15,17 +15,17 @@ impl PostgresEventReminderExpansionJobsRepo {
 
 #[derive(Debug, FromRow)]
 struct JobRaw {
-    job_uid: Uuid,
     event_uid: Uuid,
     timestamp: i64,
+    version: i64,
 }
 
 impl Into<EventRemindersExpansionJob> for JobRaw {
     fn into(self) -> EventRemindersExpansionJob {
         EventRemindersExpansionJob {
-            id: self.job_uid.into(),
             event_id: self.event_uid.into(),
             timestamp: self.timestamp,
+            version: self.version,
         }
     }
 }
@@ -37,12 +37,12 @@ impl IEventRemindersExpansionJobsRepo for PostgresEventReminderExpansionJobsRepo
             sqlx::query!(
                 r#"
             INSERT INTO calendar_event_reminder_expansion_jobs 
-            (job_uid, event_uid, timestamp)
+            (event_uid, timestamp, version)
             VALUES($1, $2, $3)
             "#,
-                job.id.inner_ref(),
                 job.event_id.inner_ref(),
-                job.timestamp
+                job.timestamp,
+                job.version
             )
             .execute(&self.pool)
             .await?;
@@ -66,20 +66,5 @@ impl IEventRemindersExpansionJobsRepo for PostgresEventReminderExpansionJobsRepo
         .into_iter()
         .map(|job| job.into())
         .collect()
-    }
-
-    async fn delete_by_event(&self, event_id: &ID) -> anyhow::Result<DeleteResult> {
-        let res = sqlx::query!(
-            r#"
-            DELETE FROM calendar_event_reminder_expansion_jobs AS j
-            WHERE j.event_uid = $1
-            "#,
-            event_id.inner_ref(),
-        )
-        .execute(&self.pool)
-        .await?;
-        Ok(DeleteResult {
-            deleted_count: res.rows_affected() as i64,
-        })
     }
 }

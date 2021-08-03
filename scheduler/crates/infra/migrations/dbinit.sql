@@ -4,6 +4,9 @@
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp"; 
 
+-- TODO: Version on reminder jobs
+-- TODO: Version on event
+-- TODO: Create indexes
 -- TODO: Create domain types and do type casting in queries
 -- TODO: better naming conventions
 -- TODO: immutable triggers
@@ -18,6 +21,8 @@ CREATE TABLE IF NOT EXISTS accounts (
     public_jwt_key text,
     settings JSONB NOT NULL
 );
+CREATE INDEX IF NOT EXISTS account_api_key ON accounts (secret_api_key);
+
 CREATE TABLE IF NOT EXISTS account_integrations (
     account_uid uuid NOT NULL REFERENCES accounts(account_uid) ON DELETE CASCADE,
     client_id text NOT NULL,
@@ -59,12 +64,12 @@ CREATE TABLE IF NOT EXISTS calendars (
     calendar_uid uuid PRIMARY KEY DEFAULT uuid_generate_v4() NOT NULL,
     user_uid uuid NOT NULL REFERENCES users(user_uid) ON DELETE CASCADE,
     account_uid uuid NOT NULL REFERENCES accounts(account_uid) ON DELETE CASCADE,
-    -- synced JSON ,
     settings JSON NOT NULL,
     metadata text[] NOT NULL
 );
 CREATE INDEX IF NOT EXISTS metadata ON calendars USING GIN (metadata);
 -- TODO: all columns immutable 
+-- TODO: name -> externally_synced_calendars 
 CREATE TABLE IF NOT EXISTS calendar_ext_synced_calendars (
     calendar_uid uuid NOT NULL REFERENCES calendars(calendar_uid) ON DELETE CASCADE,
     user_uid uuid NOT NULL REFERENCES users(user_uid) ON DELETE CASCADE,
@@ -88,12 +93,12 @@ CREATE TABLE IF NOT EXISTS calendar_events (
     recurrence JSON,
     exdates BIGINT[] NOT NULL,
     reminder JSON,
-    -- synced_events JSON,
     service_uid uuid REFERENCES services(service_uid) ON DELETE CASCADE,
     metadata text[] NOT NULL
 );
 CREATE INDEX IF NOT EXISTS event_metadata ON calendar_events USING GIN (metadata);
 -- TODO: all columns immutable 
+-- TODO: name -> externally_synced_events
 CREATE TABLE IF NOT EXISTS calendar_ext_synced_events (
     event_uid uuid NOT NULL REFERENCES calendar_events(event_uid) ON DELETE CASCADE,
     calendar_uid uuid NOT NULL REFERENCES calendars(calendar_uid) ON DELETE CASCADE,
@@ -105,21 +110,67 @@ CREATE TABLE IF NOT EXISTS calendar_ext_synced_events (
     FOREIGN KEY(calendar_uid, "provider", ext_calendar_id) REFERENCES calendar_ext_synced_calendars (calendar_uid, "provider", ext_calendar_id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS calendar_event_reminder_expansion_jobs (
-    -- TODO: is this reminder_uid needed? Why not pk = (event_uid, timestamp)
-    job_uid uuid PRIMARY KEY DEFAULT uuid_generate_v4() NOT NULL,
+CREATE TABLE IF NOT EXISTS event_reminder_versions (
     event_uid uuid NOT NULL REFERENCES calendar_events(event_uid) ON DELETE CASCADE,
-    "timestamp" BIGINT NOT NULL
+    "version" BIGINT NOT NULL,
+    PRIMARY KEY(event_uid, "version")
 );
 
+-- Removes reminders from the reminders table when the 
+-- event_reminder_versions.version is updated
+create or replace function
+    remove_old_reminders()
+    returns trigger
+as $$
+begin
+    DELETE FROM reminders
+    WHERE
+        event_uid = old.event_uid;
+    DELETE FROM calendar_event_reminder_expansion_jobs
+    WHERE
+        event_uid = old.event_uid;
+    return new;
+end;
+$$ language plpgsql;
+
+CREATE TRIGGER remove_old_reminders
+    BEFORE UPDATE ON event_reminder_versions
+FOR EACH ROW
+    WHEN (OLD.version IS DISTINCT FROM NEW.version)
+EXECUTE PROCEDURE remove_old_reminders();
+
+COMMENT ON TABLE event_reminder_versions IS 
+'There are three usecases which can generate event reminders. The first is an 
+api call to create an event with reminders. The second is an api call
+from to update an existing event. The third is a scheduled job from the 
+calendar_event_reminder_expansion_jobs table. If the update event and
+scheduled job happens at the same time it is possible that the scheduled job
+generates reminders for an outdated calendar event. Therefore the update event usecase
+will increment the version number for the calendar event and the scheduled job
+will not be able to generate reminders for the old version which no longer will be
+in this table';
+
 CREATE TABLE IF NOT EXISTS reminders (
-    -- TODO: is this reminder_uid needed? Why not pk = (event_uid, remind_at)
-    reminder_uid uuid PRIMARY KEY DEFAULT uuid_generate_v4() NOT NULL,
     event_uid uuid NOT NULL REFERENCES calendar_events(event_uid) ON DELETE CASCADE,
     account_uid uuid NOT NULL REFERENCES accounts(account_uid) ON DELETE CASCADE,
     remind_at BIGINT NOT NULL,
-    "priority" SMALLINT NOT NULL
+    "version" BIGINT NOT NULL,
+    identifier text NOT NULL,
+    PRIMARY KEY(event_uid, remind_at, identifier),
+    FOREIGN KEY(event_uid, "version") REFERENCES event_reminder_versions(event_uid, "version")
 );
+COMMENT ON COLUMN reminders.identifier IS 
+'User defined identifier to be able to seperate reminders at same timestamp for 
+the same event';
+
+CREATE TABLE IF NOT EXISTS calendar_event_reminder_expansion_jobs (
+    -- There can only be one job at the time for an event
+    event_uid uuid PRIMARY KEY NOT NULL REFERENCES calendar_events(event_uid) ON DELETE CASCADE,
+    "timestamp" BIGINT NOT NULL,
+    "version" BIGINT NOT NULL,
+    FOREIGN KEY (event_uid, "version") REFERENCES event_reminder_versions(event_uid, "version")
+);
+
 
 CREATE TABLE IF NOT EXISTS schedules (
     schedule_uid uuid PRIMARY KEY DEFAULT uuid_generate_v4() NOT NULL,
@@ -141,15 +192,12 @@ CREATE TABLE IF NOT EXISTS service_users (
     buffer_before BIGINT NOT NULL, 
     closest_booking_time BIGINT NOT NULL, 
     furthest_booking_time BIGINT, 
-    -- google_busy_calendars text[] NOT NULL,
-    -- outlook_busy_calendars text[] NOT NULL,
 	PRIMARY KEY(service_uid, user_uid),
     CHECK (
         NOT (available_calendar_uid IS NOT NULL AND available_schedule_uid IS NOT NULL)
     )
 );
 
--- TODO: Maybe create subtype for service_user_busy_calendars ??
 CREATE TABLE IF NOT EXISTS service_user_external_busy_calendars (
     service_uid uuid NOT NULL REFERENCES services(service_uid) ON DELETE CASCADE,
     user_uid uuid NOT NULL REFERENCES users(user_uid) ON DELETE CASCADE,
@@ -161,7 +209,6 @@ CREATE TABLE IF NOT EXISTS service_user_external_busy_calendars (
 );
 
 CREATE TABLE IF NOT EXISTS service_user_busy_calendars (
-    -- maybe add service_user_id here ?? 
     service_uid uuid NOT NULL REFERENCES services(service_uid) ON DELETE CASCADE,
     user_uid uuid NOT NULL REFERENCES users(user_uid) ON DELETE CASCADE,
     calendar_uid uuid NOT NULL REFERENCES calendars(calendar_uid) ON DELETE CASCADE,
@@ -169,6 +216,7 @@ CREATE TABLE IF NOT EXISTS service_user_busy_calendars (
 	PRIMARY KEY(service_uid, user_uid, calendar_uid)
 );
 
+-- TODO: maybe just add a count column ?
 CREATE TABLE IF NOT EXISTS service_reservations (
     reservation_uid uuid PRIMARY KEY DEFAULT uuid_generate_v4() NOT NULL,
     service_uid uuid NOT NULL REFERENCES services(service_uid) ON DELETE CASCADE,

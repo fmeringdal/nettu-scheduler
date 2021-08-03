@@ -1,10 +1,9 @@
-use crate::shared::entity::{Entity, ID};
+use crate::shared::entity::ID;
 
 /// A `Reminder` represents a specific time before the occurrence a
 /// `CalendarEvent` at which the owner `Account` should be notified.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Reminder {
-    pub id: ID,
     /// The `CalendarEvent` this `Reminder` is associated with
     pub event_id: ID,
     /// The `Account` this `Reminder` is associated with and which
@@ -14,31 +13,17 @@ pub struct Reminder {
     /// This is usually some minutes before a `CalendarEvent`
     pub remind_at: i64,
     /// This field is needed to avoid sending duplicate `Reminder`s to the `Account`.
-    /// There are 2 processes which produces `Reminder`s, one is triggered when a `CalendarEvent`
-    /// is created or modified and the other is a job scheduler generating
-    /// `Reminder`s on a schedule. These two could possibly interfere and generate
-    /// duplicate `Reminder`s for the same `CalendarEvent`. The former has a higher priority
-    /// than the latter.
-    /// The job sending out the `Reminder`s is going to detect duplicate `Reminder`s
-    /// and filter away the one with the lowest priority.
-    pub priority: i64,
+    /// For more info see the db schema comments
+    pub version: i64,
+    /// User defined identifier to be able to seperate reminders at same timestamp for the same
+    /// event.
+    /// For example: "ask_for_booking_review" or "send_invoice"
+    pub identifier: String,
 }
 
-impl Entity<ID> for Reminder {
-    fn id(&self) -> ID {
-        self.id.clone()
-    }
-}
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct EventRemindersExpansionJob {
-    pub id: ID,
     pub event_id: ID,
     pub timestamp: i64,
-}
-
-impl Entity<ID> for EventRemindersExpansionJob {
-    fn id(&self) -> ID {
-        self.id.clone()
-    }
+    pub version: i64,
 }

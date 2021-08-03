@@ -76,58 +76,6 @@ async fn create_reminders_for_accounts(
         .collect()
 }
 
-// Remove possible duplicate reminders created by the two triggers
-// of sync event reminders
-fn dedup_reminders(reminders: &mut Vec<Reminder>) {
-    reminders.sort_by(|r1, r2| {
-        match r2
-            .event_id
-            .to_string()
-            .partial_cmp(&r1.event_id.to_string())
-            .unwrap()
-        {
-            // Highest priority first
-            Ordering::Equal => r2.priority.partial_cmp(&r1.priority).unwrap(),
-            val => val,
-        }
-    });
-
-    for i in 1..reminders.len() {
-        // Two reminders for the same event_id, remove the one
-        // with the lowest priority (e.g. the last one because of the sorting)
-        if reminders[i].event_id == reminders[i - 1].event_id {
-            reminders.remove(i);
-        }
-    }
-}
-
-// Detects if there have been generated reminders with higher priority in the reminder repo and deletes
-// the old one if that is the case
-async fn remove_old_reminders(reminders: &mut Vec<Reminder>, ctx: &NettuContext) {
-    // Priority 0 reminders
-    let reminders_p0 = reminders
-        .iter()
-        .filter(|r| r.priority == 0)
-        .collect::<Vec<_>>();
-
-    let mut event_ids_to_remove = HashMap::new();
-
-    for i in (0..reminders_p0.len()).rev() {
-        let reminder = reminders_p0[i];
-        if ctx
-            .repos
-            .reminders
-            .find_by_event_and_priority(&reminder.event_id, 1)
-            .await
-            .is_some()
-        {
-            event_ids_to_remove.insert(reminder.event_id.as_string(), ());
-        }
-    }
-
-    reminders.retain(|r| !event_ids_to_remove.contains_key(&r.event_id.as_string()));
-}
-
 #[async_trait::async_trait(?Send)]
 impl UseCase for GetUpcomingRemindersUseCase {
     type Response = (Vec<(Account, AccountEventReminders)>, Instant);
@@ -142,9 +90,7 @@ impl UseCase for GetUpcomingRemindersUseCase {
         let ts = ctx.sys.get_timestamp_millis() + self.reminders_interval;
 
         // Get all reminders and filter out invalid / expired reminders
-        let mut reminders = ctx.repos.reminders.delete_all_before(ts).await;
-        dedup_reminders(&mut reminders);
-        remove_old_reminders(&mut reminders, ctx).await;
+        let reminders = ctx.repos.reminders.delete_all_before(ts).await;
 
         let event_lookup = ctx
             .repos

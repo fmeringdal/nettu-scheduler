@@ -56,9 +56,9 @@ impl Into<CalendarEvent> for EventRaw {
             Some(json) => serde_json::from_value(json).unwrap(),
             None => None,
         };
-        let reminder: Option<CalendarEventReminder> = match self.reminder {
+        let reminders: Vec<CalendarEventReminder> = match self.reminder {
             Some(json) => serde_json::from_value(json).unwrap(),
-            None => None,
+            None => vec![],
         };
 
         CalendarEvent {
@@ -74,7 +74,7 @@ impl Into<CalendarEvent> for EventRaw {
             updated: self.updated,
             recurrence,
             exdates: self.exdates,
-            reminder,
+            reminders,
             service_id: self.service_uid.map(|id| id.into()),
             metadata: extract_metadata(self.metadata),
         }
@@ -118,7 +118,7 @@ impl IEventRepo for PostgresEventRepo {
             e.updated,
             Json(&e.recurrence) as _,
             &e.exdates,
-            Json(&e.reminder) as _,
+            Json(&e.reminders) as _,
             e.service_id.as_ref().map(|id| id.inner_ref()),
             &metadata
         )
@@ -161,7 +161,7 @@ impl IEventRepo for PostgresEventRepo {
             e.updated,
             Json(&e.recurrence) as _,
             &e.exdates,
-            Json(&e.reminder) as _,
+            Json(&e.reminders) as _,
             e.service_id.as_ref().map(|id| id.inner_ref()),
             &metadata
         )

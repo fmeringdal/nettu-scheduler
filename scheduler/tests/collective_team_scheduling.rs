@@ -152,7 +152,7 @@ async fn test_collective_team_scheduling() {
                 duration,
                 metadata: None,
                 recurrence: None,
-                reminder: None,
+                reminders: vec![],
                 service_id: Some(service.id.clone()),
                 start_ts: available_slot,
             };

@@ -1,5 +1,6 @@
 use crate::shared::usecase::UseCase;
 
+use futures::future;
 use nettu_scheduler_domain::{Calendar, CalendarEvent, EventRemindersExpansionJob, Reminder};
 use nettu_scheduler_infra::NettuContext;
 use std::iter::Iterator;
@@ -36,17 +37,14 @@ pub enum UseCaseErrors {
 async fn create_event_reminders(
     event: &CalendarEvent,
     calendar: &Calendar,
-    priority: i64,
+    version: i64,
     ctx: &NettuContext,
 ) -> Result<(), UseCaseErrors> {
-    let event_reminder_settings = match &event.reminder {
-        None => return Ok(()), // Nothing more to do
-        Some(settings) => settings,
-    };
-    let millis_before = event_reminder_settings.minutes_before * 60 * 1000;
+    let timestamp_now_millis = ctx.sys.get_timestamp_millis();
+    let threshold_millis = timestamp_now_millis + 61 * 1000; // Now + 61 seconds
 
     let rrule_set = event.get_rrule_set(&calendar.settings);
-    let reminders = match rrule_set {
+    let reminders: Vec<Reminder> = match rrule_set {
         Some(rrule_set) => {
             let rrule_set_iter = rrule_set.into_iter();
             let dates = rrule_set_iter
@@ -59,9 +57,9 @@ async fn create_event_reminders(
             if dates.len() == 100 {
                 // There are more reminders to generate, store a job to expand them later
                 let job = EventRemindersExpansionJob {
-                    id: Default::default(),
                     event_id: event.id.clone(),
                     timestamp: dates[90].timestamp_millis(),
+                    version,
                 };
                 if ctx
                     .repos
@@ -78,23 +76,47 @@ async fn create_event_reminders(
             }
 
             dates
-                .iter()
-                .map(|d| Reminder {
-                    id: Default::default(),
-                    event_id: event.id.to_owned(),
-                    account_id: event.account_id.to_owned(),
-                    remind_at: d.timestamp_millis() - millis_before,
-                    priority,
+                .into_iter()
+                .map(|d| {
+                    let dt_millis = d.timestamp_millis();
+                    event
+                        .reminders
+                        .iter()
+                        .map(|er| {
+                            let delta_millis = er.delta * 60 * 1000;
+                            let remind_at = dt_millis + delta_millis;
+                            (er, remind_at)
+                        })
+                        .filter(|(er, remind_at)| remind_at > &threshold_millis)
+                        .map(|(er, remind_at)| Reminder {
+                            event_id: event.id.to_owned(),
+                            account_id: event.account_id.to_owned(),
+                            remind_at,
+                            version,
+                            identifier: er.identifier.clone(),
+                        })
+                        .collect::<Vec<_>>()
                 })
+                .flatten()
                 .collect()
         }
-        None => vec![Reminder {
-            id: Default::default(),
-            event_id: event.id.to_owned(),
-            account_id: event.account_id.to_owned(),
-            remind_at: event.start_ts - millis_before,
-            priority,
-        }],
+        None => event
+            .reminders
+            .iter()
+            .map(|er| {
+                let delta_millis = er.delta * 60 * 1000;
+                let remind_at = event.start_ts + delta_millis;
+                (er, remind_at)
+            })
+            .filter(|(er, remind_at)| remind_at > &threshold_millis)
+            .map(|(er, remind_at)| Reminder {
+                event_id: event.id.to_owned(),
+                account_id: event.account_id.to_owned(),
+                remind_at,
+                version,
+                identifier: er.identifier.clone(),
+            })
+            .collect(),
     };
 
     // create reminders for the next `self.expansion_interval`
@@ -116,36 +138,33 @@ impl<'a> UseCase for SyncEventRemindersUseCase<'a> {
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         match &self.request {
             SyncEventRemindersTrigger::EventModified(calendar_event, op) => {
-                // Delete event reminder expansion job if it exists
-                if ctx
-                    .repos
-                    .event_reminders_expansion_jobs
-                    .delete_by_event(&calendar_event.id)
-                    .await
-                    .is_err()
-                {
-                    error!(
-                        "Unable to delete event reminder expansion job for event: {}",
-                        calendar_event.id
-                    );
-                    return Err(UseCaseErrors::StorageError);
-                }
-
-                match op {
-                    // There are no reminders if `CalendarEvent` was just created
-                    EventOperation::Created => (),
+                let version = match op {
+                    EventOperation::Created => ctx
+                        .repos
+                        .reminders
+                        .init_version(&calendar_event.id)
+                        .await
+                        .map_err(|e| {
+                            error!(
+                                "Unable to init event {:?} reminder version. Err: {:?}",
+                                calendar_event, e
+                            );
+                            UseCaseErrors::StorageError
+                        })?,
                     // Delete existing reminders
-                    &EventOperation::Updated => {
-                        let delete_result = ctx
-                            .repos
-                            .reminders
-                            .delete_by_events(&[calendar_event.id.clone()])
-                            .await;
-                        if delete_result.is_err() {
-                            return Err(UseCaseErrors::StorageError);
-                        }
-                    }
-                }
+                    &EventOperation::Updated => ctx
+                        .repos
+                        .reminders
+                        .inc_version(&calendar_event.id)
+                        .await
+                        .map_err(|e| {
+                            error!(
+                                "Unable to increment event {:?} reminder version. Err: {:?}",
+                                calendar_event, e
+                            );
+                            UseCaseErrors::StorageError
+                        })?,
+                };
 
                 // Create new reminders
                 let calendar = ctx
@@ -155,7 +174,7 @@ impl<'a> UseCase for SyncEventRemindersUseCase<'a> {
                     .await
                     .ok_or(UseCaseErrors::CalendarNotFound)?;
 
-                create_event_reminders(calendar_event, &calendar, 1, ctx).await
+                create_event_reminders(calendar_event, &calendar, version, ctx).await
             }
             SyncEventRemindersTrigger::JobScheduler => {
                 let jobs = ctx
@@ -169,36 +188,44 @@ impl<'a> UseCase for SyncEventRemindersUseCase<'a> {
                     .map(|job| job.event_id.to_owned())
                     .collect::<Vec<_>>();
 
-                if ctx
-                    .repos
-                    .reminders
-                    .delete_by_events(&event_ids)
-                    .await
-                    .is_err()
-                {
-                    return Err(UseCaseErrors::StorageError);
-                }
-
                 let events = match ctx.repos.events.find_many(&event_ids).await {
                     Ok(events) => events,
                     Err(_) => return Err(UseCaseErrors::StorageError),
                 };
 
-                for event in events {
-                    let calendar = match ctx.repos.calendars.find(&event.calendar_id).await {
-                        Some(cal) => cal,
-                        None => continue,
-                    };
-                    if let Err(err) = create_event_reminders(&event, &calendar, 0, ctx).await {
-                        error!(
-                            "Unable to create event reminders for event {}, Error: {:?}",
-                            event.id, err
-                        );
-                    }
-                }
+                future::join_all(
+                    events
+                        .into_iter()
+                        .map(|event| generate_event_reminders_job(event, ctx))
+                        .collect::<Vec<_>>(),
+                )
+                .await;
 
                 Ok(())
             }
         }
+    }
+}
+
+async fn generate_event_reminders_job(event: CalendarEvent, ctx: &NettuContext) {
+    let calendar = match ctx.repos.calendars.find(&event.calendar_id).await {
+        Some(cal) => cal,
+        None => return,
+    };
+    let version = match ctx.repos.reminders.inc_version(&event.id).await {
+        Ok(v) => v,
+        Err(e) => {
+            error!(
+                "Unable to increment event {:?} reminder version. Err: {:?}",
+                event.id, e
+            );
+            return;
+        }
+    };
+    if let Err(err) = create_event_reminders(&event, &calendar, version, ctx).await {
+        error!(
+            "Unable to create event reminders for event {}, Error: {:?}",
+            event.id, err
+        );
     }
 }

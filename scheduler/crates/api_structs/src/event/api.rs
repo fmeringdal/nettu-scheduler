@@ -33,9 +33,12 @@ pub mod create_event {
         pub calendar_id: ID,
         pub start_ts: i64,
         pub duration: i64,
+        #[serde(default)]
         pub busy: Option<bool>,
+        #[serde(default)]
         pub recurrence: Option<RRuleOptions>,
-        pub reminder: Option<CalendarEventReminder>,
+        #[serde(default)]
+        pub reminders: Vec<CalendarEventReminder>,
         #[serde(default)]
         pub service_id: Option<ID>,
         #[serde(default)]
@@ -134,13 +137,20 @@ pub mod update_event {
     #[derive(Deserialize, Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
+        #[serde(default)]
         pub start_ts: Option<i64>,
+        #[serde(default)]
         pub duration: Option<i64>,
+        #[serde(default)]
         pub busy: Option<bool>,
+        #[serde(default)]
         pub recurrence: Option<RRuleOptions>,
+        #[serde(default)]
         pub service_id: Option<ID>,
+        #[serde(default)]
         pub exdates: Option<Vec<i64>>,
-        pub reminder: Option<CalendarEventReminder>,
+        #[serde(default)]
+        pub reminders: Option<Vec<CalendarEventReminder>>,
         #[serde(default)]
         pub metadata: Option<Metadata>,
     }

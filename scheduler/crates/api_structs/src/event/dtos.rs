@@ -16,7 +16,7 @@ pub struct CalendarEventDTO {
     pub exdates: Vec<i64>,
     pub calendar_id: ID,
     pub user_id: ID,
-    pub reminder: Option<CalendarEventReminder>,
+    pub reminders: Vec<CalendarEventReminder>,
     pub metadata: Metadata,
 }
 
@@ -33,7 +33,7 @@ impl CalendarEventDTO {
             exdates: event.exdates,
             calendar_id: event.calendar_id.clone(),
             user_id: event.user_id.clone(),
-            reminder: event.reminder,
+            reminders: event.reminders,
             metadata: event.metadata,
         }
     }

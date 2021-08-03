@@ -48,7 +48,7 @@ pub async fn create_event_admin_controller(
         user,
         calendar_id: body.calendar_id,
         recurrence: body.recurrence,
-        reminder: body.reminder,
+        reminders: body.reminders,
         service_id: body.service_id,
         metadata: body.metadata.unwrap_or_default(),
     };
@@ -74,7 +74,7 @@ pub async fn create_event_controller(
         calendar_id: body.calendar_id,
         recurrence: body.recurrence,
         user,
-        reminder: body.reminder,
+        reminders: body.reminders,
         service_id: body.service_id,
         metadata: body.metadata.unwrap_or_default(),
     };
@@ -96,7 +96,7 @@ pub struct CreateEventUseCase {
     pub duration: i64,
     pub busy: bool,
     pub recurrence: Option<RRuleOptions>,
-    pub reminder: Option<CalendarEventReminder>,
+    pub reminders: Vec<CalendarEventReminder>,
     pub service_id: Option<ID>,
     pub metadata: Metadata,
 }
@@ -136,7 +136,7 @@ impl UseCase for CreateEventUseCase {
             calendar_id: calendar.id.clone(),
             user_id: self.user.id.clone(),
             account_id: self.user.account_id.clone(),
-            reminder: self.reminder.clone(),
+            reminders: self.reminders.clone(),
             service_id: self.service_id.clone(),
             metadata: self.metadata.clone(),
         };
@@ -147,7 +147,8 @@ impl UseCase for CreateEventUseCase {
             };
         }
 
-        if let Some(reminder) = &e.reminder {
+        // TODO: maybe have reminders lengt restriction
+        for reminder in &self.reminders {
             if !reminder.is_valid() {
                 return Err(UseCaseErrors::InvalidReminder);
             }
@@ -221,7 +222,7 @@ mod test {
             busy: false,
             calendar_id: calendar.id.clone(),
             user,
-            reminder: None,
+            reminders: vec![],
             service_id: None,
             metadata: Default::default(),
         };
@@ -247,7 +248,7 @@ mod test {
             busy: false,
             calendar_id: calendar.id.clone(),
             user,
-            reminder: None,
+            reminders: vec![],
             service_id: None,
             metadata: Default::default(),
         };
@@ -273,7 +274,7 @@ mod test {
             busy: false,
             calendar_id: ID::default(),
             user,
-            reminder: None,
+            reminders: vec![],
             service_id: None,
             metadata: Default::default(),
         };
@@ -312,7 +313,7 @@ mod test {
                 busy: false,
                 calendar_id: calendar.id.clone(),
                 user: user.clone(),
-                reminder: None,
+                reminders: vec![],
                 service_id: None,
                 metadata: Default::default(),
             };

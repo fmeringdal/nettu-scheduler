@@ -214,7 +214,7 @@ mod tests {
             calendar_id: Default::default(),
             user_id: user_id.clone(),
             account_id: Default::default(),
-            reminder: Default::default(),
+            reminders: Default::default(),
             service_id: Default::default(),
             metadata: Default::default(),
         }

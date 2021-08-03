@@ -3,14 +3,12 @@ mod postgres;
 use nettu_scheduler_domain::{Reminder, ID};
 pub use postgres::PostgresReminderRepo;
 
-use crate::repos::shared::repo::DeleteResult;
-
 #[async_trait::async_trait]
 pub trait IReminderRepo: Send + Sync {
     async fn bulk_insert(&self, reminders: &[Reminder]) -> anyhow::Result<()>;
-    async fn find_by_event_and_priority(&self, event_id: &ID, priority: i64) -> Option<Reminder>;
+    async fn init_version(&self, event_id: &ID) -> anyhow::Result<i64>;
+    async fn inc_version(&self, event_id: &ID) -> anyhow::Result<i64>;
     async fn delete_all_before(&self, before: i64) -> Vec<Reminder>;
-    async fn delete_by_events(&self, event_ids: &[ID]) -> anyhow::Result<DeleteResult>;
 }
 
 #[cfg(test)]
@@ -38,7 +36,7 @@ mod tests {
             recurrence: None,
             start_ts: 1000 * 60 * 60,
             user_id: user.id.clone(),
-            reminder: None,
+            reminders: vec![],
             service_id: None,
             metadata: Default::default(),
             updated: Default::default(),
@@ -46,46 +44,44 @@ mod tests {
         };
         ctx.repos.events.insert(&event).await.unwrap();
 
+        let version = ctx
+            .repos
+            .reminders
+            .init_version(&event.id)
+            .await
+            .expect("To create reminder version");
+
         let reminders = vec![
             Reminder {
                 account_id: account.id.clone(),
                 event_id: event.id.clone(),
-                id: Default::default(),
-                priority: 0,
+                version,
                 remind_at: 1,
+                identifier: "".into(),
             },
             Reminder {
                 account_id: account.id.clone(),
                 event_id: event.id.clone(),
-                id: Default::default(),
-                priority: 2,
+                version,
                 remind_at: 2,
+                identifier: "".into(),
             },
             Reminder {
                 account_id: account.id.clone(),
                 event_id: event.id.clone(),
-                id: Default::default(),
-                priority: 0,
+                version,
                 remind_at: 3,
+                identifier: "".into(),
             },
             Reminder {
                 account_id: account.id.clone(),
                 event_id: event.id.clone(),
-                id: Default::default(),
-                priority: 0,
+                version,
                 remind_at: 4,
+                identifier: "".into(),
             },
         ];
         assert!(ctx.repos.reminders.bulk_insert(&reminders).await.is_ok());
-
-        // Find
-        let find_res = ctx
-            .repos
-            .reminders
-            .find_by_event_and_priority(&event.id, reminders[1].priority)
-            .await;
-        assert!(find_res.is_some());
-        assert_eq!(find_res.unwrap().id, reminders[1].id);
 
         // Delete before timestamp
         let delete_res = ctx
@@ -94,16 +90,7 @@ mod tests {
             .delete_all_before(reminders[1].remind_at)
             .await;
         assert_eq!(delete_res.len(), 2);
-        assert_eq!(delete_res[0].id, reminders[0].id);
-        assert_eq!(delete_res[1].id, reminders[1].id);
-
-        // Delete by event
-        let delete_res = ctx
-            .repos
-            .reminders
-            .delete_by_events(&[event.id.clone()])
-            .await;
-        assert!(delete_res.is_ok());
-        assert_eq!(delete_res.unwrap().deleted_count, 2);
+        assert_eq!(delete_res[0], reminders[0]);
+        assert_eq!(delete_res[1], reminders[1]);
     }
 }

@@ -169,7 +169,7 @@ async fn test_group_team_scheduling() {
                     duration,
                     metadata: None,
                     recurrence: None,
-                    reminder: None,
+                    reminders: vec![],
                     service_id: Some(service.id.clone()),
                     start_ts: available_slot,
                 };
@@ -480,7 +480,7 @@ async fn test_group_team_scheduling_increase_max_count() {
             duration,
             metadata: None,
             recurrence: None,
-            reminder: None,
+            reminders: vec![],
             service_id: Some(service.id.clone()),
             start_ts: available_slot,
         };
@@ -889,7 +889,7 @@ async fn test_group_team_scheduling_decrease_max_count() {
             duration,
             metadata: None,
             recurrence: None,
-            reminder: None,
+            reminders: vec![],
             service_id: Some(service.id.clone()),
             start_ts: available_slot,
         };
@@ -1086,7 +1086,7 @@ async fn test_combination_of_services() {
         duration,
         metadata: None,
         recurrence: None,
-        reminder: None,
+        reminders: vec![],
         service_id: Some(group_service.id.clone()),
         start_ts: available_slot,
     };

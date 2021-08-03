@@ -18,20 +18,51 @@ insert into calendars (calendar_uid, user_uid, account_uid, settings, metadata) 
 	('f5444e78-b224-46ef-b75b-deed50790838', 'a6b512cf-c4d8-49ac-9103-c9d8e9453bf2', '510ae4e5-3fa5-4ab4-8f87-fe33c2c9205c', '{}', '{}');
 insert into calendars (calendar_uid, user_uid, account_uid, settings, metadata) values 
 	('5688e62f-cee2-466e-b2f2-5b0717558a11', 'a6b512cf-c4d8-49ac-9103-c9d8e9453bf2', '510ae4e5-3fa5-4ab4-8f87-fe33c2c9205c', '{}', '{}');
-insert into service_user_busy_calendars (service_uid, user_uid, calendar_uid) values 
-	('6d469137-9b66-40fe-a314-3c07a1200415', 'a6b512cf-c4d8-49ac-9103-c9d8e9453bf2', 'f5444e78-b224-46ef-b75b-deed50790838');
-insert into service_user_busy_calendars (service_uid, user_uid, calendar_uid) values 
-	('6d469137-9b66-40fe-a314-3c07a1200415', 'a6b512cf-c4d8-49ac-9103-c9d8e9453bf2', '5688e62f-cee2-466e-b2f2-5b0717558a11');
-insert into service_user_external_busy_calendars (service_uid, user_uid, ext_calendar_id, "provider") values 
-	('6d469137-9b66-40fe-a314-3c07a1200415', 'a6b512cf-c4d8-49ac-9103-c9d8e9453bf2', 'busy_1', 'google');
-insert into service_user_external_busy_calendars (service_uid, user_uid, ext_calendar_id, "provider") values 
-	('6d469137-9b66-40fe-a314-3c07a1200415', 'a6b512cf-c4d8-49ac-9103-c9d8e9453bf2', 'busy_2', 'google');
-insert into service_user_external_busy_calendars (service_uid, user_uid, ext_calendar_id, "provider") values 
-	('6d469137-9b66-40fe-a314-3c07a1200415', 'a6b512cf-c4d8-49ac-9103-c9d8e9453bf2', 'busy_1', 'outlook');
-insert into service_user_external_busy_calendars (service_uid, user_uid, ext_calendar_id, "provider") values 
-	('6d469137-9b66-40fe-a314-3c07a1200415', 'a6b512cf-c4d8-49ac-9103-c9d8e9453bf2', 'busy_2', 'outlook');
-insert into service_user_external_busy_calendars (service_uid, user_uid, ext_calendar_id, "provider") values 
-	('6d469137-9b66-40fe-a314-3c07a1200415', 'a6b512cf-c4d8-49ac-9103-c9d8e9453bf2', 'busy_3', 'outlook');
+insert into calendar_events (
+		event_uid,
+		calendar_uid, 
+		user_uid, 
+		account_uid, 
+		start_ts,
+		duration,
+		end_ts,
+		busy,
+		created,
+		updated,
+		exdates,
+		metadata
+	) values 
+	(
+		'19f3ef7a-3b30-433b-be62-93810694b639',
+		'5688e62f-cee2-466e-b2f2-5b0717558a11', 
+		'a6b512cf-c4d8-49ac-9103-c9d8e9453bf2', 
+		'510ae4e5-3fa5-4ab4-8f87-fe33c2c9205c', 
+		0,
+		0,
+		0,
+		false,
+		0,
+		0,
+		'{}',
+		'{}'
+	);
+insert into event_reminder_versions (event_uid, "version") values('19f3ef7a-3b30-433b-be62-93810694b639', 0);
+insert into reminders (event_uid, account_uid, remind_at, "version", identifier) values('19f3ef7a-3b30-433b-be62-93810694b639', '510ae4e5-3fa5-4ab4-8f87-fe33c2c9205c', 0, 0, 'review');
+insert into calendar_event_reminder_expansion_jobs (event_uid, "timestamp", "version") values('19f3ef7a-3b30-433b-be62-93810694b639', 0, 0);
+-- insert into service_user_busy_calendars (service_uid, user_uid, calendar_uid) values 
+-- 	('6d469137-9b66-40fe-a314-3c07a1200415', 'a6b512cf-c4d8-49ac-9103-c9d8e9453bf2', 'f5444e78-b224-46ef-b75b-deed50790838');
+-- insert into service_user_busy_calendars (service_uid, user_uid, calendar_uid) values 
+-- 	('6d469137-9b66-40fe-a314-3c07a1200415', 'a6b512cf-c4d8-49ac-9103-c9d8e9453bf2', '5688e62f-cee2-466e-b2f2-5b0717558a11');
+-- insert into service_user_external_busy_calendars (service_uid, user_uid, ext_calendar_id, "provider") values 
+-- 	('6d469137-9b66-40fe-a314-3c07a1200415', 'a6b512cf-c4d8-49ac-9103-c9d8e9453bf2', 'busy_1', 'google');
+-- insert into service_user_external_busy_calendars (service_uid, user_uid, ext_calendar_id, "provider") values 
+-- 	('6d469137-9b66-40fe-a314-3c07a1200415', 'a6b512cf-c4d8-49ac-9103-c9d8e9453bf2', 'busy_2', 'google');
+-- insert into service_user_external_busy_calendars (service_uid, user_uid, ext_calendar_id, "provider") values 
+-- 	('6d469137-9b66-40fe-a314-3c07a1200415', 'a6b512cf-c4d8-49ac-9103-c9d8e9453bf2', 'busy_1', 'outlook');
+-- insert into service_user_external_busy_calendars (service_uid, user_uid, ext_calendar_id, "provider") values 
+-- 	('6d469137-9b66-40fe-a314-3c07a1200415', 'a6b512cf-c4d8-49ac-9103-c9d8e9453bf2', 'busy_2', 'outlook');
+-- insert into service_user_external_busy_calendars (service_uid, user_uid, ext_calendar_id, "provider") values 
+-- 	('6d469137-9b66-40fe-a314-3c07a1200415', 'a6b512cf-c4d8-49ac-9103-c9d8e9453bf2', 'busy_3', 'outlook');
 
 
 

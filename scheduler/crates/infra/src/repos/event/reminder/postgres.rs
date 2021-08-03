@@ -1,8 +1,6 @@
 use super::IReminderRepo;
-use crate::repos::shared::{repo::DeleteResult};
-use nettu_scheduler_domain::{
-    Reminder, ID,
-};
+use crate::repos::shared::repo::DeleteResult;
+use nettu_scheduler_domain::{Reminder, ID};
 use sqlx::{types::Uuid, Done, FromRow, PgPool};
 
 pub struct PostgresReminderRepo {
@@ -16,22 +14,28 @@ impl PostgresReminderRepo {
 }
 
 #[derive(Debug, FromRow)]
+struct ReminderVersionRaw {
+    event_uid: Uuid,
+    version: i64,
+}
+
+#[derive(Debug, FromRow)]
 struct ReminderRaw {
-    reminder_uid: Uuid,
     event_uid: Uuid,
     account_uid: Uuid,
     remind_at: i64,
-    priority: i16,
+    version: i64,
+    identifier: String,
 }
 
 impl Into<Reminder> for ReminderRaw {
     fn into(self) -> Reminder {
         Reminder {
-            id: self.reminder_uid.into(),
             event_id: self.event_uid.into(),
             account_id: self.account_uid.into(),
             remind_at: self.remind_at,
-            priority: self.priority as i64,
+            version: self.version,
+            identifier: self.identifier,
         }
     }
 }
@@ -43,14 +47,14 @@ impl IReminderRepo for PostgresReminderRepo {
             sqlx::query!(
                 r#"
             INSERT INTO reminders 
-            (reminder_uid, event_uid, account_uid, remind_at, priority)
+            (event_uid, account_uid, remind_at, version, identifier)
             VALUES($1, $2, $3, $4, $5)
             "#,
-                reminder.id.inner_ref(),
                 reminder.event_id.inner_ref(),
                 reminder.account_id.inner_ref(),
                 reminder.remind_at,
-                reminder.priority as i16
+                reminder.version,
+                reminder.identifier,
             )
             .execute(&self.pool)
             .await?;
@@ -76,41 +80,39 @@ impl IReminderRepo for PostgresReminderRepo {
         .collect()
     }
 
-    async fn delete_by_events(&self, event_ids: &[ID]) -> anyhow::Result<DeleteResult> {
-        let ids = event_ids
-            .iter()
-            .map(|id| id.inner_ref().clone())
-            .collect::<Vec<_>>();
-        let res = sqlx::query!(
+    async fn init_version(&self, event_id: &ID) -> anyhow::Result<i64> {
+        let r_version = sqlx::query_as!(
+            ReminderVersionRaw,
             r#"
-            DELETE FROM reminders AS r
-            WHERE r.event_uid = ANY($1)
-            "#,
-            &ids,
-        )
-        .execute(&self.pool)
-        .await?;
-        Ok(DeleteResult {
-            deleted_count: res.rows_affected() as i64,
-        })
-    }
-
-    async fn find_by_event_and_priority(&self, event_id: &ID, priority: i64) -> Option<Reminder> {
-        match sqlx::query_as!(
-            ReminderRaw,
-            r#"
-            SELECT * FROM reminders AS r
-            WHERE r.event_uid = $1 AND
-            r.priority = $2
+            INSERT INTO event_reminder_versions
+                (event_uid, version)
+            VALUES
+                ($1, $2)
+            RETURNING *
             "#,
             event_id.inner_ref(),
-            priority as i16
+            0
         )
         .fetch_one(&self.pool)
-        .await
-        {
-            Ok(reminder) => Some(reminder.into()),
-            Err(_) => None,
-        }
+        .await?;
+
+        Ok(r_version.version)
+    }
+
+    async fn inc_version(&self, event_id: &ID) -> anyhow::Result<i64> {
+        let r_version = sqlx::query_as!(
+            ReminderVersionRaw,
+            r#"
+            UPDATE event_reminder_versions
+                SET version = version + 1
+            WHERE event_uid = $1 
+            RETURNING *
+            "#,
+            event_id.inner_ref(),
+        )
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(r_version.version)
     }
 }

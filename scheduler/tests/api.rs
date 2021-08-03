@@ -386,7 +386,7 @@ async fn test_crud_events() {
             CreateEventInput {
                 calendar_id: calendar.id.clone(),
                 duration: 1000 * 60 * 60,
-                reminder: None,
+                reminders: vec![],
                 busy: None,
                 recurrence: None,
                 service_id: None,
@@ -426,7 +426,7 @@ async fn test_crud_events() {
             exdates: Some(vec![0]),
             busy: None,
             duration: None,
-            reminder: None,
+            reminders: None,
             rrule_options: None,
             service_id: None,
             start_ts: None,

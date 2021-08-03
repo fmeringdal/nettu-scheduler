@@ -65,7 +65,7 @@ mod tests {
             service_id: Default::default(),
             metadata: Default::default(),
             recurrence: Default::default(),
-            reminder: Default::default(),
+            reminders: Default::default(),
             start_ts: Default::default(),
             updated: Default::default(),
             user_id: user_id.clone(),
