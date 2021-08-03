@@ -28,7 +28,6 @@ pub async fn remove_user_from_service_controller(
         .await
         .map(|_usecase_res| HttpResponse::Ok().json(APIResponse::from("User removed from service")))
         .map_err(|e| match e {
-            UseCaseErrors::StorageError => NettuError::InternalError,
             UseCaseErrors::ServiceNotFound => {
                 NettuError::NotFound("The requested service was not found".to_string())
             }
@@ -50,7 +49,6 @@ struct UseCaseRes {}
 
 #[derive(Debug)]
 enum UseCaseErrors {
-    StorageError,
     ServiceNotFound,
     UserNotFound,
 }

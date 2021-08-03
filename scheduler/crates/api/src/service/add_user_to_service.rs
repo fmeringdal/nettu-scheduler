@@ -30,7 +30,6 @@ pub async fn add_user_to_service_controller(
     execute(usecase, &ctx).await
         .map(|res| HttpResponse::Ok().json(APIResponse::new(res.user)))
         .map_err(|e| match e {
-            UseCaseErrors::StorageError => NettuError::InternalError,
             UseCaseErrors::ServiceNotFound => NettuError::NotFound("The requested service was not found".into()),
             UseCaseErrors::UserNotFound => NettuError::NotFound("The specified user was not found".into()),
             UseCaseErrors::UserAlreadyInService => NettuError::Conflict("The specified user is already registered on the service, can not add the user more than once.".into()),
@@ -57,7 +56,6 @@ struct UseCaseRes {
 
 #[derive(Debug)]
 enum UseCaseErrors {
-    StorageError,
     ServiceNotFound,
     UserNotFound,
     UserAlreadyInService,

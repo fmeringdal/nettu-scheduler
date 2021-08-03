@@ -87,20 +87,20 @@ struct Time {
     pub minutes: i64,
 }
 
-impl Time {
-    pub fn to_millis(&self, day: &Day, tzid: &Tz) -> i64 {
-        let dt = tzid.ymd(day.year, day.month, day.day).and_hms(0, 0, 0)
-            + Duration::minutes(self.minutes)
-            + Duration::hours(self.hours);
-        let millis = dt.timestamp_millis();
-        if dt.hour() != self.hours as u32 {
-            // DST probably
-            return millis - 1000 * 60 * 60 * 24;
-        }
+// impl Time {
+//     pub fn to_millis(&self, day: &Day, tzid: &Tz) -> i64 {
+//         let dt = tzid.ymd(day.year, day.month, day.day).and_hms(0, 0, 0)
+//             + Duration::minutes(self.minutes)
+//             + Duration::hours(self.hours);
+//         let millis = dt.timestamp_millis();
+//         if dt.hour() != self.hours as u32 {
+//             // DST probably
+//             return millis - 1000 * 60 * 60 * 24;
+//         }
 
-        millis
-    }
-}
+//         millis
+//     }
+// }
 
 impl std::cmp::PartialOrd for Time {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
