@@ -1,7 +1,7 @@
 use super::IEventRemindersExpansionJobsRepo;
-use crate::repos::shared::repo::DeleteResult;
-use nettu_scheduler_domain::{EventRemindersExpansionJob, ID};
-use sqlx::{types::Uuid, Done, FromRow, PgPool};
+
+use nettu_scheduler_domain::{EventRemindersExpansionJob};
+use sqlx::{types::Uuid, FromRow, PgPool};
 
 pub struct PostgresEventReminderExpansionJobsRepo {
     pool: PgPool,

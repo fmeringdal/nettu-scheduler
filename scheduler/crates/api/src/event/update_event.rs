@@ -160,7 +160,7 @@ impl UseCase for UpdateEventUseCase {
             e.metadata = metadata.clone();
         }
 
-        if let Some(reminders) = &self.reminders {
+        if let Some(reminders) = &reminders {
             for reminder in reminders {
                 if !reminder.is_valid() {
                     return Err(UseCaseErrors::InvalidReminder);

@@ -1,8 +1,5 @@
 use crate::shared::auth::{account_can_modify_user, Permission};
-use crate::shared::{
-    auth::{protect_account_route, protect_route},
-    usecase::{execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
-};
+use crate::shared::{auth::protect_account_route, usecase::PermissionBoundary};
 use crate::{
     error::NettuError,
     shared::usecase::{execute, UseCase},
@@ -102,8 +99,7 @@ impl UseCase for AddSyncCalendarUseCase {
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
         // Check that user has integrated to that provider
-        let user_integration = ctx
-            .repos
+        ctx.repos
             .user_integrations
             .find(&self.user.id)
             .await
@@ -123,7 +119,7 @@ impl UseCase for AddSyncCalendarUseCase {
             .find(|c| c.provider == self.provider && c.ext_calendar_id == self.ext_calendar_id)
             .is_some()
         {
-            return Err(UseCaseErrors::StorageError);
+            return Err(UseCaseErrors::CalendarAlreadySynced);
         }
 
         // Check that user has write access to the given external calendar.

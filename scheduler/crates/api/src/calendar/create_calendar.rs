@@ -94,7 +94,7 @@ impl UseCase for CreateCalendarUseCase {
     const NAME: &'static str = "CreateCalendar";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
-        let mut user = match ctx.repos.users.find(&self.user_id).await {
+        let user = match ctx.repos.users.find(&self.user_id).await {
             Some(user) if user.account_id == self.account_id => user,
             _ => return Err(UseCaseErrors::UserNotFound),
         };

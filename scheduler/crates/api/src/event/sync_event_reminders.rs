@@ -87,7 +87,7 @@ async fn create_event_reminders(
                             let remind_at = dt_millis + delta_millis;
                             (er, remind_at)
                         })
-                        .filter(|(er, remind_at)| remind_at > &threshold_millis)
+                        .filter(|(_er, remind_at)| remind_at > &threshold_millis)
                         .map(|(er, remind_at)| Reminder {
                             event_id: event.id.to_owned(),
                             account_id: event.account_id.to_owned(),
@@ -108,7 +108,7 @@ async fn create_event_reminders(
                 let remind_at = event.start_ts + delta_millis;
                 (er, remind_at)
             })
-            .filter(|(er, remind_at)| remind_at > &threshold_millis)
+            .filter(|(_er, remind_at)| remind_at > &threshold_millis)
             .map(|(er, remind_at)| Reminder {
                 event_id: event.id.to_owned(),
                 account_id: event.account_id.to_owned(),

@@ -1,5 +1,5 @@
 use nettu_scheduler_domain::{
-    BusyCalendar, Metadata, Service, ServiceResource, ServiceWithUsers, TimePlan, ID,
+    Metadata, Service, ServiceResource, ServiceWithUsers, TimePlan, ID,
 };
 use serde::{Deserialize, Serialize};
 

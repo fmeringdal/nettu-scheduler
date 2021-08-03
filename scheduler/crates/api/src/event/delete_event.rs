@@ -3,7 +3,7 @@ use crate::shared::{
         account_can_modify_event, account_can_modify_user, protect_account_route, protect_route,
         Permission,
     },
-    usecase::{execute_with_policy, PermissionBoundary, Subscriber, UseCaseErrorContainer},
+    usecase::{execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
 };
 use crate::{
     error::NettuError,

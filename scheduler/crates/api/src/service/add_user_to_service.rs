@@ -158,15 +158,6 @@ pub async fn update_resource_values(
     update: &ServiceResourceUpdate,
     ctx: &NettuContext,
 ) -> Result<(), UpdateServiceResourceError> {
-    let user_calendars = ctx
-        .repos
-        .calendars
-        .find_by_user(&user_resource.user_id)
-        .await
-        .into_iter()
-        .map(|cal| cal.id)
-        .collect::<Vec<_>>();
-
     if let Some(availability) = &update.availability {
         match availability {
             TimePlan::Calendar(id) => {

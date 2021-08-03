@@ -1,7 +1,7 @@
 use super::IReminderRepo;
-use crate::repos::shared::repo::DeleteResult;
+
 use nettu_scheduler_domain::{Reminder, ID};
-use sqlx::{types::Uuid, Done, FromRow, PgPool};
+use sqlx::{types::Uuid, FromRow, PgPool};
 
 pub struct PostgresReminderRepo {
     pool: PgPool,

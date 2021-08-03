@@ -3,7 +3,7 @@ use actix_web::rt::time::Instant;
 use nettu_scheduler_domain::{Account, CalendarEvent, Reminder};
 use nettu_scheduler_infra::NettuContext;
 use std::time::Duration;
-use std::{cmp::Ordering, collections::HashMap};
+use std::{collections::HashMap};
 use tracing::error;
 
 /// Creates EventReminders for a calendar event
