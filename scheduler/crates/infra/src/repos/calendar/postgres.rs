@@ -5,6 +5,7 @@ use sqlx::{
     types::{Json, Uuid},
     Done, FromRow, PgPool,
 };
+use tracing::error;
 
 pub struct PostgresCalendarRepo {
     pool: PgPool,
@@ -43,12 +44,11 @@ impl ICalendarRepo for PostgresCalendarRepo {
         let metadata = to_metadata(calendar.metadata.clone());
         sqlx::query!(
             r#"
-            INSERT INTO calendars(calendar_uid, user_uid, account_uid, settings, metadata)
-            VALUES($1, $2, $3, $4, $5)
+            INSERT INTO calendars(calendar_uid, user_uid, settings, metadata)
+            VALUES($1, $2, $3, $4)
             "#,
             calendar.id.inner_ref(),
             calendar.user_id.inner_ref(),
-            calendar.account_id.inner_ref(),
             Json(&calendar.settings) as _,
             &metadata
         )
@@ -72,7 +72,11 @@ impl ICalendarRepo for PostgresCalendarRepo {
             &metadata
         )
         .execute(&self.pool)
-        .await?
+        .await
+        .map_err(|e| {
+            error!("Unable to update calendar: {:?}", e);
+            e
+        })?
         .rows_affected();
         Ok(())
     }
@@ -81,7 +85,9 @@ impl ICalendarRepo for PostgresCalendarRepo {
         let calendar: CalendarRaw = match sqlx::query_as!(
             CalendarRaw,
             r#"
-            SELECT * FROM calendars AS c
+            SELECT c.*, u.account_uid FROM calendars AS c
+            INNER JOIN users AS u
+                ON u.user_uid = c.user_uid
             WHERE c.calendar_uid = $1
             "#,
             calendar_id.inner_ref(),
@@ -99,7 +105,9 @@ impl ICalendarRepo for PostgresCalendarRepo {
         let calendars: Vec<CalendarRaw> = sqlx::query_as!(
             CalendarRaw,
             r#"
-            SELECT * FROM calendars AS c
+            SELECT c.*, u.account_uid FROM calendars AS c
+            INNER JOIN users AS u
+                ON u.user_uid = c.user_uid
             WHERE c.user_uid = $1
             "#,
             user_id.inner_ref(),
@@ -131,8 +139,10 @@ impl ICalendarRepo for PostgresCalendarRepo {
         let calendars: Vec<CalendarRaw> = sqlx::query_as!(
             CalendarRaw,
             r#"
-            SELECT * FROM calendars AS c
-            WHERE c.account_uid = $1 AND metadata @> ARRAY[$2]
+            SELECT c.*, u.account_uid FROM calendars AS c
+            INNER JOIN users AS u
+                ON u.user_uid = c.user_uid
+            WHERE u.account_uid = $1 AND c.metadata @> ARRAY[$2]
             LIMIT $3
             OFFSET $4
             "#,

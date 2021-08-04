@@ -42,7 +42,11 @@ impl IReservationRepo for PostgresReservationRepo {
             reservation.timestamp
         )
         .execute(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            println!("Unable to insert service reservation: {:?}", e);
+            e
+        })?;
 
         Ok(())
     }

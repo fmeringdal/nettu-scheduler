@@ -43,7 +43,6 @@ pub struct CreateSyncedEventsOnEventCreated;
 #[async_trait::async_trait(?Send)]
 impl Subscriber<CreateEventUseCase> for CreateSyncedEventsOnEventCreated {
     async fn notify(&self, e: &CalendarEvent, ctx: &nettu_scheduler_infra::NettuContext) {
-        println!("Is here in sub");
         let synced_calendars = match ctx
             .repos
             .calendar_synced
@@ -57,7 +56,6 @@ impl Subscriber<CreateEventUseCase> for CreateSyncedEventsOnEventCreated {
                 return;
             }
         };
-        println!("Synced calendars : {:?}", synced_calendars);
 
         let synced_outlook_calendars = synced_calendars
             .iter()

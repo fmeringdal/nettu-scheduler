@@ -1435,7 +1435,6 @@ dependencies = [
  "nettu_scheduler_infra",
  "nettu_scheduler_sdk",
  "openssl-probe",
- "sqlx",
  "tracing",
  "tracing-bunyan-formatter",
  "tracing-log",

@@ -11,7 +11,7 @@ pub trait IScheduleRepo: Send + Sync {
     async fn find(&self, schedule_id: &ID) -> Option<Schedule>;
     async fn find_many(&self, schedule_ids: &[ID]) -> Vec<Schedule>;
     async fn find_by_user(&self, user_id: &ID) -> Vec<Schedule>;
-    async fn delete(&self, schedule_id: &ID) -> Option<Schedule>;
+    async fn delete(&self, schedule_id: &ID) -> anyhow::Result<()>;
     async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<Schedule>;
 }
 
@@ -51,8 +51,7 @@ mod tests {
 
         // Delete
         let res = ctx.repos.schedules.delete(&schedule.id).await;
-        assert!(res.is_some());
-        assert!(res.unwrap().eq(&schedule));
+        assert!(res.is_ok());
 
         // Find
         assert!(ctx.repos.schedules.find(&schedule.id).await.is_none());

@@ -31,4 +31,3 @@ openssl-probe = "0.1.2"
 [dev-dependencies]
 nettu_scheduler_sdk = { path = "./crates/sdk" }
 chrono = "0.4.19"
-sqlx={version = "0.4.2", features = ["postgres", "runtime-actix-rustls", "uuid", "json"] }

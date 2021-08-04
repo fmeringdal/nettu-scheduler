@@ -45,16 +45,14 @@ impl IEventSyncedRepo for PostgresEventSyncedRepo {
             INSERT INTO externally_synced_calendar_events(
                 event_uid,
                 calendar_uid, 
-                user_uid, 
                 ext_calendar_id, 
                 ext_calendar_event_id,
                 provider
             )
-            VALUES($1, $2, $3, $4, $5, $6)
+            VALUES($1, $2, $3, $4, $5)
             "#,
             e.event_id.inner_ref(),
             e.calendar_id.inner_ref(),
-            e.user_id.inner_ref(),
             e.ext_calendar_id,
             e.ext_event_id,
             provider as _
@@ -74,7 +72,9 @@ impl IEventSyncedRepo for PostgresEventSyncedRepo {
         let synced_events: Vec<SyncedEventRaw> = sqlx::query_as!(
             SyncedEventRaw,
             r#"
-            SELECT * FROM externally_synced_calendar_events AS e
+            SELECT e.*, c.user_uid FROM externally_synced_calendar_events AS e
+            INNER JOIN calendars AS c
+                ON c.calendar_uid = e.calendar_uid
             WHERE e.event_uid = $1
             "#,
             event_id.inner_ref(),

@@ -20,6 +20,7 @@ use tracing::error;
 
 fn handle_error(e: UseCaseErrors) -> NettuError {
     match e {
+        UseCaseErrors::StorageError => NettuError::InternalError,
         UseCaseErrors::NotFound(event_id) => NettuError::NotFound(format!(
             "The calendar event with id: {}, was not found.",
             event_id
@@ -77,6 +78,7 @@ pub struct DeleteEventUseCase {
 #[derive(Debug)]
 pub enum UseCaseErrors {
     NotFound(ID),
+    StorageError,
 }
 
 #[async_trait::async_trait(?Send)]
@@ -96,7 +98,11 @@ impl UseCase for DeleteEventUseCase {
 
         self.delete_synced_events(&e, ctx).await;
 
-        ctx.repos.events.delete(&e.id).await;
+        ctx.repos
+            .events
+            .delete(&e.id)
+            .await
+            .map_err(|_| UseCaseErrors::StorageError)?;
 
         Ok(e)
     }

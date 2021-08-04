@@ -62,12 +62,11 @@ impl IScheduleRepo for PostgresScheduleRepo {
         let metadata = to_metadata(schedule.metadata.clone());
         sqlx::query!(
             r#"
-            INSERT INTO schedules(schedule_uid, user_uid, account_uid, rules, timezone, metadata)
-            VALUES($1, $2, $3, $4, $5, $6)
+            INSERT INTO schedules(schedule_uid, user_uid, rules, timezone, metadata)
+            VALUES($1, $2, $3, $4, $5)
             "#,
             schedule.id.inner_ref(),
             schedule.user_id.inner_ref(),
-            schedule.account_id.inner_ref(),
             Json(&schedule.rules) as _,
             schedule.timezone.to_string(),
             &metadata
@@ -83,16 +82,12 @@ impl IScheduleRepo for PostgresScheduleRepo {
         sqlx::query!(
             r#"
             UPDATE schedules
-            SET user_uid = $2,
-            account_uid = $3,
-            rules = $4,
-            timezone = $5,
-            metadata = $6
+            SET rules = $2,
+            timezone = $3,
+            metadata = $4
             WHERE schedule_uid = $1
             "#,
             schedule.id.inner_ref(),
-            schedule.user_id.inner_ref(),
-            schedule.account_id.inner_ref(),
             Json(&schedule.rules) as _,
             schedule.timezone.to_string(),
             &metadata
@@ -107,7 +102,9 @@ impl IScheduleRepo for PostgresScheduleRepo {
         let schedule: ScheduleRaw = match sqlx::query_as!(
             ScheduleRaw,
             r#"
-            SELECT * FROM schedules AS s
+            SELECT s.*, u.account_uid FROM schedules AS s
+            INNER JOIN users AS u
+                ON u.user_uid = s.user_uid
             WHERE s.schedule_uid = $1
             "#,
             schedule_id.inner_ref(),
@@ -129,7 +126,9 @@ impl IScheduleRepo for PostgresScheduleRepo {
         sqlx::query_as!(
             ScheduleRaw,
             r#"
-            SELECT * FROM schedules AS s
+            SELECT s.*, u.account_uid FROM schedules AS s
+            INNER JOIN users AS u
+                ON u.user_uid = s.user_uid
             WHERE s.schedule_uid = ANY($1)
             "#,
             &ids,
@@ -146,7 +145,9 @@ impl IScheduleRepo for PostgresScheduleRepo {
         let schedules: Vec<ScheduleRaw> = sqlx::query_as!(
             ScheduleRaw,
             r#"
-            SELECT * FROM schedules AS s
+            SELECT s.*, u.account_uid FROM schedules AS s
+            INNER JOIN users AS u
+                ON u.user_uid = s.user_uid
             WHERE s.user_uid = $1
             "#,
             user_id.inner_ref(),
@@ -158,9 +159,8 @@ impl IScheduleRepo for PostgresScheduleRepo {
         schedules.into_iter().map(|s| s.into()).collect()
     }
 
-    async fn delete(&self, schedule_id: &ID) -> Option<Schedule> {
-        match sqlx::query_as!(
-            ScheduleRaw,
+    async fn delete(&self, schedule_id: &ID) -> anyhow::Result<()> {
+        sqlx::query!(
             r#"
             DELETE FROM schedules AS s
             WHERE s.schedule_uid = $1
@@ -169,11 +169,8 @@ impl IScheduleRepo for PostgresScheduleRepo {
             schedule_id.inner_ref(),
         )
         .fetch_one(&self.pool)
-        .await
-        {
-            Ok(schedule) => Some(schedule.into()),
-            Err(_) => None,
-        }
+        .await?;
+        Ok(())
     }
 
     async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<Schedule> {
@@ -182,8 +179,10 @@ impl IScheduleRepo for PostgresScheduleRepo {
         let schedules: Vec<ScheduleRaw> = sqlx::query_as!(
             ScheduleRaw,
             r#"
-            SELECT * FROM schedules AS s
-            WHERE s.account_uid = $1 AND metadata @> ARRAY[$2]
+            SELECT s.*, u.account_uid FROM schedules AS s
+            INNER JOIN users AS u
+                ON u.user_uid = s.user_uid
+            WHERE u.account_uid = $1 AND s.metadata @> ARRAY[$2]
             LIMIT $3
             OFFSET $4
             "#,

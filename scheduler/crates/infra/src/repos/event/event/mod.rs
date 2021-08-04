@@ -40,7 +40,7 @@ pub trait IEventRepo: Send + Sync {
         min_ts: i64,
         max_ts: i64,
     ) -> Vec<CalendarEvent>;
-    async fn delete(&self, event_id: &ID) -> Option<CalendarEvent>;
+    async fn delete(&self, event_id: &ID) -> anyhow::Result<()>;
     async fn delete_by_service(&self, service_id: &ID) -> anyhow::Result<()>;
     async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<CalendarEvent>;
 }
@@ -121,13 +121,8 @@ mod tests {
         assert!(get_event_res[0].eq(&event));
 
         // Delete
-        let delete_res = ctx
-            .repos
-            .events
-            .delete(&event.id)
-            .await
-            .expect("To delete event by id");
-        assert!(delete_res.eq(&event));
+        let delete_res = ctx.repos.events.delete(&event.id).await;
+        assert!(delete_res.is_ok());
 
         // Find
         assert!(ctx.repos.events.find(&event.id).await.is_none());
