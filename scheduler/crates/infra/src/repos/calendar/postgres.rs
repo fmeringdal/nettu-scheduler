@@ -63,15 +63,11 @@ impl ICalendarRepo for PostgresCalendarRepo {
         sqlx::query!(
             r#"
             UPDATE calendars
-            SET user_uid = $2,
-            account_uid = $3,
-            settings = $4,
-            metadata = $5
+            SET settings = $2,
+            metadata = $3
             WHERE calendar_uid = $1
             "#,
             calendar.id.inner_ref(),
-            calendar.user_id.inner_ref(),
-            calendar.account_id.inner_ref(),
             Json(&calendar.settings) as _,
             &metadata
         )

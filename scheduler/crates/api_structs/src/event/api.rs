@@ -162,21 +162,3 @@ pub mod update_event {
 
     pub type APIResponse = CalendarEventResponse;
 }
-
-pub mod send_account_event_reminders {
-    use super::*;
-
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
-    pub struct AccountEventRemindersDTO {
-        events: Vec<CalendarEventDTO>,
-    }
-
-    impl AccountEventRemindersDTO {
-        pub fn new(events: Vec<CalendarEvent>) -> Self {
-            Self {
-                events: events.into_iter().map(CalendarEventDTO::new).collect(),
-            }
-        }
-    }
-}

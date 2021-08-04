@@ -204,6 +204,7 @@ impl UseCase for UpdateEventUseCase {
         } else if start_or_duration_change && e.recurrence.is_some() {
             e.set_recurrence(e.recurrence.clone().unwrap(), &calendar.settings, true)
         } else {
+            e.recurrence = None;
             true
         };
 

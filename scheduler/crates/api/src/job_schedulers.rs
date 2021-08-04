@@ -1,14 +1,17 @@
 use crate::{
     event::{
-        get_upcoming_reminders::GetUpcomingRemindersUseCase,
+        get_upcoming_reminders::{
+            AccountEventReminder, AccountReminders, GetUpcomingRemindersUseCase,
+        },
         sync_event_reminders::{SyncEventRemindersTrigger, SyncEventRemindersUseCase},
     },
     shared::usecase::execute,
 };
 use actix_web::client::Client;
 use actix_web::rt::time::{delay_until, interval, Instant};
-use nettu_scheduler_api_structs::send_account_event_reminders::AccountEventRemindersDTO;
+use nettu_scheduler_api_structs::dtos::CalendarEventDTO;
 use nettu_scheduler_infra::NettuContext;
+use serde::Serialize;
 use std::time::Duration;
 use tracing::error;
 
@@ -21,9 +24,9 @@ pub fn get_start_delay(now_ts: usize, secs_before_min: usize) -> usize {
     }
 }
 
-pub fn start_reminders_expansion_job_scheduler(ctx: NettuContext) {
+pub fn start_reminder_generation_job_scheduler(ctx: NettuContext) {
     actix_web::rt::spawn(async move {
-        let mut interval = interval(Duration::from_secs(30 * 60 * 1000));
+        let mut interval = interval(Duration::from_secs(30 * 60));
         loop {
             interval.tick().await;
 
@@ -49,6 +52,40 @@ pub fn start_send_reminders_job(ctx: NettuContext) {
             actix_web::rt::spawn(send_reminders(context));
         }
     });
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AccountEventRemindersDTO {
+    event: CalendarEventDTO,
+    identifier: String,
+}
+
+impl AccountEventRemindersDTO {
+    pub fn new(account_event_reminder: AccountEventReminder) -> Self {
+        Self {
+            event: CalendarEventDTO::new(account_event_reminder.event),
+            identifier: account_event_reminder.identifier,
+        }
+    }
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AccountRemindersDTO {
+    reminders: Vec<AccountEventRemindersDTO>,
+}
+
+impl AccountRemindersDTO {
+    pub fn new(acc_reminders: AccountReminders) -> Self {
+        Self {
+            reminders: acc_reminders
+                .reminders
+                .into_iter()
+                .map(AccountEventRemindersDTO::new)
+                .collect(),
+        }
+    }
 }
 
 async fn send_reminders(context: NettuContext) {
@@ -77,7 +114,7 @@ async fn send_reminders(context: NettuContext) {
                 if let Err(e) = client
                     .post(webhook.url)
                     .header("nettu-scheduler-webhook-key", webhook.key)
-                    .send_json(&AccountEventRemindersDTO::new(reminders.events))
+                    .send_json(&AccountRemindersDTO::new(reminders))
                     .await
                 {
                     error!("Error informing client of reminders: {:?}", e);

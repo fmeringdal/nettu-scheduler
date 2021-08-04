@@ -4,14 +4,16 @@
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp"; 
 
+-- TODO: Add back created attribute to immutable column, raw sql in tests to remove it
 -- TODO: Better docs and comments on schema
--- TODO: The unique constraints are REALLY stupid, find out how to get rid of them
+-- TODO: The unique constraints are REALLY stupid, find out how to get rid of them: https://dba.stackexchange.com/questions/153392/why-do-composite-foreign-keys-need-a-separate-unique-constraint?rq=1
 -- TODO: Better indexing strategy
 -- TODO: Have external calendars and events relations for better normalization / consistency
 -- TODO: Split schema into multiple files
 
 ------------------ DOMAIN
-CREATE DOMAIN ext_calendar_provider AS TEXT 
+CREATE DOMAIN ext_calendar_provider AS TEXT
+    NOT NULL
     CHECK (VALUE in ('google', 'outlook'));
 COMMENT ON DOMAIN ext_calendar_provider IS
 'external calendar provider names that are supported by nettu scheduler';
@@ -66,7 +68,7 @@ commit;
 
 
 
------------------- RELATIONS
+------------------ RELATIONS, INDEXES AND TRIGGERS
 
 CREATE TABLE IF NOT EXISTS accounts (
     account_uid uuid PRIMARY KEY DEFAULT uuid_generate_v4() NOT NULL,

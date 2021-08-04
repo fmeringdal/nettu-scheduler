@@ -9,6 +9,7 @@ use nettu_scheduler_sdk::{
     CreateEventInput, CreateScheduleInput, CreateServiceInput, CreateUserInput,
     GetServiceBookingSlotsInput, NettuSDK, RoundRobinAlgorithm, User,
 };
+use sqlx::postgres::PgPoolOptions;
 
 async fn create_default_service_host(admin_client: &NettuSDK, service_id: &ID) -> (User, Calendar) {
     let input = CreateUserInput { metadata: None };
@@ -447,6 +448,26 @@ async fn test_round_robin_availability_scheduling() {
                 .expect("To create service event")
                 .event
                 .id;
+
+            let connection_string =
+                std::env::var("DATABASE_URL").expect("DATABASE_URL env var to exist");
+            let pool = PgPoolOptions::new()
+                .max_connections(1)
+                .connect(&connection_string)
+                .await
+                .expect("TO CONNECT TO POSTGRES");
+
+            sqlx::query(
+                r#"
+            SELECT * FROM users AS u
+            WHERE u.account_uid = $1 AND metadata @> ARRAY[$2]
+            LIMIT $3
+            OFFSET $4
+            "#,
+            )
+            .execute(&pool)
+            .await
+            .expect("To update schema");
 
             // Created field can only by updated through direct db queries
             let mut service_event = app

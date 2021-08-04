@@ -2,8 +2,8 @@ use crate::shared::usecase::UseCase;
 use actix_web::rt::time::Instant;
 use nettu_scheduler_domain::{Account, CalendarEvent, Reminder};
 use nettu_scheduler_infra::NettuContext;
+use std::collections::HashMap;
 use std::time::Duration;
-use std::{collections::HashMap};
 use tracing::error;
 
 /// Creates EventReminders for a calendar event
@@ -17,8 +17,14 @@ pub struct GetUpcomingRemindersUseCase {
 pub enum UseCaseErrors {}
 
 #[derive(Debug)]
-pub struct AccountEventReminders {
-    pub events: Vec<CalendarEvent>,
+pub struct AccountReminders {
+    pub reminders: Vec<AccountEventReminder>,
+}
+
+#[derive(Debug)]
+pub struct AccountEventReminder {
+    pub event: CalendarEvent,
+    pub identifier: String,
 }
 
 async fn get_accounts_from_reminders(
@@ -43,10 +49,10 @@ async fn create_reminders_for_accounts(
     reminders: Vec<Reminder>,
     mut event_lookup: HashMap<String, CalendarEvent>,
     ctx: &NettuContext,
-) -> Vec<(Account, AccountEventReminders)> {
+) -> Vec<(Account, AccountReminders)> {
     let account_lookup = get_accounts_from_reminders(&reminders, ctx).await;
 
-    let mut account_reminders: HashMap<String, (&Account, Vec<CalendarEvent>)> = HashMap::new();
+    let mut account_reminders: HashMap<String, (&Account, AccountReminders)> = HashMap::new();
 
     for reminder in reminders {
         let account = match account_lookup.get(&reminder.account_id.as_string()) {
@@ -56,29 +62,43 @@ async fn create_reminders_for_accounts(
 
         // Remove instead of get because there shouldnt be multiple reminders for the same event id
         // and also we get ownership over calendar_event
-        let calendar_event = match event_lookup.remove(&reminder.event_id.as_string()) {
-            Some(e) => e,
+        let calendar_event = match event_lookup.get(&reminder.event_id.as_string()) {
+            Some(e) => e.clone(),
             None => continue,
         };
         match account_reminders.get_mut(&account.id.as_string()) {
             Some(acc_reminders) => {
-                acc_reminders.1.push(calendar_event);
+                acc_reminders.1.reminders.push(AccountEventReminder {
+                    event: calendar_event,
+                    identifier: reminder.identifier,
+                });
             }
             None => {
-                account_reminders.insert(account.id.as_string(), (account, vec![calendar_event]));
+                account_reminders.insert(
+                    account.id.as_string(),
+                    (
+                        account,
+                        AccountReminders {
+                            reminders: vec![AccountEventReminder {
+                                event: calendar_event,
+                                identifier: reminder.identifier,
+                            }],
+                        },
+                    ),
+                );
             }
         };
     }
 
     account_reminders
         .into_iter()
-        .map(|(_, (acc, events))| (acc.clone(), AccountEventReminders { events }))
+        .map(|(_, (acc, reminders))| (acc.clone(), reminders))
         .collect()
 }
 
 #[async_trait::async_trait(?Send)]
 impl UseCase for GetUpcomingRemindersUseCase {
-    type Response = (Vec<(Account, AccountEventReminders)>, Instant);
+    type Response = (Vec<(Account, AccountReminders)>, Instant);
 
     type Errors = UseCaseErrors;
 
