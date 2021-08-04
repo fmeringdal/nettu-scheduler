@@ -1,5 +1,6 @@
 use crate::shared::usecase::UseCase;
 use actix_web::rt::time::Instant;
+use nettu_scheduler_api_structs::send_event_reminders::{AccountEventReminder, AccountReminders};
 use nettu_scheduler_domain::{Account, CalendarEvent, Reminder};
 use nettu_scheduler_infra::NettuContext;
 use std::collections::HashMap;
@@ -15,17 +16,6 @@ pub struct GetUpcomingRemindersUseCase {
 
 #[derive(Debug)]
 pub enum UseCaseErrors {}
-
-#[derive(Debug)]
-pub struct AccountReminders {
-    pub reminders: Vec<AccountEventReminder>,
-}
-
-#[derive(Debug)]
-pub struct AccountEventReminder {
-    pub event: CalendarEvent,
-    pub identifier: String,
-}
 
 async fn get_accounts_from_reminders(
     reminders: &[Reminder],

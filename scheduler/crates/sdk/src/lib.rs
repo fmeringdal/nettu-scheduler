@@ -26,6 +26,7 @@ pub use calendar::{
 pub use event::{
     CreateEventInput, DeleteEventInput, GetEventInput, GetEventsInstancesInput, UpdateEventInput,
 };
+pub use nettu_scheduler_api_structs::send_event_reminders::AccountRemindersDTO as AccountReminders;
 pub use nettu_scheduler_domain::{
     providers::google::*, providers::outlook::*, scheduling::RoundRobinAlgorithm, BusyCalendar,
     CalendarEventReminder, IntegrationProvider, RRuleOptions, ScheduleRule,

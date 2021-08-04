@@ -162,3 +162,52 @@ pub mod update_event {
 
     pub type APIResponse = CalendarEventResponse;
 }
+
+pub mod send_event_reminders {
+    use super::*;
+
+    #[derive(Debug)]
+    pub struct AccountEventReminder {
+        pub event: CalendarEvent,
+        pub identifier: String,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct AccountEventRemindersDTO {
+        event: CalendarEventDTO,
+        identifier: String,
+    }
+
+    impl AccountEventRemindersDTO {
+        pub fn new(account_event_reminder: AccountEventReminder) -> Self {
+            Self {
+                event: CalendarEventDTO::new(account_event_reminder.event),
+                identifier: account_event_reminder.identifier,
+            }
+        }
+    }
+
+    #[derive(Debug)]
+    pub struct AccountReminders {
+        pub reminders: Vec<AccountEventReminder>,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct AccountRemindersDTO {
+        reminders: Vec<AccountEventRemindersDTO>,
+    }
+
+    impl AccountRemindersDTO {
+        pub fn new(acc_reminders: AccountReminders) -> Self {
+            Self {
+                reminders: acc_reminders
+                    .reminders
+                    .into_iter()
+                    .map(AccountEventRemindersDTO::new)
+                    .collect(),
+            }
+        }
+    }
+}

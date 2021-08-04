@@ -1,15 +1,13 @@
 use crate::{
     event::{
-        get_upcoming_reminders::{
-            AccountEventReminder, AccountReminders, GetUpcomingRemindersUseCase,
-        },
+        get_upcoming_reminders::GetUpcomingRemindersUseCase,
         sync_event_reminders::{SyncEventRemindersTrigger, SyncEventRemindersUseCase},
     },
     shared::usecase::execute,
 };
 use actix_web::client::Client;
 use actix_web::rt::time::{delay_until, interval, Instant};
-use nettu_scheduler_api_structs::dtos::CalendarEventDTO;
+use nettu_scheduler_api_structs::send_event_reminders::AccountRemindersDTO;
 use nettu_scheduler_infra::NettuContext;
 use serde::Serialize;
 use std::time::Duration;
@@ -52,40 +50,6 @@ pub fn start_send_reminders_job(ctx: NettuContext) {
             actix_web::rt::spawn(send_reminders(context));
         }
     });
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct AccountEventRemindersDTO {
-    event: CalendarEventDTO,
-    identifier: String,
-}
-
-impl AccountEventRemindersDTO {
-    pub fn new(account_event_reminder: AccountEventReminder) -> Self {
-        Self {
-            event: CalendarEventDTO::new(account_event_reminder.event),
-            identifier: account_event_reminder.identifier,
-        }
-    }
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct AccountRemindersDTO {
-    reminders: Vec<AccountEventRemindersDTO>,
-}
-
-impl AccountRemindersDTO {
-    pub fn new(acc_reminders: AccountReminders) -> Self {
-        Self {
-            reminders: acc_reminders
-                .reminders
-                .into_iter()
-                .map(AccountEventRemindersDTO::new)
-                .collect(),
-        }
-    }
 }
 
 async fn send_reminders(context: NettuContext) {
