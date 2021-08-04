@@ -101,8 +101,7 @@ update on account_integrations
 CREATE TABLE IF NOT EXISTS users (
     user_uid uuid PRIMARY KEY DEFAULT uuid_generate_v4() NOT NULL,
     account_uid uuid NOT NULL REFERENCES accounts(account_uid) ON DELETE CASCADE,
-    metadata text[] NOT NULL,
-    UNIQUE (user_uid, account_uid)
+    metadata text[] NOT NULL
 );
 CREATE INDEX IF NOT EXISTS user_metadata ON users USING GIN (metadata);
 
@@ -121,8 +120,7 @@ CREATE TABLE IF NOT EXISTS user_integrations (
     "provider" ext_calendar_provider NOT NULL,
     -- User cannot have multiple integrations to the same provider
     PRIMARY KEY(user_uid, "provider"),
-    FOREIGN KEY(account_uid, "provider") REFERENCES account_integrations(account_uid, "provider") ON DELETE CASCADE,
-    FOREIGN KEY(user_uid, account_uid) REFERENCES users(user_uid, account_uid) ON DELETE CASCADE
+    FOREIGN KEY(account_uid, "provider") REFERENCES account_integrations(account_uid, "provider") ON DELETE CASCADE
 );
 create trigger
     immutable_columns
@@ -134,8 +132,7 @@ CREATE TABLE IF NOT EXISTS services (
     service_uid uuid PRIMARY KEY DEFAULT uuid_generate_v4() NOT NULL,
     account_uid uuid NOT NULL REFERENCES accounts(account_uid) ON DELETE CASCADE,
     multi_person JSON NOT NULL,
-    metadata text[] NOT NULL,
-    UNIQUE (service_uid, account_uid)
+    metadata text[] NOT NULL
 );
 CREATE INDEX IF NOT EXISTS service_metadata ON services USING GIN (metadata);
 
@@ -170,8 +167,6 @@ update on externally_synced_calendars
 CREATE TABLE IF NOT EXISTS calendar_events (
     event_uid uuid PRIMARY KEY DEFAULT uuid_generate_v4() NOT NULL,
     calendar_uid uuid NOT NULL REFERENCES calendars(calendar_uid) ON DELETE CASCADE,
-    -- user_uid uuid NOT NULL REFERENCES calendars(calendar_uid) ON DELETE CASCADE,
-    -- account_uid uuid NOT NULL REFERENCES calendars(calendar_uid) ON DELETE CASCADE,
     start_ts BIGINT NOT NULL,
     duration BIGINT NOT NULL,
     end_ts BIGINT NOT NULL,
