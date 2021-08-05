@@ -1,10 +1,11 @@
 -- DROP SCHEMA public CASCADE;
 -- CREATE SCHEMA public;
 -- \i ~/Projects/nettu-scheduler/scheduler/crates/infra/migrations/dbinit.sql;
+begin;
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp"; 
 
--- TODO: The unique constraints are REALLY stupid, find out how to get rid of them: https://dba.stackexchange.com/questions/153392/why-do-composite-foreign-keys-need-a-separate-unique-constraint?rq=1
+-- TODO: https://stackoverflow.com/questions/30770098/postgresql-increment-if-exist-or-create-a-new-row
 -- TODO: Better docs and comments on schema
 -- TODO: Better indexing strategy
 -- TODO: Have external calendars and events relations for better normalization / consistency
@@ -61,9 +62,6 @@ comment on function
   immutable_columns()
 is
   'function used in before update triggers to make columns immutable';
-
-commit;
-
 
 
 
@@ -138,7 +136,6 @@ CREATE INDEX IF NOT EXISTS service_metadata ON services USING GIN (metadata);
 
 CREATE TABLE IF NOT EXISTS calendars (
     calendar_uid uuid PRIMARY KEY DEFAULT uuid_generate_v4() NOT NULL,
-    -- account_uid uuid NOT NULL REFERENCES accounts(account_uid) ON DELETE CASCADE,
     user_uid uuid NOT NULL REFERENCES users(user_uid) ON DELETE CASCADE,
     settings JSON NOT NULL,
     metadata text[] NOT NULL
@@ -330,3 +327,5 @@ CREATE TABLE IF NOT EXISTS service_reservations (
     service_uid uuid NOT NULL REFERENCES services(service_uid) ON DELETE CASCADE,
     "timestamp" BIGINT NOT NULL
 );
+
+commit;
