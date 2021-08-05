@@ -130,304 +130,304 @@ impl UseCase for GetUpcomingRemindersUseCase {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use crate::{
-        event::{delete_event::DeleteEventUseCase, update_event::UpdateEventUseCase},
-        shared::usecase::execute,
-    };
+// #[cfg(test)]
+// mod tests {
+//     use crate::{
+//         event::{delete_event::DeleteEventUseCase, update_event::UpdateEventUseCase},
+//         shared::usecase::execute,
+//     };
 
-    use super::super::create_event::CreateEventUseCase;
-    use super::*;
-    use nettu_scheduler_domain::{Calendar, CalendarEventReminder, User, ID};
-    use nettu_scheduler_infra::{setup_context as _setup_ctx, ISys};
-    use std::sync::Arc;
+//     use super::super::create_event::CreateEventUseCase;
+//     use super::*;
+//     use nettu_scheduler_domain::{Calendar, CalendarEventReminder, User, ID};
+//     use nettu_scheduler_infra::{setup_context as _setup_ctx, ISys};
+//     use std::sync::Arc;
 
-    async fn setup_context() -> NettuContext {
-        let ctx = _setup_ctx().await;
-        ctx.repos
-            .reminders
-            .delete_all_before(CalendarEvent::get_max_timestamp())
-            .await;
+//     async fn setup_context() -> NettuContext {
+//         let ctx = _setup_ctx().await;
+//         ctx.repos
+//             .reminders
+//             .delete_all_before(CalendarEvent::get_max_timestamp())
+//             .await;
 
-        ctx
-    }
+//         ctx
+//     }
 
-    pub struct StaticTimeSys1;
-    impl ISys for StaticTimeSys1 {
-        fn get_timestamp_millis(&self) -> i64 {
-            1613862000000 // Sun Feb 21 2021 00:00:00 GMT+0100 (Central European Standard Time) {}
-        }
-    }
+//     pub struct StaticTimeSys1;
+//     impl ISys for StaticTimeSys1 {
+//         fn get_timestamp_millis(&self) -> i64 {
+//             1613862000000 // Sun Feb 21 2021 00:00:00 GMT+0100 (Central European Standard Time) {}
+//         }
+//     }
 
-    pub struct StaticTimeSys2;
-    impl ISys for StaticTimeSys2 {
-        fn get_timestamp_millis(&self) -> i64 {
-            1613862000000 + 1000 * 60 * 49 // Sun Feb 21 2021 00:49:00 GMT+0100 (Central European Standard Time) {}
-        }
-    }
+//     pub struct StaticTimeSys2;
+//     impl ISys for StaticTimeSys2 {
+//         fn get_timestamp_millis(&self) -> i64 {
+//             1613862000000 + 1000 * 60 * 49 // Sun Feb 21 2021 00:49:00 GMT+0100 (Central European Standard Time) {}
+//         }
+//     }
 
-    pub struct StaticTimeSys3;
-    impl ISys for StaticTimeSys3 {
-        fn get_timestamp_millis(&self) -> i64 {
-            1613862000000 + 1000 * 60 * 60 * 24 // Sun Feb 22 2021 00:00:00 GMT+0100 (Central European Standard Time) {}
-        }
-    }
+//     pub struct StaticTimeSys3;
+//     impl ISys for StaticTimeSys3 {
+//         fn get_timestamp_millis(&self) -> i64 {
+//             1613862000000 + 1000 * 60 * 60 * 24 // Sun Feb 22 2021 00:00:00 GMT+0100 (Central European Standard Time) {}
+//         }
+//     }
 
-    async fn insert_common_data(ctx: &NettuContext) -> (Account, ID, Calendar) {
-        let account = Account::default();
-        ctx.repos.accounts.insert(&account).await.unwrap();
+//     async fn insert_common_data(ctx: &NettuContext) -> (Account, ID, Calendar) {
+//         let account = Account::default();
+//         ctx.repos.accounts.insert(&account).await.unwrap();
 
-        let user = User::new(account.id.clone());
-        ctx.repos.users.insert(&user).await.unwrap();
-        let mut calendar = Calendar::new(&user.id, &account.id);
-        calendar.settings.timezone = chrono_tz::Europe::Oslo;
-        ctx.repos.calendars.insert(&calendar).await.unwrap();
-        (account, user.id, calendar)
-    }
+//         let user = User::new(account.id.clone());
+//         ctx.repos.users.insert(&user).await.unwrap();
+//         let mut calendar = Calendar::new(&user.id, &account.id);
+//         calendar.settings.timezone = chrono_tz::Europe::Oslo;
+//         ctx.repos.calendars.insert(&calendar).await.unwrap();
+//         (account, user.id, calendar)
+//     }
 
-    async fn insert_events(ctx: &NettuContext) {
-        let (account, user_id, calendar) = insert_common_data(ctx).await;
-        let user = ctx.repos.users.find(&user_id).await.unwrap();
+//     async fn insert_events(ctx: &NettuContext) {
+//         let (account, user_id, calendar) = insert_common_data(ctx).await;
+//         let user = ctx.repos.users.find(&user_id).await.unwrap();
 
-        let usecase = CreateEventUseCase {
-            user: user.clone(),
-            calendar_id: calendar.id.clone(),
-            start_ts: ctx.sys.get_timestamp_millis(),
-            duration: 1000 * 60 * 60 * 2,
-            busy: false,
-            recurrence: Some(Default::default()),
-            reminders: vec![CalendarEventReminder {
-                delta: -10,
-                identifier: "".into(),
-            }],
-            service_id: None,
-            metadata: Default::default(),
-        };
+//         let usecase = CreateEventUseCase {
+//             user: user.clone(),
+//             calendar_id: calendar.id.clone(),
+//             start_ts: ctx.sys.get_timestamp_millis(),
+//             duration: 1000 * 60 * 60 * 2,
+//             busy: false,
+//             recurrence: Some(Default::default()),
+//             reminders: vec![CalendarEventReminder {
+//                 delta: -10,
+//                 identifier: "".into(),
+//             }],
+//             service_id: None,
+//             metadata: Default::default(),
+//         };
 
-        execute(usecase, ctx).await.unwrap();
+//         execute(usecase, ctx).await.unwrap();
 
-        let sys3 = StaticTimeSys3 {};
-        let usecase = CreateEventUseCase {
-            calendar_id: calendar.id.clone(),
-            user,
-            start_ts: sys3.get_timestamp_millis() + 1000 * 60 * 5,
-            duration: 1000 * 60 * 60 * 2,
-            busy: false,
-            recurrence: None,
-            reminders: vec![CalendarEventReminder {
-                delta: -10,
-                identifier: "".into(),
-            }],
-            service_id: None,
-            metadata: Default::default(),
-        };
+//         let sys3 = StaticTimeSys3 {};
+//         let usecase = CreateEventUseCase {
+//             calendar_id: calendar.id.clone(),
+//             user,
+//             start_ts: sys3.get_timestamp_millis() + 1000 * 60 * 5,
+//             duration: 1000 * 60 * 60 * 2,
+//             busy: false,
+//             recurrence: None,
+//             reminders: vec![CalendarEventReminder {
+//                 delta: -10,
+//                 identifier: "".into(),
+//             }],
+//             service_id: None,
+//             metadata: Default::default(),
+//         };
 
-        execute(usecase, ctx).await.unwrap();
-    }
+//         execute(usecase, ctx).await.unwrap();
+//     }
 
-    #[actix_web::main]
-    #[serial_test::serial]
-    #[test]
-    async fn get_upcoming_reminders() {
-        let mut ctx = setup_context().await;
-        ctx.sys = Arc::new(StaticTimeSys1 {});
+//     #[actix_web::main]
+//     #[serial_test::serial]
+//     #[test]
+//     async fn get_upcoming_reminders() {
+//         let mut ctx = setup_context().await;
+//         ctx.sys = Arc::new(StaticTimeSys1 {});
 
-        insert_events(&ctx).await;
+//         insert_events(&ctx).await;
 
-        let usecase = GetUpcomingRemindersUseCase {
-            reminders_interval: 1000 * 60,
-        };
-        let res = execute(usecase, &ctx).await;
-        assert!(res.is_ok());
-        let res = res.unwrap().0;
-        assert_eq!(res.len(), 1);
-        assert_eq!(res[0].1.reminders.len(), 1);
+//         let usecase = GetUpcomingRemindersUseCase {
+//             reminders_interval: 1000 * 60,
+//         };
+//         let res = execute(usecase, &ctx).await;
+//         assert!(res.is_ok());
+//         let res = res.unwrap().0;
+//         assert_eq!(res.len(), 1);
+//         assert_eq!(res[0].1.reminders.len(), 1);
 
-        ctx.sys = Arc::new(StaticTimeSys2 {});
-        let usecase = GetUpcomingRemindersUseCase {
-            reminders_interval: 1000 * 60,
-        };
-        let res = execute(usecase, &ctx).await;
-        assert!(res.is_ok());
-        let res = res.unwrap().0;
-        assert_eq!(res.len(), 0);
+//         ctx.sys = Arc::new(StaticTimeSys2 {});
+//         let usecase = GetUpcomingRemindersUseCase {
+//             reminders_interval: 1000 * 60,
+//         };
+//         let res = execute(usecase, &ctx).await;
+//         assert!(res.is_ok());
+//         let res = res.unwrap().0;
+//         assert_eq!(res.len(), 0);
 
-        ctx.sys = Arc::new(StaticTimeSys3 {});
-        let usecase = GetUpcomingRemindersUseCase {
-            reminders_interval: 1000 * 60,
-        };
-        let res = execute(usecase, &ctx).await;
-        assert!(res.is_ok());
-        let res = res.unwrap().0;
-        assert_eq!(res.len(), 1);
-        assert_eq!(res[0].1.reminders.len(), 2);
+//         ctx.sys = Arc::new(StaticTimeSys3 {});
+//         let usecase = GetUpcomingRemindersUseCase {
+//             reminders_interval: 1000 * 60,
+//         };
+//         let res = execute(usecase, &ctx).await;
+//         assert!(res.is_ok());
+//         let res = res.unwrap().0;
+//         assert_eq!(res.len(), 1);
+//         assert_eq!(res[0].1.reminders.len(), 2);
 
-        let usecase = GetUpcomingRemindersUseCase {
-            reminders_interval: 1000 * 60,
-        };
-        let res = execute(usecase, &ctx).await;
-        assert!(res.is_ok());
-        let res = res.unwrap().0;
-        assert_eq!(res.len(), 0);
-    }
+//         let usecase = GetUpcomingRemindersUseCase {
+//             reminders_interval: 1000 * 60,
+//         };
+//         let res = execute(usecase, &ctx).await;
+//         assert!(res.is_ok());
+//         let res = res.unwrap().0;
+//         assert_eq!(res.len(), 0);
+//     }
 
-    #[actix_web::main]
-    #[serial_test::serial]
-    #[test]
-    async fn updating_event_also_updates_reminders() {
-        let mut ctx = setup_context().await;
-        ctx.sys = Arc::new(StaticTimeSys1 {});
+//     #[actix_web::main]
+//     #[serial_test::serial]
+//     #[test]
+//     async fn updating_event_also_updates_reminders() {
+//         let mut ctx = setup_context().await;
+//         ctx.sys = Arc::new(StaticTimeSys1 {});
 
-        let now = ctx.sys.get_timestamp_millis();
-        let delta = -10;
+//         let now = ctx.sys.get_timestamp_millis();
+//         let delta = -10;
 
-        let (account, user_id, calendar) = insert_common_data(&ctx).await;
-        let user = ctx.repos.users.find(&user_id).await.unwrap();
-        let usecase = CreateEventUseCase {
-            calendar_id: calendar.id.clone(),
-            user: user.clone(),
-            start_ts: now,
-            duration: 1000 * 60 * 60 * 2,
-            busy: false,
-            recurrence: Some(Default::default()),
-            reminders: vec![CalendarEventReminder {
-                delta,
-                identifier: "".into(),
-            }],
-            service_id: None,
-            metadata: Default::default(),
-        };
+//         let (account, user_id, calendar) = insert_common_data(&ctx).await;
+//         let user = ctx.repos.users.find(&user_id).await.unwrap();
+//         let usecase = CreateEventUseCase {
+//             calendar_id: calendar.id.clone(),
+//             user: user.clone(),
+//             start_ts: now,
+//             duration: 1000 * 60 * 60 * 2,
+//             busy: false,
+//             recurrence: Some(Default::default()),
+//             reminders: vec![CalendarEventReminder {
+//                 delta,
+//                 identifier: "".into(),
+//             }],
+//             service_id: None,
+//             metadata: Default::default(),
+//         };
 
-        let calendar_event = execute(usecase, &ctx).await.unwrap();
-        let old_reminders = ctx.repos.reminders.delete_all_before(now).await;
-        ctx.repos
-            .reminders
-            .bulk_insert(&old_reminders)
-            .await
-            .unwrap();
+//         let calendar_event = execute(usecase, &ctx).await.unwrap();
+//         let old_reminders = ctx.repos.reminders.delete_all_before(now).await;
+//         ctx.repos
+//             .reminders
+//             .bulk_insert(&old_reminders)
+//             .await
+//             .unwrap();
 
-        let start_ts_diff = 15 * 60 * 1000; // 15 minutes
-        let new_start = calendar_event.start_ts + start_ts_diff; // Postponed 15 minutes
-        let user = ctx.repos.users.find(&user_id).await.unwrap();
-        let update_event_usecase = UpdateEventUseCase {
-            event_id: calendar_event.id,
-            user,
-            busy: None,
-            duration: None,
-            exdates: None,
-            metadata: None,
-            reminders: Some(vec![CalendarEventReminder {
-                delta,
-                identifier: "".into(),
-            }]),
-            recurrence: Some(Default::default()),
-            service_id: None,
-            start_ts: Some(new_start),
-        };
-        execute(update_event_usecase, &ctx).await.unwrap();
-        let new_reminders = ctx.repos.reminders.delete_all_before(new_start).await;
-        assert_eq!(new_reminders.len(), old_reminders.len());
-        assert_eq!(new_reminders.len(), 1);
-        assert_eq!(new_reminders[0].remind_at + delta * 60 * 1000, new_start);
-        assert_eq!(new_reminders[0].event_id, old_reminders[0].event_id);
-        assert_eq!(
-            new_reminders[0].remind_at,
-            old_reminders[0].remind_at + start_ts_diff
-        );
-    }
+//         let start_ts_diff = 15 * 60 * 1000; // 15 minutes
+//         let new_start = calendar_event.start_ts + start_ts_diff; // Postponed 15 minutes
+//         let user = ctx.repos.users.find(&user_id).await.unwrap();
+//         let update_event_usecase = UpdateEventUseCase {
+//             event_id: calendar_event.id,
+//             user,
+//             busy: None,
+//             duration: None,
+//             exdates: None,
+//             metadata: None,
+//             reminders: Some(vec![CalendarEventReminder {
+//                 delta,
+//                 identifier: "".into(),
+//             }]),
+//             recurrence: Some(Default::default()),
+//             service_id: None,
+//             start_ts: Some(new_start),
+//         };
+//         execute(update_event_usecase, &ctx).await.unwrap();
+//         let new_reminders = ctx.repos.reminders.delete_all_before(new_start).await;
+//         assert_eq!(new_reminders.len(), old_reminders.len());
+//         assert_eq!(new_reminders.len(), 1);
+//         assert_eq!(new_reminders[0].remind_at + delta * 60 * 1000, new_start);
+//         assert_eq!(new_reminders[0].event_id, old_reminders[0].event_id);
+//         assert_eq!(
+//             new_reminders[0].remind_at,
+//             old_reminders[0].remind_at + start_ts_diff
+//         );
+//     }
 
-    #[actix_web::main]
-    #[serial_test::serial]
-    #[test]
-    async fn deleting_event_reminder_setting_also_deletes_reminders() {
-        let mut ctx = setup_context().await;
-        ctx.sys = Arc::new(StaticTimeSys1 {});
+//     #[actix_web::main]
+//     #[serial_test::serial]
+//     #[test]
+//     async fn deleting_event_reminder_setting_also_deletes_reminders() {
+//         let mut ctx = setup_context().await;
+//         ctx.sys = Arc::new(StaticTimeSys1 {});
 
-        let now = ctx.sys.get_timestamp_millis();
+//         let now = ctx.sys.get_timestamp_millis();
 
-        let (account, user_id, calendar) = insert_common_data(&ctx).await;
-        let user = ctx.repos.users.find(&user_id).await.unwrap();
-        let usecase = CreateEventUseCase {
-            user: user.clone(),
-            calendar_id: calendar.id.clone(),
-            start_ts: now,
-            duration: 1000 * 60 * 60 * 2,
-            busy: false,
-            recurrence: Some(Default::default()),
-            reminders: vec![CalendarEventReminder {
-                delta: -10,
-                identifier: "".into(),
-            }],
-            service_id: None,
-            metadata: Default::default(),
-        };
+//         let (account, user_id, calendar) = insert_common_data(&ctx).await;
+//         let user = ctx.repos.users.find(&user_id).await.unwrap();
+//         let usecase = CreateEventUseCase {
+//             user: user.clone(),
+//             calendar_id: calendar.id.clone(),
+//             start_ts: now,
+//             duration: 1000 * 60 * 60 * 2,
+//             busy: false,
+//             recurrence: Some(Default::default()),
+//             reminders: vec![CalendarEventReminder {
+//                 delta: -10,
+//                 identifier: "".into(),
+//             }],
+//             service_id: None,
+//             metadata: Default::default(),
+//         };
 
-        let calendar_event = execute(usecase, &ctx).await.unwrap();
-        let old_reminders = ctx.repos.reminders.delete_all_before(now).await;
-        ctx.repos
-            .reminders
-            .bulk_insert(&old_reminders)
-            .await
-            .unwrap();
+//         let calendar_event = execute(usecase, &ctx).await.unwrap();
+//         let old_reminders = ctx.repos.reminders.delete_all_before(now).await;
+//         ctx.repos
+//             .reminders
+//             .bulk_insert(&old_reminders)
+//             .await
+//             .unwrap();
 
-        let update_event_usecase = UpdateEventUseCase {
-            user: user.clone(),
-            event_id: calendar_event.id,
-            busy: None,
-            duration: None,
-            exdates: None,
-            metadata: None,
-            reminders: None,
-            recurrence: Some(Default::default()),
-            service_id: None,
-            start_ts: None,
-        };
-        execute(update_event_usecase, &ctx).await.unwrap();
-        let new_reminders = ctx.repos.reminders.delete_all_before(now).await;
-        assert!(new_reminders.is_empty());
-    }
+//         let update_event_usecase = UpdateEventUseCase {
+//             user: user.clone(),
+//             event_id: calendar_event.id,
+//             busy: None,
+//             duration: None,
+//             exdates: None,
+//             metadata: None,
+//             reminders: None,
+//             recurrence: Some(Default::default()),
+//             service_id: None,
+//             start_ts: None,
+//         };
+//         execute(update_event_usecase, &ctx).await.unwrap();
+//         let new_reminders = ctx.repos.reminders.delete_all_before(now).await;
+//         assert!(new_reminders.is_empty());
+//     }
 
-    #[actix_web::main]
-    #[serial_test::serial]
-    #[test]
-    async fn deleting_event_also_deletes_reminders() {
-        let mut ctx = setup_context().await;
-        ctx.sys = Arc::new(StaticTimeSys1 {});
+//     #[actix_web::main]
+//     #[serial_test::serial]
+//     #[test]
+//     async fn deleting_event_also_deletes_reminders() {
+//         let mut ctx = setup_context().await;
+//         ctx.sys = Arc::new(StaticTimeSys1 {});
 
-        let now = ctx.sys.get_timestamp_millis();
+//         let now = ctx.sys.get_timestamp_millis();
 
-        let (account, user_id, calendar) = insert_common_data(&ctx).await;
-        let user = ctx.repos.users.find(&user_id).await.unwrap();
-        let usecase = CreateEventUseCase {
-            user: user.clone(),
-            calendar_id: calendar.id.clone(),
-            start_ts: now,
-            duration: 1000 * 60 * 60 * 2,
-            busy: false,
-            recurrence: Some(Default::default()),
-            reminders: vec![CalendarEventReminder {
-                delta: -10,
-                identifier: "".into(),
-            }],
-            service_id: None,
-            metadata: Default::default(),
-        };
+//         let (account, user_id, calendar) = insert_common_data(&ctx).await;
+//         let user = ctx.repos.users.find(&user_id).await.unwrap();
+//         let usecase = CreateEventUseCase {
+//             user: user.clone(),
+//             calendar_id: calendar.id.clone(),
+//             start_ts: now,
+//             duration: 1000 * 60 * 60 * 2,
+//             busy: false,
+//             recurrence: Some(Default::default()),
+//             reminders: vec![CalendarEventReminder {
+//                 delta: -10,
+//                 identifier: "".into(),
+//             }],
+//             service_id: None,
+//             metadata: Default::default(),
+//         };
 
-        let calendar_event = execute(usecase, &ctx).await.unwrap();
-        let old_reminders = ctx.repos.reminders.delete_all_before(now).await;
-        ctx.repos
-            .reminders
-            .bulk_insert(&old_reminders)
-            .await
-            .unwrap();
+//         let calendar_event = execute(usecase, &ctx).await.unwrap();
+//         let old_reminders = ctx.repos.reminders.delete_all_before(now).await;
+//         ctx.repos
+//             .reminders
+//             .bulk_insert(&old_reminders)
+//             .await
+//             .unwrap();
 
-        let update_event_usecase = DeleteEventUseCase {
-            user,
-            event_id: calendar_event.id,
-        };
-        execute(update_event_usecase, &ctx).await.unwrap();
-        let new_reminders = ctx.repos.reminders.delete_all_before(now).await;
-        assert!(new_reminders.is_empty());
-    }
-}
+//         let update_event_usecase = DeleteEventUseCase {
+//             user,
+//             event_id: calendar_event.id,
+//         };
+//         execute(update_event_usecase, &ctx).await.unwrap();
+//         let new_reminders = ctx.repos.reminders.delete_all_before(now).await;
+//         assert!(new_reminders.is_empty());
+//     }
+// }

@@ -65,7 +65,7 @@ impl UseCase for RemoveServiceEventIntendUseCase {
         };
         ctx.repos
             .reservations
-            .remove_one(&self.service_id, self.timestamp)
+            .decrement(&self.service_id, self.timestamp)
             .await
             .map(|_| UseCaseRes {})
             .map_err(|_| UseCaseErrors::StorageError)

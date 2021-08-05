@@ -322,10 +322,12 @@ before
 update on service_user_busy_calendars
     for each row execute procedure immutable_columns('service_uid', 'user_uid', 'calendar_uid');
 
+-- TODO: Trigger to delete
 CREATE TABLE IF NOT EXISTS service_reservations (
-    reservation_uid uuid PRIMARY KEY DEFAULT uuid_generate_v4() NOT NULL,
     service_uid uuid NOT NULL REFERENCES services(service_uid) ON DELETE CASCADE,
-    "timestamp" BIGINT NOT NULL
+    "timestamp" BIGINT NOT NULL,
+    "count" BIGINT NOT NULL DEFAULT 1 CHECK ("count" >= 0),
+    PRIMARY KEY(service_uid, "timestamp")
 );
 
 commit;

@@ -174,11 +174,3 @@ pub enum BusyCalendar {
     Outlook(String),
     Nettu(ID),
 }
-
-/// Relevant for group services
-#[derive(Debug)]
-pub struct ServiceReservation {
-    pub id: ID,
-    pub timestamp: i64,
-    pub service_id: ID,
-}

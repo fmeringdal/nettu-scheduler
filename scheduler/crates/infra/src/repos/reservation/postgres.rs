@@ -1,5 +1,5 @@
 use super::IReservationRepo;
-use nettu_scheduler_domain::{ServiceReservation, ID};
+use nettu_scheduler_domain::ID;
 use sqlx::{types::Uuid, FromRow, PgPool};
 
 pub struct PostgresReservationRepo {
@@ -14,45 +14,35 @@ impl PostgresReservationRepo {
 
 #[derive(Debug, FromRow)]
 struct ReservationRaw {
-    reservation_uid: Uuid,
+    count: i64,
     timestamp: i64,
     service_uid: Uuid,
 }
 
-impl Into<ServiceReservation> for ReservationRaw {
-    fn into(self) -> ServiceReservation {
-        ServiceReservation {
-            id: self.reservation_uid.into(),
-            service_id: self.service_uid.into(),
-            timestamp: self.timestamp,
-        }
-    }
-}
-
 #[async_trait::async_trait]
 impl IReservationRepo for PostgresReservationRepo {
-    async fn insert(&self, reservation: &ServiceReservation) -> anyhow::Result<()> {
+    async fn increment(&self, service_id: &ID, timestamp: i64) -> anyhow::Result<()> {
         sqlx::query!(
             r#"
-            INSERT INTO service_reservations(reservation_uid, service_uid, timestamp)
-            VALUES($1, $2, $3)
+            INSERT INTO service_reservations(service_uid, timestamp)
+            VALUES($1, $2)
+            ON CONFLICT(service_uid, timestamp) DO UPDATE SET count = service_reservations.count + 1
             "#,
-            reservation.id.inner_ref(),
-            reservation.service_id.inner_ref(),
-            reservation.timestamp
+            service_id.inner_ref(),
+            timestamp
         )
         .execute(&self.pool)
         .await
         .map_err(|e| {
-            println!("Unable to insert service reservation: {:?}", e);
+            println!("Unable to increment service reservation: {:?}", e);
             e
         })?;
 
         Ok(())
     }
 
-    async fn find(&self, service_id: &ID, timestamp: i64) -> Vec<ServiceReservation> {
-        let reservations: Vec<ReservationRaw> = match sqlx::query_as!(
+    async fn count(&self, service_id: &ID, timestamp: i64) -> anyhow::Result<usize> {
+        let reservation: Option<ReservationRaw> = sqlx::query_as!(
             ReservationRaw,
             r#"
             SELECT * FROM service_reservations as r
@@ -62,33 +52,30 @@ impl IReservationRepo for PostgresReservationRepo {
             service_id.inner_ref(),
             timestamp,
         )
-        .fetch_all(&self.pool)
-        .await
-        {
-            Ok(res) => res,
-            Err(_) => vec![],
-        };
-        reservations.into_iter().map(|r| r.into()).collect()
+        .fetch_optional(&self.pool)
+        .await?;
+
+        let count = reservation.map(|r| r.count).unwrap_or(0);
+        Ok(count as usize)
     }
 
-    async fn remove_one(&self, service_id: &ID, timestamp: i64) -> anyhow::Result<()> {
+    async fn decrement(&self, service_id: &ID, timestamp: i64) -> anyhow::Result<()> {
         sqlx::query_as!(
             ReservationRaw,
             r#"
-            DELETE FROM service_reservations as r
-            WHERE r.reservation_uid IN
-            (
-                SELECT reservation_uid FROM service_reservations as r
-                WHERE r.service_uid = $1 AND
-                r.timestamp = $2
-                LIMIT 1
-            ) 
+            UPDATE service_reservations as r
+            SET count = count - 1
+            WHERE r.service_uid = $1 AND r.timestamp = $2
             "#,
             service_id.inner_ref(),
             timestamp,
         )
         .execute(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            println!("Error : {:?}", e);
+            e
+        })?;
         Ok(())
     }
 }

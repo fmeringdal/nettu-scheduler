@@ -15,7 +15,7 @@ use nettu_scheduler_domain::{
         RoundRobinAlgorithm, RoundRobinAvailabilityAssignment,
         RoundRobinEqualDistributionAssignment,
     },
-    ServiceMultiPersonOptions, ServiceReservation, User,
+    ServiceMultiPersonOptions, User,
 };
 use nettu_scheduler_domain::{Account, ID};
 use nettu_scheduler_infra::NettuContext;
@@ -247,20 +247,19 @@ impl UseCase for CreateServiceEventIntendUseCase {
                         let reservations = ctx
                             .repos
                             .reservations
-                            .find(&service.id, self.timestamp)
-                            .await;
-                        if reservations.len() + 1 < *max_count {
+                            .count(&service.id, self.timestamp)
+                            .await
+                            .map_err(|_| UseCaseErrors::StorageError)?;
+                        if reservations + 1 < *max_count {
                             // Client do not need to create service event yet
                             create_event_for_hosts = false;
                         }
-                        let reservation = ServiceReservation {
-                            id: Default::default(),
-                            service_id: service.id.clone(),
-                            timestamp: self.timestamp,
-                        };
-                        if ctx.repos.reservations.insert(&reservation).await.is_err() {
-                            return Err(UseCaseErrors::StorageError);
-                        }
+
+                        ctx.repos
+                            .reservations
+                            .increment(&service.id, self.timestamp)
+                            .await
+                            .map_err(|_| UseCaseErrors::StorageError)?;
 
                         all_hosts_user_ids
                     }
