@@ -1,6 +1,6 @@
 [package]
 name = "nettu_scheduler_api_structs"
-version = "0.2.9"
+version = "0.3.0"
 description = "Nettu scheduler api types"
 license = "MIT"
 authors = ["Fredrik Meringdal"]
@@ -10,4 +10,4 @@ edition = "2018"
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
-nettu_scheduler_domain = { path = "../domain", version = "0.1.9" }
+nettu_scheduler_domain = { path = "../domain", version = "0.2.0" }

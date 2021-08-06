@@ -13,7 +13,7 @@ An important point is to not store the booking resource itself in `Nettu schedul
 
 
 ```js
-import { NettuClient } from "@nettu/scheduler-sdk";
+import { NettuClient, BusyCalendarProvider } from "@nettu/scheduler-sdk";
 
 const client = NettuClient({ apiKey: "YOUR_API_KEY" });
 
@@ -44,10 +44,18 @@ await client.service.addUser(service.id, {
         variant: "Schedule",
         id: schedule.id
     },
-    // Calendars that should be used to calculate busy time
-    busy: [calendar.id],
     // Make User unbookable for 10 minutes after a booking 
     buffer: 10
+});
+
+// Add calendars that should be used to calculate busy time
+await client.service.addBusyCalendar({
+    serviceId: service.id,
+    userId: user.id,
+    calendar: {
+        id: calendar.id,
+        provider: BusyCalendarProvider.Nettu
+    }
 });
 
 // Now query for the available bookingslots
@@ -66,13 +74,14 @@ await client.events.create(user.id, {
     startTs: bookingSlotsBefore[0].start,
     calendarId: calendar.id,
     duration: 1000 * 60 * 30, // 30 minutes in millis
-    isService: true, // Flagging this event as a service event so that possible service buffers will be created correctly
+    serviceId: service.id, // Flagging this event as a service event so that possible service buffers will be created correctly
     busy: true, // The user will be busy during this time and not bookable
     // Optional if you want to receive a webhook notification 15 minutes before
     // the booking
-    reminder: {
-        minutesBefore: 15
-    }
+    reminders: [{
+        delta: -15,
+        identifier: "remind"
+    }]
 });
 
 const bookingSlotsRes2 = await client.service.getBookingslots(service.id, {

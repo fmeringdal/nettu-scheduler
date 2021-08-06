@@ -22,6 +22,7 @@ pub struct CreateCalendarInput {
     pub week_start: isize,
     pub metadata: Option<Metadata>,
 }
+
 pub struct SyncCalendarInput {
     pub user_id: ID,
     pub calendar_id: ID,
