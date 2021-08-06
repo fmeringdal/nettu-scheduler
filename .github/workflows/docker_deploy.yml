@@ -1,7 +1,5 @@
 name: Docker deploy
 
-on: [push]
-
 on:
   workflow_run:
     workflows: ["Test"]
