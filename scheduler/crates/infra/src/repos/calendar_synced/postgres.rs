@@ -1,6 +1,6 @@
 use super::ICalendarSyncedRepo;
 use nettu_scheduler_domain::{SyncedCalendar, ID};
-use sqlx::{types::Uuid, FromRow, PgPool};
+use sqlx::{types::Uuid, Done, FromRow, PgPool};
 use tracing::error;
 
 pub struct PostgresCalendarSyncedRepo {
@@ -64,7 +64,7 @@ impl ICalendarSyncedRepo for PostgresCalendarSyncedRepo {
 
     async fn delete(&self, c: &SyncedCalendar) -> anyhow::Result<()> {
         let provider: String = c.provider.clone().into();
-        sqlx::query!(
+        let rows = sqlx::query!(
             r#"
             DELETE FROM externally_synced_calendars
             WHERE calendar_uid = $1 AND
@@ -79,8 +79,11 @@ impl ICalendarSyncedRepo for PostgresCalendarSyncedRepo {
         )
         .execute(&self.pool)
         .await?;
-
-        Ok(())
+        if rows.rows_affected() == 1 {
+            Ok(())
+        } else {
+            Err(anyhow::Error::msg("Synced calendar not found"))
+        }
     }
 
     async fn find_by_calendar(&self, calendar_id: &ID) -> anyhow::Result<Vec<SyncedCalendar>> {

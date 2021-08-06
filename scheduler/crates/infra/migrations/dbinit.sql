@@ -5,7 +5,6 @@ begin;
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp"; 
 
--- TODO: https://stackoverflow.com/questions/30770098/postgresql-increment-if-exist-or-create-a-new-row
 -- TODO: Better docs and comments on schema
 -- TODO: Better indexing strategy
 -- TODO: Have external calendars and events relations for better normalization / consistency
@@ -322,7 +321,6 @@ before
 update on service_user_busy_calendars
     for each row execute procedure immutable_columns('service_uid', 'user_uid', 'calendar_uid');
 
--- TODO: Trigger to delete
 CREATE TABLE IF NOT EXISTS service_reservations (
     service_uid uuid NOT NULL REFERENCES services(service_uid) ON DELETE CASCADE,
     "timestamp" BIGINT NOT NULL,

@@ -38,6 +38,15 @@ mod tests {
             .await
             .expect("To insert service");
 
+        // Is null before inserting
+        let count = ctx
+            .repos
+            .reservations
+            .count(&service.id, 0)
+            .await
+            .expect("To get reservations count");
+        assert_eq!(count, 0);
+
         assert!(ctx
             .repos
             .reservations
@@ -89,6 +98,7 @@ mod tests {
             .expect("To insert service");
 
         let timestamp = 10;
+
         assert!(ctx
             .repos
             .reservations
