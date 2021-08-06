@@ -18,7 +18,7 @@ It supports authentication through api keys for server - server communication an
 - **Calendar Events**: Supports recurrence rules, flexible querying and reminders.
 - **Calendars**: For grouping `Calendar Event`s.
 - **Freebusy**: Find out when `User`s are free and when they are busy.
-- **Google Integration**: Connect your Nettu and Google calendars
+- **Integrations**: Connect your Nettu, Google and Outlook calendars
 - **Mutli-tenancy**: All resources are grouped by `Account`s. 
 - **Metadata queries**: Add key-value metadata to your resources and then query on that metadata 
 - **Webhooks**: Notifying your server about `Calendar Event` reminders.

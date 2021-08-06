@@ -35,16 +35,22 @@ await client.events.create(user.id, {
         freq: Frequenzy.Daily,
         interval: 1
     },
-    reminder: {
-        minutesBefore: 15 // Your webhook url will be called with this CalendarEvent 15 minutes before an occurence of this event
-    },
+    reminders: [{
+        delta: -15, // Your webhook url will be called with this CalendarEvent 15 minutes before an occurence of this event
+        identifier: "your_unqiue_identifer" // Some unique identifier that you will receive along with the webhook
+    }],
     metadata: {
         mykey: "myvalue"
     }
 });
 
-// The controller for the given URL that Nettu Scheduler service will call
-// req.body.events is a list of `CalendarEvent`s
+// Your endpoint that Nettu Scheduler service will call
+//  req.body = {
+//      reminders: {
+//          event: CalendarEvent,
+//          identifier: string
+//      }[]
+//  }
 const webhookReceiverController = (req) => {
     if(req.headers["nettu-scheduler-webhook-key"] !== key) return;
     // Handle reminder by sending email to participants or whatever your app needs to do
