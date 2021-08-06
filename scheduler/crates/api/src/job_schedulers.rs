@@ -9,7 +9,7 @@ use actix_web::client::Client;
 use actix_web::rt::time::{delay_until, interval, Instant};
 use nettu_scheduler_api_structs::send_event_reminders::AccountRemindersDTO;
 use nettu_scheduler_infra::NettuContext;
-use serde::Serialize;
+
 use std::time::Duration;
 use tracing::error;
 

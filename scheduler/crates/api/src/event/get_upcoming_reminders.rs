@@ -139,7 +139,7 @@ mod tests {
         event::{delete_event::DeleteEventUseCase, update_event::UpdateEventUseCase},
         shared::usecase::execute,
     };
-    use nettu_scheduler_domain::{Calendar, CalendarEventReminder, User, ID};
+    use nettu_scheduler_domain::{Calendar, CalendarEventReminder, User};
     use nettu_scheduler_infra::{setup_context as _setup_ctx, ISys};
     use std::sync::Arc;
 
