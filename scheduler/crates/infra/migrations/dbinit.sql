@@ -186,7 +186,6 @@ update on calendar_events
 CREATE TABLE IF NOT EXISTS externally_synced_calendar_events (
     event_uid uuid NOT NULL REFERENCES calendar_events(event_uid) ON DELETE CASCADE,
     calendar_uid uuid NOT NULL REFERENCES calendars(calendar_uid) ON DELETE CASCADE,
-    -- user_uid uuid NOT NULL,
     ext_calendar_id text NOT NULL,
     ext_calendar_event_id text NOT NULL,
     "provider" ext_calendar_provider NOT NULL,

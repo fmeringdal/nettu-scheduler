@@ -1,7 +1,7 @@
 use super::{BusyCalendarIdentifier, ExternalBusyCalendarIdentifier, IServiceUserBusyCalendarRepo};
 
 use nettu_scheduler_domain::{BusyCalendar, ID};
-use sqlx::{FromRow, PgPool};
+use sqlx::{Done, FromRow, PgPool};
 
 pub struct PostgresServiceUseBusyCalendarRepo {
     pool: PgPool,
@@ -33,7 +33,7 @@ impl Into<BusyCalendar> for BusyCalendarRaw {
 #[async_trait::async_trait]
 impl IServiceUserBusyCalendarRepo for PostgresServiceUseBusyCalendarRepo {
     async fn exists(&self, input: BusyCalendarIdentifier) -> anyhow::Result<bool> {
-        sqlx::query!(
+        let res = sqlx::query!(
             r#"
             SELECT FROM service_user_busy_calendars WHERE 
             service_uid = $1 AND 
@@ -44,14 +44,14 @@ impl IServiceUserBusyCalendarRepo for PostgresServiceUseBusyCalendarRepo {
             input.user_id.inner_ref(),
             input.calendar_id.inner_ref(),
         )
-        .fetch_one(&self.pool)
+        .execute(&self.pool)
         .await?;
 
-        Ok(true)
+        Ok(res.rows_affected() == 1)
     }
 
     async fn exists_ext(&self, input: ExternalBusyCalendarIdentifier) -> anyhow::Result<bool> {
-        sqlx::query!(
+        let res = sqlx::query!(
             r#"
             SELECT FROM service_user_external_busy_calendars WHERE 
             service_uid = $1 AND 
@@ -62,10 +62,10 @@ impl IServiceUserBusyCalendarRepo for PostgresServiceUseBusyCalendarRepo {
             input.user_id.inner_ref(),
             input.ext_calendar_id,
         )
-        .fetch_one(&self.pool)
+        .execute(&self.pool)
         .await?;
 
-        Ok(true)
+        Ok(res.rows_affected() == 1)
     }
 
     async fn insert(&self, input: BusyCalendarIdentifier) -> anyhow::Result<()> {
