@@ -171,7 +171,7 @@ CREATE TABLE IF NOT EXISTS calendar_events (
     updated BIGINT NOT NULL,
     recurrence JSON,
     exdates BIGINT[] NOT NULL,
-    reminder JSON,
+    reminders JSON,
     service_uid uuid REFERENCES services(service_uid) ON DELETE CASCADE,
     metadata text[] NOT NULL
 );

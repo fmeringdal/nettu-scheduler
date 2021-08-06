@@ -46,7 +46,7 @@ struct EventRaw {
     updated: i64,
     recurrence: Option<serde_json::Value>,
     exdates: Vec<i64>,
-    reminder: Option<serde_json::Value>,
+    reminders: Option<serde_json::Value>,
     service_uid: Option<Uuid>,
     metadata: Vec<String>,
 }
@@ -57,7 +57,7 @@ impl Into<CalendarEvent> for EventRaw {
             Some(json) => serde_json::from_value(json).unwrap(),
             None => None,
         };
-        let reminders: Vec<CalendarEventReminder> = match self.reminder {
+        let reminders: Vec<CalendarEventReminder> = match self.reminders {
             Some(json) => serde_json::from_value(json).unwrap(),
             None => vec![],
         };
@@ -99,7 +99,7 @@ impl IEventRepo for PostgresEventRepo {
                 updated,
                 recurrence,
                 exdates,
-                reminder,
+                reminders,
                 service_uid,
                 metadata
             )
@@ -138,7 +138,7 @@ impl IEventRepo for PostgresEventRepo {
                 updated = $7,
                 recurrence = $8,
                 exdates = $9,
-                reminder = $10,
+                reminders = $10,
                 service_uid = $11,
                 metadata = $12
             WHERE event_uid = $1
