@@ -11,7 +11,7 @@ RUN apt-get install -y \
 	curl \
 	pkg-config \
 	libssl-dev
-RUN apt-get dist-upgrade
+RUN apt-get -y dist-upgrade
 
 
 
