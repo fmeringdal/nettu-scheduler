@@ -110,7 +110,7 @@ update on users
 
 CREATE TABLE IF NOT EXISTS user_integrations (
     account_uid uuid NOT NULL,
-    user_uid uuid NOT NULL,
+    user_uid uuid NOT NULL REFERENCES users(user_uid) ON DELETE CASCADE,
     refresh_token text NOT NULL,
     access_token text NOT NULL,
     access_token_expires_ts BIGINT NOT NULL,
@@ -223,7 +223,7 @@ in this table';
 
 CREATE TABLE IF NOT EXISTS reminders (
     event_uid uuid NOT NULL REFERENCES calendar_events(event_uid) ON DELETE CASCADE,
-    account_uid uuid NOT NULL,
+    account_uid uuid NOT NULL REFERENCES accounts(account_uid) ON DELETE CASCADE,
     remind_at BIGINT NOT NULL,
     "version" entity_version NOT NULL,
     identifier text NOT NULL,
