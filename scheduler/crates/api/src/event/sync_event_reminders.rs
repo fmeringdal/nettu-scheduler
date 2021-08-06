@@ -47,11 +47,30 @@ async fn create_event_reminders(
     let reminders: Vec<Reminder> = match rrule_set {
         Some(rrule_set) => {
             let rrule_set_iter = rrule_set.into_iter();
+
+            let max_delta_millis = event
+                .reminders
+                .iter()
+                .max_by_key(|r| r.delta)
+                .map(|r| r.delta * 60 * 1000)
+                .unwrap_or(0);
+
+            let mut future_occurences_selected = 0;
+            let now = ctx.sys.get_timestamp_millis();
             let dates = rrule_set_iter
-                // Ignore old dates
-                .skip_while(|d| d.timestamp_millis() < ctx.sys.get_timestamp_millis())
-                // Take the future 100 dates
-                .take(100)
+                // Ignore occurences of event that does not have a reminder in the future
+                .skip_while(|d| d.timestamp_millis() + max_delta_millis < now)
+                // Take the next 100 occurences
+                // .take(100)
+                .take_while(|d| {
+                    if d.timestamp_millis() >= now {
+                        future_occurences_selected += 1;
+                        return future_occurences_selected <= 100;
+                    } else {
+                        // This is possible if there are old occurences with reminders still in the future
+                        true
+                    }
+                })
                 .collect::<Vec<_>>();
 
             if dates.len() == 100 {
@@ -118,6 +137,7 @@ async fn create_event_reminders(
             })
             .collect(),
     };
+    println!("Reminders to insert : {:?}", reminders.len());
 
     // create reminders for the next `self.expansion_interval`
     if ctx.repos.reminders.bulk_insert(&reminders).await.is_err() {

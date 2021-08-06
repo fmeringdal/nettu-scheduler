@@ -51,7 +51,6 @@ impl Subscriber<CreateEventUseCase> for CreateSyncedEventsOnEventCreated {
         {
             Ok(synced_calendars) => synced_calendars,
             Err(e) => {
-                println!("Unable to query synced calendars from repo: {:?}", e);
                 error!("Unable to query synced calendars from repo: {:?}", e);
                 return;
             }
