@@ -82,12 +82,12 @@ impl UseCase for RemoveBusyCalendarUseCase {
                     service_id: self.service_id.clone(),
                     user_id: user.id.clone(),
                 };
-                if ctx
+                if !ctx
                     .repos
                     .service_user_busy_calendars
                     .exists_ext(identifier)
                     .await
-                    .is_err()
+                    .unwrap_or(false)
                 {
                     return Err(UseCaseErrors::BusyCalendarNotFound);
                 }
@@ -99,12 +99,12 @@ impl UseCase for RemoveBusyCalendarUseCase {
                     service_id: self.service_id.clone(),
                     user_id: user.id.clone(),
                 };
-                if ctx
+                if !ctx
                     .repos
                     .service_user_busy_calendars
                     .exists_ext(identifier)
                     .await
-                    .is_err()
+                    .unwrap_or(false)
                 {
                     return Err(UseCaseErrors::BusyCalendarNotFound);
                 }
@@ -115,12 +115,12 @@ impl UseCase for RemoveBusyCalendarUseCase {
                     service_id: self.service_id.clone(),
                     user_id: user.id.clone(),
                 };
-                if ctx
+                if !ctx
                     .repos
                     .service_user_busy_calendars
                     .exists(identifier)
                     .await
-                    .is_err()
+                    .unwrap_or(false)
                 {
                     return Err(UseCaseErrors::BusyCalendarNotFound);
                 }

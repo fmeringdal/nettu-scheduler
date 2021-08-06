@@ -96,7 +96,7 @@ impl UseCase for AddBusyCalendarUseCase {
                     .service_user_busy_calendars
                     .exists_ext(identifier)
                     .await
-                    .is_ok()
+                    .unwrap_or(false)
                 {
                     return Err(UseCaseErrors::CalendarAlreadyRegistered);
                 }
@@ -113,7 +113,7 @@ impl UseCase for AddBusyCalendarUseCase {
                     .service_user_busy_calendars
                     .exists_ext(identifier)
                     .await
-                    .is_ok()
+                    .unwrap_or(false)
                 {
                     return Err(UseCaseErrors::CalendarAlreadyRegistered);
                 }
@@ -129,7 +129,7 @@ impl UseCase for AddBusyCalendarUseCase {
                     .service_user_busy_calendars
                     .exists(identifier)
                     .await
-                    .is_ok()
+                    .unwrap_or(false)
                 {
                     return Err(UseCaseErrors::CalendarAlreadyRegistered);
                 }
