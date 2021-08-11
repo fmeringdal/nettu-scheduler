@@ -43,6 +43,7 @@ pub struct CreateSyncedEventsOnEventCreated;
 #[async_trait::async_trait(?Send)]
 impl Subscriber<CreateEventUseCase> for CreateSyncedEventsOnEventCreated {
     async fn notify(&self, e: &CalendarEvent, ctx: &nettu_scheduler_infra::NettuContext) {
+        println!("Calendar event created, going to insert into synced calendars.");
         let synced_calendars = match ctx
             .repos
             .calendar_synced
@@ -52,6 +53,7 @@ impl Subscriber<CreateEventUseCase> for CreateSyncedEventsOnEventCreated {
             Ok(synced_calendars) => synced_calendars,
             Err(e) => {
                 error!("Unable to query synced calendars from repo: {:?}", e);
+                println!("Unable to query synced calendars from repo: {:?}", e);
                 return;
             }
         };

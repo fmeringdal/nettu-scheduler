@@ -120,7 +120,12 @@ impl IEventRepo for PostgresEventRepo {
             &metadata
         )
         .execute(&self.pool)
-        .await?;
+        .await
+        .map_err(|err| {
+            println!("Insert calendar event {:?}. Error: {:?}", e, err);
+            error!("Insert calendar event {:?}. Error: {:?}", e, err);
+            err
+        })?;
 
         Ok(())
     }

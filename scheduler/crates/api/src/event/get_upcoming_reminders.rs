@@ -101,7 +101,6 @@ impl UseCase for GetUpcomingRemindersUseCase {
 
         // Get all reminders and filter out invalid / expired reminders
         let reminders = ctx.repos.reminders.delete_all_before(ts).await;
-        println!("Ts: {}", ts);
 
         let event_lookup = ctx
             .repos

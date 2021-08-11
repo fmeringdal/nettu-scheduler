@@ -78,7 +78,7 @@ create trigger
     immutable_columns
 before
 update on accounts
-    for each row execute procedure immutable_columns('secret_api_key');
+    for each row execute procedure immutable_columns('account_uid', 'secret_api_key');
 
 CREATE TABLE IF NOT EXISTS account_integrations (
     account_uid uuid NOT NULL REFERENCES accounts(account_uid) ON DELETE CASCADE,
@@ -271,8 +271,6 @@ update on schedules
 
 -- TODO: how to make sure user is owner of calendar and schedule  ?
 -- TODO: how to make sure user and service is in same account  ?
--- TODO: What happens if available_calendar_uid is deleted and both available_calendar_uid and available_schedule_uid
--- TODO: - becomes null
 -- https://stackoverflow.com/questions/66911060/setting-a-composite-foreign-key-to-null-in-postgres
 CREATE TABLE IF NOT EXISTS service_users (
     service_uid uuid NOT NULL REFERENCES services(service_uid) ON DELETE CASCADE,

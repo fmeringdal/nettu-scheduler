@@ -45,13 +45,6 @@ async fn refresh_access_token(req: RefreshTokenRequest) -> Result<RefreshTokenRe
 }
 
 pub async fn exchange_code_token(req: CodeTokenRequest) -> Result<CodeTokenResponse, ()> {
-    println!("Got here!!!!!!!!!!!!!!!!!!!");
-    println!("Got here!!!!!!!!!!!!!!!!!!!");
-    println!("Got here!!!!!!!!!!!!!!!!!!!");
-    println!("Got here!!!!!!!!!!!!!!!!!!!");
-    println!("Got here!!!!!!!!!!!!!!!!!!!");
-    println!("Got here!!!!!!!!!!!!!!!!!!!");
-    println!("Got here!!!!!!!!!!!!!!!!!!!");
     let params = [
         ("client_id", req.client_id.as_str()),
         ("client_secret", req.client_secret.as_str()),
@@ -67,13 +60,11 @@ pub async fn exchange_code_token(req: CodeTokenRequest) -> Result<CodeTokenRespo
         .send()
         .await
         .map_err(|e| {
-            println!("1. Unable to exchange code token: {:?}", e);
             error!("1. Unable to exchange code token: {:?}", e);
             ()
         })?;
 
     let res = res.json::<CodeTokenResponse>().await.map_err(|e| {
-        println!("2. Unable to exchange code token: {:?}", e);
         error!("2. Unable to exchange code token: {:?}", e);
         ()
     })?;
@@ -81,10 +72,6 @@ pub async fn exchange_code_token(req: CodeTokenRequest) -> Result<CodeTokenRespo
     let scopes = res.scope.split(" ").collect::<Vec<_>>();
     for required_scope in REQUIRED_OAUTH_SCOPES.iter() {
         if !scopes.contains(&required_scope) {
-            println!(
-                "Missing scope: {:?} got scopes: {:?}",
-                required_scope, scopes
-            );
             error!(
                 "Missing scope: {:?} got scopes: {:?}",
                 required_scope, scopes
@@ -92,8 +79,6 @@ pub async fn exchange_code_token(req: CodeTokenRequest) -> Result<CodeTokenRespo
             return Err(());
         }
     }
-
-    println!("Got here!!!!!!!!!!!!!!!!!!! with res : {:?}", res);
 
     Ok(res)
 }

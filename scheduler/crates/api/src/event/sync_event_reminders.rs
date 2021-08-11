@@ -137,7 +137,6 @@ async fn create_event_reminders(
             })
             .collect(),
     };
-    println!("Reminders to insert : {:?}", reminders.len());
 
     // create reminders for the next `self.expansion_interval`
     if ctx.repos.reminders.bulk_insert(&reminders).await.is_err() {
