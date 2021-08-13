@@ -301,6 +301,6 @@ async fn test_collective_team_scheduling_is_collective() {
         .expect("To get bookingslots")
         .dates;
 
-    // Host 1 is available but host 2 is neveer available
+    // Host 1 is available but host 2 is never available
     assert!(bookingslots.is_empty());
 }

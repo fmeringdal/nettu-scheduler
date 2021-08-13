@@ -62,24 +62,6 @@ impl IReminderRepo for PostgresReminderRepo {
         Ok(())
     }
 
-    async fn delete_all_before(&self, before: i64) -> Vec<Reminder> {
-        sqlx::query_as!(
-            ReminderRaw,
-            r#"
-            DELETE FROM reminders AS r
-            WHERE r.remind_at <= $1
-            RETURNING *
-            "#,
-            before,
-        )
-        .fetch_all(&self.pool)
-        .await
-        .unwrap_or_default()
-        .into_iter()
-        .map(|reminder| reminder.into())
-        .collect()
-    }
-
     async fn init_version(&self, event_id: &ID) -> anyhow::Result<i64> {
         let r_version = sqlx::query_as!(
             ReminderVersionRaw,
@@ -118,5 +100,23 @@ impl IReminderRepo for PostgresReminderRepo {
         .await?;
 
         Ok(r_version.version)
+    }
+
+    async fn delete_all_before(&self, before: i64) -> Vec<Reminder> {
+        sqlx::query_as!(
+            ReminderRaw,
+            r#"
+            DELETE FROM reminders AS r
+            WHERE r.remind_at <= $1
+            RETURNING *
+            "#,
+            before,
+        )
+        .fetch_all(&self.pool)
+        .await
+        .unwrap_or_default()
+        .into_iter()
+        .map(|reminder| reminder.into())
+        .collect()
     }
 }

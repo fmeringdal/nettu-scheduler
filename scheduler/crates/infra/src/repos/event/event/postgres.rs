@@ -188,6 +188,73 @@ impl IEventRepo for PostgresEventRepo {
         Some(event.into())
     }
 
+    async fn find_many(&self, event_ids: &[ID]) -> anyhow::Result<Vec<CalendarEvent>> {
+        let ids = event_ids
+            .iter()
+            .map(|id| *id.inner_ref())
+            .collect::<Vec<_>>();
+        let events: Vec<EventRaw> = sqlx::query_as!(
+            EventRaw,
+            r#"
+            SELECT e.*, u.user_uid, account_uid FROM calendar_events AS e
+            INNER JOIN calendars AS c
+                ON c.calendar_uid = e.calendar_uid
+            INNER JOIN users AS u
+                ON u.user_uid = c.user_uid
+            WHERE e.event_uid = ANY($1)
+            "#,
+            &ids,
+        )
+        .fetch_all(&self.pool)
+        .await?;
+        Ok(events.into_iter().map(|e| e.into()).collect())
+    }
+
+    async fn find_by_calendar(
+        &self,
+        calendar_id: &ID,
+        timespan: Option<&nettu_scheduler_domain::TimeSpan>,
+    ) -> anyhow::Result<Vec<CalendarEvent>> {
+        let events: Vec<EventRaw> = match timespan {
+            Some(timespan) => {
+                sqlx::query_as!(
+                    EventRaw,
+                    r#"
+                    SELECT e.*, u.user_uid, account_uid FROM calendar_events AS e
+                    INNER JOIN calendars AS c
+                        ON c.calendar_uid = e.calendar_uid
+                    INNER JOIN users AS u
+                        ON u.user_uid = c.user_uid
+                    WHERE e.calendar_uid = $1 AND
+                    e.start_ts <= $2 AND e.end_ts >= $3
+                    "#,
+                    calendar_id.inner_ref(),
+                    timespan.end(),
+                    timespan.start()
+                )
+                .fetch_all(&self.pool)
+                .await?
+            }
+            None => {
+                sqlx::query_as!(
+                    EventRaw,
+                    r#"
+                    SELECT e.*, u.user_uid, account_uid FROM calendar_events AS e
+                    INNER JOIN calendars AS c
+                        ON c.calendar_uid = e.calendar_uid
+                    INNER JOIN users AS u
+                        ON u.user_uid = c.user_uid
+                    WHERE e.calendar_uid = $1
+                    "#,
+                    calendar_id.inner_ref(),
+                )
+                .fetch_all(&self.pool)
+                .await?
+            }
+        };
+        Ok(events.into_iter().map(|e| e.into()).collect())
+    }
+
     async fn find_most_recently_created_service_events(
         &self,
         service_id: &ID,
@@ -298,73 +365,6 @@ impl IEventRepo for PostgresEventRepo {
             Err(_e) => return vec![],
         };
         events.into_iter().map(|e| e.into()).collect()
-    }
-
-    async fn find_many(&self, event_ids: &[ID]) -> anyhow::Result<Vec<CalendarEvent>> {
-        let ids = event_ids
-            .iter()
-            .map(|id| *id.inner_ref())
-            .collect::<Vec<_>>();
-        let events: Vec<EventRaw> = sqlx::query_as!(
-            EventRaw,
-            r#"
-            SELECT e.*, u.user_uid, account_uid FROM calendar_events AS e
-            INNER JOIN calendars AS c
-                ON c.calendar_uid = e.calendar_uid
-            INNER JOIN users AS u
-                ON u.user_uid = c.user_uid
-            WHERE e.event_uid = ANY($1)
-            "#,
-            &ids,
-        )
-        .fetch_all(&self.pool)
-        .await?;
-        Ok(events.into_iter().map(|e| e.into()).collect())
-    }
-
-    async fn find_by_calendar(
-        &self,
-        calendar_id: &ID,
-        timespan: Option<&nettu_scheduler_domain::TimeSpan>,
-    ) -> anyhow::Result<Vec<CalendarEvent>> {
-        let events: Vec<EventRaw> = match timespan {
-            Some(timespan) => {
-                sqlx::query_as!(
-                    EventRaw,
-                    r#"
-                    SELECT e.*, u.user_uid, account_uid FROM calendar_events AS e
-                    INNER JOIN calendars AS c
-                        ON c.calendar_uid = e.calendar_uid
-                    INNER JOIN users AS u
-                        ON u.user_uid = c.user_uid
-                    WHERE e.calendar_uid = $1 AND
-                    e.start_ts <= $2 AND e.end_ts >= $3
-                    "#,
-                    calendar_id.inner_ref(),
-                    timespan.end(),
-                    timespan.start()
-                )
-                .fetch_all(&self.pool)
-                .await?
-            }
-            None => {
-                sqlx::query_as!(
-                    EventRaw,
-                    r#"
-                    SELECT e.*, u.user_uid, account_uid FROM calendar_events AS e
-                    INNER JOIN calendars AS c
-                        ON c.calendar_uid = e.calendar_uid
-                    INNER JOIN users AS u
-                        ON u.user_uid = c.user_uid
-                    WHERE e.calendar_uid = $1
-                    "#,
-                    calendar_id.inner_ref(),
-                )
-                .fetch_all(&self.pool)
-                .await?
-            }
-        };
-        Ok(events.into_iter().map(|e| e.into()).collect())
     }
 
     async fn delete(&self, event_id: &ID) -> anyhow::Result<()> {

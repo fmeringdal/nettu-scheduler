@@ -55,7 +55,7 @@ async fn create_event_reminders(
                 .map(|r| r.delta * 60 * 1000)
                 .unwrap_or(0);
 
-            let mut future_occurences_selected = 0;
+            let mut future_occurrences_selected = 0;
             let now = ctx.sys.get_timestamp_millis();
             let dates = rrule_set_iter
                 // Ignore occurences of event that does not have a reminder in the future
@@ -64,8 +64,8 @@ async fn create_event_reminders(
                 // .take(100)
                 .take_while(|d| {
                     if d.timestamp_millis() >= now {
-                        future_occurences_selected += 1;
-                        future_occurences_selected <= 100
+                        future_occurrences_selected += 1;
+                        future_occurrences_selected <= 100
                     } else {
                         // This is possible if there are old occurences with reminders still in the future
                         true

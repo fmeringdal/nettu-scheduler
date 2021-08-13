@@ -364,7 +364,7 @@ async fn test_round_robin_availability_scheduling() {
 
     let admin_client = NettuSDK::new(address, res.secret_api_key);
 
-    // Each test case is a list of timestamps for the least recently assgined event for a host
+    // Each test case is a list of timestamps for the least recently assigned event for a host
     let test_cases: Vec<Vec<i64>> = vec![
         vec![3, 0, 1, 5],
         vec![0],
@@ -455,14 +455,14 @@ async fn test_round_robin_availability_scheduling() {
                 .events
                 .find(&event_id)
                 .await
-                .expect("To find evnet");
+                .expect("To find event");
             service_event.created = *last_assigned_service_event;
             app.ctx
                 .repos
                 .events
                 .save(&service_event)
                 .await
-                .expect("To save evnet");
+                .expect("To save event");
         }
 
         let last_assigned_event = last_assigned_service_event_per_host.iter().min().unwrap();

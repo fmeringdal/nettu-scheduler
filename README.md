@@ -19,7 +19,7 @@ It supports authentication through api keys for server - server communication an
 - **Calendars**: For grouping `Calendar Event`s.
 - **Freebusy**: Find out when `User`s are free and when they are busy.
 - **Integrations**: Connect your Nettu, Google and Outlook calendars
-- **Mutli-tenancy**: All resources are grouped by `Account`s. 
+- **Multi-tenancy**: All resources are grouped by `Account`s. 
 - **Metadata queries**: Add key-value metadata to your resources and then query on that metadata 
 - **Webhooks**: Notifying your server about `Calendar Event` reminders.
 
@@ -31,7 +31,7 @@ It supports authentication through api keys for server - server communication an
 
 ## Quick start
 
-The server is using PostgreSQL for persistence so we will need to spin up that first: 
+The server is using PostgreSQL for persistence, so we will need to spin up that first: 
 ```bash
 cd scheduler
 docker-compose -f integrations/docker-compose.yml up -d
@@ -52,7 +52,7 @@ cargo run inmemory
 ```
 
 The `ACCOUNT_API_KEY` environment variable is going to create an `Account` (if it does not already exist) during
-server startup with the given key. `Account`s act as tenants in the server and it is possible to create multiple `Account`s by using the `CREATE_ACCOUNT_SECRET_CODE` which you can provide as an environment variable.
+server startup with the given key. `Account`s act as tenants in the server, and it is possible to create multiple `Account`s by using the `CREATE_ACCOUNT_SECRET_CODE` which you can provide as an environment variable.
 
 Quick example of how to create and query a user
 ```bash

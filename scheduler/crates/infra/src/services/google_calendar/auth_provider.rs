@@ -8,7 +8,7 @@ use serde::Deserialize;
 // https://developers.google.com/identity/protocols/oauth2/web-server#httprest_3
 
 const TOKEN_REFETCH_ENDPOINT: &str = "https://www.googleapis.com/oauth2/v4/token";
-const CODE_TOKEN_EXHANGE_ENDPOINT: &str = "https://oauth2.googleapis.com/token";
+const CODE_TOKEN_EXCHANGE_ENDPOINT: &str = "https://oauth2.googleapis.com/token";
 const REQUIRED_OAUTH_SCOPES: [&str; 1] = ["https://www.googleapis.com/auth/calendar"];
 
 struct RefreshTokenRequest {
@@ -62,7 +62,7 @@ pub async fn exchange_code_token(req: CodeTokenRequest) -> Result<CodeTokenRespo
     // TODO: query params instead of body ??
     let client = reqwest::Client::new();
     let res = client
-        .post(CODE_TOKEN_EXHANGE_ENDPOINT)
+        .post(CODE_TOKEN_EXCHANGE_ENDPOINT)
         .form(&params)
         .send()
         .await
@@ -106,7 +106,7 @@ pub async fn get_access_token(user: &User, ctx: &NettuContext) -> Option<String>
     let now = Utc::now().timestamp_millis();
     let one_minute_in_millis = 1000 * 60;
     if now + one_minute_in_millis <= integration.access_token_expires_ts {
-        // Current acces token is still valid for at least one minutes so return it
+        // Current access token is still valid for at least one minutes so return it
         return Some(integration.access_token.clone());
     }
     // Access token has or will expire soon, now renew it

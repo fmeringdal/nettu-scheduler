@@ -491,7 +491,7 @@ mod test {
                 busy: false
             }
         );
-        // Check that Date variant ovverides wday variant
+        // Check that Date variant overrides wday variant
         assert_eq!(
             freebusy[1],
             EventInstance {

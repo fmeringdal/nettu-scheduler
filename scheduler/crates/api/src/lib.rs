@@ -130,14 +130,14 @@ impl Application {
                 .expect("To insert default account");
 
             let account_google_client_id_env = "ACCOUNT_GOOGLE_CLIENT_ID";
-            let account_google_client_sercret_env = "ACCOUNT_GOOGLE_CLIENT_SERCRET";
+            let account_google_client_secret_env = "ACCOUNT_GOOGLE_CLIENT_SECRET";
             let account_google_redirect_uri_env = "ACCOUNT_GOOGLE_REDIRECT_URI";
             if let Ok(google_client_id) = std::env::var(account_google_client_id_env) {
-                let google_client_secret = std::env::var(account_google_client_sercret_env)
+                let google_client_secret = std::env::var(account_google_client_secret_env)
                     .unwrap_or_else(|_| {
                         panic!(
                             "{} should be specified also when {} is specified.",
-                            account_google_client_sercret_env, account_google_client_id_env
+                            account_google_client_secret_env, account_google_client_id_env
                         )
                     });
                 let google_redirect_uri = std::env::var(account_google_redirect_uri_env)
@@ -161,14 +161,14 @@ impl Application {
                     .expect("To insert google account integration");
             }
             let account_outlook_client_id_env = "ACCOUNT_OUTLOOK_CLIENT_ID";
-            let account_outlook_client_sercret_env = "ACCOUNT_OUTLOOK_CLIENT_SERCRET";
+            let account_outlook_client_secret_env = "ACCOUNT_OUTLOOK_CLIENT_SECRET";
             let account_outlook_redirect_uri_env = "ACCOUNT_OUTLOOK_REDIRECT_URI";
             if let Ok(outlook_client_id) = std::env::var(account_outlook_client_id_env) {
-                let outlook_client_secret = std::env::var(account_outlook_client_sercret_env)
+                let outlook_client_secret = std::env::var(account_outlook_client_secret_env)
                     .unwrap_or_else(|_| {
                         panic!(
                             "{} should be specified also when {} is specified.",
-                            account_outlook_client_sercret_env, account_outlook_client_id_env
+                            account_outlook_client_secret_env, account_outlook_client_id_env
                         )
                     });
                 let outlook_redirect_uri = std::env::var(account_outlook_redirect_uri_env)

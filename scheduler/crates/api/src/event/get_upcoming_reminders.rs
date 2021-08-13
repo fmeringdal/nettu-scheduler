@@ -50,7 +50,7 @@ async fn create_reminders_for_accounts(
             None => continue,
         };
 
-        // Remove instead of get because there shouldnt be multiple reminders for the same event id
+        // Remove instead of get because there shouldn't be multiple reminders for the same event id
         // and also we get ownership over calendar_event
         let calendar_event = match event_lookup.get(&reminder.event_id.as_string()) {
             Some(e) => e.clone(),
@@ -96,7 +96,7 @@ impl UseCase for GetUpcomingRemindersUseCase {
 
     /// This will run every minute
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
-        // Find all occurences for the next interval and delete them
+        // Find all occurrences for the next interval and delete them
         let ts = ctx.sys.get_timestamp_millis() + self.reminders_interval;
 
         // Get all reminders and filter out invalid / expired reminders

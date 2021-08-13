@@ -15,7 +15,7 @@ pub struct Reminder {
     /// This field is needed to avoid sending duplicate `Reminder`s to the `Account`.
     /// For more info see the db schema comments
     pub version: i64,
-    /// User defined identifier to be able to seperate reminders at same timestamp for the same
+    /// User defined identifier to be able to separate reminders at same timestamp for the same
     /// event.
     /// For example: "ask_for_booking_review" or "send_invoice"
     pub identifier: String,

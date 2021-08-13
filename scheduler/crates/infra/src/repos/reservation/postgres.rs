@@ -41,24 +41,6 @@ impl IReservationRepo for PostgresReservationRepo {
         Ok(())
     }
 
-    async fn count(&self, service_id: &ID, timestamp: i64) -> anyhow::Result<usize> {
-        let reservation: Option<ReservationRaw> = sqlx::query_as!(
-            ReservationRaw,
-            r#"
-            SELECT * FROM service_reservations as r
-            WHERE r.service_uid = $1 AND
-            r.timestamp = $2
-            "#,
-            service_id.inner_ref(),
-            timestamp,
-        )
-        .fetch_optional(&self.pool)
-        .await?;
-
-        let count = reservation.map(|r| r.count).unwrap_or(0);
-        Ok(count as usize)
-    }
-
     async fn decrement(&self, service_id: &ID, timestamp: i64) -> anyhow::Result<()> {
         sqlx::query_as!(
             ReservationRaw,
@@ -77,5 +59,23 @@ impl IReservationRepo for PostgresReservationRepo {
             e
         })?;
         Ok(())
+    }
+
+    async fn count(&self, service_id: &ID, timestamp: i64) -> anyhow::Result<usize> {
+        let reservation: Option<ReservationRaw> = sqlx::query_as!(
+            ReservationRaw,
+            r#"
+            SELECT * FROM service_reservations as r
+            WHERE r.service_uid = $1 AND
+            r.timestamp = $2
+            "#,
+            service_id.inner_ref(),
+            timestamp,
+        )
+        .fetch_optional(&self.pool)
+        .await?;
+
+        let count = reservation.map(|r| r.count).unwrap_or(0);
+        Ok(count as usize)
     }
 }

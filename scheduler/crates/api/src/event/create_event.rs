@@ -147,7 +147,7 @@ impl UseCase for CreateEventUseCase {
             };
         }
 
-        // TODO: maybe have reminders lengt restriction
+        // TODO: maybe have reminders length restriction
         for reminder in &self.reminders {
             if !reminder.is_valid() {
                 return Err(UseCaseErrors::InvalidReminder);

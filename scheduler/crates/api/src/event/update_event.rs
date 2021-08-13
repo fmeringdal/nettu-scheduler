@@ -244,7 +244,7 @@ mod test {
 
     #[actix_web::main]
     #[test]
-    async fn update_notexisting_event() {
+    async fn update_nonexisting_event() {
         let mut usecase = UpdateEventUseCase {
             user: User::new(Default::default()),
             event_id: Default::default(),

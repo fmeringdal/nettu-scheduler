@@ -73,7 +73,7 @@ impl UseCase for UpdateServiceUseCase {
                 if let ServiceMultiPersonOptions::Group(old_count) = &service.multi_person {
                     if new_count > old_count {
                         // Delete all calendar events for this service, because
-                        // then it should be possible for more perople to book
+                        // then it should be possible for more people to book
                         if ctx
                             .repos
                             .events
