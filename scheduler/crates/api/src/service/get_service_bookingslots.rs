@@ -122,15 +122,12 @@ impl UseCase for GetServiceBookingSlotsUseCase {
             interval: self.interval,
             duration: self.duration,
         };
-        let booking_timespan = match validate_bookingslots_query(&query) {
-            Ok(t) => Ok(t),
-            Err(e) => match e {
-                BookingQueryError::InvalidInterval => Err(UseCaseErrors::InvalidInterval),
-                BookingQueryError::InvalidTimespan => Err(UseCaseErrors::InvalidTimespan),
-                BookingQueryError::InvalidDate(d) => Err(UseCaseErrors::InvalidDate(d)),
-                BookingQueryError::InvalidTimezone(d) => Err(UseCaseErrors::InvalidTimezone(d)),
-            },
-        }?;
+        let booking_timespan = validate_bookingslots_query(&query).map_err(|e| match e {
+            BookingQueryError::InvalidInterval => Err(UseCaseErrors::InvalidInterval),
+            BookingQueryError::InvalidTimespan => Err(UseCaseErrors::InvalidTimespan),
+            BookingQueryError::InvalidDate(d) => Err(UseCaseErrors::InvalidDate(d)),
+            BookingQueryError::InvalidTimezone(d) => Err(UseCaseErrors::InvalidTimezone(d)),
+        })?;
         let timezone: chrono_tz::Tz = query
             .iana_tz
             .unwrap_or_else(|| "UTC".into())
