@@ -127,8 +127,8 @@ pub mod remove_service_event_intend {
         message: String,
     }
 
-    impl APIResponse {
-        pub fn new() -> Self {
+    impl Default for APIResponse {
+        fn default() -> Self {
             Self {
                 message: "Deleted Booking Intend".into(),
             }

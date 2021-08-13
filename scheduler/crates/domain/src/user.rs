@@ -53,18 +53,18 @@ pub enum IntegrationProvider {
     Outlook,
 }
 
-impl Into<String> for IntegrationProvider {
-    fn into(self) -> String {
-        match self {
-            Self::Google => "google".into(),
-            Self::Outlook => "outlook".into(),
+impl From<IntegrationProvider> for String {
+    fn from(e: IntegrationProvider) -> Self {
+        match e {
+            IntegrationProvider::Google => "google".into(),
+            IntegrationProvider::Outlook => "outlook".into(),
         }
     }
 }
 
-impl Into<IntegrationProvider> for String {
-    fn into(self) -> IntegrationProvider {
-        match &self[..] {
+impl From<String> for IntegrationProvider {
+    fn from(e: String) -> IntegrationProvider {
+        match &e[..] {
             "google" => IntegrationProvider::Google,
             "outlook" => IntegrationProvider::Outlook,
             _ => unreachable!("Invalid provider"),

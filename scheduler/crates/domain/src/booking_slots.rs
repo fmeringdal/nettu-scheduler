@@ -1,6 +1,4 @@
-use crate::{
-    date, event_instance::EventInstance, CompatibleInstances, ID,
-};
+use crate::{date, event_instance::EventInstance, CompatibleInstances, ID};
 use chrono::prelude::*;
 use chrono_tz::Tz;
 use date::format_date;
@@ -154,7 +152,7 @@ pub fn get_booking_slots(
 
     let mut cursor = start_ts;
     while cursor + duration <= end_ts {
-        let available_event = is_cursor_in_events(cursor, duration, &free_events);
+        let available_event = is_cursor_in_events(cursor, duration, free_events);
         if let Some(event) = available_event {
             booking_slots.push(BookingSlot {
                 start: cursor,

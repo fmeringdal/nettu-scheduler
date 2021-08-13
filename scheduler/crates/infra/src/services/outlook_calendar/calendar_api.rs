@@ -28,33 +28,25 @@ pub struct OutlookCalendarEventAttributes {
     body: OutlookCalendarEventBody,
 }
 
-impl Into<OutlookCalendarEventAttributes> for CalendarEvent {
-    fn into(self) -> OutlookCalendarEventAttributes {
-        let show_as = if self.busy {
+impl From<CalendarEvent> for OutlookCalendarEventAttributes {
+    fn from(e: CalendarEvent) -> Self {
+        let show_as = if e.busy {
             OutlookCalendarEventShowAs::Busy
         } else {
             OutlookCalendarEventShowAs::Free
         };
 
         let empty = "".to_string();
-        let subject = self
-            .metadata
-            .get("outlook.subject")
-            .unwrap_or(&empty)
-            .clone();
-        let content = self
-            .metadata
-            .get("outlook.content")
-            .unwrap_or(&empty)
-            .clone();
+        let subject = e.metadata.get("outlook.subject").unwrap_or(&empty).clone();
+        let content = e.metadata.get("outlook.content").unwrap_or(&empty).clone();
         OutlookCalendarEventAttributes {
             start: OutlookCalendarEventTime {
                 time_zone: "UTC".to_string(),
-                date_time: format!("{}", Utc.timestamp_millis(self.start_ts).format("%+")),
+                date_time: format!("{}", Utc.timestamp_millis(e.start_ts).format("%+")),
             },
             end: OutlookCalendarEventTime {
                 time_zone: "UTC".to_string(),
-                date_time: format!("{}", Utc.timestamp_millis(self.end_ts).format("%+")),
+                date_time: format!("{}", Utc.timestamp_millis(e.end_ts).format("%+")),
             },
             is_online_meeting: false,
             body: OutlookCalendarEventBody {
@@ -120,7 +112,6 @@ impl OutlookCalendarRestApi {
         {
             Ok(res) => res.json::<T>().await.map_err(|e| {
                 warn!("Outlook calendar api PUT deserialize error: {:?}", e);
-                ()
             }),
             Err(e) => {
                 warn!("Outlook calendar api PUT error: {:?}", e);
@@ -144,7 +135,6 @@ impl OutlookCalendarRestApi {
         {
             Ok(res) => res.json::<T>().await.map_err(|e| {
                 warn!("Outlook calendar api POST deserialize error: {:?}", e);
-                ()
             }),
             Err(e) => {
                 warn!("Outlook calendar api POST error: {:?}", e);
@@ -163,7 +153,6 @@ impl OutlookCalendarRestApi {
         {
             Ok(res) => res.json::<T>().await.map_err(|e| {
                 warn!("Error: {:?}", e);
-                ()
             }),
             Err(_) => Err(()),
         }
@@ -179,7 +168,6 @@ impl OutlookCalendarRestApi {
         {
             Ok(res) => res.json::<T>().await.map_err(|e| {
                 println!("Outlook calendar api GET deserialize error: {:?}", e);
-                ()
             }),
             Err(e) => {
                 println!("Outlook calendar api get error: {:?}", e);
@@ -189,7 +177,7 @@ impl OutlookCalendarRestApi {
     }
 
     pub async fn list(&self) -> Result<ListCalendarsResponse, ()> {
-        self.get(format!("me/calendars")).await
+        self.get("me/calendars".to_string()).await
     }
 
     pub async fn remove(&self, calendar_id: String, event_id: String) -> Result<(), ()> {
@@ -235,16 +223,10 @@ impl OutlookCalendarRestApi {
                     calendar_id,
                     // format!("{}", Utc.timestamp_millis(body.time_min).format("%+")),
                     // format!("{}", Utc.timestamp_millis(body.time_max).format("%+"))
-                    format!(
-                        "{}",
-                        Utc.timestamp_millis(body.time_min)
-                            .to_rfc3339_opts(SecondsFormat::Secs, true)
-                    ),
-                    format!(
-                        "{}",
-                        Utc.timestamp_millis(body.time_max)
-                            .to_rfc3339_opts(SecondsFormat::Secs, true)
-                    )
+                    Utc.timestamp_millis(body.time_min)
+                        .to_rfc3339_opts(SecondsFormat::Secs, true),
+                    Utc.timestamp_millis(body.time_max)
+                        .to_rfc3339_opts(SecondsFormat::Secs, true),
                 ))
             })
             .collect::<Vec<_>>();
@@ -259,10 +241,7 @@ impl OutlookCalendarRestApi {
             .map(|view| {
                 view.value
                     .into_iter()
-                    .filter(|e| match e.show_as {
-                        OutlookCalendarEventShowAs::Busy => true,
-                        _ => false,
-                    })
+                    .filter(|e| matches!(e.show_as, OutlookCalendarEventShowAs::Busy))
                     .map(|e| EventInstance {
                         busy: true,
                         start_ts: e.start.get_timestamp_millis(),

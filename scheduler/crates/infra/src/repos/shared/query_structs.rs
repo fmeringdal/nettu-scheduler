@@ -19,7 +19,7 @@ pub fn extract_metadata(entries: Vec<String>) -> Metadata {
     entries
         .into_iter()
         .map(|row| {
-            let key_value = row.splitn(2, "_").collect::<Vec<_>>();
+            let key_value = row.splitn(2, '_').collect::<Vec<_>>();
             (key_value[0].to_string(), key_value[1].to_string())
         })
         .collect()

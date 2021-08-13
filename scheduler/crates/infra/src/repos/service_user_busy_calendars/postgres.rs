@@ -19,12 +19,12 @@ struct BusyCalendarRaw {
     calendar_id: String,
 }
 
-impl Into<BusyCalendar> for BusyCalendarRaw {
-    fn into(self) -> BusyCalendar {
-        match &self.provider[..] {
-            "google" => BusyCalendar::Google(self.calendar_id),
-            "outlook" => BusyCalendar::Outlook(self.calendar_id),
-            "nettu" => BusyCalendar::Nettu(self.calendar_id.parse().unwrap()),
+impl From<BusyCalendarRaw> for BusyCalendar {
+    fn from(e: BusyCalendarRaw) -> Self {
+        match &e.provider[..] {
+            "google" => BusyCalendar::Google(e.calendar_id),
+            "outlook" => BusyCalendar::Outlook(e.calendar_id),
+            "nettu" => BusyCalendar::Nettu(e.calendar_id.parse().unwrap()),
             _ => unreachable!("Invalid provider"),
         }
     }
@@ -35,8 +35,8 @@ impl IServiceUserBusyCalendarRepo for PostgresServiceUseBusyCalendarRepo {
     async fn exists(&self, input: BusyCalendarIdentifier) -> anyhow::Result<bool> {
         let res = sqlx::query!(
             r#"
-            SELECT FROM service_user_busy_calendars WHERE 
-            service_uid = $1 AND 
+            SELECT FROM service_user_busy_calendars WHERE
+            service_uid = $1 AND
             user_uid = $2 AND
             calendar_uid = $3
             "#,
@@ -53,8 +53,8 @@ impl IServiceUserBusyCalendarRepo for PostgresServiceUseBusyCalendarRepo {
     async fn exists_ext(&self, input: ExternalBusyCalendarIdentifier) -> anyhow::Result<bool> {
         let res = sqlx::query!(
             r#"
-            SELECT FROM service_user_external_busy_calendars WHERE 
-            service_uid = $1 AND 
+            SELECT FROM service_user_external_busy_calendars WHERE
+            service_uid = $1 AND
             user_uid = $2 AND
             ext_calendar_id = $3
             "#,
@@ -145,11 +145,11 @@ impl IServiceUserBusyCalendarRepo for PostgresServiceUseBusyCalendarRepo {
         let busy_calendars: Vec<BusyCalendarRaw> = sqlx::query_as(
             r#"
             SELECT ext_c.provider, ext_c.ext_calendar_id as calendar_id
-            FROM service_user_external_busy_calendars AS ext_c 
+            FROM service_user_external_busy_calendars AS ext_c
             WHERE ext_c.service_uid = $1 AND ext_c.user_uid = $2
             UNION ALL
             SELECT 'nettu' as provider, bc.calendar_uid::text as calendar_id
-            FROM service_user_busy_calendars AS bc 
+            FROM service_user_busy_calendars AS bc
             WHERE bc.service_uid = $1 AND bc.user_uid = $2
             "#,
         )

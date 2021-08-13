@@ -59,11 +59,7 @@ impl UseCase for RemoveAccountIntegrationUseCase {
             .find(&self.account.id)
             .await
             .map_err(|_| UseCaseErrors::StorageError)?;
-        if acc_integrations
-            .iter()
-            .find(|i| i.provider == self.provider)
-            .is_none()
-        {
+        if !acc_integrations.iter().any(|i| i.provider == self.provider) {
             return Err(UseCaseErrors::IntegrationNotFound);
         }
 

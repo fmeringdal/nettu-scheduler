@@ -21,14 +21,14 @@ pub struct AccountIntegrationRaw {
     provider: String,
 }
 
-impl Into<AccountIntegration> for AccountIntegrationRaw {
-    fn into(self) -> AccountIntegration {
-        AccountIntegration {
-            account_id: self.account_uid.into(),
-            client_id: self.client_id,
-            client_secret: self.client_secret,
-            redirect_uri: self.redirect_uri,
-            provider: self.provider.into(),
+impl From<AccountIntegrationRaw> for AccountIntegration {
+    fn from(e: AccountIntegrationRaw) -> Self {
+        Self {
+            account_id: e.account_uid.into(),
+            client_id: e.client_id,
+            client_secret: e.client_secret,
+            redirect_uri: e.redirect_uri,
+            provider: e.provider.into(),
         }
     }
 }

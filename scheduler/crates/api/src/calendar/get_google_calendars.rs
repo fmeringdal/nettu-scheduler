@@ -79,7 +79,7 @@ impl UseCase for GetGoogleCalendarsUseCase {
     const NAME: &'static str = "GetGoogleCalendars";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
-        let provider = GoogleCalendarProvider::new(&mut self.user, ctx)
+        let provider = GoogleCalendarProvider::new(&self.user, ctx)
             .await
             .map_err(|_| UseCaseErrors::UserNotConnectedToGoogle)?;
 

@@ -34,14 +34,14 @@ impl ID {
     }
 }
 
-impl Into<ID> for Uuid {
-    fn into(self) -> ID {
-        ID::from(self)
+impl From<ID> for Uuid {
+    fn from(e: ID) -> Self {
+        e.inner()
     }
 }
-impl Into<Uuid> for ID {
-    fn into(self) -> Uuid {
-        self.inner()
+impl From<Uuid> for ID {
+    fn from(e: Uuid) -> Self {
+        ID::from(e)
     }
 }
 

@@ -25,7 +25,7 @@ impl OutlookCalendarEventTime {
             .unwrap_or(UTC)
             // This is so weird formatting, but it works
             .datetime_from_str(
-                &self.date_time[..self.date_time.find(".").unwrap()],
+                &self.date_time[..self.date_time.find('.').unwrap()],
                 "%FT%T",
             )
             .map_err(|err| {
@@ -33,7 +33,7 @@ impl OutlookCalendarEventTime {
                 println!("Value: {:?}", self);
                 err
             })
-            .unwrap_or(UTC.timestamp(0, 0))
+            .unwrap_or_else(|_| UTC.timestamp(0, 0))
             .timestamp_millis()
     }
 }

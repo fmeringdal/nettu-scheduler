@@ -64,11 +64,7 @@ impl UseCase for AddAccountIntegrationUseCase {
             .find(&self.account.id)
             .await
             .map_err(|_| UseCaseErrors::StorageError)?;
-        if acc_integrations
-            .iter()
-            .find(|i| i.provider == self.provider)
-            .is_some()
-        {
+        if acc_integrations.iter().any(|i| i.provider == self.provider) {
             return Err(UseCaseErrors::IntegrationAlreadyExists);
         }
 

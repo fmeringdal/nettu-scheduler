@@ -23,15 +23,15 @@ struct SyncedEventRaw {
     provider: String,
 }
 
-impl Into<SyncedCalendarEvent> for SyncedEventRaw {
-    fn into(self) -> SyncedCalendarEvent {
-        SyncedCalendarEvent {
-            event_id: self.event_uid.into(),
-            user_id: self.user_uid.into(),
-            calendar_id: self.calendar_uid.into(),
-            ext_calendar_id: self.ext_calendar_id,
-            ext_event_id: self.ext_calendar_event_id,
-            provider: self.provider.into(),
+impl From<SyncedEventRaw> for SyncedCalendarEvent {
+    fn from(e: SyncedEventRaw) -> Self {
+        Self {
+            event_id: e.event_uid.into(),
+            user_id: e.user_uid.into(),
+            calendar_id: e.calendar_uid.into(),
+            ext_calendar_id: e.ext_calendar_id,
+            ext_event_id: e.ext_calendar_event_id,
+            provider: e.provider.into(),
         }
     }
 }
@@ -44,8 +44,8 @@ impl IEventSyncedRepo for PostgresEventSyncedRepo {
             r#"
             INSERT INTO externally_synced_calendar_events(
                 event_uid,
-                calendar_uid, 
-                ext_calendar_id, 
+                calendar_uid,
+                ext_calendar_id,
                 ext_calendar_event_id,
                 provider
             )

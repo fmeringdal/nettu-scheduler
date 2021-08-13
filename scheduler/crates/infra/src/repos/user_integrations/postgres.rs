@@ -24,15 +24,15 @@ pub struct UserIntegrationRaw {
     provider: String,
 }
 
-impl Into<UserIntegration> for UserIntegrationRaw {
-    fn into(self) -> UserIntegration {
-        UserIntegration {
-            user_id: self.user_uid.into(),
-            account_id: self.account_uid.into(),
-            refresh_token: self.refresh_token,
-            access_token: self.access_token,
-            access_token_expires_ts: self.access_token_expires_ts,
-            provider: self.provider.into(),
+impl From<UserIntegrationRaw> for UserIntegration {
+    fn from(e: UserIntegrationRaw) -> Self {
+        Self {
+            user_id: e.user_uid.into(),
+            account_id: e.account_uid.into(),
+            refresh_token: e.refresh_token,
+            access_token: e.access_token,
+            access_token_expires_ts: e.access_token_expires_ts,
+            provider: e.provider.into(),
         }
     }
 }
@@ -66,9 +66,9 @@ impl IUserIntegrationRepo for PostgresUserIntegrationRepo {
         let provider: String = integration.provider.clone().into();
         sqlx::query!(
             r#"
-            UPDATE user_integrations 
-            SET access_token = $1, 
-            access_token_expires_ts = $2, 
+            UPDATE user_integrations
+            SET access_token = $1,
+            access_token_expires_ts = $2,
             refresh_token = $3
             WHERE user_uid = $4 AND provider = $5
             "#,
@@ -108,7 +108,7 @@ impl IUserIntegrationRepo for PostgresUserIntegrationRepo {
         match sqlx::query!(
             "
             DELETE FROM user_integrations
-            WHERE user_uid = $1 AND 
+            WHERE user_uid = $1 AND
             provider = $2
             ",
             user_id.inner_ref(),

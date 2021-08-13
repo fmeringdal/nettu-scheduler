@@ -65,7 +65,7 @@ async fn create_event_reminders(
                 .take_while(|d| {
                     if d.timestamp_millis() >= now {
                         future_occurences_selected += 1;
-                        return future_occurences_selected <= 100;
+                        future_occurences_selected <= 100
                     } else {
                         // This is possible if there are old occurences with reminders still in the future
                         true

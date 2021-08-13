@@ -25,7 +25,7 @@ pub async fn remove_service_event_intend_controller(
 
     execute(usecase, &ctx)
         .await
-        .map(|_| HttpResponse::Ok().json(APIResponse::new()))
+        .map(|_| HttpResponse::Ok().json(APIResponse::default()))
         .map_err(|e| match e {
             UseCaseErrors::ServiceNotFound => {
                 NettuError::NotFound("The requested service was not found".into())

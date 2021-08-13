@@ -1,6 +1,4 @@
-use nettu_scheduler_domain::{
-    Metadata, Service, ServiceResource, ServiceWithUsers, TimePlan, ID,
-};
+use nettu_scheduler_domain::{Metadata, Service, ServiceResource, ServiceWithUsers, TimePlan, ID};
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Debug, Clone)]

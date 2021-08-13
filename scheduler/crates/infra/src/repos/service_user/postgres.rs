@@ -26,24 +26,24 @@ pub struct ServiceUserRaw {
     furthest_booking_time: Option<i64>,
 }
 
-impl Into<ServiceResource> for ServiceUserRaw {
-    fn into(self) -> ServiceResource {
-        let availability = if let Some(calendar) = self.available_calendar_uid {
+impl From<ServiceUserRaw> for ServiceResource {
+    fn from(e: ServiceUserRaw) -> Self {
+        let availability = if let Some(calendar) = e.available_calendar_uid {
             TimePlan::Calendar(calendar.into())
-        } else if let Some(schedule) = self.available_schedule_uid {
+        } else if let Some(schedule) = e.available_schedule_uid {
             TimePlan::Schedule(schedule.into())
         } else {
             TimePlan::Empty
         };
 
         ServiceResource {
-            user_id: self.user_uid.into(),
-            service_id: self.service_uid.into(),
+            user_id: e.user_uid.into(),
+            service_id: e.service_uid.into(),
             availability,
-            buffer_after: self.buffer_after,
-            buffer_before: self.buffer_before,
-            closest_booking_time: self.closest_booking_time,
-            furthest_booking_time: self.furthest_booking_time,
+            buffer_after: e.buffer_after,
+            buffer_before: e.buffer_before,
+            closest_booking_time: e.closest_booking_time,
+            furthest_booking_time: e.furthest_booking_time,
         }
     }
 }
@@ -86,12 +86,12 @@ impl IServiceUserRepo for PostgresServiceUserRepo {
 
         sqlx::query!(
             r#"
-            UPDATE service_users SET 
-                available_calendar_uid = $3, 
-                available_schedule_uid = $4, 
-                buffer_after = $5, 
-                buffer_before = $6, 
-                closest_booking_time = $7, 
+            UPDATE service_users SET
+                available_calendar_uid = $3,
+                available_schedule_uid = $4,
+                buffer_after = $5,
+                buffer_before = $6,
+                closest_booking_time = $7,
                 furthest_booking_time = $8
             WHERE service_uid = $1 AND user_uid = $2
             "#,
@@ -114,7 +114,7 @@ impl IServiceUserRepo for PostgresServiceUserRepo {
         // https://github.com/launchbadge/sqlx/issues/367
         let service_user: ServiceUserRaw = match sqlx::query_as(
             r#"
-            SELECT su.*, array_agg(c.calendar_uid) AS busy FROM service_users as su 
+            SELECT su.*, array_agg(c.calendar_uid) AS busy FROM service_users as su
             LEFT JOIN service_user_busy_calendars AS c
             ON su.service_uid = c.service_uid AND su.user_uid = c.user_uid
             WHERE su.service_uid = $1 AND su.user_uid = $2
@@ -136,7 +136,7 @@ impl IServiceUserRepo for PostgresServiceUserRepo {
         // https://github.com/launchbadge/sqlx/issues/367
         let service_users: Vec<ServiceUserRaw> = match sqlx::query_as(
             r#"
-            SELECT su.*, array_agg(c.calendar_uid) AS busy FROM service_users as su 
+            SELECT su.*, array_agg(c.calendar_uid) AS busy FROM service_users as su
             LEFT JOIN service_user_busy_calendars AS c
             ON su.service_uid = c.service_uid AND su.user_uid = c.user_uid
             WHERE su.user_uid = $1

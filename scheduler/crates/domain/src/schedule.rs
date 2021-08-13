@@ -249,7 +249,7 @@ impl ScheduleRule {
             .map(|(index, _)| *index)
             .collect::<Vec<_>>();
         // largest index first
-        remove_intervals.sort_by(|i1, i2| i2.partial_cmp(&i1).unwrap());
+        remove_intervals.sort_by(|i1, i2| i2.partial_cmp(i1).unwrap());
         for index in remove_intervals {
             self.intervals.remove(index);
         }

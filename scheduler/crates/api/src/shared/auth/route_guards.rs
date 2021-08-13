@@ -99,8 +99,7 @@ fn decode_token(account: &Account, token: &str) -> anyhow::Result<Claims> {
         None => return Err(anyhow::Error::msg("Account does not support user tokens")),
     };
     let decoding_key = DecodingKey::from_rsa_pem(public_key.as_bytes())?;
-    let claims =
-        decode::<Claims>(&token, &decoding_key, &Validation::new(Algorithm::RS256))?.claims;
+    let claims = decode::<Claims>(token, &decoding_key, &Validation::new(Algorithm::RS256))?.claims;
 
     Ok(claims)
 }
@@ -166,7 +165,7 @@ pub async fn protect_public_account_route(
     http_req: &HttpRequest,
     ctx: &NettuContext,
 ) -> Result<Account, NettuError> {
-    match get_nettu_account_header(&http_req) {
+    match get_nettu_account_header(http_req) {
         Some(res) => {
             let account_id = res?;
 
@@ -178,7 +177,7 @@ pub async fn protect_public_account_route(
             }
         }
         // No nettu-account header, then check if this is an admin client
-        None => return protect_account_route(&http_req, &ctx).await,
+        None => return protect_account_route(http_req, ctx).await,
     }
 }
 

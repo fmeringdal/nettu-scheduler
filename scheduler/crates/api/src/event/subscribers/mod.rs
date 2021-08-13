@@ -16,7 +16,7 @@ pub struct CreateRemindersOnEventCreated;
 impl Subscriber<CreateEventUseCase> for CreateRemindersOnEventCreated {
     async fn notify(&self, e: &CalendarEvent, ctx: &nettu_scheduler_infra::NettuContext) {
         let sync_event_reminders = SyncEventRemindersUseCase {
-            request: SyncEventRemindersTrigger::EventModified(&e, EventOperation::Created),
+            request: SyncEventRemindersTrigger::EventModified(e, EventOperation::Created),
         };
 
         // Sideeffect, ignore result
@@ -30,7 +30,7 @@ pub struct SyncRemindersOnEventUpdated;
 impl Subscriber<UpdateEventUseCase> for SyncRemindersOnEventUpdated {
     async fn notify(&self, e: &CalendarEvent, ctx: &nettu_scheduler_infra::NettuContext) {
         let sync_event_reminders = SyncEventRemindersUseCase {
-            request: SyncEventRemindersTrigger::EventModified(&e, EventOperation::Updated),
+            request: SyncEventRemindersTrigger::EventModified(e, EventOperation::Updated),
         };
 
         // Sideeffect, ignore result

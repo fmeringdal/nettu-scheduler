@@ -141,7 +141,7 @@ impl UseCase for UpdateEventUseCase {
             metadata,
         } = self;
 
-        let mut e = match ctx.repos.events.find(&event_id).await {
+        let mut e = match ctx.repos.events.find(event_id).await {
             Some(event) if event.user_id == user.id => event,
             _ => {
                 return Err(UseCaseErrors::NotFound(

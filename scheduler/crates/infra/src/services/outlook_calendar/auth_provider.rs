@@ -76,19 +76,16 @@ pub async fn exchange_code_token(req: CodeTokenRequest) -> Result<CodeTokenRespo
         .map_err(|e| {
             println!("------------------------------------------------------");
             println!("Error got : {:?}", e);
-            ()
         })?;
 
     let res = res.json::<CodeTokenResponse>().await.map_err(|e| {
         println!("------------------------------------------------------");
         println!("2. Error got : {:?}", e);
-
-        ()
     })?;
 
     let scopes = res
         .scope
-        .split(" ")
+        .split(' ')
         .into_iter()
         .map(|scope| scope.to_lowercase())
         .collect::<Vec<_>>();
@@ -110,10 +107,9 @@ pub async fn exchange_code_token(req: CodeTokenRequest) -> Result<CodeTokenRespo
 pub async fn get_access_token(user: &User, ctx: &NettuContext) -> Option<String> {
     // Check if user has connected to outlook
     let mut integrations = ctx.repos.user_integrations.find(&user.id).await.ok()?;
-    let integration = integrations.iter_mut().find(|i| match i.provider {
-        IntegrationProvider::Outlook => true,
-        _ => false,
-    })?;
+    let integration = integrations
+        .iter_mut()
+        .find(|i| matches!(i.provider, IntegrationProvider::Outlook))?;
 
     let now = Utc::now().timestamp_millis();
     let one_minute_in_millis = 1000 * 60;
@@ -128,10 +124,9 @@ pub async fn get_access_token(user: &User, ctx: &NettuContext) -> Option<String>
         Ok(acc_integrations) => acc_integrations,
         Err(_) => return None,
     };
-    let outlook_settings = acc_integrations.into_iter().find(|i| match i.provider {
-        IntegrationProvider::Outlook => true,
-        _ => false,
-    })?;
+    let outlook_settings = acc_integrations
+        .into_iter()
+        .find(|i| matches!(i.provider, IntegrationProvider::Outlook))?;
 
     let refresh_token_req = RefreshTokenRequest {
         client_id: outlook_settings.client_id,
@@ -150,7 +145,7 @@ pub async fn get_access_token(user: &User, ctx: &NettuContext) -> Option<String>
             let access_token = integration.access_token.clone();
 
             // Update user with updated google tokens
-            if let Err(e) = ctx.repos.user_integrations.save(&integration).await {
+            if let Err(e) = ctx.repos.user_integrations.save(integration).await {
                 error!(
                     "Unable to save updated outlook credentials for user. Error: {:?}",
                     e

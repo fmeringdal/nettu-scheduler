@@ -45,6 +45,13 @@ async fn refresh_access_token(req: RefreshTokenRequest) -> Result<RefreshTokenRe
 }
 
 pub async fn exchange_code_token(req: CodeTokenRequest) -> Result<CodeTokenResponse, ()> {
+    println!("Got here!!!!!!!!!!!!!!!!!!!");
+    println!("Got here!!!!!!!!!!!!!!!!!!!");
+    println!("Got here!!!!!!!!!!!!!!!!!!!");
+    println!("Got here!!!!!!!!!!!!!!!!!!!");
+    println!("Got here!!!!!!!!!!!!!!!!!!!");
+    println!("Got here!!!!!!!!!!!!!!!!!!!");
+    println!("Got here!!!!!!!!!!!!!!!!!!!");
     let params = [
         ("client_id", req.client_id.as_str()),
         ("client_secret", req.client_secret.as_str()),
@@ -52,7 +59,7 @@ pub async fn exchange_code_token(req: CodeTokenRequest) -> Result<CodeTokenRespo
         ("code", req.code.as_str()),
         ("grant_type", "authorization_code"),
     ];
-    // TODO: query params intead of body ??
+    // TODO: query params instead of body ??
     let client = reqwest::Client::new();
     let res = client
         .post(CODE_TOKEN_EXHANGE_ENDPOINT)
@@ -60,18 +67,22 @@ pub async fn exchange_code_token(req: CodeTokenRequest) -> Result<CodeTokenRespo
         .send()
         .await
         .map_err(|e| {
+            println!("1. Unable to exchange code token: {:?}", e);
             error!("1. Unable to exchange code token: {:?}", e);
-            ()
         })?;
 
     let res = res.json::<CodeTokenResponse>().await.map_err(|e| {
+        println!("2. Unable to exchange code token: {:?}", e);
         error!("2. Unable to exchange code token: {:?}", e);
-        ()
     })?;
 
-    let scopes = res.scope.split(" ").collect::<Vec<_>>();
+    let scopes = res.scope.split(' ').collect::<Vec<_>>();
     for required_scope in REQUIRED_OAUTH_SCOPES.iter() {
-        if !scopes.contains(&required_scope) {
+        if !scopes.contains(required_scope) {
+            println!(
+                "Missing scope: {:?} got scopes: {:?}",
+                required_scope, scopes
+            );
             error!(
                 "Missing scope: {:?} got scopes: {:?}",
                 required_scope, scopes
@@ -80,16 +91,17 @@ pub async fn exchange_code_token(req: CodeTokenRequest) -> Result<CodeTokenRespo
         }
     }
 
+    println!("Got here!!!!!!!!!!!!!!!!!!! with res : {:?}", res);
+
     Ok(res)
 }
 
 pub async fn get_access_token(user: &User, ctx: &NettuContext) -> Option<String> {
     // Check if user has connected to google
     let mut integrations = ctx.repos.user_integrations.find(&user.id).await.ok()?;
-    let integration = integrations.iter_mut().find(|i| match i.provider {
-        IntegrationProvider::Google => true,
-        _ => false,
-    })?;
+    let integration = integrations
+        .iter_mut()
+        .find(|i| matches!(i.provider, IntegrationProvider::Google))?;
 
     let now = Utc::now().timestamp_millis();
     let one_minute_in_millis = 1000 * 60;
@@ -104,10 +116,9 @@ pub async fn get_access_token(user: &User, ctx: &NettuContext) -> Option<String>
         Ok(acc_integrations) => acc_integrations,
         Err(_) => return None,
     };
-    let google_settings = acc_integrations.into_iter().find(|i| match i.provider {
-        IntegrationProvider::Google => true,
-        _ => false,
-    })?;
+    let google_settings = acc_integrations
+        .into_iter()
+        .find(|i| matches!(i.provider, IntegrationProvider::Google))?;
 
     let refresh_token_req = RefreshTokenRequest {
         client_id: google_settings.client_id,
@@ -124,7 +135,7 @@ pub async fn get_access_token(user: &User, ctx: &NettuContext) -> Option<String>
             let access_token = integration.access_token.clone();
 
             // Update user with updated google tokens
-            if let Err(e) = ctx.repos.user_integrations.save(&integration).await {
+            if let Err(e) = ctx.repos.user_integrations.save(integration).await {
                 error!(
                     "Unable to save updated google credentials for user. Error: {:?}",
                     e

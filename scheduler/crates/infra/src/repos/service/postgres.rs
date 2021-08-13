@@ -36,29 +36,29 @@ struct ServiceWithUsersRaw {
     metadata: Vec<String>,
 }
 
-impl Into<Service> for ServiceRaw {
-    fn into(self) -> Service {
-        Service {
-            id: self.service_uid.into(),
-            account_id: self.account_uid.into(),
-            multi_person: serde_json::from_value(self.multi_person).unwrap(),
-            metadata: extract_metadata(self.metadata),
+impl From<ServiceRaw> for Service {
+    fn from(e: ServiceRaw) -> Self {
+        Self {
+            id: e.service_uid.into(),
+            account_id: e.account_uid.into(),
+            multi_person: serde_json::from_value(e.multi_person).unwrap(),
+            metadata: extract_metadata(e.metadata),
         }
     }
 }
 
-impl Into<ServiceWithUsers> for ServiceWithUsersRaw {
-    fn into(self) -> ServiceWithUsers {
-        let users: Vec<ServiceUserRaw> = match self.users {
+impl From<ServiceWithUsersRaw> for ServiceWithUsers {
+    fn from(e: ServiceWithUsersRaw) -> Self {
+        let users: Vec<ServiceUserRaw> = match e.users {
             Some(json) => serde_json::from_value(json).unwrap_or_default(),
             None => vec![],
         };
-        ServiceWithUsers {
-            id: self.service_uid.into(),
-            account_id: self.account_uid.into(),
+        Self {
+            id: e.service_uid.into(),
+            account_id: e.account_uid.into(),
             users: users.into_iter().map(|u| u.into()).collect(),
-            multi_person: serde_json::from_value(self.multi_person).unwrap(),
-            metadata: extract_metadata(self.metadata),
+            multi_person: serde_json::from_value(e.multi_person).unwrap(),
+            metadata: extract_metadata(e.metadata),
         }
     }
 }
@@ -85,10 +85,10 @@ impl IServiceRepo for PostgresServiceRepo {
     async fn save(&self, service: &Service) -> anyhow::Result<()> {
         sqlx::query!(
             r#"
-            UPDATE services SET 
+            UPDATE services SET
                 multi_person = $2,
                 metadata = $3
-            WHERE service_uid = $1 
+            WHERE service_uid = $1
             "#,
             service.id.inner_ref(),
             Json(&service.multi_person) as _,
@@ -104,7 +104,7 @@ impl IServiceRepo for PostgresServiceRepo {
         let service: ServiceRaw = match sqlx::query_as!(
             ServiceRaw,
             r#"
-            SELECT * FROM services AS s 
+            SELECT * FROM services AS s
             WHERE s.service_uid = $1
             "#,
             service_id.inner_ref()
@@ -121,9 +121,9 @@ impl IServiceRepo for PostgresServiceRepo {
     async fn find_with_users(&self, service_id: &ID) -> Option<ServiceWithUsers> {
         let service: ServiceWithUsersRaw = match sqlx::query_as(
             r#"
-            SELECT s.*, jsonb_agg((su.*)) AS users FROM services AS s 
-            LEFT JOIN service_users AS su 
-            ON su.service_uid = s.service_uid 
+            SELECT s.*, jsonb_agg((su.*)) AS users FROM services AS s
+            LEFT JOIN service_users AS su
+            ON su.service_uid = s.service_uid
             WHERE s.service_uid = $1
             GROUP BY s.service_uid
             "#,
@@ -143,7 +143,7 @@ impl IServiceRepo for PostgresServiceRepo {
         sqlx::query!(
             r#"
             DELETE FROM services AS s
-            WHERE s.service_uid = $1 
+            WHERE s.service_uid = $1
             "#,
             service_id.inner_ref(),
         )
@@ -170,7 +170,7 @@ impl IServiceRepo for PostgresServiceRepo {
         )
         .fetch_all(&self.pool)
         .await
-        .unwrap_or(vec![]);
+        .unwrap_or_default();
 
         services.into_iter().map(|s| s.into()).collect()
     }

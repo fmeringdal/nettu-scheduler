@@ -23,11 +23,11 @@ struct MostRecentCreatedServiceEventsRaw {
     created: Option<i64>,
 }
 
-impl Into<MostRecentCreatedServiceEvents> for MostRecentCreatedServiceEventsRaw {
-    fn into(self) -> MostRecentCreatedServiceEvents {
-        MostRecentCreatedServiceEvents {
-            user_id: self.user_uid.into(),
-            created: self.created,
+impl From<MostRecentCreatedServiceEventsRaw> for MostRecentCreatedServiceEvents {
+    fn from(e: MostRecentCreatedServiceEventsRaw) -> Self {
+        Self {
+            user_id: e.user_uid.into(),
+            created: e.created,
         }
     }
 }
@@ -46,38 +46,38 @@ struct EventRaw {
     updated: i64,
     recurrence: Option<serde_json::Value>,
     exdates: Vec<i64>,
-    reminders: Option<serde_json::Value>,
+    reminder: Option<serde_json::Value>,
     service_uid: Option<Uuid>,
     metadata: Vec<String>,
 }
 
-impl Into<CalendarEvent> for EventRaw {
-    fn into(self) -> CalendarEvent {
-        let recurrence: Option<RRuleOptions> = match self.recurrence {
+impl From<EventRaw> for CalendarEvent {
+    fn from(e: EventRaw) -> Self {
+        let recurrence: Option<RRuleOptions> = match e.recurrence {
             Some(json) => serde_json::from_value(json).unwrap(),
             None => None,
         };
-        let reminders: Vec<CalendarEventReminder> = match self.reminders {
+        let reminders: Vec<CalendarEventReminder> = match e.reminder {
             Some(json) => serde_json::from_value(json).unwrap(),
             None => vec![],
         };
 
-        CalendarEvent {
-            id: self.event_uid.into(),
-            user_id: self.user_uid.into(),
-            account_id: self.account_uid.into(),
-            calendar_id: self.calendar_uid.into(),
-            start_ts: self.start_ts,
-            duration: self.duration,
-            busy: self.busy,
-            end_ts: self.end_ts,
-            created: self.created,
-            updated: self.updated,
+        Self {
+            id: e.event_uid.into(),
+            user_id: e.user_uid.into(),
+            account_id: e.account_uid.into(),
+            calendar_id: e.calendar_uid.into(),
+            start_ts: e.start_ts,
+            duration: e.duration,
+            busy: e.busy,
+            end_ts: e.end_ts,
+            created: e.created,
+            updated: e.updated,
             recurrence,
-            exdates: self.exdates,
+            exdates: e.exdates,
             reminders,
-            service_id: self.service_uid.map(|id| id.into()),
-            metadata: extract_metadata(self.metadata),
+            service_id: e.service_uid.map(|id| id.into()),
+            metadata: extract_metadata(e.metadata),
         }
     }
 }
@@ -90,7 +90,7 @@ impl IEventRepo for PostgresEventRepo {
             r#"
             INSERT INTO calendar_events(
                 event_uid,
-                calendar_uid, 
+                calendar_uid,
                 start_ts,
                 duration,
                 end_ts,
@@ -99,7 +99,7 @@ impl IEventRepo for PostgresEventRepo {
                 updated,
                 recurrence,
                 exdates,
-                reminders,
+                reminder,
                 service_uid,
                 metadata
             )
@@ -120,12 +120,7 @@ impl IEventRepo for PostgresEventRepo {
             &metadata
         )
         .execute(&self.pool)
-        .await
-        .map_err(|err| {
-            println!("Insert calendar event {:?}. Error: {:?}", e, err);
-            error!("Insert calendar event {:?}. Error: {:?}", e, err);
-            err
-        })?;
+        .await?;
 
         Ok(())
     }
@@ -134,7 +129,7 @@ impl IEventRepo for PostgresEventRepo {
         let metadata = to_metadata(e.metadata.clone());
         sqlx::query!(
             r#"
-            UPDATE calendar_events SET 
+            UPDATE calendar_events SET
                 start_ts = $2,
                 duration = $3,
                 end_ts = $4,
@@ -143,7 +138,7 @@ impl IEventRepo for PostgresEventRepo {
                 updated = $7,
                 recurrence = $8,
                 exdates = $9,
-                reminders = $10,
+                reminder = $10,
                 service_uid = $11,
                 metadata = $12
             WHERE event_uid = $1
@@ -177,7 +172,7 @@ impl IEventRepo for PostgresEventRepo {
             r#"
             SELECT e.*, u.user_uid, account_uid FROM calendar_events AS e
             INNER JOIN calendars AS c
-                ON c.calendar_uid = e.calendar_uid 
+                ON c.calendar_uid = e.calendar_uid
             INNER JOIN users AS u
                 ON u.user_uid = c.user_uid
             WHERE e.event_uid = $1
@@ -200,7 +195,7 @@ impl IEventRepo for PostgresEventRepo {
     ) -> Vec<MostRecentCreatedServiceEvents> {
         let user_ids = user_ids
             .iter()
-            .map(|id| id.inner_ref().clone())
+            .map(|id| *id.inner_ref())
             .collect::<Vec<_>>();
         // https://github.com/launchbadge/sqlx/issues/367
         let events: Vec<MostRecentCreatedServiceEventsRaw> = match sqlx::query_as(
@@ -243,14 +238,14 @@ impl IEventRepo for PostgresEventRepo {
     ) -> Vec<CalendarEvent> {
         let user_ids = user_ids
             .iter()
-            .map(|id| id.inner_ref().clone())
+            .map(|id| *id.inner_ref())
             .collect::<Vec<_>>();
         let events: Vec<EventRaw> = match sqlx::query_as!(
             EventRaw,
             r#"
             SELECT e.*, u.user_uid, account_uid FROM calendar_events AS e
             INNER JOIN calendars AS c
-                ON c.calendar_uid = e.calendar_uid 
+                ON c.calendar_uid = e.calendar_uid
             INNER JOIN users AS u
                 ON u.user_uid = c.user_uid
             WHERE e.service_uid = $1 AND
@@ -283,7 +278,7 @@ impl IEventRepo for PostgresEventRepo {
             r#"
             SELECT e.*, u.user_uid, account_uid FROM calendar_events AS e
             INNER JOIN calendars AS c
-                ON c.calendar_uid = e.calendar_uid 
+                ON c.calendar_uid = e.calendar_uid
             INNER JOIN users AS u
                 ON u.user_uid = c.user_uid
             WHERE u.user_uid = $1 AND
@@ -308,14 +303,14 @@ impl IEventRepo for PostgresEventRepo {
     async fn find_many(&self, event_ids: &[ID]) -> anyhow::Result<Vec<CalendarEvent>> {
         let ids = event_ids
             .iter()
-            .map(|id| id.inner_ref().clone())
+            .map(|id| *id.inner_ref())
             .collect::<Vec<_>>();
         let events: Vec<EventRaw> = sqlx::query_as!(
             EventRaw,
             r#"
             SELECT e.*, u.user_uid, account_uid FROM calendar_events AS e
             INNER JOIN calendars AS c
-                ON c.calendar_uid = e.calendar_uid 
+                ON c.calendar_uid = e.calendar_uid
             INNER JOIN users AS u
                 ON u.user_uid = c.user_uid
             WHERE e.event_uid = ANY($1)
@@ -339,10 +334,10 @@ impl IEventRepo for PostgresEventRepo {
                     r#"
                     SELECT e.*, u.user_uid, account_uid FROM calendar_events AS e
                     INNER JOIN calendars AS c
-                        ON c.calendar_uid = e.calendar_uid 
+                        ON c.calendar_uid = e.calendar_uid
                     INNER JOIN users AS u
                         ON u.user_uid = c.user_uid
-                    WHERE e.calendar_uid = $1 AND 
+                    WHERE e.calendar_uid = $1 AND
                     e.start_ts <= $2 AND e.end_ts >= $3
                     "#,
                     calendar_id.inner_ref(),
@@ -358,7 +353,7 @@ impl IEventRepo for PostgresEventRepo {
                     r#"
                     SELECT e.*, u.user_uid, account_uid FROM calendar_events AS e
                     INNER JOIN calendars AS c
-                        ON c.calendar_uid = e.calendar_uid 
+                        ON c.calendar_uid = e.calendar_uid
                     INNER JOIN users AS u
                         ON u.user_uid = c.user_uid
                     WHERE e.calendar_uid = $1
@@ -411,7 +406,7 @@ impl IEventRepo for PostgresEventRepo {
             r#"
             SELECT e.*, u.user_uid, account_uid FROM calendar_events AS e
             INNER JOIN calendars AS c
-                ON c.calendar_uid = e.calendar_uid 
+                ON c.calendar_uid = e.calendar_uid
             INNER JOIN users AS u
                 ON u.user_uid = c.user_uid
             WHERE u.account_uid = $1 AND e.metadata @> ARRAY[$2]
@@ -425,7 +420,7 @@ impl IEventRepo for PostgresEventRepo {
         )
         .fetch_all(&self.pool)
         .await
-        .unwrap_or(vec![]);
+        .unwrap_or_default();
 
         events.into_iter().map(|e| e.into()).collect()
     }

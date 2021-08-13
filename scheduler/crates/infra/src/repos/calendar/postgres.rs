@@ -26,14 +26,14 @@ struct CalendarRaw {
     metadata: Vec<String>,
 }
 
-impl Into<Calendar> for CalendarRaw {
-    fn into(self) -> Calendar {
-        Calendar {
-            id: self.calendar_uid.into(),
-            user_id: self.user_uid.into(),
-            account_id: self.account_uid.into(),
-            settings: serde_json::from_value(self.settings).unwrap(),
-            metadata: extract_metadata(self.metadata),
+impl From<CalendarRaw> for Calendar {
+    fn from(e: CalendarRaw) -> Self {
+        Self {
+            id: e.calendar_uid.into(),
+            user_id: e.user_uid.into(),
+            account_id: e.account_uid.into(),
+            settings: serde_json::from_value(e.settings).unwrap(),
+            metadata: extract_metadata(e.metadata),
         }
     }
 }
@@ -114,7 +114,7 @@ impl ICalendarRepo for PostgresCalendarRepo {
         )
         .fetch_all(&self.pool)
         .await
-        .unwrap_or(vec![]);
+        .unwrap_or_default();
 
         calendars.into_iter().map(|c| c.into()).collect()
     }
@@ -130,7 +130,7 @@ impl ICalendarRepo for PostgresCalendarRepo {
         .execute(&self.pool)
         .await
         .map(|_| ())
-        .map_err(|e| anyhow::Error::new(e))
+        .map_err(anyhow::Error::new)
     }
 
     async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<Calendar> {
@@ -153,7 +153,7 @@ impl ICalendarRepo for PostgresCalendarRepo {
         )
         .fetch_all(&self.pool)
         .await
-        .unwrap_or(vec![]);
+        .unwrap_or_default();
 
         calendars.into_iter().map(|c| c.into()).collect()
     }

@@ -21,13 +21,13 @@ struct SyncedCalendarRaw {
     provider: String,
 }
 
-impl Into<SyncedCalendar> for SyncedCalendarRaw {
-    fn into(self) -> SyncedCalendar {
-        SyncedCalendar {
-            user_id: self.user_uid.into(),
-            calendar_id: self.calendar_uid.into(),
-            ext_calendar_id: self.ext_calendar_id,
-            provider: self.provider.into(),
+impl From<SyncedCalendarRaw> for SyncedCalendar {
+    fn from(e: SyncedCalendarRaw) -> Self {
+        Self {
+            user_id: e.user_uid.into(),
+            calendar_id: e.calendar_uid.into(),
+            ext_calendar_id: e.ext_calendar_id,
+            provider: e.provider.into(),
         }
     }
 }
@@ -39,9 +39,9 @@ impl ICalendarSyncedRepo for PostgresCalendarSyncedRepo {
         sqlx::query!(
             r#"
             INSERT INTO externally_synced_calendars (
-                calendar_uid, 
-                user_uid, 
-                ext_calendar_id, 
+                calendar_uid,
+                user_uid,
+                ext_calendar_id,
                 provider
             )
             VALUES($1, $2, $3, $4)
