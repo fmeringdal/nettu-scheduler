@@ -48,7 +48,7 @@ or if you want to build it yourself with `cargo`:
 cd scheduler
 export ACCOUNT_API_KEY="REPLACE_ME"
 export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/nettuscheduler"
-cargo run inmemory
+cargo run
 ```
 
 The `ACCOUNT_API_KEY` environment variable is going to create an `Account` (if it does not already exist) during
