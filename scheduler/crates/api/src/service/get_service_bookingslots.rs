@@ -102,6 +102,17 @@ pub(crate) enum UseCaseErrors {
     InvalidTimezone(String),
 }
 
+impl From<BookingQueryError> for UseCaseErrors {
+    fn from(e: BookingQueryError) -> Self {
+        match e {
+            BookingQueryError::InvalidInterval => UseCaseErrors::InvalidInterval,
+            BookingQueryError::InvalidTimespan => UseCaseErrors::InvalidTimespan,
+            BookingQueryError::InvalidDate(d) => UseCaseErrors::InvalidDate(d),
+            BookingQueryError::InvalidTimezone(d) => UseCaseErrors::InvalidTimezone(d),
+        }
+    }
+}
+
 #[async_trait::async_trait(?Send)]
 impl UseCase for GetServiceBookingSlotsUseCase {
     type Response = UseCaseRes;
@@ -122,12 +133,7 @@ impl UseCase for GetServiceBookingSlotsUseCase {
             interval: self.interval,
             duration: self.duration,
         };
-        let booking_timespan = validate_bookingslots_query(&query).map_err(|e| match e {
-            BookingQueryError::InvalidInterval => Err(UseCaseErrors::InvalidInterval),
-            BookingQueryError::InvalidTimespan => Err(UseCaseErrors::InvalidTimespan),
-            BookingQueryError::InvalidDate(d) => Err(UseCaseErrors::InvalidDate(d)),
-            BookingQueryError::InvalidTimezone(d) => Err(UseCaseErrors::InvalidTimezone(d)),
-        })?;
+        let booking_timespan = validate_bookingslots_query(&query)?;
         let timezone: chrono_tz::Tz = query
             .iana_tz
             .unwrap_or_else(|| "UTC".into())
