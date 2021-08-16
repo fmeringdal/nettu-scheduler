@@ -137,9 +137,11 @@ async fn create_event_reminders(
     };
 
     // create reminders for the next `self.expansion_interval`
-    if ctx.repos.reminders.bulk_insert(&reminders).await.is_err() {
-        return Err(UseCaseError::StorageError);
-    }
+    ctx.repos
+        .reminders
+        .bulk_insert(&reminders)
+        .await
+        .map_err(|_| UseCaseError::StorageError)?;
 
     Ok(())
 }

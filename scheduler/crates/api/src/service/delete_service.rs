@@ -68,9 +68,12 @@ impl UseCase for DeleteServiceUseCase {
         let res = ctx.repos.services.find(&self.service_id).await;
         match res {
             Some(service) if service.account_id == self.account.id => {
-                if ctx.repos.services.delete(&self.service_id).await.is_err() {
-                    return Err(UseCaseError::StorageError);
-                }
+                ctx.repos
+                    .services
+                    .delete(&self.service_id)
+                    .await
+                    .map_err(|_| UseCaseError::StorageError)?;
+
                 Ok(UseCaseRes { service })
             }
             _ => Err(UseCaseError::NotFound(self.service_id.clone())),

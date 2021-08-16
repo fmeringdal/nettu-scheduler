@@ -80,15 +80,11 @@ impl UseCase for UpdateServiceUseCase {
                     if new_count > old_count {
                         // Delete all calendar events for this service, because
                         // then it should be possible for more people to book
-                        if ctx
-                            .repos
+                        ctx.repos
                             .events
                             .delete_by_service(&service.id)
                             .await
-                            .is_err()
-                        {
-                            return Err(UseCaseError::StorageError);
-                        }
+                            .map_err(|_| UseCaseError::StorageError)?;
                     }
                 }
             }

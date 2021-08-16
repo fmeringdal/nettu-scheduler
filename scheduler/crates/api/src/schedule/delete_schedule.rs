@@ -81,10 +81,11 @@ impl UseCase for DeleteScheduleUseCase {
         let schedule = ctx.repos.schedules.find(&self.schedule_id).await;
         match schedule {
             Some(schedule) if schedule.user_id == self.user_id => {
-                let res = ctx.repos.schedules.delete(&schedule.id).await;
-                if res.is_err() {
-                    return Err(UseCaseError::StorageError);
-                }
+                ctx.repos
+                    .schedules
+                    .delete(&schedule.id)
+                    .await
+                    .map_err(|_| UseCaseError::StorageError)?;
 
                 Ok(schedule)
             }

@@ -150,10 +150,11 @@ impl UseCase for CreateEventUseCase {
             }
         }
 
-        let repo_res = ctx.repos.events.insert(&e).await;
-        if repo_res.is_err() {
-            return Err(UseCaseError::StorageError);
-        }
+        ctx.repos
+            .events
+            .insert(&e)
+            .await
+            .map_err(|_| UseCaseError::StorageError)?;
 
         Ok(e)
     }
