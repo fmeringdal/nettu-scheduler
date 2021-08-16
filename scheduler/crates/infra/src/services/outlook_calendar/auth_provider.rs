@@ -8,7 +8,7 @@ use serde::Deserialize;
 // https://developers.google.com/identity/protocols/oauth2/web-server#httprest_3
 
 const TOKEN_REFETCH_ENDPOINT: &str = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
-const CODE_TOKEN_EXHANGE_ENDPOINT: &str =
+const CODE_TOKEN_EXCHANGE_ENDPOINT: &str =
     "https://login.microsoftonline.com/common/oauth2/v2.0/token";
 const REQUIRED_OAUTH_SCOPES: [&str; 2] = [
     "https://graph.microsoft.com/calendars.readwrite",
@@ -69,26 +69,23 @@ pub async fn exchange_code_token(req: CodeTokenRequest) -> Result<CodeTokenRespo
     let client = reqwest::Client::new();
 
     let res = client
-        .post(CODE_TOKEN_EXHANGE_ENDPOINT)
+        .post(CODE_TOKEN_EXCHANGE_ENDPOINT)
         .form(&params)
         .send()
         .await
         .map_err(|e| {
             println!("------------------------------------------------------");
             println!("Error got : {:?}", e);
-            ()
         })?;
 
     let res = res.json::<CodeTokenResponse>().await.map_err(|e| {
         println!("------------------------------------------------------");
         println!("2. Error got : {:?}", e);
-
-        ()
     })?;
 
     let scopes = res
         .scope
-        .split(" ")
+        .split(' ')
         .into_iter()
         .map(|scope| scope.to_lowercase())
         .collect::<Vec<_>>();
@@ -110,15 +107,14 @@ pub async fn exchange_code_token(req: CodeTokenRequest) -> Result<CodeTokenRespo
 pub async fn get_access_token(user: &User, ctx: &NettuContext) -> Option<String> {
     // Check if user has connected to outlook
     let mut integrations = ctx.repos.user_integrations.find(&user.id).await.ok()?;
-    let integration = integrations.iter_mut().find(|i| match i.provider {
-        IntegrationProvider::Outlook => true,
-        _ => false,
-    })?;
+    let integration = integrations
+        .iter_mut()
+        .find(|i| matches!(i.provider, IntegrationProvider::Outlook))?;
 
     let now = Utc::now().timestamp_millis();
     let one_minute_in_millis = 1000 * 60;
     if now + one_minute_in_millis <= integration.access_token_expires_ts {
-        // Current acces token is still valid for at least one minutes so return it
+        // Current access token is still valid for at least one minutes so return it
         return Some(integration.access_token.clone());
     }
     // Access token has or will expire soon, now renew it
@@ -128,10 +124,9 @@ pub async fn get_access_token(user: &User, ctx: &NettuContext) -> Option<String>
         Ok(acc_integrations) => acc_integrations,
         Err(_) => return None,
     };
-    let outlook_settings = acc_integrations.into_iter().find(|i| match i.provider {
-        IntegrationProvider::Outlook => true,
-        _ => false,
-    })?;
+    let outlook_settings = acc_integrations
+        .into_iter()
+        .find(|i| matches!(i.provider, IntegrationProvider::Outlook))?;
 
     let refresh_token_req = RefreshTokenRequest {
         client_id: outlook_settings.client_id,
@@ -150,7 +145,7 @@ pub async fn get_access_token(user: &User, ctx: &NettuContext) -> Option<String>
             let access_token = integration.access_token.clone();
 
             // Update user with updated google tokens
-            if let Err(e) = ctx.repos.user_integrations.save(&integration).await {
+            if let Err(e) = ctx.repos.user_integrations.save(integration).await {
                 error!(
                     "Unable to save updated outlook credentials for user. Error: {:?}",
                     e

@@ -1,7 +1,8 @@
 use super::IAccountRepo;
 use nettu_scheduler_domain::{Account, PEMKey, ID};
 use sqlx::{
-    types::{Json, Uuid}, FromRow, PgPool,
+    types::{Json, Uuid},
+    FromRow, PgPool,
 };
 
 pub struct PostgresAccountRepo {
@@ -22,13 +23,13 @@ pub struct AccountRaw {
     settings: serde_json::Value,
 }
 
-impl Into<Account> for AccountRaw {
-    fn into(self) -> Account {
-        Account {
-            id: self.account_uid.into(),
-            secret_api_key: self.secret_api_key,
-            public_jwt_key: self.public_jwt_key.map(|key| PEMKey::new(key).unwrap()),
-            settings: serde_json::from_value(self.settings).unwrap(),
+impl From<AccountRaw> for Account {
+    fn from(e: AccountRaw) -> Self {
+        Self {
+            id: e.account_uid.into(),
+            secret_api_key: e.secret_api_key,
+            public_jwt_key: e.public_jwt_key.map(|key| PEMKey::new(key).unwrap()),
+            settings: serde_json::from_value(e.settings).unwrap(),
         }
     }
 }
@@ -91,7 +92,7 @@ impl IAccountRepo for PostgresAccountRepo {
     async fn find_many(&self, accounts_ids: &[ID]) -> anyhow::Result<Vec<Account>> {
         let ids = accounts_ids
             .iter()
-            .map(|id| id.inner_ref().clone())
+            .map(|id| *id.inner_ref())
             .collect::<Vec<_>>();
         let accounts_raw: Vec<AccountRaw> = sqlx::query_as!(
             AccountRaw,

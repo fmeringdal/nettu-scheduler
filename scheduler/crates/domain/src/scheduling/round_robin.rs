@@ -93,13 +93,7 @@ impl RoundRobinEqualDistributionAssignment {
             .sorted_by_key(|u| u.event_count)
             .take_while(|u| {
                 let take = match prev {
-                    Some(count) => {
-                        if count == u.event_count {
-                            true
-                        } else {
-                            false
-                        }
-                    }
+                    Some(count) => count == u.event_count,
                     None => true,
                 };
                 prev = Some(u.event_count);

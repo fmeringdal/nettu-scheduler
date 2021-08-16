@@ -141,7 +141,7 @@ impl UseCase for UpdateEventUseCase {
             metadata,
         } = self;
 
-        let mut e = match ctx.repos.events.find(&event_id).await {
+        let mut e = match ctx.repos.events.find(event_id).await {
             Some(event) if event.user_id == user.id => event,
             _ => {
                 return Err(UseCaseErrors::NotFound(
@@ -244,7 +244,7 @@ mod test {
 
     #[actix_web::main]
     #[test]
-    async fn update_notexisting_event() {
+    async fn update_nonexisting_event() {
         let mut usecase = UpdateEventUseCase {
             user: User::new(Default::default()),
             event_id: Default::default(),

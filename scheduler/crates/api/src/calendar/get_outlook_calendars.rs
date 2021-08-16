@@ -79,7 +79,7 @@ impl UseCase for GetOutlookCalendarsUseCase {
     const NAME: &'static str = "GetOutlookCalendars";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
-        let provider = OutlookCalendarProvider::new(&mut self.user, ctx)
+        let provider = OutlookCalendarProvider::new(&self.user, ctx)
             .await
             .map_err(|_| UseCaseErrors::UserNotConnectedToOutlook)?;
 

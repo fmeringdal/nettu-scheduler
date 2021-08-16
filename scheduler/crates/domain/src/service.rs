@@ -22,7 +22,7 @@ pub enum TimePlan {
 pub struct ServiceResource {
     /// Id of the `User` registered on this `Service`
     pub user_id: ID,
-    /// Id of the `Service` this user is reqistered on
+    /// Id of the `Service` this user is registered on
     pub service_id: ID,
     /// Every available event in a `Calendar` or a `Schedule` in this field
     /// describes the time when this `ServiceResource` will be bookable.

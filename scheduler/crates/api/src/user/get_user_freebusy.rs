@@ -129,7 +129,7 @@ impl GetFreeBusyUseCase {
         let all_events_futures = calendars.iter().map(|calendar| {
             ctx.repos
                 .events
-                .find_by_calendar(&calendar.id, Some(&timespan))
+                .find_by_calendar(&calendar.id, Some(timespan))
         });
 
         join_all(all_events_futures)
@@ -143,7 +143,7 @@ impl GetFreeBusyUseCase {
                         let calendar = calendars_lookup
                             .get(&event.calendar_id.to_string())
                             .unwrap();
-                        event.expand(Some(&timespan), &calendar.settings)
+                        event.expand(Some(timespan), &calendar.settings)
                     })
                     // It is possible that there are no instances in the expanded event, should remove them
                     .filter(|instances| !instances.is_empty())

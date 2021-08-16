@@ -81,9 +81,9 @@ pub(crate) struct GetServiceBookingSlotsUseCase {
     pub host_user_ids: Option<Vec<ID>>,
 }
 
-impl Into<NettuError> for UseCaseErrors {
-    fn into(self) -> NettuError {
-        handle_error(self)
+impl From<UseCaseErrors> for NettuError {
+    fn from(e: UseCaseErrors) -> Self {
+        handle_error(e)
     }
 }
 
@@ -100,6 +100,17 @@ pub(crate) enum UseCaseErrors {
     InvalidTimespan,
     InvalidDate(String),
     InvalidTimezone(String),
+}
+
+impl From<BookingQueryError> for UseCaseErrors {
+    fn from(e: BookingQueryError) -> Self {
+        match e {
+            BookingQueryError::InvalidInterval => UseCaseErrors::InvalidInterval,
+            BookingQueryError::InvalidTimespan => UseCaseErrors::InvalidTimespan,
+            BookingQueryError::InvalidDate(d) => UseCaseErrors::InvalidDate(d),
+            BookingQueryError::InvalidTimezone(d) => UseCaseErrors::InvalidTimezone(d),
+        }
+    }
 }
 
 #[async_trait::async_trait(?Send)]
@@ -122,17 +133,7 @@ impl UseCase for GetServiceBookingSlotsUseCase {
             interval: self.interval,
             duration: self.duration,
         };
-        let booking_timespan = match validate_bookingslots_query(&query) {
-            Ok(t) => t,
-            Err(e) => match e {
-                BookingQueryError::InvalidInterval => return Err(UseCaseErrors::InvalidInterval),
-                BookingQueryError::InvalidTimespan => return Err(UseCaseErrors::InvalidTimespan),
-                BookingQueryError::InvalidDate(d) => return Err(UseCaseErrors::InvalidDate(d)),
-                BookingQueryError::InvalidTimezone(d) => {
-                    return Err(UseCaseErrors::InvalidTimezone(d))
-                }
-            },
-        };
+        let booking_timespan = validate_bookingslots_query(&query)?;
         let timezone: chrono_tz::Tz = query
             .iana_tz
             .unwrap_or_else(|| "UTC".into())
@@ -225,20 +226,20 @@ impl GetServiceBookingSlotsUseCase {
                 let all_calendar_events = ctx
                     .repos
                     .events
-                    .find_by_calendar(&id, Some(&timespan))
+                    .find_by_calendar(id, Some(timespan))
                     .await
                     .unwrap_or_default();
 
                 let all_event_instances = all_calendar_events
                     .iter()
-                    .map(|e| e.expand(Some(&timespan), &calendar.settings))
+                    .map(|e| e.expand(Some(timespan), &calendar.settings))
                     .flatten()
                     .collect::<Vec<_>>();
 
                 get_free_busy(all_event_instances).free
             }
-            TimePlan::Schedule(id) => match ctx.repos.schedules.find(&id).await {
-                Some(schedule) if schedule.user_id == user.user_id => schedule.freebusy(&timespan),
+            TimePlan::Schedule(id) => match ctx.repos.schedules.find(id).await {
+                Some(schedule) if schedule.user_id == user.user_id => schedule.freebusy(timespan),
                 _ => empty,
             },
             TimePlan::Empty => empty,
@@ -315,7 +316,7 @@ impl GetServiceBookingSlotsUseCase {
             match ctx
                 .repos
                 .events
-                .find_by_calendar(&cal.id, Some(&timespan))
+                .find_by_calendar(&cal.id, Some(timespan))
                 .await
             {
                 Ok(calendar_events) => {
@@ -323,25 +324,22 @@ impl GetServiceBookingSlotsUseCase {
                         .into_iter()
                         .filter(|e| e.busy)
                         .map(|e| {
-                            let mut instances = e.expand(Some(&timespan), &cal.settings);
+                            let mut instances = e.expand(Some(timespan), &cal.settings);
 
                             // Add buffer to instances if event is a service event
                             if let Some(service_id) = e.service_id {
-                                match all_service_resources
+                                if let Some(service_resource) = all_service_resources
                                     .iter()
                                     .find(|s| s.service_id == service_id)
                                 {
-                                    Some(service_resource) => {
-                                        let buffer_after_in_millis =
-                                            service_resource.buffer_after * 60 * 1000;
-                                        let buffer_before_in_millis =
-                                            service_resource.buffer_before * 60 * 1000;
-                                        for instance in instances.iter_mut() {
-                                            instance.end_ts += buffer_after_in_millis;
-                                            instance.start_ts -= buffer_before_in_millis;
-                                        }
+                                    let buffer_after_in_millis =
+                                        service_resource.buffer_after * 60 * 1000;
+                                    let buffer_before_in_millis =
+                                        service_resource.buffer_before * 60 * 1000;
+                                    for instance in instances.iter_mut() {
+                                        instance.end_ts += buffer_after_in_millis;
+                                        instance.start_ts -= buffer_before_in_millis;
                                     }
-                                    _ => (),
                                 }
                             }
 
@@ -360,13 +358,13 @@ impl GetServiceBookingSlotsUseCase {
 
         if !google_busy_calendar_ids.is_empty() {
             // TODO: no unwrap
-            let mut user = ctx
+            let user = ctx
                 .repos
                 .users
                 .find(&user.user_id)
                 .await
                 .expect("User to be found");
-            match GoogleCalendarProvider::new(&mut user, ctx).await {
+            match GoogleCalendarProvider::new(&user, ctx).await {
                 Ok(google_calendar_provider) => {
                     let query = FreeBusyProviderQuery {
                         calendar_ids: google_busy_calendar_ids,
@@ -389,25 +387,22 @@ impl GetServiceBookingSlotsUseCase {
 
         if !outlook_busy_calendar_ids.is_empty() {
             // TODO: no unwrap
-            let mut user = ctx
+            let user = ctx
                 .repos
                 .users
                 .find(&user.user_id)
                 .await
                 .expect("User to be found");
-            match OutlookCalendarProvider::new(&mut user, ctx).await {
-                Ok(provider) => {
-                    let query = FreeBusyProviderQuery {
-                        calendar_ids: outlook_busy_calendar_ids,
-                        end: timespan.end(),
-                        start: timespan.start(),
-                    };
-                    let outlook_busy = provider.freebusy(query).await;
-                    for outlook_busy_event in outlook_busy.inner() {
-                        busy_events.push(outlook_busy_event);
-                    }
+            if let Ok(provider) = OutlookCalendarProvider::new(&user, ctx).await {
+                let query = FreeBusyProviderQuery {
+                    calendar_ids: outlook_busy_calendar_ids,
+                    end: timespan.end(),
+                    start: timespan.start(),
+                };
+                let outlook_busy = provider.freebusy(query).await;
+                for outlook_busy_event in outlook_busy.inner() {
+                    busy_events.push(outlook_busy_event);
                 }
-                Err(_) => {}
             }
         }
 

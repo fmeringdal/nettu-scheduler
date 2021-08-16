@@ -28,14 +28,14 @@ struct ReminderRaw {
     identifier: String,
 }
 
-impl Into<Reminder> for ReminderRaw {
-    fn into(self) -> Reminder {
-        Reminder {
-            event_id: self.event_uid.into(),
-            account_id: self.account_uid.into(),
-            remind_at: self.remind_at,
-            version: self.version,
-            identifier: self.identifier,
+impl From<ReminderRaw> for Reminder {
+    fn from(e: ReminderRaw) -> Self {
+        Self {
+            event_id: e.event_uid.into(),
+            account_id: e.account_uid.into(),
+            remind_at: e.remind_at,
+            version: e.version,
+            identifier: e.identifier,
         }
     }
 }
@@ -46,7 +46,7 @@ impl IReminderRepo for PostgresReminderRepo {
         for reminder in reminders {
             sqlx::query!(
                 r#"
-            INSERT INTO reminders 
+            INSERT INTO reminders
             (event_uid, account_uid, remind_at, version, identifier)
             VALUES($1, $2, $3, $4, $5)
             "#,
@@ -60,24 +60,6 @@ impl IReminderRepo for PostgresReminderRepo {
             .await?;
         }
         Ok(())
-    }
-
-    async fn delete_all_before(&self, before: i64) -> Vec<Reminder> {
-        sqlx::query_as!(
-            ReminderRaw,
-            r#"
-            DELETE FROM reminders AS r
-            WHERE r.remind_at <= $1
-            RETURNING *
-            "#,
-            before,
-        )
-        .fetch_all(&self.pool)
-        .await
-        .unwrap_or(vec![])
-        .into_iter()
-        .map(|reminder| reminder.into())
-        .collect()
     }
 
     async fn init_version(&self, event_id: &ID) -> anyhow::Result<i64> {
@@ -118,5 +100,23 @@ impl IReminderRepo for PostgresReminderRepo {
         .await?;
 
         Ok(r_version.version)
+    }
+
+    async fn delete_all_before(&self, before: i64) -> Vec<Reminder> {
+        sqlx::query_as!(
+            ReminderRaw,
+            r#"
+            DELETE FROM reminders AS r
+            WHERE r.remind_at <= $1
+            RETURNING *
+            "#,
+            before,
+        )
+        .fetch_all(&self.pool)
+        .await
+        .unwrap_or_default()
+        .into_iter()
+        .map(|reminder| reminder.into())
+        .collect()
     }
 }

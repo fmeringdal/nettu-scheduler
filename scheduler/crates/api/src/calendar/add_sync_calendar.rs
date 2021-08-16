@@ -116,8 +116,7 @@ impl UseCase for AddSyncCalendarUseCase {
             .await
             .map_err(|_| UseCaseErrors::StorageError)?
             .into_iter()
-            .find(|c| c.provider == self.provider && c.ext_calendar_id == self.ext_calendar_id)
-            .is_some()
+            .any(|c| c.provider == self.provider && c.ext_calendar_id == self.ext_calendar_id)
         {
             return Err(UseCaseErrors::CalendarAlreadySynced);
         }
@@ -133,12 +132,11 @@ impl UseCase for AddSyncCalendarUseCase {
                     .await
                     .map_err(|_| UseCaseErrors::StorageError)?;
 
-                if google_calendars
+                if !google_calendars
                     .items
                     .into_iter()
                     .map(|c| c.id)
-                    .find(|google_calendar_id| google_calendar_id == &self.ext_calendar_id)
-                    .is_none()
+                    .any(|google_calendar_id| google_calendar_id == self.ext_calendar_id)
                 {
                     return Err(UseCaseErrors::ExternalCalendarNotFound);
                 }
@@ -152,12 +150,11 @@ impl UseCase for AddSyncCalendarUseCase {
                     .await
                     .map_err(|_| UseCaseErrors::StorageError)?;
 
-                if outlook_calendars
+                if !outlook_calendars
                     .value
                     .into_iter()
                     .map(|c| c.id)
-                    .find(|outlook_calendar_id| outlook_calendar_id == &self.ext_calendar_id)
-                    .is_none()
+                    .any(|outlook_calendar_id| outlook_calendar_id == self.ext_calendar_id)
                 {
                     return Err(UseCaseErrors::ExternalCalendarNotFound);
                 }

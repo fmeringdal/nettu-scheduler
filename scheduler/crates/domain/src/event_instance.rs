@@ -33,7 +33,7 @@ impl CompatibleInstances {
             }
             if let Some(merged) = EventInstance::merge(
                 &instance,
-                &compatible_events.get(compatible_events.len() - 1).unwrap(),
+                compatible_events.get(compatible_events.len() - 1).unwrap(),
             ) {
                 let len = compatible_events.len();
                 compatible_events[len - 1] = merged;

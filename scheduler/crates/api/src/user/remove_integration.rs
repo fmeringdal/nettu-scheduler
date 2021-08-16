@@ -85,10 +85,9 @@ impl UseCase for OAuthIntegrationUseCase {
             .find(&self.user.id)
             .await
             .map_err(|_| UseCaseErrors::StorageError)?;
-        if user_integrations
+        if !user_integrations
             .into_iter()
-            .find(|i| i.provider == self.provider)
-            .is_none()
+            .any(|i| i.provider == self.provider)
         {
             return Err(UseCaseErrors::IntegrationNotFound);
         };

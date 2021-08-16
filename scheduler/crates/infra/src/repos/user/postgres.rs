@@ -20,12 +20,12 @@ struct UserRaw {
     metadata: Vec<String>,
 }
 
-impl Into<User> for UserRaw {
-    fn into(self) -> User {
-        User {
-            id: self.user_uid.into(),
-            account_id: self.account_uid.into(),
-            metadata: extract_metadata(self.metadata),
+impl From<UserRaw> for User {
+    fn from(e: UserRaw) -> Self {
+        Self {
+            id: e.user_uid.into(),
+            account_id: e.account_uid.into(),
+            metadata: extract_metadata(e.metadata),
         }
     }
 }
@@ -106,7 +106,7 @@ impl IUserRepo for PostgresUserRepo {
     async fn find_many(&self, user_ids: &[ID]) -> Vec<User> {
         let user_ids = user_ids
             .iter()
-            .map(|id| id.inner_ref().clone())
+            .map(|id| *id.inner_ref())
             .collect::<Vec<_>>();
 
         let users: Vec<UserRaw> = sqlx::query_as!(
@@ -119,7 +119,7 @@ impl IUserRepo for PostgresUserRepo {
         )
         .fetch_all(&self.pool)
         .await
-        .unwrap_or(vec![]);
+        .unwrap_or_default();
 
         users.into_iter().map(|u| u.into()).collect()
     }
@@ -162,7 +162,7 @@ impl IUserRepo for PostgresUserRepo {
         )
         .fetch_all(&self.pool)
         .await
-        .unwrap_or(vec![]);
+        .unwrap_or_default();
 
         users.into_iter().map(|u| u.into()).collect()
     }

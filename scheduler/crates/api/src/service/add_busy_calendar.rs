@@ -148,11 +148,10 @@ impl UseCase for AddBusyCalendarUseCase {
                     .await
                     .map_err(|_| UseCaseErrors::StorageError)?;
 
-                if g_calendars
+                if !g_calendars
                     .items
                     .into_iter()
-                    .find(|g_calendar| g_calendar.id == *g_cal_id)
-                    .is_none()
+                    .any(|g_calendar| g_calendar.id == *g_cal_id)
                 {
                     return Err(UseCaseErrors::CalendarNotFound);
                 }
@@ -167,16 +166,15 @@ impl UseCase for AddBusyCalendarUseCase {
                     .await
                     .map_err(|_| UseCaseErrors::StorageError)?;
 
-                if o_calendars
+                if !o_calendars
                     .value
                     .into_iter()
-                    .find(|o_calendar| o_calendar.id == *o_cal_id)
-                    .is_none()
+                    .any(|o_calendar| o_calendar.id == *o_cal_id)
                 {
                     return Err(UseCaseErrors::CalendarNotFound);
                 }
             }
-            BusyCalendar::Nettu(n_cal_id) => match ctx.repos.calendars.find(&n_cal_id).await {
+            BusyCalendar::Nettu(n_cal_id) => match ctx.repos.calendars.find(n_cal_id).await {
                 Some(cal) if cal.user_id == user.id => (),
                 _ => return Err(UseCaseErrors::CalendarNotFound),
             },

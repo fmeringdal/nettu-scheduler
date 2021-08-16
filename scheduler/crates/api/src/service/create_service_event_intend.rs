@@ -103,7 +103,7 @@ impl UseCase for CreateServiceEventIntendUseCase {
         };
         let res = execute(get_bookingslots_usecase, ctx)
             .await
-            .map_err(|e| UseCaseErrors::BookingSlotsQuery(e))?;
+            .map_err(UseCaseErrors::BookingSlotsQuery)?;
         let service = res.service;
         let booking_slots_dates = res.booking_slots.dates;
 
@@ -115,7 +115,7 @@ impl UseCase for CreateServiceEventIntendUseCase {
                     if slot.start == self.timestamp {
                         // Check that all host users are available
                         for host_user_id in host_user_ids {
-                            if !slot.user_ids.contains(&host_user_id) {
+                            if !slot.user_ids.contains(host_user_id) {
                                 return Err(UseCaseErrors::UserNotAvailable);
                             }
                         }

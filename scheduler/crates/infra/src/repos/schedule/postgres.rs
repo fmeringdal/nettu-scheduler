@@ -30,7 +30,7 @@ fn extract_metadata(entries: Vec<String>) -> Metadata {
     entries
         .into_iter()
         .map(|row| {
-            let key_value = row.splitn(2, "_").collect::<Vec<_>>();
+            let key_value = row.splitn(2, '_').collect::<Vec<_>>();
             (key_value[0].to_string(), key_value[1].to_string())
         })
         .collect()
@@ -43,15 +43,18 @@ fn to_metadata(metadata: Metadata) -> Vec<String> {
         .collect()
 }
 
-impl Into<Schedule> for ScheduleRaw {
-    fn into(self) -> Schedule {
-        Schedule {
-            id: self.schedule_uid.into(),
-            user_id: self.user_uid.into(),
-            account_id: self.account_uid.into(),
-            rules: serde_json::from_value(self.rules).unwrap_or_default(),
-            timezone: self.timezone.parse().unwrap_or("UTC".parse().unwrap()),
-            metadata: extract_metadata(self.metadata),
+impl From<ScheduleRaw> for Schedule {
+    fn from(e: ScheduleRaw) -> Self {
+        Self {
+            id: e.schedule_uid.into(),
+            user_id: e.user_uid.into(),
+            account_id: e.account_uid.into(),
+            rules: serde_json::from_value(e.rules).unwrap_or_default(),
+            timezone: e
+                .timezone
+                .parse()
+                .unwrap_or_else(|_| "UTC".parse().unwrap()),
+            metadata: extract_metadata(e.metadata),
         }
     }
 }
@@ -121,7 +124,7 @@ impl IScheduleRepo for PostgresScheduleRepo {
     async fn find_many(&self, schedule_ids: &[ID]) -> Vec<Schedule> {
         let ids = schedule_ids
             .iter()
-            .map(|id| id.inner_ref().clone())
+            .map(|id| *id.inner_ref())
             .collect::<Vec<_>>();
         sqlx::query_as!(
             ScheduleRaw,
@@ -135,7 +138,7 @@ impl IScheduleRepo for PostgresScheduleRepo {
         )
         .fetch_all(&self.pool)
         .await
-        .unwrap_or(vec![])
+        .unwrap_or_default()
         .into_iter()
         .map(|e| e.into())
         .collect()
@@ -154,7 +157,7 @@ impl IScheduleRepo for PostgresScheduleRepo {
         )
         .fetch_all(&self.pool)
         .await
-        .unwrap_or(vec![]);
+        .unwrap_or_default();
 
         schedules.into_iter().map(|s| s.into()).collect()
     }
@@ -193,7 +196,7 @@ impl IScheduleRepo for PostgresScheduleRepo {
         )
         .fetch_all(&self.pool)
         .await
-        .unwrap_or(vec![]);
+        .unwrap_or_default();
 
         schedules.into_iter().map(|s| s.into()).collect()
     }

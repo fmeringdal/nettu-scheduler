@@ -69,7 +69,7 @@ impl From<CalendarEvent> for GoogleCalendarEventAttributes {
             end: GoogleCalendarEventDateTime::new(e.start_ts + e.duration),
             // Recurrence sync not supported yet
             recurrence: vec![],
-            // Wheter it blocks calendar time or not
+            // Whether it blocks calendar time or not
             transparency,
         }
     }
@@ -177,7 +177,6 @@ impl GoogleCalendarRestApi {
         {
             Ok(res) => res.json::<T>().await.map_err(|e| {
                 warn!("Google calendar api PUT deserialize error: {:?}", e);
-                ()
             }),
             Err(e) => {
                 warn!("Google calendar api PUT error: {:?}", e);
@@ -202,7 +201,6 @@ impl GoogleCalendarRestApi {
             Ok(res) => res.json::<T>().await.map_err(|e| {
                 println!("Google calendar api POST deserialize error: {:?}", e);
                 warn!("Google calendar api POST deserialize error: {:?}", e);
-                ()
             }),
             Err(e) => {
                 println!("Google calendar api POST error: {:?}", e);
@@ -222,7 +220,6 @@ impl GoogleCalendarRestApi {
         {
             Ok(res) => res.json::<T>().await.map_err(|e| {
                 warn!("Google calendar api GET deserialize error: {:?}", e);
-                ()
             }),
             Err(e) => {
                 warn!("Google calendar api get error: {:?}", e);
@@ -241,7 +238,6 @@ impl GoogleCalendarRestApi {
         {
             Ok(res) => res.json::<T>().await.map_err(|e| {
                 warn!("Error: {:?}", e);
-                ()
             }),
             Err(_) => Err(()),
         }

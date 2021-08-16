@@ -23,7 +23,7 @@ pub struct PEMKey(String);
 
 impl PEMKey {
     pub fn new(key: String) -> anyhow::Result<Self> {
-        jsonwebtoken::DecodingKey::from_rsa_pem(key.as_bytes().as_ref())?;
+        jsonwebtoken::DecodingKey::from_rsa_pem(key.as_bytes())?;
         Ok(Self(key))
     }
 

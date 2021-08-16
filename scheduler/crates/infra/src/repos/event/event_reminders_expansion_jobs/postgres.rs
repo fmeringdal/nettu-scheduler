@@ -20,12 +20,12 @@ struct JobRaw {
     version: i64,
 }
 
-impl Into<EventRemindersExpansionJob> for JobRaw {
-    fn into(self) -> EventRemindersExpansionJob {
-        EventRemindersExpansionJob {
-            event_id: self.event_uid.into(),
-            timestamp: self.timestamp,
-            version: self.version,
+impl From<JobRaw> for EventRemindersExpansionJob {
+    fn from(e: JobRaw) -> Self {
+        Self {
+            event_id: e.event_uid.into(),
+            timestamp: e.timestamp,
+            version: e.version,
         }
     }
 }
@@ -36,7 +36,7 @@ impl IEventRemindersGenerationJobsRepo for PostgresEventReminderGenerationJobsRe
         for job in jobs {
             sqlx::query!(
                 r#"
-            INSERT INTO calendar_event_reminder_generation_jobs 
+            INSERT INTO calendar_event_reminder_generation_jobs
             (event_uid, timestamp, version)
             VALUES($1, $2, $3)
             "#,
@@ -62,7 +62,7 @@ impl IEventRemindersGenerationJobsRepo for PostgresEventReminderGenerationJobsRe
         )
         .fetch_all(&self.pool)
         .await
-        .unwrap_or(vec![])
+        .unwrap_or_default()
         .into_iter()
         .map(|job| job.into())
         .collect()

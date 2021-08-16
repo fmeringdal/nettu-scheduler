@@ -111,8 +111,7 @@ impl UseCase for OAuthIntegrationUseCase {
             .map_err(|_| UseCaseErrors::StorageError)?;
         if user_integrations
             .into_iter()
-            .find(|i| i.provider == self.provider)
-            .is_some()
+            .any(|i| i.provider == self.provider)
         {
             return Err(UseCaseErrors::IntegrationAlreadyExists);
         };
