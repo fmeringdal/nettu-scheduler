@@ -26,12 +26,12 @@ pub enum NettuError {
 impl actix_web::error::ResponseError for NettuError {
     fn status_code(&self) -> StatusCode {
         match *self {
-            NettuError::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
-            NettuError::BadClientData(_) => StatusCode::BAD_REQUEST,
-            NettuError::Unauthorized(_) => StatusCode::UNAUTHORIZED,
-            NettuError::Conflict(_) => StatusCode::CONFLICT,
-            NettuError::NotFound(_) => StatusCode::NOT_FOUND,
-            NettuError::UnidentifiableClient(_) => StatusCode::UNAUTHORIZED,
+            Self::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
+            Self::BadClientData(_) => StatusCode::BAD_REQUEST,
+            Self::Unauthorized(_) => StatusCode::UNAUTHORIZED,
+            Self::Conflict(_) => StatusCode::CONFLICT,
+            Self::NotFound(_) => StatusCode::NOT_FOUND,
+            Self::UnidentifiableClient(_) => StatusCode::UNAUTHORIZED,
         }
     }
 

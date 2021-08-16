@@ -1,5 +1,4 @@
 use super::{BusyCalendarIdentifier, ExternalBusyCalendarIdentifier, IServiceUserBusyCalendarRepo};
-
 use nettu_scheduler_domain::{BusyCalendar, ID};
 use sqlx::{Done, FromRow, PgPool};
 

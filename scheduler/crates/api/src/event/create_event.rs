@@ -3,10 +3,7 @@ use crate::error::NettuError;
 use crate::event::subscribers::CreateSyncedEventsOnEventCreated;
 use crate::shared::{
     auth::{account_can_modify_user, protect_account_route, protect_route, Permission},
-    usecase::{
-        execute, execute_with_policy, PermissionBoundary, Subscriber, UseCase,
-        UseCaseErrorContainer,
-    },
+    usecase::{execute, execute_with_policy, PermissionBoundary, Subscriber, UseCase},
 };
 use actix_web::{web, HttpResponse};
 use nettu_scheduler_api_structs::create_event::*;
@@ -14,22 +11,6 @@ use nettu_scheduler_domain::{
     CalendarEvent, CalendarEventReminder, Metadata, RRuleOptions, User, ID,
 };
 use nettu_scheduler_infra::NettuContext;
-
-fn handle_error(e: UseCaseErrors) -> NettuError {
-    match e {
-        UseCaseErrors::NotFound(calendar_id) => NettuError::NotFound(format!(
-            "The calendar with id: {}, was not found.",
-            calendar_id
-        )),
-        UseCaseErrors::InvalidRecurrenceRule => {
-            NettuError::BadClientData("Invalid recurrence rule specified for the event".into())
-        }
-        UseCaseErrors::InvalidReminder => {
-            NettuError::BadClientData("Invalid reminder specified for the event".into())
-        }
-        UseCaseErrors::StorageError => NettuError::InternalError,
-    }
-}
 
 pub async fn create_event_admin_controller(
     http_req: web::HttpRequest,
@@ -56,7 +37,7 @@ pub async fn create_event_admin_controller(
     execute(usecase, &ctx)
         .await
         .map(|event| HttpResponse::Created().json(APIResponse::new(event)))
-        .map_err(handle_error)
+        .map_err(NettuError::from)
 }
 
 pub async fn create_event_controller(
@@ -82,10 +63,7 @@ pub async fn create_event_controller(
     execute_with_policy(usecase, &policy, &ctx)
         .await
         .map(|event| HttpResponse::Created().json(APIResponse::new(event)))
-        .map_err(|e| match e {
-            UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
-            UseCaseErrorContainer::UseCase(e) => handle_error(e),
-        })
+        .map_err(NettuError::from)
 }
 
 #[derive(Debug)]
@@ -102,25 +80,43 @@ pub struct CreateEventUseCase {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum UseCaseErrors {
+pub enum UseCaseError {
     InvalidRecurrenceRule,
     InvalidReminder,
     NotFound(ID),
     StorageError,
 }
 
+impl From<UseCaseError> for NettuError {
+    fn from(e: UseCaseError) -> Self {
+        match e {
+            UseCaseError::NotFound(calendar_id) => Self::NotFound(format!(
+                "The calendar with id: {}, was not found.",
+                calendar_id
+            )),
+            UseCaseError::InvalidRecurrenceRule => {
+                Self::BadClientData("Invalid recurrence rule specified for the event".into())
+            }
+            UseCaseError::InvalidReminder => {
+                Self::BadClientData("Invalid reminder specified for the event".into())
+            }
+            UseCaseError::StorageError => Self::InternalError,
+        }
+    }
+}
+
 #[async_trait::async_trait(?Send)]
 impl UseCase for CreateEventUseCase {
     type Response = CalendarEvent;
 
-    type Errors = UseCaseErrors;
+    type Error = UseCaseError;
 
     const NAME: &'static str = "CreateEvent";
 
-    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Error> {
         let calendar = match ctx.repos.calendars.find(&self.calendar_id).await {
             Some(calendar) if calendar.user_id == self.user.id => calendar,
-            _ => return Err(UseCaseErrors::NotFound(self.calendar_id.clone())),
+            _ => return Err(UseCaseError::NotFound(self.calendar_id.clone())),
         };
 
         let mut e = CalendarEvent {
@@ -143,21 +139,22 @@ impl UseCase for CreateEventUseCase {
 
         if let Some(rrule_opts) = self.recurrence.clone() {
             if !e.set_recurrence(rrule_opts, &calendar.settings, true) {
-                return Err(UseCaseErrors::InvalidRecurrenceRule);
+                return Err(UseCaseError::InvalidRecurrenceRule);
             };
         }
 
         // TODO: maybe have reminders length restriction
         for reminder in &self.reminders {
             if !reminder.is_valid() {
-                return Err(UseCaseErrors::InvalidReminder);
+                return Err(UseCaseError::InvalidReminder);
             }
         }
 
-        let repo_res = ctx.repos.events.insert(&e).await;
-        if repo_res.is_err() {
-            return Err(UseCaseErrors::StorageError);
-        }
+        ctx.repos
+            .events
+            .insert(&e)
+            .await
+            .map_err(|_| UseCaseError::StorageError)?;
 
         Ok(e)
     }
@@ -283,7 +280,7 @@ mod test {
         assert!(res.is_err());
         assert_eq!(
             res.unwrap_err(),
-            UseCaseErrors::NotFound(usecase.calendar_id)
+            UseCaseError::NotFound(usecase.calendar_id)
         );
     }
 

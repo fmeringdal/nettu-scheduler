@@ -1,9 +1,8 @@
 mod postgres;
 
+use super::shared::query_structs::MetadataFindQuery;
 use nettu_scheduler_domain::{Calendar, ID};
 pub use postgres::PostgresCalendarRepo;
-
-use super::shared::query_structs::MetadataFindQuery;
 
 #[async_trait::async_trait]
 pub trait ICalendarRepo: Send + Sync {

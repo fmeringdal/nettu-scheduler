@@ -1,10 +1,8 @@
 use crate::shared::usecase::UseCase;
-
 use futures::future;
 use nettu_scheduler_domain::{Calendar, CalendarEvent, EventRemindersExpansionJob, Reminder};
 use nettu_scheduler_infra::NettuContext;
 use std::iter::Iterator;
-
 use tracing::error;
 
 #[derive(Debug)]
@@ -29,7 +27,7 @@ pub enum SyncEventRemindersTrigger<'a> {
 }
 
 #[derive(Debug)]
-pub enum UseCaseErrors {
+pub enum UseCaseError {
     StorageError,
     CalendarNotFound,
 }
@@ -39,7 +37,7 @@ async fn create_event_reminders(
     calendar: &Calendar,
     version: i64,
     ctx: &NettuContext,
-) -> Result<(), UseCaseErrors> {
+) -> Result<(), UseCaseError> {
     let timestamp_now_millis = ctx.sys.get_timestamp_millis();
     let threshold_millis = timestamp_now_millis + 61 * 1000; // Now + 61 seconds
 
@@ -139,9 +137,11 @@ async fn create_event_reminders(
     };
 
     // create reminders for the next `self.expansion_interval`
-    if ctx.repos.reminders.bulk_insert(&reminders).await.is_err() {
-        return Err(UseCaseErrors::StorageError);
-    }
+    ctx.repos
+        .reminders
+        .bulk_insert(&reminders)
+        .await
+        .map_err(|_| UseCaseError::StorageError)?;
 
     Ok(())
 }
@@ -150,11 +150,11 @@ async fn create_event_reminders(
 impl<'a> UseCase for SyncEventRemindersUseCase<'a> {
     type Response = ();
 
-    type Errors = UseCaseErrors;
+    type Error = UseCaseError;
 
     const NAME: &'static str = "SyncEventReminders";
 
-    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Error> {
         match &self.request {
             SyncEventRemindersTrigger::EventModified(calendar_event, op) => {
                 let version = match op {
@@ -168,7 +168,7 @@ impl<'a> UseCase for SyncEventRemindersUseCase<'a> {
                                 "Unable to init event {:?} reminder version. Err: {:?}",
                                 calendar_event, e
                             );
-                            UseCaseErrors::StorageError
+                            UseCaseError::StorageError
                         })?,
                     // Delete existing reminders
                     &EventOperation::Updated => ctx
@@ -181,7 +181,7 @@ impl<'a> UseCase for SyncEventRemindersUseCase<'a> {
                                 "Unable to increment event {:?} reminder version. Err: {:?}",
                                 calendar_event, e
                             );
-                            UseCaseErrors::StorageError
+                            UseCaseError::StorageError
                         })?,
                 };
 
@@ -191,7 +191,7 @@ impl<'a> UseCase for SyncEventRemindersUseCase<'a> {
                     .calendars
                     .find(&calendar_event.calendar_id)
                     .await
-                    .ok_or(UseCaseErrors::CalendarNotFound)?;
+                    .ok_or(UseCaseError::CalendarNotFound)?;
 
                 create_event_reminders(calendar_event, &calendar, version, ctx).await
             }
@@ -209,7 +209,7 @@ impl<'a> UseCase for SyncEventRemindersUseCase<'a> {
 
                 let events = match ctx.repos.events.find_many(&event_ids).await {
                     Ok(events) => events,
-                    Err(_) => return Err(UseCaseErrors::StorageError),
+                    Err(_) => return Err(UseCaseError::StorageError),
                 };
 
                 future::join_all(

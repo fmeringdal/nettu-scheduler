@@ -17,7 +17,7 @@
 // //         query: Self::QueryParams,
 // //     ) -> Result<U, NettuError>;
 
-// //     fn handle_error(e: U::Errors) -> NettuError;
+// //     fn handle_error(e: U::Error) -> NettuError;
 // //     fn handle_ok(res: U::Response) -> HttpResponse;
 
 // //     async fn execute_controller(
@@ -32,7 +32,7 @@
 
 // #[async_trait::async_trait(?Send)]
 // pub trait APIController: UseCase {
-//     fn handle_error(e: Self::Errors) -> NettuError;
+//     fn handle_error(e: Self::Error) -> NettuError;
 //     fn handle_ok(res: Self::Response) -> HttpResponse;
 
 //     async fn execute_controller<P, B, Q>(
@@ -54,7 +54,7 @@
 // //     type Body = Params;
 // //     type QueryParams = Params;
 
-// //     fn handle_error(e: <CreateUserUseCase as UseCase>::Errors) -> NettuError {
+// //     fn handle_error(e: <CreateUserUseCase as UseCase>::Error) -> NettuError {
 // //         todo!()
 // //     }
 

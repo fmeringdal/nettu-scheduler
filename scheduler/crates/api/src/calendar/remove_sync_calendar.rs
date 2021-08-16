@@ -10,10 +10,10 @@ use nettu_scheduler_domain::IntegrationProvider;
 use nettu_scheduler_domain::{User, ID};
 use nettu_scheduler_infra::NettuContext;
 
-fn error_handler(e: UseCaseErrors) -> NettuError {
+fn error_handler(e: UseCaseError) -> NettuError {
     match e {
-        UseCaseErrors::StorageError => NettuError::InternalError,
-        UseCaseErrors::SyncNotFound => {
+        UseCaseError::StorageError => NettuError::InternalError,
+        UseCaseError::SyncNotFound => {
             NettuError::NotFound("The given calendar sync was not found.".to_string())
         }
     }
@@ -76,7 +76,7 @@ struct RemoveSyncCalendarUseCase {
 }
 
 #[derive(Debug)]
-enum UseCaseErrors {
+enum UseCaseError {
     SyncNotFound,
     StorageError,
 }
@@ -85,27 +85,27 @@ enum UseCaseErrors {
 impl UseCase for RemoveSyncCalendarUseCase {
     type Response = ();
 
-    type Errors = UseCaseErrors;
+    type Error = UseCaseError;
 
     const NAME: &'static str = "RemoveSyncCalendar";
 
-    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Error> {
         // Check if calendar sync exists
         let sync_calendar = ctx
             .repos
             .calendar_synced
             .find_by_calendar(&self.calendar_id)
             .await
-            .map_err(|_| UseCaseErrors::StorageError)?
+            .map_err(|_| UseCaseError::StorageError)?
             .into_iter()
             .find(|c| c.provider == self.provider && c.ext_calendar_id == self.ext_calendar_id)
-            .ok_or(UseCaseErrors::SyncNotFound)?;
+            .ok_or(UseCaseError::SyncNotFound)?;
 
         ctx.repos
             .calendar_synced
             .delete(&sync_calendar)
             .await
-            .map_err(|_| UseCaseErrors::StorageError)
+            .map_err(|_| UseCaseError::StorageError)
     }
 }
 

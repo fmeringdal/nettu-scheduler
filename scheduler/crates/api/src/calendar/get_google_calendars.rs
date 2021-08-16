@@ -11,15 +11,6 @@ use nettu_scheduler_domain::{
 };
 use nettu_scheduler_infra::{google_calendar::GoogleCalendarProvider, NettuContext};
 
-fn handle_errors(e: UseCaseErrors) -> NettuError {
-    match e {
-        UseCaseErrors::UserNotConnectedToGoogle => {
-            NettuError::BadClientData("The user is not connected to google.".into())
-        }
-        UseCaseErrors::GoogleQuery => NettuError::InternalError,
-    }
-}
-
 pub async fn get_google_calendars_admin_controller(
     http_req: web::HttpRequest,
     path: web::Path<PathParams>,
@@ -37,7 +28,7 @@ pub async fn get_google_calendars_admin_controller(
     execute(usecase, &ctx)
         .await
         .map(|calendars| HttpResponse::Ok().json(APIResponse::new(calendars)))
-        .map_err(handle_errors)
+        .map_err(NettuError::from)
 }
 
 pub async fn get_google_calendars_controller(
@@ -55,7 +46,7 @@ pub async fn get_google_calendars_controller(
     execute(usecase, &ctx)
         .await
         .map(|calendars| HttpResponse::Ok().json(APIResponse::new(calendars)))
-        .map_err(handle_errors)
+        .map_err(NettuError::from)
 }
 
 #[derive(Debug)]
@@ -65,28 +56,39 @@ struct GetGoogleCalendarsUseCase {
 }
 
 #[derive(Debug)]
-enum UseCaseErrors {
+enum UseCaseError {
     UserNotConnectedToGoogle,
     GoogleQuery,
+}
+
+impl From<UseCaseError> for NettuError {
+    fn from(e: UseCaseError) -> Self {
+        match e {
+            UseCaseError::UserNotConnectedToGoogle => {
+                Self::BadClientData("The user is not connected to google.".into())
+            }
+            UseCaseError::GoogleQuery => Self::InternalError,
+        }
+    }
 }
 
 #[async_trait::async_trait(?Send)]
 impl UseCase for GetGoogleCalendarsUseCase {
     type Response = Vec<GoogleCalendarListEntry>;
 
-    type Errors = UseCaseErrors;
+    type Error = UseCaseError;
 
     const NAME: &'static str = "GetGoogleCalendars";
 
-    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Error> {
         let provider = GoogleCalendarProvider::new(&self.user, ctx)
             .await
-            .map_err(|_| UseCaseErrors::UserNotConnectedToGoogle)?;
+            .map_err(|_| UseCaseError::UserNotConnectedToGoogle)?;
 
         provider
             .list(self.min_access_role.clone())
             .await
-            .map_err(|_| UseCaseErrors::GoogleQuery)
+            .map_err(|_| UseCaseError::GoogleQuery)
             .map(|res| res.items)
     }
 }

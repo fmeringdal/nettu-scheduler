@@ -1,9 +1,8 @@
 mod postgres;
 
+use nettu_scheduler_domain::ID;
 use nettu_scheduler_domain::{IntegrationProvider, UserIntegration};
 pub use postgres::{PostgresUserIntegrationRepo, UserIntegrationRaw};
-
-use nettu_scheduler_domain::ID;
 
 #[async_trait::async_trait]
 pub trait IUserIntegrationRepo: Send + Sync {

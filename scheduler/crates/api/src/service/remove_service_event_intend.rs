@@ -26,12 +26,7 @@ pub async fn remove_service_event_intend_controller(
     execute(usecase, &ctx)
         .await
         .map(|_| HttpResponse::Ok().json(APIResponse::default()))
-        .map_err(|e| match e {
-            UseCaseErrors::ServiceNotFound => {
-                NettuError::NotFound("The requested service was not found".into())
-            }
-            UseCaseErrors::StorageError => NettuError::InternalError,
-        })
+        .map_err(NettuError::from)
 }
 
 #[derive(Debug)]
@@ -45,29 +40,40 @@ struct RemoveServiceEventIntendUseCase {
 struct UseCaseRes {}
 
 #[derive(Debug)]
-enum UseCaseErrors {
+enum UseCaseError {
     ServiceNotFound,
     StorageError,
+}
+
+impl From<UseCaseError> for NettuError {
+    fn from(e: UseCaseError) -> Self {
+        match e {
+            UseCaseError::ServiceNotFound => {
+                Self::NotFound("The requested service was not found".into())
+            }
+            UseCaseError::StorageError => Self::InternalError,
+        }
+    }
 }
 
 #[async_trait::async_trait(?Send)]
 impl UseCase for RemoveServiceEventIntendUseCase {
     type Response = UseCaseRes;
 
-    type Errors = UseCaseErrors;
+    type Error = UseCaseError;
 
     const NAME: &'static str = "RemoveServiceEventIntend";
 
-    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Error> {
         match ctx.repos.services.find(&self.service_id).await {
             Some(s) if s.account_id == self.account.id => (),
-            _ => return Err(UseCaseErrors::ServiceNotFound),
+            _ => return Err(UseCaseError::ServiceNotFound),
         };
         ctx.repos
             .reservations
             .decrement(&self.service_id, self.timestamp)
             .await
             .map(|_| UseCaseRes {})
-            .map_err(|_| UseCaseErrors::StorageError)
+            .map_err(|_| UseCaseError::StorageError)
     }
 }

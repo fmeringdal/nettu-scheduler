@@ -8,15 +8,6 @@ use nettu_scheduler_api_structs::get_calendar::{APIResponse, PathParams};
 use nettu_scheduler_domain::{Calendar, ID};
 use nettu_scheduler_infra::NettuContext;
 
-fn handle_errors(e: UseCaseErrors) -> NettuError {
-    match e {
-        UseCaseErrors::NotFound(calendar_id) => NettuError::NotFound(format!(
-            "The calendar with id: {}, was not found.",
-            calendar_id
-        )),
-    }
-}
-
 pub async fn get_calendar_admin_controller(
     http_req: web::HttpRequest,
     path: web::Path<PathParams>,
@@ -33,7 +24,7 @@ pub async fn get_calendar_admin_controller(
     execute(usecase, &ctx)
         .await
         .map(|calendar| HttpResponse::Ok().json(APIResponse::new(calendar)))
-        .map_err(handle_errors)
+        .map_err(NettuError::from)
 }
 
 pub async fn get_calendar_controller(
@@ -51,7 +42,7 @@ pub async fn get_calendar_controller(
     execute(usecase, &ctx)
         .await
         .map(|calendar| HttpResponse::Ok().json(APIResponse::new(calendar)))
-        .map_err(handle_errors)
+        .map_err(NettuError::from)
 }
 
 #[derive(Debug)]
@@ -61,23 +52,33 @@ struct GetCalendarUseCase {
 }
 
 #[derive(Debug)]
-enum UseCaseErrors {
+enum UseCaseError {
     NotFound(ID),
+}
+impl From<UseCaseError> for NettuError {
+    fn from(e: UseCaseError) -> Self {
+        match e {
+            UseCaseError::NotFound(calendar_id) => Self::NotFound(format!(
+                "The calendar with id: {}, was not found.",
+                calendar_id
+            )),
+        }
+    }
 }
 
 #[async_trait::async_trait(?Send)]
 impl UseCase for GetCalendarUseCase {
     type Response = Calendar;
 
-    type Errors = UseCaseErrors;
+    type Error = UseCaseError;
 
     const NAME: &'static str = "GetCalendar";
 
-    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Error> {
         let cal = ctx.repos.calendars.find(&self.calendar_id).await;
         match cal {
             Some(cal) if cal.user_id == self.user_id => Ok(cal),
-            _ => Err(UseCaseErrors::NotFound(self.calendar_id.clone())),
+            _ => Err(UseCaseError::NotFound(self.calendar_id.clone())),
         }
     }
 }

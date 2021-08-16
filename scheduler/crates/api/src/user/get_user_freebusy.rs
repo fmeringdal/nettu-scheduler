@@ -44,11 +44,7 @@ pub async fn get_freebusy_controller(
                 user_id: usecase_res.user_id.to_string(),
             })
         })
-        .map_err(|e| match e {
-            UseCaseErrors::InvalidTimespan => {
-                NettuError::BadClientData("The provided start_ts and end_ts is invalid".into())
-            }
-        })
+        .map_err(NettuError::from)
 }
 
 #[derive(Debug)]
@@ -66,22 +62,32 @@ pub struct GetFreeBusyResponse {
 }
 
 #[derive(Debug)]
-pub enum UseCaseErrors {
+pub enum UseCaseError {
     InvalidTimespan,
+}
+
+impl From<UseCaseError> for NettuError {
+    fn from(e: UseCaseError) -> Self {
+        match e {
+            UseCaseError::InvalidTimespan => {
+                Self::BadClientData("The provided start_ts and end_ts is invalid".into())
+            }
+        }
+    }
 }
 
 #[async_trait::async_trait(?Send)]
 impl UseCase for GetFreeBusyUseCase {
     type Response = GetFreeBusyResponse;
 
-    type Errors = UseCaseErrors;
+    type Error = UseCaseError;
 
     const NAME: &'static str = "GetUserFreebusy";
 
-    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Error> {
         let timespan = TimeSpan::new(self.start_ts, self.end_ts);
         if timespan.greater_than(ctx.config.event_instances_query_duration_limit) {
-            return Err(UseCaseErrors::InvalidTimespan);
+            return Err(UseCaseError::InvalidTimespan);
         }
 
         let busy_event_instances = self

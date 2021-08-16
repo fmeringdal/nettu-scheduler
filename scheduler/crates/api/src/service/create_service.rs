@@ -22,9 +22,7 @@ pub async fn create_service_controller(
     execute(usecase, &ctx)
         .await
         .map(|usecase_res| HttpResponse::Created().json(APIResponse::new(usecase_res.service)))
-        .map_err(|e| match e {
-            UseCaseErrors::StorageError => NettuError::InternalError,
-        })
+        .map_err(NettuError::from)
 }
 
 #[derive(Debug)]
@@ -39,19 +37,27 @@ struct UseCaseRes {
 }
 
 #[derive(Debug)]
-enum UseCaseErrors {
+enum UseCaseError {
     StorageError,
+}
+
+impl From<UseCaseError> for NettuError {
+    fn from(e: UseCaseError) -> Self {
+        match e {
+            UseCaseError::StorageError => Self::InternalError,
+        }
+    }
 }
 
 #[async_trait::async_trait(?Send)]
 impl UseCase for CreateServiceUseCase {
     type Response = UseCaseRes;
 
-    type Errors = UseCaseErrors;
+    type Error = UseCaseError;
 
     const NAME: &'static str = "CreateService";
 
-    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Error> {
         let mut service = Service::new(self.account.id.clone());
         service.metadata = self.metadata.clone();
         service.multi_person = self.multi_person.clone();
@@ -61,6 +67,6 @@ impl UseCase for CreateServiceUseCase {
             .insert(&service)
             .await
             .map(|_| UseCaseRes { service })
-            .map_err(|_| UseCaseErrors::StorageError)
+            .map_err(|_| UseCaseError::StorageError)
     }
 }

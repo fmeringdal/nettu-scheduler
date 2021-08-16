@@ -14,12 +14,11 @@ use delete_user::delete_user_controller;
 use get_me::get_me_controller;
 use get_user::get_user_controller;
 use get_user_freebusy::get_freebusy_controller;
+pub use get_user_freebusy::parse_vec_query_value;
 use get_users_by_meta::get_users_by_meta_controller;
 use oauth_integration::*;
 use remove_integration::{remove_integration_admin_controller, remove_integration_controller};
 use update_user::update_user_controller;
-
-pub use get_user_freebusy::parse_vec_query_value;
 
 pub fn configure_routes(cfg: &mut web::ServiceConfig) {
     cfg.route("/user", web::post().to(create_user_controller));

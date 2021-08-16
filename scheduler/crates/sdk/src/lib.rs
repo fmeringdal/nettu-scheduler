@@ -9,20 +9,13 @@ mod status;
 mod user;
 
 use account::AccountClient;
-use calendar::CalendarClient;
-use event::CalendarEventClient;
-use schedule::ScheduleClient;
-use service::ServiceClient;
-use status::StatusClient;
-use std::sync::Arc;
-use user::UserClient;
-
 pub(crate) use base::{APIResponse, BaseClient};
-
+use calendar::CalendarClient;
 pub use calendar::{
     CreateCalendarInput, DeleteCalendarInput, GetCalendarEventsInput, GetCalendarInput,
     StopCalendarSyncInput, SyncCalendarInput, UpdateCalendarInput,
 };
+use event::CalendarEventClient;
 pub use event::{
     CreateEventInput, DeleteEventInput, GetEventInput, GetEventsInstancesInput, UpdateEventInput,
 };
@@ -32,14 +25,19 @@ pub use nettu_scheduler_domain::{
     CalendarEventReminder, IntegrationProvider, RRuleOptions, ScheduleRule,
     ServiceMultiPersonOptions, SyncedCalendar, TimePlan, ID,
 };
+use schedule::ScheduleClient;
 pub use schedule::{CreateScheduleInput, UpdateScheduleInput};
+use service::ServiceClient;
 pub use service::{
     AddBusyCalendar, AddServiceUserInput, CreateBookingIntendInput, CreateServiceInput,
     GetServiceBookingSlotsInput, RemoveBookingIntendInput, RemoveBusyCalendar,
     RemoveServiceUserInput, UpdateServiceInput, UpdateServiceUserInput,
 };
 pub use shared::{KVMetadata, MetadataFindInput};
+use status::StatusClient;
+use std::sync::Arc;
 pub use user::CreateUserInput;
+use user::UserClient;
 
 // Domain
 pub use nettu_scheduler_api_structs::dtos::AccountDTO as Account;

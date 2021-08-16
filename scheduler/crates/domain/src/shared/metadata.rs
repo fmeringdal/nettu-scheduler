@@ -1,6 +1,5 @@
-use std::collections::HashMap;
-
 use crate::{Entity, ID};
+use std::collections::HashMap;
 
 pub type Metadata = HashMap<String, String>;
 

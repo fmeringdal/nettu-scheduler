@@ -1,9 +1,8 @@
+use crate::{CodeTokenRequest, CodeTokenResponse, NettuContext};
 use chrono::Utc;
 use nettu_scheduler_domain::{IntegrationProvider, User};
-use tracing::error;
-
-use crate::{CodeTokenRequest, CodeTokenResponse, NettuContext};
 use serde::Deserialize;
+use tracing::error;
 
 // https://developers.google.com/identity/protocols/oauth2/web-server#httprest_3
 

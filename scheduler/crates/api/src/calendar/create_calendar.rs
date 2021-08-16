@@ -1,7 +1,7 @@
 use crate::shared::auth::{account_can_modify_user, Permission};
 use crate::shared::{
     auth::{protect_account_route, protect_route},
-    usecase::{execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
+    usecase::{execute_with_policy, PermissionBoundary},
 };
 use crate::{
     error::NettuError,
@@ -11,16 +11,6 @@ use actix_web::{web, HttpResponse};
 use nettu_scheduler_api_structs::create_calendar::{APIResponse, PathParams, RequestBody};
 use nettu_scheduler_domain::{Calendar, CalendarSettings, Metadata, ID};
 use nettu_scheduler_infra::NettuContext;
-
-fn error_handler(e: UseCaseErrors) -> NettuError {
-    match e {
-        UseCaseErrors::StorageError => NettuError::InternalError,
-        UseCaseErrors::InvalidCalendarSetting(e) => NettuError::BadClientData(e),
-        UseCaseErrors::UserNotFound => {
-            NettuError::NotFound("The requested user was not found.".to_string())
-        }
-    }
-}
 
 pub async fn create_calendar_admin_controller(
     http_req: web::HttpRequest,
@@ -42,7 +32,7 @@ pub async fn create_calendar_admin_controller(
     execute(usecase, &ctx)
         .await
         .map(|calendar| HttpResponse::Created().json(APIResponse::new(calendar)))
-        .map_err(error_handler)
+        .map_err(NettuError::from)
 }
 
 pub async fn create_calendar_controller(
@@ -63,10 +53,7 @@ pub async fn create_calendar_controller(
     execute_with_policy(usecase, &policy, &ctx)
         .await
         .map(|calendar| HttpResponse::Created().json(APIResponse::new(calendar)))
-        .map_err(|e| match e {
-            UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
-            UseCaseErrorContainer::UseCase(e) => error_handler(e),
-        })
+        .map_err(NettuError::from)
 }
 
 #[derive(Debug)]
@@ -79,35 +66,47 @@ struct CreateCalendarUseCase {
 }
 
 #[derive(Debug)]
-enum UseCaseErrors {
+enum UseCaseError {
     UserNotFound,
     InvalidCalendarSetting(String),
     StorageError,
+}
+
+impl From<UseCaseError> for NettuError {
+    fn from(e: UseCaseError) -> Self {
+        match e {
+            UseCaseError::StorageError => Self::InternalError,
+            UseCaseError::InvalidCalendarSetting(e) => Self::BadClientData(e),
+            UseCaseError::UserNotFound => {
+                Self::NotFound("The requested user was not found.".to_string())
+            }
+        }
+    }
 }
 
 #[async_trait::async_trait(?Send)]
 impl UseCase for CreateCalendarUseCase {
     type Response = Calendar;
 
-    type Errors = UseCaseErrors;
+    type Error = UseCaseError;
 
     const NAME: &'static str = "CreateCalendar";
 
-    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Error> {
         let user = match ctx.repos.users.find(&self.user_id).await {
             Some(user) if user.account_id == self.account_id => user,
-            _ => return Err(UseCaseErrors::UserNotFound),
+            _ => return Err(UseCaseError::UserNotFound),
         };
 
         let mut settings = CalendarSettings::default();
         if !settings.set_timezone(&self.timezone) {
-            return Err(UseCaseErrors::InvalidCalendarSetting(format!(
+            return Err(UseCaseError::InvalidCalendarSetting(format!(
                 "Invalid timezone given: {:?}",
                 self.timezone
             )));
         }
         if !settings.set_week_start(self.week_start) {
-            return Err(UseCaseErrors::InvalidCalendarSetting(format!(
+            return Err(UseCaseError::InvalidCalendarSetting(format!(
                 "Invalid week_start given: {:?}",
                 self.week_start
             )));
@@ -122,7 +121,7 @@ impl UseCase for CreateCalendarUseCase {
             .insert(&calendar)
             .await
             .map(|_| calendar)
-            .map_err(|_| UseCaseErrors::StorageError)
+            .map_err(|_| UseCaseError::StorageError)
     }
 }
 

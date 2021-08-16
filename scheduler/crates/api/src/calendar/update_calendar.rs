@@ -2,26 +2,13 @@ use crate::shared::{
     auth::{
         account_can_modify_calendar, account_can_modify_user, protect_account_route, Permission,
     },
-    usecase::{execute, execute_with_policy, PermissionBoundary, UseCase, UseCaseErrorContainer},
+    usecase::{execute, execute_with_policy, PermissionBoundary, UseCase},
 };
 use crate::{error::NettuError, shared::auth::protect_route};
 use actix_web::{web, HttpResponse};
 use nettu_scheduler_api_structs::update_calendar::{APIResponse, PathParams, RequestBody};
 use nettu_scheduler_domain::{Calendar, Metadata, User, ID};
 use nettu_scheduler_infra::NettuContext;
-
-fn handle_errors(e: UseCaseErrors) -> NettuError {
-    match e {
-        UseCaseErrors::StorageError => NettuError::InternalError,
-        UseCaseErrors::CalendarNotFound => {
-            NettuError::NotFound("The calendar was not found.".into())
-        }
-        UseCaseErrors::InvalidSettings(err) => NettuError::BadClientData(format!(
-            "Bad calendar settings provided. Error message: {}",
-            err
-        )),
-    }
-}
 
 pub async fn update_calendar_admin_controller(
     http_req: web::HttpRequest,
@@ -44,7 +31,7 @@ pub async fn update_calendar_admin_controller(
     execute(usecase, &ctx)
         .await
         .map(|calendar| HttpResponse::Ok().json(APIResponse::new(calendar)))
-        .map_err(handle_errors)
+        .map_err(NettuError::from)
 }
 
 pub async fn update_calendar_controller(
@@ -66,10 +53,7 @@ pub async fn update_calendar_controller(
     execute_with_policy(usecase, &policy, &ctx)
         .await
         .map(|calendar| HttpResponse::Ok().json(APIResponse::new(calendar)))
-        .map_err(|e| match e {
-            UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
-            UseCaseErrorContainer::UseCase(e) => handle_errors(e),
-        })
+        .map_err(NettuError::from)
 }
 
 #[derive(Debug)]
@@ -82,29 +66,42 @@ struct UpdateCalendarUseCase {
 }
 
 #[derive(Debug)]
-enum UseCaseErrors {
+enum UseCaseError {
     CalendarNotFound,
     StorageError,
     InvalidSettings(String),
+}
+
+impl From<UseCaseError> for NettuError {
+    fn from(e: UseCaseError) -> Self {
+        match e {
+            UseCaseError::StorageError => Self::InternalError,
+            UseCaseError::CalendarNotFound => Self::NotFound("The calendar was not found.".into()),
+            UseCaseError::InvalidSettings(err) => Self::BadClientData(format!(
+                "Bad calendar settings provided. Error message: {}",
+                err
+            )),
+        }
+    }
 }
 
 #[async_trait::async_trait(?Send)]
 impl UseCase for UpdateCalendarUseCase {
     type Response = Calendar;
 
-    type Errors = UseCaseErrors;
+    type Error = UseCaseError;
 
     const NAME: &'static str = "UpdateCalendar";
 
-    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Error> {
         let mut calendar = match ctx.repos.calendars.find(&self.calendar_id).await {
             Some(cal) if cal.user_id == self.user.id => cal,
-            _ => return Err(UseCaseErrors::CalendarNotFound),
+            _ => return Err(UseCaseError::CalendarNotFound),
         };
 
         if let Some(wkst) = self.week_start {
             if !calendar.settings.set_week_start(wkst) {
-                return Err(UseCaseErrors::InvalidSettings(format!(
+                return Err(UseCaseError::InvalidSettings(format!(
                     "Invalid week start: {}, must be between 0 and 6",
                     wkst
                 )));
@@ -113,7 +110,7 @@ impl UseCase for UpdateCalendarUseCase {
 
         if let Some(timezone) = &self.timezone {
             if !calendar.settings.set_timezone(timezone) {
-                return Err(UseCaseErrors::InvalidSettings(format!(
+                return Err(UseCaseError::InvalidSettings(format!(
                     "Invalid timezone: {}, must be a valid IANA Timezone string",
                     timezone
                 )));
@@ -129,7 +126,7 @@ impl UseCase for UpdateCalendarUseCase {
             .save(&calendar)
             .await
             .map(|_| calendar)
-            .map_err(|_| UseCaseErrors::StorageError)
+            .map_err(|_| UseCaseError::StorageError)
     }
 }
 

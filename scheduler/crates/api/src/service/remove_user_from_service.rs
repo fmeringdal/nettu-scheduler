@@ -6,7 +6,6 @@ use crate::{
     },
 };
 use actix_web::{web, HttpRequest, HttpResponse};
-
 use nettu_scheduler_api_structs::remove_user_from_service::*;
 use nettu_scheduler_domain::{Account, ID};
 use nettu_scheduler_infra::NettuContext;
@@ -27,14 +26,7 @@ pub async fn remove_user_from_service_controller(
     execute(usecase, &ctx)
         .await
         .map(|_usecase_res| HttpResponse::Ok().json(APIResponse::from("User removed from service")))
-        .map_err(|e| match e {
-            UseCaseErrors::ServiceNotFound => {
-                NettuError::NotFound("The requested service was not found".to_string())
-            }
-            UseCaseErrors::UserNotFound => {
-                NettuError::NotFound("The specified user was not found in the service".to_string())
-            }
-        })
+        .map_err(NettuError::from)
 }
 
 #[derive(Debug)]
@@ -48,23 +40,36 @@ struct RemoveUserFromServiceUseCase {
 struct UseCaseRes {}
 
 #[derive(Debug)]
-enum UseCaseErrors {
+enum UseCaseError {
     ServiceNotFound,
     UserNotFound,
+}
+
+impl From<UseCaseError> for NettuError {
+    fn from(e: UseCaseError) -> Self {
+        match e {
+            UseCaseError::ServiceNotFound => {
+                Self::NotFound("The requested service was not found".to_string())
+            }
+            UseCaseError::UserNotFound => {
+                Self::NotFound("The specified user was not found in the service".to_string())
+            }
+        }
+    }
 }
 
 #[async_trait::async_trait(?Send)]
 impl UseCase for RemoveUserFromServiceUseCase {
     type Response = UseCaseRes;
 
-    type Errors = UseCaseErrors;
+    type Error = UseCaseError;
 
     const NAME: &'static str = "RemoveUserFromService";
 
-    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Error> {
         let service = match ctx.repos.services.find(&self.service_id).await {
             Some(service) if service.account_id == self.account.id => service,
-            _ => return Err(UseCaseErrors::ServiceNotFound),
+            _ => return Err(UseCaseError::ServiceNotFound),
         };
 
         ctx.repos
@@ -72,6 +77,6 @@ impl UseCase for RemoveUserFromServiceUseCase {
             .delete(&service.id, &self.user_id)
             .await
             .map(|_| UseCaseRes {})
-            .map_err(|_| UseCaseErrors::UserNotFound)
+            .map_err(|_| UseCaseError::UserNotFound)
     }
 }

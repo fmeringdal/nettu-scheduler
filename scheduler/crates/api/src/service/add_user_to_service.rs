@@ -27,14 +27,10 @@ pub async fn add_user_to_service_controller(
         furthest_booking_time: body.furthest_booking_time,
     };
 
-    execute(usecase, &ctx).await
+    execute(usecase, &ctx)
+        .await
         .map(|res| HttpResponse::Ok().json(APIResponse::new(res.user)))
-        .map_err(|e| match e {
-            UseCaseErrors::ServiceNotFound => NettuError::NotFound("The requested service was not found".into()),
-            UseCaseErrors::UserNotFound => NettuError::NotFound("The specified user was not found".into()),
-            UseCaseErrors::UserAlreadyInService => NettuError::Conflict("The specified user is already registered on the service, can not add the user more than once.".into()),
-            UseCaseErrors::InvalidValue(e) => e.to_nettu_error(),
-        })
+        .map_err(NettuError::from)
 }
 
 #[derive(Debug)]
@@ -55,22 +51,33 @@ struct UseCaseRes {
 }
 
 #[derive(Debug)]
-enum UseCaseErrors {
+enum UseCaseError {
     ServiceNotFound,
     UserNotFound,
     UserAlreadyInService,
     InvalidValue(UpdateServiceResourceError),
 }
 
+impl From<UseCaseError> for NettuError {
+    fn from(e: UseCaseError) -> Self {
+        match e {
+            UseCaseError::ServiceNotFound => Self::NotFound("The requested service was not found".into()),
+            UseCaseError::UserNotFound => Self::NotFound("The specified user was not found".into()),
+            UseCaseError::UserAlreadyInService => Self::Conflict("The specified user is already registered on the service, can not add the user more than once.".into()),
+            UseCaseError::InvalidValue(e) => e.to_nettu_error(),
+        }
+    }
+}
+
 #[async_trait::async_trait(?Send)]
 impl UseCase for AddUserToServiceUseCase {
     type Response = UseCaseRes;
 
-    type Errors = UseCaseErrors;
+    type Error = UseCaseError;
 
     const NAME: &'static str = "AddUserToService";
 
-    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Error> {
         if ctx
             .repos
             .users
@@ -78,12 +85,12 @@ impl UseCase for AddUserToServiceUseCase {
             .await
             .is_none()
         {
-            return Err(UseCaseErrors::UserNotFound);
+            return Err(UseCaseError::UserNotFound);
         }
 
         let service = match ctx.repos.services.find(&self.service_id).await {
             Some(service) if service.account_id == self.account.id => service,
-            _ => return Err(UseCaseErrors::ServiceNotFound),
+            _ => return Err(UseCaseError::ServiceNotFound),
         };
 
         let mut user_resource =
@@ -101,7 +108,7 @@ impl UseCase for AddUserToServiceUseCase {
             ctx,
         )
         .await
-        .map_err(UseCaseErrors::InvalidValue)?;
+        .map_err(UseCaseError::InvalidValue)?;
 
         ctx.repos
             .service_users
@@ -110,7 +117,7 @@ impl UseCase for AddUserToServiceUseCase {
             .map(|_| UseCaseRes {
                 user: user_resource,
             })
-            .map_err(|_| UseCaseErrors::UserAlreadyInService)
+            .map_err(|_| UseCaseError::UserAlreadyInService)
     }
 }
 

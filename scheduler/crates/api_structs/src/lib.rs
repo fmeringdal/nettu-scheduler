@@ -5,7 +5,6 @@ mod schedule;
 mod service;
 mod status;
 mod user;
-
 pub mod dtos {
     pub use crate::account::dtos::*;
     pub use crate::calendar::dtos::*;
@@ -14,7 +13,6 @@ pub mod dtos {
     pub use crate::service::dtos::*;
     pub use crate::user::dtos::*;
 }
-
 pub use crate::account::api::*;
 pub use crate::calendar::api::*;
 pub use crate::event::api::*;

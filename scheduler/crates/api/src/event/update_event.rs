@@ -6,10 +6,7 @@ use crate::{
         auth::{
             account_can_modify_event, account_can_modify_user, protect_account_route, Permission,
         },
-        usecase::{
-            execute, execute_with_policy, PermissionBoundary, Subscriber, UseCase,
-            UseCaseErrorContainer,
-        },
+        usecase::{execute, execute_with_policy, PermissionBoundary, Subscriber, UseCase},
     },
 };
 use actix_web::{web, HttpRequest, HttpResponse};
@@ -19,22 +16,6 @@ use nettu_scheduler_domain::{
     CalendarEvent, CalendarEventReminder, Metadata, RRuleOptions, User, ID,
 };
 use nettu_scheduler_infra::NettuContext;
-
-fn handle_error(e: UseCaseErrors) -> NettuError {
-    match e {
-        UseCaseErrors::NotFound(entity, event_id) => NettuError::NotFound(format!(
-            "The {} with id: {}, was not found.",
-            entity, event_id
-        )),
-        UseCaseErrors::InvalidRecurrenceRule => {
-            NettuError::BadClientData("Invalid recurrence rule specified for the event".into())
-        }
-        UseCaseErrors::InvalidReminder => {
-            NettuError::BadClientData("Invalid reminder specified for the event".into())
-        }
-        UseCaseErrors::StorageError => NettuError::InternalError,
-    }
-}
 
 pub async fn update_event_admin_controller(
     http_req: HttpRequest,
@@ -63,7 +44,7 @@ pub async fn update_event_admin_controller(
     execute(usecase, &ctx)
         .await
         .map(|event| HttpResponse::Ok().json(APIResponse::new(event)))
-        .map_err(handle_error)
+        .map_err(NettuError::from)
 }
 
 pub async fn update_event_controller(
@@ -91,10 +72,7 @@ pub async fn update_event_controller(
     execute_with_policy(usecase, &policy, &ctx)
         .await
         .map(|event| HttpResponse::Ok().json(APIResponse::new(event)))
-        .map_err(|e| match e {
-            UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
-            UseCaseErrorContainer::UseCase(e) => handle_error(e),
-        })
+        .map_err(NettuError::from)
 }
 
 #[derive(Debug)]
@@ -112,22 +90,40 @@ pub struct UpdateEventUseCase {
 }
 
 #[derive(Debug)]
-pub enum UseCaseErrors {
+pub enum UseCaseError {
     NotFound(String, ID),
     InvalidReminder,
     StorageError,
     InvalidRecurrenceRule,
 }
 
+impl From<UseCaseError> for NettuError {
+    fn from(e: UseCaseError) -> Self {
+        match e {
+            UseCaseError::NotFound(entity, event_id) => Self::NotFound(format!(
+                "The {} with id: {}, was not found.",
+                entity, event_id
+            )),
+            UseCaseError::InvalidRecurrenceRule => {
+                Self::BadClientData("Invalid recurrence rule specified for the event".into())
+            }
+            UseCaseError::InvalidReminder => {
+                Self::BadClientData("Invalid reminder specified for the event".into())
+            }
+            UseCaseError::StorageError => Self::InternalError,
+        }
+    }
+}
+
 #[async_trait::async_trait(?Send)]
 impl UseCase for UpdateEventUseCase {
     type Response = CalendarEvent;
 
-    type Errors = UseCaseErrors;
+    type Error = UseCaseError;
 
     const NAME: &'static str = "UpdateEvent";
 
-    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Error> {
         let UpdateEventUseCase {
             user,
             event_id,
@@ -144,7 +140,7 @@ impl UseCase for UpdateEventUseCase {
         let mut e = match ctx.repos.events.find(event_id).await {
             Some(event) if event.user_id == user.id => event,
             _ => {
-                return Err(UseCaseErrors::NotFound(
+                return Err(UseCaseError::NotFound(
                     "Calendar Event".into(),
                     event_id.clone(),
                 ))
@@ -163,7 +159,7 @@ impl UseCase for UpdateEventUseCase {
         if let Some(reminders) = &reminders {
             for reminder in reminders {
                 if !reminder.is_valid() {
-                    return Err(UseCaseErrors::InvalidReminder);
+                    return Err(UseCaseError::InvalidReminder);
                 }
             }
             e.reminders = reminders.clone();
@@ -172,7 +168,7 @@ impl UseCase for UpdateEventUseCase {
         let calendar = match ctx.repos.calendars.find(&e.calendar_id).await {
             Some(cal) => cal,
             _ => {
-                return Err(UseCaseErrors::NotFound(
+                return Err(UseCaseError::NotFound(
                     "Calendar".into(),
                     e.calendar_id.clone(),
                 ))
@@ -209,7 +205,7 @@ impl UseCase for UpdateEventUseCase {
         };
 
         if !valid_recurrence {
-            return Err(UseCaseErrors::InvalidRecurrenceRule);
+            return Err(UseCaseError::InvalidRecurrenceRule);
         };
 
         e.updated = ctx.sys.get_timestamp_millis();
@@ -219,7 +215,7 @@ impl UseCase for UpdateEventUseCase {
             .save(&e)
             .await
             .map(|_| e.clone())
-            .map_err(|_| UseCaseErrors::StorageError)
+            .map_err(|_| UseCaseError::StorageError)
     }
 
     fn subscribers() -> Vec<Box<dyn Subscriber<Self>>> {

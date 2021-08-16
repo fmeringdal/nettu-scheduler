@@ -3,7 +3,7 @@ use crate::shared::{
         account_can_modify_event, account_can_modify_user, protect_account_route, protect_route,
         Permission,
     },
-    usecase::{execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
+    usecase::{execute_with_policy, PermissionBoundary},
 };
 use crate::{
     error::NettuError,
@@ -17,16 +17,6 @@ use nettu_scheduler_infra::{
     NettuContext,
 };
 use tracing::error;
-
-fn handle_error(e: UseCaseErrors) -> NettuError {
-    match e {
-        UseCaseErrors::StorageError => NettuError::InternalError,
-        UseCaseErrors::NotFound(event_id) => NettuError::NotFound(format!(
-            "The calendar event with id: {}, was not found.",
-            event_id
-        )),
-    }
-}
 
 pub async fn delete_event_admin_controller(
     http_req: HttpRequest,
@@ -45,7 +35,7 @@ pub async fn delete_event_admin_controller(
     execute(usecase, &ctx)
         .await
         .map(|event| HttpResponse::Ok().json(APIResponse::new(event)))
-        .map_err(handle_error)
+        .map_err(NettuError::from)
 }
 
 pub async fn delete_event_controller(
@@ -63,10 +53,7 @@ pub async fn delete_event_controller(
     execute_with_policy(usecase, &policy, &ctx)
         .await
         .map(|event| HttpResponse::Ok().json(APIResponse::new(event)))
-        .map_err(|e| match e {
-            UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
-            UseCaseErrorContainer::UseCase(e) => handle_error(e),
-        })
+        .map_err(NettuError::from)
 }
 
 #[derive(Debug)]
@@ -76,24 +63,36 @@ pub struct DeleteEventUseCase {
 }
 
 #[derive(Debug)]
-pub enum UseCaseErrors {
+pub enum UseCaseError {
     NotFound(ID),
     StorageError,
+}
+
+impl From<UseCaseError> for NettuError {
+    fn from(e: UseCaseError) -> Self {
+        match e {
+            UseCaseError::StorageError => Self::InternalError,
+            UseCaseError::NotFound(event_id) => Self::NotFound(format!(
+                "The calendar event with id: {}, was not found.",
+                event_id
+            )),
+        }
+    }
 }
 
 #[async_trait::async_trait(?Send)]
 impl UseCase for DeleteEventUseCase {
     type Response = CalendarEvent;
 
-    type Errors = UseCaseErrors;
+    type Error = UseCaseError;
 
     const NAME: &'static str = "DeleteEvent";
 
     // TODO: use only one db call
-    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Error> {
         let e = match ctx.repos.events.find(&self.event_id).await {
             Some(e) if e.user_id == self.user.id => e,
-            _ => return Err(UseCaseErrors::NotFound(self.event_id.clone())),
+            _ => return Err(UseCaseError::NotFound(self.event_id.clone())),
         };
 
         self.delete_synced_events(&e, ctx).await;
@@ -102,7 +101,7 @@ impl UseCase for DeleteEventUseCase {
             .events
             .delete(&e.id)
             .await
-            .map_err(|_| UseCaseErrors::StorageError)?;
+            .map_err(|_| UseCaseError::StorageError)?;
 
         Ok(e)
     }

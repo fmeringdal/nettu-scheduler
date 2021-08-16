@@ -46,13 +46,7 @@ pub async fn create_service_event_intend_controller(
                 res.create_event_for_hosts,
             ))
         })
-        .map_err(|e| match e {
-            UseCaseErrors::UserNotAvailable => {
-                NettuError::BadClientData("The user is not available at the given time".into())
-            }
-            UseCaseErrors::StorageError => NettuError::InternalError,
-            UseCaseErrors::BookingSlotsQuery(e) => e.into(),
-        })
+        .map_err(NettuError::from)
 }
 
 #[derive(Debug)]
@@ -72,21 +66,33 @@ struct UseCaseRes {
 }
 
 #[derive(Debug)]
-enum UseCaseErrors {
+enum UseCaseError {
     UserNotAvailable,
     StorageError,
-    BookingSlotsQuery(get_service_bookingslots::UseCaseErrors),
+    BookingSlotsQuery(get_service_bookingslots::UseCaseError),
+}
+
+impl From<UseCaseError> for NettuError {
+    fn from(e: UseCaseError) -> Self {
+        match e {
+            UseCaseError::UserNotAvailable => {
+                Self::BadClientData("The user is not available at the given time".into())
+            }
+            UseCaseError::StorageError => Self::InternalError,
+            UseCaseError::BookingSlotsQuery(e) => e.into(),
+        }
+    }
 }
 
 #[async_trait::async_trait(?Send)]
 impl UseCase for CreateServiceEventIntendUseCase {
     type Response = UseCaseRes;
 
-    type Errors = UseCaseErrors;
+    type Error = UseCaseError;
 
     const NAME: &'static str = "CreateServiceEventIntend";
 
-    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Error> {
         let start = UTC.timestamp_millis(self.timestamp);
         let start_date = format_date(&start);
         let day_after = start + Duration::days(1);
@@ -103,7 +109,7 @@ impl UseCase for CreateServiceEventIntendUseCase {
         };
         let res = execute(get_bookingslots_usecase, ctx)
             .await
-            .map_err(UseCaseErrors::BookingSlotsQuery)?;
+            .map_err(UseCaseError::BookingSlotsQuery)?;
         let service = res.service;
         let booking_slots_dates = res.booking_slots.dates;
 
@@ -116,7 +122,7 @@ impl UseCase for CreateServiceEventIntendUseCase {
                         // Check that all host users are available
                         for host_user_id in host_user_ids {
                             if !slot.user_ids.contains(host_user_id) {
-                                return Err(UseCaseErrors::UserNotAvailable);
+                                return Err(UseCaseError::UserNotAvailable);
                             }
                         }
                         found_slot = true;
@@ -131,7 +137,7 @@ impl UseCase for CreateServiceEventIntendUseCase {
                 }
             }
             if !found_slot {
-                return Err(UseCaseErrors::UserNotAvailable);
+                return Err(UseCaseError::UserNotAvailable);
             }
             host_user_ids.clone()
         } else {
@@ -143,7 +149,7 @@ impl UseCase for CreateServiceEventIntendUseCase {
                         break;
                     }
                     if slot.start > self.timestamp {
-                        return Err(UseCaseErrors::UserNotAvailable);
+                        return Err(UseCaseError::UserNotAvailable);
                     }
                 }
                 if !hosts_at_slot.is_empty() {
@@ -157,7 +163,7 @@ impl UseCase for CreateServiceEventIntendUseCase {
                 .collect::<Vec<_>>();
 
             if hosts_at_slot.is_empty() {
-                return Err(UseCaseErrors::UserNotAvailable);
+                return Err(UseCaseError::UserNotAvailable);
             } else {
                 let user_ids_at_slot = hosts_at_slot
                     .iter()
@@ -227,7 +233,7 @@ impl UseCase for CreateServiceEventIntendUseCase {
 
                         // Check that all the hosts are available
                         if user_ids_at_slot.len() < all_hosts_user_ids.len() {
-                            return Err(UseCaseErrors::UserNotAvailable);
+                            return Err(UseCaseError::UserNotAvailable);
                         }
 
                         all_hosts_user_ids
@@ -241,7 +247,7 @@ impl UseCase for CreateServiceEventIntendUseCase {
 
                         // Check that all the hosts are available
                         if user_ids_at_slot.len() < all_hosts_user_ids.len() {
-                            return Err(UseCaseErrors::UserNotAvailable);
+                            return Err(UseCaseError::UserNotAvailable);
                         }
 
                         let reservations = ctx
@@ -249,7 +255,7 @@ impl UseCase for CreateServiceEventIntendUseCase {
                             .reservations
                             .count(&service.id, self.timestamp)
                             .await
-                            .map_err(|_| UseCaseErrors::StorageError)?;
+                            .map_err(|_| UseCaseError::StorageError)?;
                         if reservations + 1 < *max_count {
                             // Client do not need to create service event yet
                             create_event_for_hosts = false;
@@ -259,7 +265,7 @@ impl UseCase for CreateServiceEventIntendUseCase {
                             .reservations
                             .increment(&service.id, self.timestamp)
                             .await
-                            .map_err(|_| UseCaseErrors::StorageError)?;
+                            .map_err(|_| UseCaseError::StorageError)?;
 
                         all_hosts_user_ids
                     }

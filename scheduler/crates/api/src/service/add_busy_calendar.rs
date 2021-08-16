@@ -36,18 +36,7 @@ pub async fn add_busy_calendar_controller(
     execute(usecase, &ctx)
         .await
         .map(|_| HttpResponse::Ok().json(APIResponse::from("Busy calendar added to service user")))
-        .map_err(|e| match e {
-            UseCaseErrors::StorageError => NettuError::InternalError,
-            UseCaseErrors::CalendarNotFound => {
-                NettuError::NotFound("The requested calendar was not found or user is missing permissions to read the calendar".into())
-            }
-            UseCaseErrors::UserNotFound => {
-                NettuError::NotFound("The specified user was not found".into())
-            }
-            UseCaseErrors::CalendarAlreadyRegistered => NettuError::Conflict(
-                "The busy calendar is already registered on the service user".into(),
-            ),
-        })
+        .map_err(NettuError::from)
 }
 
 #[derive(Debug)]
@@ -59,28 +48,45 @@ struct AddBusyCalendarUseCase {
 }
 
 #[derive(Debug)]
-enum UseCaseErrors {
+enum UseCaseError {
     StorageError,
     UserNotFound,
     CalendarAlreadyRegistered,
     CalendarNotFound,
 }
 
+impl From<UseCaseError> for NettuError {
+    fn from(e: UseCaseError) -> Self {
+        match e {
+            UseCaseError::StorageError => Self::InternalError,
+            UseCaseError::CalendarNotFound => {
+                Self::NotFound("The requested calendar was not found or user is missing permissions to read the calendar".into())
+            }
+            UseCaseError::UserNotFound => {
+                Self::NotFound("The specified user was not found".into())
+            }
+            UseCaseError::CalendarAlreadyRegistered => Self::Conflict(
+                "The busy calendar is already registered on the service user".into(),
+            ),
+        }
+    }
+}
+
 #[async_trait::async_trait(?Send)]
 impl UseCase for AddBusyCalendarUseCase {
     type Response = ();
 
-    type Errors = UseCaseErrors;
+    type Error = UseCaseError;
 
     const NAME: &'static str = "AddBusyCalendar";
 
-    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Error> {
         let user = ctx
             .repos
             .users
             .find_by_account_id(&self.user_id, &self.account.id)
             .await
-            .ok_or(UseCaseErrors::UserNotFound)?;
+            .ok_or(UseCaseError::UserNotFound)?;
 
         // Check if busy calendar already exists
         match &self.busy {
@@ -98,7 +104,7 @@ impl UseCase for AddBusyCalendarUseCase {
                     .await
                     .unwrap_or(false)
                 {
-                    return Err(UseCaseErrors::CalendarAlreadyRegistered);
+                    return Err(UseCaseError::CalendarAlreadyRegistered);
                 }
             }
             BusyCalendar::Outlook(o_cal_id) => {
@@ -115,7 +121,7 @@ impl UseCase for AddBusyCalendarUseCase {
                     .await
                     .unwrap_or(false)
                 {
-                    return Err(UseCaseErrors::CalendarAlreadyRegistered);
+                    return Err(UseCaseError::CalendarAlreadyRegistered);
                 }
             }
             BusyCalendar::Nettu(n_cal_id) => {
@@ -131,7 +137,7 @@ impl UseCase for AddBusyCalendarUseCase {
                     .await
                     .unwrap_or(false)
                 {
-                    return Err(UseCaseErrors::CalendarAlreadyRegistered);
+                    return Err(UseCaseError::CalendarAlreadyRegistered);
                 }
             }
         }
@@ -141,42 +147,42 @@ impl UseCase for AddBusyCalendarUseCase {
             BusyCalendar::Google(g_cal_id) => {
                 let provider = GoogleCalendarProvider::new(&user, ctx)
                     .await
-                    .map_err(|_| UseCaseErrors::StorageError)?;
+                    .map_err(|_| UseCaseError::StorageError)?;
 
                 let g_calendars = provider
                     .list(GoogleCalendarAccessRole::FreeBusyReader)
                     .await
-                    .map_err(|_| UseCaseErrors::StorageError)?;
+                    .map_err(|_| UseCaseError::StorageError)?;
 
                 if !g_calendars
                     .items
                     .into_iter()
                     .any(|g_calendar| g_calendar.id == *g_cal_id)
                 {
-                    return Err(UseCaseErrors::CalendarNotFound);
+                    return Err(UseCaseError::CalendarNotFound);
                 }
             }
             BusyCalendar::Outlook(o_cal_id) => {
                 let provider = OutlookCalendarProvider::new(&user, ctx)
                     .await
-                    .map_err(|_| UseCaseErrors::StorageError)?;
+                    .map_err(|_| UseCaseError::StorageError)?;
 
                 let o_calendars = provider
                     .list(OutlookCalendarAccessRole::Reader)
                     .await
-                    .map_err(|_| UseCaseErrors::StorageError)?;
+                    .map_err(|_| UseCaseError::StorageError)?;
 
                 if !o_calendars
                     .value
                     .into_iter()
                     .any(|o_calendar| o_calendar.id == *o_cal_id)
                 {
-                    return Err(UseCaseErrors::CalendarNotFound);
+                    return Err(UseCaseError::CalendarNotFound);
                 }
             }
             BusyCalendar::Nettu(n_cal_id) => match ctx.repos.calendars.find(n_cal_id).await {
                 Some(cal) if cal.user_id == user.id => (),
-                _ => return Err(UseCaseErrors::CalendarNotFound),
+                _ => return Err(UseCaseError::CalendarNotFound),
             },
         }
 
@@ -193,7 +199,7 @@ impl UseCase for AddBusyCalendarUseCase {
                     .service_user_busy_calendars
                     .insert_ext(identifier)
                     .await
-                    .map_err(|_| UseCaseErrors::StorageError)
+                    .map_err(|_| UseCaseError::StorageError)
             }
             BusyCalendar::Outlook(o_cal_id) => {
                 let identifier = ExternalBusyCalendarIdentifier {
@@ -206,7 +212,7 @@ impl UseCase for AddBusyCalendarUseCase {
                     .service_user_busy_calendars
                     .insert_ext(identifier)
                     .await
-                    .map_err(|_| UseCaseErrors::StorageError)
+                    .map_err(|_| UseCaseError::StorageError)
             }
             BusyCalendar::Nettu(n_cal_id) => {
                 let identifier = BusyCalendarIdentifier {
@@ -218,7 +224,7 @@ impl UseCase for AddBusyCalendarUseCase {
                     .service_user_busy_calendars
                     .insert(identifier)
                     .await
-                    .map_err(|_| UseCaseErrors::StorageError)
+                    .map_err(|_| UseCaseError::StorageError)
             }
         }
     }

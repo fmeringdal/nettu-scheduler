@@ -6,7 +6,7 @@ use crate::{
     error::NettuError,
     shared::{
         auth::{protect_route, Permission},
-        usecase::{execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
+        usecase::{execute_with_policy, PermissionBoundary},
     },
 };
 use actix_web::{web, HttpResponse};
@@ -14,20 +14,6 @@ use chrono_tz::Tz;
 use nettu_scheduler_api_structs::update_schedule::*;
 use nettu_scheduler_domain::{Metadata, Schedule, ScheduleRule, ID};
 use nettu_scheduler_infra::NettuContext;
-
-fn handle_error(e: UseCaseErrors) -> NettuError {
-    match e {
-        UseCaseErrors::ScheduleNotFound(schedule_id) => NettuError::NotFound(format!(
-            "The schedule with id: {}, was not found.",
-            schedule_id
-        )),
-        UseCaseErrors::StorageError => NettuError::InternalError,
-        UseCaseErrors::InvalidSettings(err) => NettuError::BadClientData(format!(
-            "Bad schedule settings provided. Error message: {}",
-            err
-        )),
-    }
-}
 
 pub async fn update_schedule_admin_controller(
     http_req: web::HttpRequest,
@@ -50,7 +36,7 @@ pub async fn update_schedule_admin_controller(
     execute(usecase, &ctx)
         .await
         .map(|res| HttpResponse::Ok().json(APIResponse::new(res.schedule)))
-        .map_err(handle_error)
+        .map_err(NettuError::from)
 }
 
 pub async fn update_schedule_controller(
@@ -73,10 +59,7 @@ pub async fn update_schedule_controller(
     execute_with_policy(usecase, &policy, &ctx)
         .await
         .map(|res| HttpResponse::Ok().json(APIResponse::new(res.schedule)))
-        .map_err(|e| match e {
-            UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
-            UseCaseErrorContainer::UseCase(e) => handle_error(e),
-        })
+        .map_err(NettuError::from)
 }
 
 #[derive(Debug)]
@@ -89,11 +72,28 @@ struct UpdateScheduleUseCase {
 }
 
 #[derive(Debug)]
-enum UseCaseErrors {
+enum UseCaseError {
     ScheduleNotFound(ID),
     StorageError,
     InvalidSettings(String),
 }
+
+impl From<UseCaseError> for NettuError {
+    fn from(e: UseCaseError) -> Self {
+        match e {
+            UseCaseError::ScheduleNotFound(schedule_id) => Self::NotFound(format!(
+                "The schedule with id: {}, was not found.",
+                schedule_id
+            )),
+            UseCaseError::StorageError => Self::InternalError,
+            UseCaseError::InvalidSettings(err) => Self::BadClientData(format!(
+                "Bad schedule settings provided. Error message: {}",
+                err
+            )),
+        }
+    }
+}
+
 #[derive(Debug)]
 struct UseCaseRes {
     pub schedule: Schedule,
@@ -103,21 +103,21 @@ struct UseCaseRes {
 impl UseCase for UpdateScheduleUseCase {
     type Response = UseCaseRes;
 
-    type Errors = UseCaseErrors;
+    type Error = UseCaseError;
 
     const NAME: &'static str = "UpdateSchedule";
 
-    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Error> {
         let mut schedule = match ctx.repos.schedules.find(&self.schedule_id).await {
             Some(cal) if cal.user_id == self.user_id => cal,
-            _ => return Err(UseCaseErrors::ScheduleNotFound(self.schedule_id.clone())),
+            _ => return Err(UseCaseError::ScheduleNotFound(self.schedule_id.clone())),
         };
 
         if let Some(tz) = &self.timezone {
             match tz.parse::<Tz>() {
                 Ok(tz) => schedule.timezone = tz,
                 Err(_) => {
-                    return Err(UseCaseErrors::InvalidSettings(format!(
+                    return Err(UseCaseError::InvalidSettings(format!(
                         "Invalid timezone provided: {}",
                         tz
                     )))
@@ -135,7 +135,7 @@ impl UseCase for UpdateScheduleUseCase {
         let repo_res = ctx.repos.schedules.save(&schedule).await;
         match repo_res {
             Ok(_) => Ok(UseCaseRes { schedule }),
-            Err(_) => Err(UseCaseErrors::StorageError),
+            Err(_) => Err(UseCaseError::StorageError),
         }
     }
 }

@@ -1,22 +1,12 @@
 use crate::shared::{
     auth::{account_can_modify_schedule, protect_account_route, protect_route, Permission},
-    usecase::{execute, execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
+    usecase::{execute, execute_with_policy, PermissionBoundary},
 };
 use crate::{error::NettuError, shared::usecase::UseCase};
 use actix_web::{web, HttpResponse};
 use nettu_scheduler_api_structs::delete_schedule::*;
 use nettu_scheduler_domain::{Schedule, ID};
 use nettu_scheduler_infra::NettuContext;
-
-fn handle_error(e: UseCaseErrors) -> NettuError {
-    match e {
-        UseCaseErrors::StorageError => NettuError::InternalError,
-        UseCaseErrors::NotFound(schedule_id) => NettuError::NotFound(format!(
-            "The schedule with id: {}, was not found.",
-            schedule_id
-        )),
-    }
-}
 
 pub async fn delete_schedule_admin_controller(
     http_req: web::HttpRequest,
@@ -34,7 +24,7 @@ pub async fn delete_schedule_admin_controller(
     execute(usecase, &ctx)
         .await
         .map(|schedule| HttpResponse::Ok().json(APIResponse::new(schedule)))
-        .map_err(handle_error)
+        .map_err(NettuError::from)
 }
 
 pub async fn delete_schedule_controller(
@@ -52,16 +42,25 @@ pub async fn delete_schedule_controller(
     execute_with_policy(usecase, &policy, &ctx)
         .await
         .map(|schedule| HttpResponse::Ok().json(APIResponse::new(schedule)))
-        .map_err(|e| match e {
-            UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
-            UseCaseErrorContainer::UseCase(e) => handle_error(e),
-        })
+        .map_err(NettuError::from)
 }
 
 #[derive(Debug)]
-pub enum UseCaseErrors {
+pub enum UseCaseError {
     NotFound(ID),
     StorageError,
+}
+
+impl From<UseCaseError> for NettuError {
+    fn from(e: UseCaseError) -> Self {
+        match e {
+            UseCaseError::StorageError => Self::InternalError,
+            UseCaseError::NotFound(schedule_id) => Self::NotFound(format!(
+                "The schedule with id: {}, was not found.",
+                schedule_id
+            )),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -74,22 +73,23 @@ pub struct DeleteScheduleUseCase {
 impl UseCase for DeleteScheduleUseCase {
     type Response = Schedule;
 
-    type Errors = UseCaseErrors;
+    type Error = UseCaseError;
 
     const NAME: &'static str = "DeleteSchedule";
 
-    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Error> {
         let schedule = ctx.repos.schedules.find(&self.schedule_id).await;
         match schedule {
             Some(schedule) if schedule.user_id == self.user_id => {
-                let res = ctx.repos.schedules.delete(&schedule.id).await;
-                if res.is_err() {
-                    return Err(UseCaseErrors::StorageError);
-                }
+                ctx.repos
+                    .schedules
+                    .delete(&schedule.id)
+                    .await
+                    .map_err(|_| UseCaseError::StorageError)?;
 
                 Ok(schedule)
             }
-            _ => Err(UseCaseErrors::NotFound(self.schedule_id.clone())),
+            _ => Err(UseCaseError::NotFound(self.schedule_id.clone())),
         }
     }
 }

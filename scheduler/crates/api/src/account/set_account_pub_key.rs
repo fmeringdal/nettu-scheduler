@@ -20,12 +20,7 @@ pub async fn set_account_pub_key_controller(
     execute(usecase, &ctx)
         .await
         .map(|account| HttpResponse::Ok().json(APIResponse::new(account)))
-        .map_err(|e| match e {
-            UseCaseErrors::InvalidPemKey => {
-                NettuError::BadClientData("Malformed public pem key provided".into())
-            }
-            UseCaseErrors::StorageError => NettuError::InternalError,
-        })
+        .map_err(NettuError::from)
 }
 
 #[derive(Debug)]
@@ -35,24 +30,35 @@ struct SetAccountPubKeyUseCase {
 }
 
 #[derive(Debug)]
-enum UseCaseErrors {
+enum UseCaseError {
     InvalidPemKey,
     StorageError,
+}
+
+impl From<UseCaseError> for NettuError {
+    fn from(e: UseCaseError) -> Self {
+        match e {
+            UseCaseError::InvalidPemKey => {
+                Self::BadClientData("Malformed public pem key provided".into())
+            }
+            UseCaseError::StorageError => Self::InternalError,
+        }
+    }
 }
 
 #[async_trait::async_trait(?Send)]
 impl UseCase for SetAccountPubKeyUseCase {
     type Response = Account;
 
-    type Errors = UseCaseErrors;
+    type Error = UseCaseError;
 
     const NAME: &'static str = "SetAccountPublicKey";
 
-    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Error> {
         let key = if let Some(key) = &self.public_jwt_key {
             match PEMKey::new(key.clone()) {
                 Ok(key) => Some(key),
-                Err(_) => return Err(UseCaseErrors::InvalidPemKey),
+                Err(_) => return Err(UseCaseError::InvalidPemKey),
             }
         } else {
             None
@@ -61,7 +67,7 @@ impl UseCase for SetAccountPubKeyUseCase {
 
         match ctx.repos.accounts.save(&self.account).await {
             Ok(_) => Ok(self.account.clone()),
-            Err(_) => Err(UseCaseErrors::StorageError),
+            Err(_) => Err(UseCaseError::StorageError),
         }
     }
 }

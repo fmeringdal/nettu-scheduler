@@ -1,6 +1,6 @@
 use crate::shared::{
     auth::account_can_modify_user,
-    usecase::{execute, UseCase, UseCaseErrorContainer},
+    usecase::{execute, UseCase},
 };
 use crate::{
     error::NettuError,
@@ -14,19 +14,6 @@ use chrono_tz::Tz;
 use nettu_scheduler_api_structs::create_schedule::*;
 use nettu_scheduler_domain::{Metadata, Schedule, ScheduleRule, ID};
 use nettu_scheduler_infra::NettuContext;
-
-fn handle_error(e: UseCaseErrors) -> NettuError {
-    match e {
-        UseCaseErrors::InvalidTimezone(msg) => NettuError::BadClientData(format!(
-            "Invalid timezone: {}. It should be a valid IANA TimeZone.",
-            msg
-        )),
-        UseCaseErrors::Storage => NettuError::InternalError,
-        UseCaseErrors::UserNotFound(user_id) => {
-            NettuError::NotFound(format!("The user with id: {}, was not found.", user_id))
-        }
-    }
-}
 
 pub async fn create_schedule_admin_controller(
     http_req: web::HttpRequest,
@@ -48,7 +35,7 @@ pub async fn create_schedule_admin_controller(
     execute(usecase, &ctx)
         .await
         .map(|res| HttpResponse::Created().json(APIResponse::new(res.schedule)))
-        .map_err(handle_error)
+        .map_err(NettuError::from)
 }
 
 pub async fn create_schedule_controller(
@@ -69,10 +56,7 @@ pub async fn create_schedule_controller(
     execute_with_policy(usecase, &policy, &ctx)
         .await
         .map(|res| HttpResponse::Created().json(APIResponse::new(res.schedule)))
-        .map_err(|e| match e {
-            UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
-            UseCaseErrorContainer::UseCase(e) => handle_error(e),
-        })
+        .map_err(NettuError::from)
 }
 
 #[derive(Debug)]
@@ -85,10 +69,25 @@ struct CreateScheduleUseCase {
 }
 
 #[derive(Debug)]
-enum UseCaseErrors {
+enum UseCaseError {
     InvalidTimezone(String),
     UserNotFound(ID),
     Storage,
+}
+
+impl From<UseCaseError> for NettuError {
+    fn from(e: UseCaseError) -> Self {
+        match e {
+            UseCaseError::InvalidTimezone(msg) => Self::BadClientData(format!(
+                "Invalid timezone: {}. It should be a valid IANA TimeZone.",
+                msg
+            )),
+            UseCaseError::Storage => Self::InternalError,
+            UseCaseError::UserNotFound(user_id) => {
+                Self::NotFound(format!("The user with id: {}, was not found.", user_id))
+            }
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -100,14 +99,14 @@ struct UseCaseRes {
 impl UseCase for CreateScheduleUseCase {
     type Response = UseCaseRes;
 
-    type Errors = UseCaseErrors;
+    type Error = UseCaseError;
 
     const NAME: &'static str = "CreateSchedule";
 
-    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Error> {
         let tz: Tz = match self.tzid.parse() {
             Ok(tz) => tz,
-            Err(_) => return Err(UseCaseErrors::InvalidTimezone(self.tzid.to_string())),
+            Err(_) => return Err(UseCaseError::InvalidTimezone(self.tzid.to_string())),
         };
 
         let user = ctx
@@ -116,7 +115,7 @@ impl UseCase for CreateScheduleUseCase {
             .find_by_account_id(&self.user_id, &self.account_id)
             .await;
         if user.is_none() {
-            return Err(UseCaseErrors::UserNotFound(self.user_id.clone()));
+            return Err(UseCaseError::UserNotFound(self.user_id.clone()));
         }
         let user = user.unwrap();
 
@@ -131,7 +130,7 @@ impl UseCase for CreateScheduleUseCase {
         let res = ctx.repos.schedules.insert(&schedule).await;
         match res {
             Ok(_) => Ok(UseCaseRes { schedule }),
-            Err(_) => Err(UseCaseErrors::Storage),
+            Err(_) => Err(UseCaseError::Storage),
         }
     }
 }
