@@ -1,9 +1,8 @@
 mod postgres;
 
+use super::shared::query_structs::MetadataFindQuery;
 use nettu_scheduler_domain::{User, ID};
 pub use postgres::PostgresUserRepo;
-
-use super::shared::query_structs::MetadataFindQuery;
 
 #[async_trait::async_trait]
 pub trait IUserRepo: Send + Sync {

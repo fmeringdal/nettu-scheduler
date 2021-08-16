@@ -16,15 +16,6 @@ use nettu_scheduler_infra::{
     NettuContext,
 };
 
-fn error_handler(e: UseCaseErrors) -> NettuError {
-    match e {
-        UseCaseErrors::StorageError => NettuError::InternalError,
-        UseCaseErrors::ExternalCalendarNotFound => NettuError::NotFound("The external calendar was not found. Make sure it exists and that user has write access to that calendar".into()),
-        UseCaseErrors::CalendarAlreadySynced => NettuError::Conflict("The calendar is already synced to the given external calendar".into()),
-        UseCaseErrors::NoProviderIntegration => NettuError::NotFound("The user has not integrated with the given provider".into()),
-    }
-}
-
 pub async fn add_sync_calendar_admin_controller(
     http_req: web::HttpRequest,
     path_params: web::Path<PathParams>,
@@ -45,7 +36,7 @@ pub async fn add_sync_calendar_admin_controller(
     execute(usecase, &ctx)
         .await
         .map(|_| HttpResponse::Ok().json(APIResponse::from("Calendar sync created")))
-        .map_err(error_handler)
+        .map_err(NettuError::from)
 }
 
 // pub async fn add_sync_calendar_controller(
@@ -82,31 +73,42 @@ struct AddSyncCalendarUseCase {
 }
 
 #[derive(Debug)]
-enum UseCaseErrors {
+enum UseCaseError {
     NoProviderIntegration,
     ExternalCalendarNotFound,
     CalendarAlreadySynced,
     StorageError,
 }
 
+impl From<UseCaseError> for NettuError {
+    fn from(e: UseCaseError) -> Self {
+        match e {
+            UseCaseError::StorageError => Self::InternalError,
+            UseCaseError::ExternalCalendarNotFound => Self::NotFound("The external calendar was not found. Make sure it exists and that user has write access to that calendar".into()),
+            UseCaseError::CalendarAlreadySynced => Self::Conflict("The calendar is already synced to the given external calendar".into()),
+            UseCaseError::NoProviderIntegration => Self::NotFound("The user has not integrated with the given provider".into()),
+        }
+    }
+}
+
 #[async_trait::async_trait(?Send)]
 impl UseCase for AddSyncCalendarUseCase {
     type Response = ();
 
-    type Errors = UseCaseErrors;
+    type Error = UseCaseError;
 
     const NAME: &'static str = "AddSyncCalendar";
 
-    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Error> {
         // Check that user has integrated to that provider
         ctx.repos
             .user_integrations
             .find(&self.user.id)
             .await
-            .map_err(|_| UseCaseErrors::StorageError)?
+            .map_err(|_| UseCaseError::StorageError)?
             .into_iter()
             .find(|i| i.provider == self.provider)
-            .ok_or(UseCaseErrors::NoProviderIntegration)?;
+            .ok_or(UseCaseError::NoProviderIntegration)?;
 
         // Check if calendar sync already exists
         if ctx
@@ -114,11 +116,11 @@ impl UseCase for AddSyncCalendarUseCase {
             .calendar_synced
             .find_by_calendar(&self.calendar_id)
             .await
-            .map_err(|_| UseCaseErrors::StorageError)?
+            .map_err(|_| UseCaseError::StorageError)?
             .into_iter()
             .any(|c| c.provider == self.provider && c.ext_calendar_id == self.ext_calendar_id)
         {
-            return Err(UseCaseErrors::CalendarAlreadySynced);
+            return Err(UseCaseError::CalendarAlreadySynced);
         }
 
         // Check that user has write access to the given external calendar.
@@ -126,11 +128,11 @@ impl UseCase for AddSyncCalendarUseCase {
             IntegrationProvider::Google => {
                 let google_provider = GoogleCalendarProvider::new(&self.user, ctx)
                     .await
-                    .map_err(|_| UseCaseErrors::StorageError)?;
+                    .map_err(|_| UseCaseError::StorageError)?;
                 let google_calendars = google_provider
                     .list(GoogleCalendarAccessRole::Writer)
                     .await
-                    .map_err(|_| UseCaseErrors::StorageError)?;
+                    .map_err(|_| UseCaseError::StorageError)?;
 
                 if !google_calendars
                     .items
@@ -138,17 +140,17 @@ impl UseCase for AddSyncCalendarUseCase {
                     .map(|c| c.id)
                     .any(|google_calendar_id| google_calendar_id == self.ext_calendar_id)
                 {
-                    return Err(UseCaseErrors::ExternalCalendarNotFound);
+                    return Err(UseCaseError::ExternalCalendarNotFound);
                 }
             }
             IntegrationProvider::Outlook => {
                 let outlook_provider = OutlookCalendarProvider::new(&self.user, ctx)
                     .await
-                    .map_err(|_| UseCaseErrors::StorageError)?;
+                    .map_err(|_| UseCaseError::StorageError)?;
                 let outlook_calendars = outlook_provider
                     .list(OutlookCalendarAccessRole::Writer)
                     .await
-                    .map_err(|_| UseCaseErrors::StorageError)?;
+                    .map_err(|_| UseCaseError::StorageError)?;
 
                 if !outlook_calendars
                     .value
@@ -156,7 +158,7 @@ impl UseCase for AddSyncCalendarUseCase {
                     .map(|c| c.id)
                     .any(|outlook_calendar_id| outlook_calendar_id == self.ext_calendar_id)
                 {
-                    return Err(UseCaseErrors::ExternalCalendarNotFound);
+                    return Err(UseCaseError::ExternalCalendarNotFound);
                 }
             }
         }
@@ -172,7 +174,7 @@ impl UseCase for AddSyncCalendarUseCase {
             .calendar_synced
             .insert(&synced_calendar)
             .await
-            .map_err(|_| UseCaseErrors::StorageError)
+            .map_err(|_| UseCaseError::StorageError)
     }
 }
 

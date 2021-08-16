@@ -35,16 +35,7 @@ pub async fn update_service_user_controller(
     execute(usecase, &ctx)
         .await
         .map(|usecase_res| HttpResponse::Ok().json(APIResponse::new(usecase_res.user)))
-        .map_err(|e| match e {
-            UseCaseErrors::StorageError => NettuError::InternalError,
-            UseCaseErrors::ServiceNotFound => {
-                NettuError::NotFound("The requested service was not found".into())
-            }
-            UseCaseErrors::UserNotFound => {
-                NettuError::NotFound("The specified user was not found".into())
-            }
-            UseCaseErrors::InvalidValue(e) => e.to_nettu_error(),
-        })
+        .map_err(NettuError::from)
 }
 
 #[derive(Debug)]
@@ -65,25 +56,38 @@ struct UseCaseRes {
 }
 
 #[derive(Debug)]
-enum UseCaseErrors {
+enum UseCaseError {
     StorageError,
     ServiceNotFound,
     UserNotFound,
     InvalidValue(UpdateServiceResourceError),
 }
 
+impl From<UseCaseError> for NettuError {
+    fn from(e: UseCaseError) -> Self {
+        match e {
+            UseCaseError::StorageError => Self::InternalError,
+            UseCaseError::ServiceNotFound => {
+                Self::NotFound("The requested service was not found".into())
+            }
+            UseCaseError::UserNotFound => Self::NotFound("The specified user was not found".into()),
+            UseCaseError::InvalidValue(e) => e.to_nettu_error(),
+        }
+    }
+}
+
 #[async_trait::async_trait(?Send)]
 impl UseCase for UpdateServiceUserUseCase {
     type Response = UseCaseRes;
 
-    type Errors = UseCaseErrors;
+    type Error = UseCaseError;
 
     const NAME: &'static str = "UpdateServiceUser";
 
-    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Error> {
         let _service = match ctx.repos.services.find(&self.service_id).await {
             Some(service) if service.account_id == self.account.id => service,
-            _ => return Err(UseCaseErrors::ServiceNotFound),
+            _ => return Err(UseCaseError::ServiceNotFound),
         };
 
         let mut user_resource = match ctx
@@ -93,7 +97,7 @@ impl UseCase for UpdateServiceUserUseCase {
             .await
         {
             Some(res) => res,
-            _ => return Err(UseCaseErrors::UserNotFound),
+            _ => return Err(UseCaseError::UserNotFound),
         };
 
         update_resource_values(
@@ -108,7 +112,7 @@ impl UseCase for UpdateServiceUserUseCase {
             ctx,
         )
         .await
-        .map_err(UseCaseErrors::InvalidValue)?;
+        .map_err(UseCaseError::InvalidValue)?;
 
         ctx.repos
             .service_users
@@ -117,6 +121,6 @@ impl UseCase for UpdateServiceUserUseCase {
             .map(|_| UseCaseRes {
                 user: user_resource,
             })
-            .map_err(|_| UseCaseErrors::StorageError)
+            .map_err(|_| UseCaseError::StorageError)
     }
 }

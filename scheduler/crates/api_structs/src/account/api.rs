@@ -1,7 +1,6 @@
+use crate::dtos::AccountDTO;
 use nettu_scheduler_domain::Account;
 use serde::{Deserialize, Serialize};
-
-use crate::dtos::AccountDTO;
 
 #[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]

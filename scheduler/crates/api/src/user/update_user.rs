@@ -22,12 +22,7 @@ pub async fn update_user_controller(
     execute(usecase, &ctx)
         .await
         .map(|usecase_res| HttpResponse::Ok().json(APIResponse::new(usecase_res.user)))
-        .map_err(|e| match e {
-            UseCaseErrors::StorageError => NettuError::InternalError,
-            UseCaseErrors::UserNotFound(id) => {
-                NettuError::Conflict(format!("A user with id {} was not found", id))
-            }
-        })
+        .map_err(NettuError::from)
 }
 
 #[derive(Debug)]
@@ -43,19 +38,30 @@ pub struct UseCaseRes {
 }
 
 #[derive(Debug)]
-pub enum UseCaseErrors {
+pub enum UseCaseError {
     StorageError,
     UserNotFound(ID),
+}
+
+impl From<UseCaseError> for NettuError {
+    fn from(e: UseCaseError) -> Self {
+        match e {
+            UseCaseError::StorageError => Self::InternalError,
+            UseCaseError::UserNotFound(id) => {
+                Self::Conflict(format!("A user with id {} was not found", id))
+            }
+        }
+    }
 }
 
 #[async_trait::async_trait(?Send)]
 impl UseCase for UpdateUserUseCase {
     type Response = UseCaseRes;
-    type Errors = UseCaseErrors;
+    type Error = UseCaseError;
 
     const NAME: &'static str = "UpdateUser";
 
-    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Error> {
         let mut user = match ctx
             .repos
             .users
@@ -63,7 +69,7 @@ impl UseCase for UpdateUserUseCase {
             .await
         {
             Some(user) => user,
-            None => return Err(UseCaseErrors::UserNotFound(self.user_id.clone())),
+            None => return Err(UseCaseError::UserNotFound(self.user_id.clone())),
         };
 
         if let Some(metadata) = &self.metadata {
@@ -75,6 +81,6 @@ impl UseCase for UpdateUserUseCase {
             .save(&user)
             .await
             .map(|_| UseCaseRes { user })
-            .map_err(|_| UseCaseErrors::StorageError)
+            .map_err(|_| UseCaseError::StorageError)
     }
 }

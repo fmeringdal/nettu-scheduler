@@ -31,15 +31,7 @@ pub async fn remove_busy_calendar_controller(
     execute(usecase, &ctx)
         .await
         .map(|_| HttpResponse::Ok().json(APIResponse::from("Busy calendar added to service user")))
-        .map_err(|e| match e {
-            UseCaseErrors::StorageError => NettuError::InternalError,
-            UseCaseErrors::UserNotFound => {
-                NettuError::NotFound("The specified user was not found".into())
-            }
-            UseCaseErrors::BusyCalendarNotFound => NettuError::NotFound(
-                "The busy calendar is not registered on the service user".into(),
-            ),
-        })
+        .map_err(NettuError::from)
 }
 
 #[derive(Debug)]
@@ -51,27 +43,39 @@ struct RemoveBusyCalendarUseCase {
 }
 
 #[derive(Debug)]
-enum UseCaseErrors {
+enum UseCaseError {
     StorageError,
     UserNotFound,
     BusyCalendarNotFound,
+}
+
+impl From<UseCaseError> for NettuError {
+    fn from(e: UseCaseError) -> Self {
+        match e {
+            UseCaseError::StorageError => Self::InternalError,
+            UseCaseError::UserNotFound => Self::NotFound("The specified user was not found".into()),
+            UseCaseError::BusyCalendarNotFound => {
+                Self::NotFound("The busy calendar is not registered on the service user".into())
+            }
+        }
+    }
 }
 
 #[async_trait::async_trait(?Send)]
 impl UseCase for RemoveBusyCalendarUseCase {
     type Response = ();
 
-    type Errors = UseCaseErrors;
+    type Error = UseCaseError;
 
     const NAME: &'static str = "RemoveBusyCalendar";
 
-    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Error> {
         let user = ctx
             .repos
             .users
             .find_by_account_id(&self.user_id, &self.account.id)
             .await
-            .ok_or(UseCaseErrors::UserNotFound)?;
+            .ok_or(UseCaseError::UserNotFound)?;
 
         // Check if busy calendar exists
         match &self.busy {
@@ -89,7 +93,7 @@ impl UseCase for RemoveBusyCalendarUseCase {
                     .await
                     .unwrap_or(false)
                 {
-                    return Err(UseCaseErrors::BusyCalendarNotFound);
+                    return Err(UseCaseError::BusyCalendarNotFound);
                 }
             }
             BusyCalendar::Outlook(o_cal_id) => {
@@ -106,7 +110,7 @@ impl UseCase for RemoveBusyCalendarUseCase {
                     .await
                     .unwrap_or(false)
                 {
-                    return Err(UseCaseErrors::BusyCalendarNotFound);
+                    return Err(UseCaseError::BusyCalendarNotFound);
                 }
             }
             BusyCalendar::Nettu(n_cal_id) => {
@@ -122,7 +126,7 @@ impl UseCase for RemoveBusyCalendarUseCase {
                     .await
                     .unwrap_or(false)
                 {
-                    return Err(UseCaseErrors::BusyCalendarNotFound);
+                    return Err(UseCaseError::BusyCalendarNotFound);
                 }
             }
         }
@@ -140,7 +144,7 @@ impl UseCase for RemoveBusyCalendarUseCase {
                     .service_user_busy_calendars
                     .delete_ext(identifier)
                     .await
-                    .map_err(|_| UseCaseErrors::StorageError)
+                    .map_err(|_| UseCaseError::StorageError)
             }
             BusyCalendar::Outlook(o_cal_id) => {
                 let identifier = ExternalBusyCalendarIdentifier {
@@ -153,7 +157,7 @@ impl UseCase for RemoveBusyCalendarUseCase {
                     .service_user_busy_calendars
                     .delete_ext(identifier)
                     .await
-                    .map_err(|_| UseCaseErrors::StorageError)
+                    .map_err(|_| UseCaseError::StorageError)
             }
             BusyCalendar::Nettu(n_cal_id) => {
                 let identifier = BusyCalendarIdentifier {
@@ -165,7 +169,7 @@ impl UseCase for RemoveBusyCalendarUseCase {
                     .service_user_busy_calendars
                     .delete(identifier)
                     .await
-                    .map_err(|_| UseCaseErrors::StorageError)
+                    .map_err(|_| UseCaseError::StorageError)
             }
         }
     }

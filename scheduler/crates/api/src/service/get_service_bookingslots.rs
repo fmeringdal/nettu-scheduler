@@ -18,32 +18,6 @@ use nettu_scheduler_infra::{
 };
 use tracing::error;
 
-fn handle_error(e: UseCaseErrors) -> NettuError {
-    match e {
-        UseCaseErrors::InvalidDate(msg) => {
-            NettuError::BadClientData(format!(
-                "Invalid datetime: {}. Should be YYYY-MM-DD, e.g. January 1. 2020 => 2020-1-1",
-                msg
-            ))
-        }
-        UseCaseErrors::InvalidTimezone(msg) => {
-            NettuError::BadClientData(format!(
-                "Invalid timezone: {}. It should be a valid IANA TimeZone.",
-                msg
-            ))
-        }
-        UseCaseErrors::InvalidInterval => {
-            NettuError::BadClientData(
-                "Invalid interval specified. It should be between 10 - 60 minutes inclusively and be specified as milliseconds.".into()
-            )
-        }
-        UseCaseErrors::InvalidTimespan => {
-            NettuError::BadClientData("The provided start and end is invalid".into())
-        }
-        UseCaseErrors::ServiceNotFound => NettuError::NotFound("Service was not found".into())
-    }
-}
-
 pub async fn get_service_bookingslots_controller(
     _http_req: HttpRequest,
     query_params: web::Query<QueryParams>,
@@ -67,7 +41,7 @@ pub async fn get_service_bookingslots_controller(
     execute(usecase, &ctx)
         .await
         .map(|usecase_res| HttpResponse::Ok().json(APIResponse::new(usecase_res.booking_slots)))
-        .map_err(handle_error)
+        .map_err(NettuError::from)
 }
 
 #[derive(Debug)]
@@ -81,9 +55,31 @@ pub(crate) struct GetServiceBookingSlotsUseCase {
     pub host_user_ids: Option<Vec<ID>>,
 }
 
-impl From<UseCaseErrors> for NettuError {
-    fn from(e: UseCaseErrors) -> Self {
-        handle_error(e)
+impl From<UseCaseError> for NettuError {
+    fn from(e: UseCaseError) -> Self {
+        match e {
+            UseCaseError::InvalidDate(msg) => {
+                Self::BadClientData(format!(
+                    "Invalid datetime: {}. Should be YYYY-MM-DD, e.g. January 1. 2020 => 2020-1-1",
+                    msg
+                ))
+            }
+            UseCaseError::InvalidTimezone(msg) => {
+                Self::BadClientData(format!(
+                    "Invalid timezone: {}. It should be a valid IANA TimeZone.",
+                    msg
+                ))
+            }
+            UseCaseError::InvalidInterval => {
+                Self::BadClientData(
+                    "Invalid interval specified. It should be between 10 - 60 minutes inclusively and be specified as milliseconds.".into()
+                )
+            }
+            UseCaseError::InvalidTimespan => {
+                Self::BadClientData("The provided start and end is invalid".into())
+            }
+            UseCaseError::ServiceNotFound => Self::NotFound("Service was not found".into())
+        }
     }
 }
 
@@ -94,7 +90,7 @@ pub(crate) struct UseCaseRes {
 }
 
 #[derive(Debug)]
-pub(crate) enum UseCaseErrors {
+pub(crate) enum UseCaseError {
     ServiceNotFound,
     InvalidInterval,
     InvalidTimespan,
@@ -102,13 +98,13 @@ pub(crate) enum UseCaseErrors {
     InvalidTimezone(String),
 }
 
-impl From<BookingQueryError> for UseCaseErrors {
+impl From<BookingQueryError> for UseCaseError {
     fn from(e: BookingQueryError) -> Self {
         match e {
-            BookingQueryError::InvalidInterval => UseCaseErrors::InvalidInterval,
-            BookingQueryError::InvalidTimespan => UseCaseErrors::InvalidTimespan,
-            BookingQueryError::InvalidDate(d) => UseCaseErrors::InvalidDate(d),
-            BookingQueryError::InvalidTimezone(d) => UseCaseErrors::InvalidTimezone(d),
+            BookingQueryError::InvalidInterval => Self::InvalidInterval,
+            BookingQueryError::InvalidTimespan => Self::InvalidTimespan,
+            BookingQueryError::InvalidDate(d) => Self::InvalidDate(d),
+            BookingQueryError::InvalidTimezone(d) => Self::InvalidTimezone(d),
         }
     }
 }
@@ -117,13 +113,13 @@ impl From<BookingQueryError> for UseCaseErrors {
 impl UseCase for GetServiceBookingSlotsUseCase {
     type Response = UseCaseRes;
 
-    type Errors = UseCaseErrors;
+    type Error = UseCaseError;
 
     const NAME: &'static str = "GetServiceBookingSlots";
 
-    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Error> {
         if !validate_slots_interval(self.interval) {
-            return Err(UseCaseErrors::InvalidInterval);
+            return Err(UseCaseError::InvalidInterval);
         }
 
         let query = BookingSlotsQuery {
@@ -142,7 +138,7 @@ impl UseCase for GetServiceBookingSlotsUseCase {
 
         let service = match ctx.repos.services.find_with_users(&self.service_id).await {
             Some(s) => s,
-            None => return Err(UseCaseErrors::ServiceNotFound),
+            None => return Err(UseCaseError::ServiceNotFound),
         };
 
         if ServiceMultiPersonOptions::Group(0) == service.multi_person {
@@ -156,7 +152,7 @@ impl UseCase for GetServiceBookingSlotsUseCase {
 
         let timespan = TimeSpan::new(booking_timespan.start_ts, booking_timespan.end_ts);
         if timespan.greater_than(ctx.config.booking_slots_query_duration_limit) {
-            return Err(UseCaseErrors::InvalidTimespan);
+            return Err(UseCaseError::InvalidTimespan);
         }
 
         match &self.host_user_ids {

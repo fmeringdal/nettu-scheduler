@@ -1,22 +1,12 @@
 use crate::shared::{
     auth::{account_can_modify_calendar, protect_account_route, protect_route, Permission},
-    usecase::{execute, execute_with_policy, PermissionBoundary, UseCaseErrorContainer},
+    usecase::{execute, execute_with_policy, PermissionBoundary},
 };
 use crate::{error::NettuError, shared::usecase::UseCase};
 use actix_web::{web, HttpResponse};
 use nettu_scheduler_api_structs::delete_calendar::{APIResponse, PathParams};
 use nettu_scheduler_domain::{Calendar, ID};
 use nettu_scheduler_infra::NettuContext;
-
-fn handle_errors(e: UseCaseErrors) -> NettuError {
-    match e {
-        UseCaseErrors::NotFound(calendar_id) => NettuError::NotFound(format!(
-            "The calendar with id: {}, was not found.",
-            calendar_id
-        )),
-        UseCaseErrors::UnableToDelete => NettuError::InternalError,
-    }
-}
 
 pub async fn delete_calendar_admin_controller(
     http_req: web::HttpRequest,
@@ -34,7 +24,7 @@ pub async fn delete_calendar_admin_controller(
     execute(usecase, &ctx)
         .await
         .map(|calendar| HttpResponse::Ok().json(APIResponse::new(calendar)))
-        .map_err(handle_errors)
+        .map_err(NettuError::from)
 }
 
 pub async fn delete_calendar_controller(
@@ -52,16 +42,25 @@ pub async fn delete_calendar_controller(
     execute_with_policy(usecase, &policy, &ctx)
         .await
         .map(|calendar| HttpResponse::Ok().json(APIResponse::new(calendar)))
-        .map_err(|e| match e {
-            UseCaseErrorContainer::Unauthorized(e) => NettuError::Unauthorized(e),
-            UseCaseErrorContainer::UseCase(e) => handle_errors(e),
-        })
+        .map_err(NettuError::from)
 }
 
 #[derive(Debug)]
-pub enum UseCaseErrors {
+pub enum UseCaseError {
     NotFound(ID),
     UnableToDelete,
+}
+
+impl From<UseCaseError> for NettuError {
+    fn from(e: UseCaseError) -> Self {
+        match e {
+            UseCaseError::NotFound(calendar_id) => Self::NotFound(format!(
+                "The calendar with id: {}, was not found.",
+                calendar_id
+            )),
+            UseCaseError::UnableToDelete => Self::InternalError,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -74,11 +73,11 @@ pub struct DeleteCalendarUseCase {
 impl UseCase for DeleteCalendarUseCase {
     type Response = Calendar;
 
-    type Errors = UseCaseErrors;
+    type Error = UseCaseError;
 
     const NAME: &'static str = "DeleteCalendar";
 
-    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Error> {
         let calendar = ctx.repos.calendars.find(&self.calendar_id).await;
         match calendar {
             Some(calendar) if calendar.user_id == self.user_id => ctx
@@ -87,8 +86,8 @@ impl UseCase for DeleteCalendarUseCase {
                 .delete(&calendar.id)
                 .await
                 .map(|_| calendar)
-                .map_err(|_| UseCaseErrors::UnableToDelete),
-            _ => Err(UseCaseErrors::NotFound(self.calendar_id.clone())),
+                .map_err(|_| UseCaseError::UnableToDelete),
+            _ => Err(UseCaseError::NotFound(self.calendar_id.clone())),
         }
     }
 }

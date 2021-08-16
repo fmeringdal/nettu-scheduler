@@ -2,9 +2,8 @@
 pub mod auth_provider;
 mod calendar_api;
 
-use crate::NettuContext;
-
 use super::FreeBusyProviderQuery;
+use crate::NettuContext;
 use calendar_api::{
     FreeBusyCalendar, FreeBusyRequest, GoogleCalendarEvent, GoogleCalendarEventAttributes,
     GoogleCalendarRestApi, GoogleDateTime, ListCalendarsResponse,

@@ -1,6 +1,5 @@
 use chrono::TimeZone;
 use chrono_tz::{Tz, UTC};
-
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

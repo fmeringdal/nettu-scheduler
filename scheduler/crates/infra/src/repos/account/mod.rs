@@ -1,9 +1,8 @@
 mod postgres;
 
 use nettu_scheduler_domain::Account;
-pub use postgres::PostgresAccountRepo;
-
 use nettu_scheduler_domain::ID;
+pub use postgres::PostgresAccountRepo;
 
 #[async_trait::async_trait]
 pub trait IAccountRepo: Send + Sync {

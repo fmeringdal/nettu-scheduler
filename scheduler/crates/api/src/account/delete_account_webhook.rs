@@ -1,4 +1,4 @@
-use super::set_account_webhook::{SetAccountWebhookUseCase, UseCaseErrors};
+use super::set_account_webhook::SetAccountWebhookUseCase;
 use crate::error::NettuError;
 use crate::shared::auth::protect_account_route;
 use crate::shared::usecase::execute;
@@ -20,10 +20,5 @@ pub async fn delete_account_webhook_controller(
     execute(usecase, &ctx)
         .await
         .map(|account| HttpResponse::Ok().json(APIResponse::new(account)))
-        .map_err(|e| match e {
-            UseCaseErrors::InvalidURI(err) => {
-                NettuError::BadClientData(format!("Invalid URI provided. Error message: {}", err))
-            }
-            UseCaseErrors::StorageError => NettuError::InternalError,
-        })
+        .map_err(NettuError::from)
 }

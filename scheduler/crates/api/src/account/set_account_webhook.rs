@@ -20,12 +20,7 @@ pub async fn set_account_webhook_controller(
     execute(usecase, &ctx)
         .await
         .map(|account| HttpResponse::Ok().json(APIResponse::new(account)))
-        .map_err(|e| match e {
-            UseCaseErrors::InvalidURI(err) => {
-                NettuError::BadClientData(format!("Invalid URI provided. Error message: {}", err))
-            }
-            UseCaseErrors::StorageError => NettuError::InternalError,
-        })
+        .map_err(NettuError::from)
 }
 
 #[derive(Debug)]
@@ -35,27 +30,37 @@ pub struct SetAccountWebhookUseCase {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum UseCaseErrors {
+pub enum UseCaseError {
     InvalidURI(String),
     StorageError,
 }
 
+impl From<UseCaseError> for NettuError {
+    fn from(e: UseCaseError) -> Self {
+        match e {
+            UseCaseError::InvalidURI(err) => {
+                Self::BadClientData(format!("Invalid URI provided. Error message: {}", err))
+            }
+            UseCaseError::StorageError => Self::InternalError,
+        }
+    }
+}
 #[async_trait::async_trait(?Send)]
 impl UseCase for SetAccountWebhookUseCase {
     type Response = Account;
 
-    type Errors = UseCaseErrors;
+    type Error = UseCaseError;
 
     const NAME: &'static str = "SetAccountWebhook";
 
-    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Error> {
         let success = self
             .account
             .settings
             .set_webhook_url(self.webhook_url.clone());
 
         if !success {
-            return Err(UseCaseErrors::InvalidURI(format!(
+            return Err(UseCaseError::InvalidURI(format!(
                 "Malformed url or scheme is not https: {:?}",
                 self.webhook_url
             )));
@@ -63,7 +68,7 @@ impl UseCase for SetAccountWebhookUseCase {
 
         match ctx.repos.accounts.save(&self.account).await {
             Ok(_) => Ok(self.account.clone()),
-            Err(_) => Err(UseCaseErrors::StorageError),
+            Err(_) => Err(UseCaseError::StorageError),
         }
     }
 }
@@ -90,7 +95,7 @@ mod tests {
             if let Err(err) = res {
                 assert_eq!(
                     err,
-                    UseCaseErrors::InvalidURI(format!(
+                    UseCaseError::InvalidURI(format!(
                         "Malformed url or scheme is not https: {:?}",
                         Some(bad_uri)
                     ))

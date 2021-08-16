@@ -1,9 +1,8 @@
+use crate::dtos::{ServiceDTO, ServiceResourceDTO, ServiceWithUsersDTO};
 use nettu_scheduler_domain::{
     BusyCalendar, Service, ServiceResource, ServiceWithUsers, TimePlan, ID,
 };
 use serde::{Deserialize, Serialize};
-
-use crate::dtos::{ServiceDTO, ServiceResourceDTO, ServiceWithUsersDTO};
 
 #[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]

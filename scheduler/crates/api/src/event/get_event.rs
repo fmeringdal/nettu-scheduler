@@ -10,15 +10,6 @@ use nettu_scheduler_api_structs::get_event::*;
 use nettu_scheduler_domain::{CalendarEvent, ID};
 use nettu_scheduler_infra::NettuContext;
 
-fn handle_error(e: UseCaseErrors) -> NettuError {
-    match e {
-        UseCaseErrors::NotFound(event_id) => NettuError::NotFound(format!(
-            "The calendar event with id: {}, was not found.",
-            event_id
-        )),
-    }
-}
-
 pub async fn get_event_admin_controller(
     http_req: HttpRequest,
     path_params: web::Path<PathParams>,
@@ -35,7 +26,7 @@ pub async fn get_event_admin_controller(
     execute(usecase, &ctx)
         .await
         .map(|event| HttpResponse::Ok().json(APIResponse::new(event)))
-        .map_err(handle_error)
+        .map_err(NettuError::from)
 }
 
 pub async fn get_event_controller(
@@ -53,7 +44,7 @@ pub async fn get_event_controller(
     execute(usecase, &ctx)
         .await
         .map(|calendar_event| HttpResponse::Ok().json(APIResponse::new(calendar_event)))
-        .map_err(handle_error)
+        .map_err(NettuError::from)
 }
 
 #[derive(Debug)]
@@ -63,23 +54,34 @@ pub struct GetEventUseCase {
 }
 
 #[derive(Debug)]
-pub enum UseCaseErrors {
+pub enum UseCaseError {
     NotFound(ID),
+}
+
+impl From<UseCaseError> for NettuError {
+    fn from(e: UseCaseError) -> Self {
+        match e {
+            UseCaseError::NotFound(event_id) => Self::NotFound(format!(
+                "The calendar event with id: {}, was not found.",
+                event_id
+            )),
+        }
+    }
 }
 
 #[async_trait::async_trait(?Send)]
 impl UseCase for GetEventUseCase {
     type Response = CalendarEvent;
 
-    type Errors = UseCaseErrors;
+    type Error = UseCaseError;
 
     const NAME: &'static str = "GetEvent";
 
-    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Error> {
         let e = ctx.repos.events.find(&self.event_id).await;
         match e {
             Some(event) if event.user_id == self.user_id => Ok(event),
-            _ => Err(UseCaseErrors::NotFound(self.event_id.clone())),
+            _ => Err(UseCaseError::NotFound(self.event_id.clone())),
         }
     }
 }

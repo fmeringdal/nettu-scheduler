@@ -8,15 +8,6 @@ use nettu_scheduler_api_structs::remove_integration::*;
 use nettu_scheduler_domain::{IntegrationProvider, User};
 use nettu_scheduler_infra::NettuContext;
 
-fn handle_error(e: UseCaseErrors) -> NettuError {
-    match e {
-        UseCaseErrors::StorageError => NettuError::InternalError,
-        UseCaseErrors::IntegrationNotFound => NettuError::NotFound(
-            "Did not find an integration between that user and provider".into(),
-        ),
-    }
-}
-
 pub async fn remove_integration_admin_controller(
     http_req: HttpRequest,
     path: web::Path<PathParams>,
@@ -33,7 +24,7 @@ pub async fn remove_integration_admin_controller(
     execute(usecase, &ctx)
         .await
         .map(|res| HttpResponse::Ok().json(APIResponse::new(res.user)))
-        .map_err(handle_error)
+        .map_err(NettuError::from)
 }
 
 pub async fn remove_integration_controller(
@@ -51,7 +42,7 @@ pub async fn remove_integration_controller(
     execute(usecase, &ctx)
         .await
         .map(|res| HttpResponse::Ok().json(APIResponse::new(res.user)))
-        .map_err(handle_error)
+        .map_err(NettuError::from)
 }
 
 #[derive(Debug)]
@@ -66,30 +57,41 @@ pub struct UseCaseRes {
 }
 
 #[derive(Debug)]
-pub enum UseCaseErrors {
+pub enum UseCaseError {
     StorageError,
     IntegrationNotFound,
+}
+
+impl From<UseCaseError> for NettuError {
+    fn from(e: UseCaseError) -> Self {
+        match e {
+            UseCaseError::StorageError => Self::InternalError,
+            UseCaseError::IntegrationNotFound => {
+                Self::NotFound("Did not find an integration between that user and provider".into())
+            }
+        }
+    }
 }
 
 #[async_trait::async_trait(?Send)]
 impl UseCase for OAuthIntegrationUseCase {
     type Response = UseCaseRes;
-    type Errors = UseCaseErrors;
+    type Error = UseCaseError;
 
     const NAME: &'static str = "RemoveIntegration";
 
-    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Error> {
         let user_integrations = ctx
             .repos
             .user_integrations
             .find(&self.user.id)
             .await
-            .map_err(|_| UseCaseErrors::StorageError)?;
+            .map_err(|_| UseCaseError::StorageError)?;
         if !user_integrations
             .into_iter()
             .any(|i| i.provider == self.provider)
         {
-            return Err(UseCaseErrors::IntegrationNotFound);
+            return Err(UseCaseError::IntegrationNotFound);
         };
 
         ctx.repos
@@ -99,6 +101,6 @@ impl UseCase for OAuthIntegrationUseCase {
             .map(|_| UseCaseRes {
                 user: self.user.clone(),
             })
-            .map_err(|_| UseCaseErrors::StorageError)
+            .map_err(|_| UseCaseError::StorageError)
     }
 }

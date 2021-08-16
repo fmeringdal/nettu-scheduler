@@ -1,5 +1,4 @@
 use super::IEventRemindersGenerationJobsRepo;
-
 use nettu_scheduler_domain::EventRemindersExpansionJob;
 use sqlx::{types::Uuid, FromRow, PgPool};
 

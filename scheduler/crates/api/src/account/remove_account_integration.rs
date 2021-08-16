@@ -24,12 +24,7 @@ pub async fn remove_account_integration_controller(
                 "Provider integration removed from account",
             ))
         })
-        .map_err(|e| match e {
-            UseCaseErrors::StorageError => NettuError::InternalError,
-            UseCaseErrors::IntegrationNotFound => NettuError::NotFound(
-                "Did not find an integration between the given account and provider".into(),
-            ),
-        })
+        .map_err(NettuError::from)
 }
 
 #[derive(Debug)]
@@ -39,34 +34,44 @@ pub struct RemoveAccountIntegrationUseCase {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum UseCaseErrors {
+pub enum UseCaseError {
     StorageError,
     IntegrationNotFound,
 }
 
+impl From<UseCaseError> for NettuError {
+    fn from(e: UseCaseError) -> Self {
+        match e {
+            UseCaseError::StorageError => Self::InternalError,
+            UseCaseError::IntegrationNotFound => Self::NotFound(
+                "Did not find an integration between the given account and provider".into(),
+            ),
+        }
+    }
+}
 #[async_trait::async_trait(?Send)]
 impl UseCase for RemoveAccountIntegrationUseCase {
     type Response = ();
 
-    type Errors = UseCaseErrors;
+    type Error = UseCaseError;
 
     const NAME: &'static str = "RemoveAccountIntegration";
 
-    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Error> {
         let acc_integrations = ctx
             .repos
             .account_integrations
             .find(&self.account.id)
             .await
-            .map_err(|_| UseCaseErrors::StorageError)?;
+            .map_err(|_| UseCaseError::StorageError)?;
         if !acc_integrations.iter().any(|i| i.provider == self.provider) {
-            return Err(UseCaseErrors::IntegrationNotFound);
+            return Err(UseCaseError::IntegrationNotFound);
         }
 
         ctx.repos
             .account_integrations
             .delete(&self.account.id, self.provider.clone())
             .await
-            .map_err(|_| UseCaseErrors::StorageError)
+            .map_err(|_| UseCaseError::StorageError)
     }
 }

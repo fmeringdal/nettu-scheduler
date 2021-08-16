@@ -15,7 +15,7 @@ pub struct GetUpcomingRemindersUseCase {
 }
 
 #[derive(Debug)]
-pub enum UseCaseErrors {}
+pub enum UseCaseError {}
 
 async fn get_accounts_from_reminders(
     reminders: &[Reminder],
@@ -90,12 +90,12 @@ async fn create_reminders_for_accounts(
 impl UseCase for GetUpcomingRemindersUseCase {
     type Response = (Vec<(Account, AccountReminders)>, Instant);
 
-    type Errors = UseCaseErrors;
+    type Error = UseCaseError;
 
     const NAME: &'static str = "GetUpcomingReminders";
 
     /// This will run every minute
-    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Error> {
         // Find all occurrences for the next interval and delete them
         let ts = ctx.sys.get_timestamp_millis() + self.reminders_interval;
 

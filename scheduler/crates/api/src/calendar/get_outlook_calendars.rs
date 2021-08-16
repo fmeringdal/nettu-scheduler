@@ -11,15 +11,6 @@ use nettu_scheduler_domain::{
 };
 use nettu_scheduler_infra::{outlook_calendar::OutlookCalendarProvider, NettuContext};
 
-fn handle_errors(e: UseCaseErrors) -> NettuError {
-    match e {
-        UseCaseErrors::UserNotConnectedToOutlook => {
-            NettuError::BadClientData("The user is not connected to outlook.".into())
-        }
-        UseCaseErrors::OutlookQuery => NettuError::InternalError,
-    }
-}
-
 pub async fn get_outlook_calendars_admin_controller(
     http_req: web::HttpRequest,
     path: web::Path<PathParams>,
@@ -37,7 +28,7 @@ pub async fn get_outlook_calendars_admin_controller(
     execute(usecase, &ctx)
         .await
         .map(|calendars| HttpResponse::Ok().json(APIResponse::new(calendars)))
-        .map_err(handle_errors)
+        .map_err(NettuError::from)
 }
 
 pub async fn get_outlook_calendars_controller(
@@ -55,7 +46,7 @@ pub async fn get_outlook_calendars_controller(
     execute(usecase, &ctx)
         .await
         .map(|calendars| HttpResponse::Ok().json(APIResponse::new(calendars)))
-        .map_err(handle_errors)
+        .map_err(NettuError::from)
 }
 
 #[derive(Debug)]
@@ -65,28 +56,39 @@ struct GetOutlookCalendarsUseCase {
 }
 
 #[derive(Debug)]
-enum UseCaseErrors {
+enum UseCaseError {
     UserNotConnectedToOutlook,
     OutlookQuery,
+}
+
+impl From<UseCaseError> for NettuError {
+    fn from(e: UseCaseError) -> Self {
+        match e {
+            UseCaseError::UserNotConnectedToOutlook => {
+                Self::BadClientData("The user is not connected to outlook.".into())
+            }
+            UseCaseError::OutlookQuery => Self::InternalError,
+        }
+    }
 }
 
 #[async_trait::async_trait(?Send)]
 impl UseCase for GetOutlookCalendarsUseCase {
     type Response = Vec<OutlookCalendar>;
 
-    type Errors = UseCaseErrors;
+    type Error = UseCaseError;
 
     const NAME: &'static str = "GetOutlookCalendars";
 
-    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Error> {
         let provider = OutlookCalendarProvider::new(&self.user, ctx)
             .await
-            .map_err(|_| UseCaseErrors::UserNotConnectedToOutlook)?;
+            .map_err(|_| UseCaseError::UserNotConnectedToOutlook)?;
 
         provider
             .list(self.min_access_role.clone())
             .await
-            .map_err(|_| UseCaseErrors::OutlookQuery)
+            .map_err(|_| UseCaseError::OutlookQuery)
             .map(|res| res.value)
     }
 }

@@ -8,18 +8,6 @@ use nettu_scheduler_api_structs::get_event_instances::*;
 use nettu_scheduler_domain::{CalendarEvent, EventInstance, TimeSpan, ID};
 use nettu_scheduler_infra::NettuContext;
 
-fn handle_error(e: UseCaseErrors) -> NettuError {
-    match e {
-        UseCaseErrors::InvalidTimespan => {
-            NettuError::BadClientData("The provided start_ts and end_ts is invalid".into())
-        }
-        UseCaseErrors::NotFound(entity, event_id) => NettuError::NotFound(format!(
-            "The {} with id: {}, was not found.",
-            entity, event_id
-        )),
-    }
-}
-
 pub async fn get_event_instances_admin_controller(
     http_req: HttpRequest,
     path_params: web::Path<PathParams>,
@@ -40,7 +28,7 @@ pub async fn get_event_instances_admin_controller(
         .map(|usecase_res| {
             HttpResponse::Ok().json(APIResponse::new(usecase_res.event, usecase_res.instances))
         })
-        .map_err(handle_error)
+        .map_err(NettuError::from)
 }
 
 pub async fn get_event_instances_controller(
@@ -62,7 +50,7 @@ pub async fn get_event_instances_controller(
         .map(|usecase_res| {
             HttpResponse::Ok().json(APIResponse::new(usecase_res.event, usecase_res.instances))
         })
-        .map_err(handle_error)
+        .map_err(NettuError::from)
 }
 
 #[derive(Debug)]
@@ -73,9 +61,23 @@ pub struct GetEventInstancesUseCase {
 }
 
 #[derive(Debug)]
-pub enum UseCaseErrors {
+pub enum UseCaseError {
     NotFound(String, ID),
     InvalidTimespan,
+}
+
+impl From<UseCaseError> for NettuError {
+    fn from(e: UseCaseError) -> Self {
+        match e {
+            UseCaseError::InvalidTimespan => {
+                Self::BadClientData("The provided start_ts and end_ts is invalid".into())
+            }
+            UseCaseError::NotFound(entity, event_id) => Self::NotFound(format!(
+                "The {} with id: {}, was not found.",
+                entity, event_id
+            )),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -88,33 +90,30 @@ pub struct UseCaseResponse {
 impl UseCase for GetEventInstancesUseCase {
     type Response = UseCaseResponse;
 
-    type Errors = UseCaseErrors;
+    type Error = UseCaseError;
 
     const NAME: &'static str = "GetEventInstances";
 
-    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Error> {
         let e = ctx.repos.events.find(&self.event_id).await;
         match e {
             Some(event) if self.user_id == event.user_id => {
                 let calendar = match ctx.repos.calendars.find(&event.calendar_id).await {
                     Some(cal) => cal,
                     None => {
-                        return Err(UseCaseErrors::NotFound(
-                            "Calendar".into(),
-                            event.calendar_id,
-                        ))
+                        return Err(UseCaseError::NotFound("Calendar".into(), event.calendar_id))
                     }
                 };
 
                 let timespan = TimeSpan::new(self.timespan.start_ts, self.timespan.end_ts);
                 if timespan.greater_than(ctx.config.event_instances_query_duration_limit) {
-                    return Err(UseCaseErrors::InvalidTimespan);
+                    return Err(UseCaseError::InvalidTimespan);
                 }
 
                 let instances = event.expand(Some(&timespan), &calendar.settings);
                 Ok(UseCaseResponse { event, instances })
             }
-            _ => Err(UseCaseErrors::NotFound(
+            _ => Err(UseCaseError::NotFound(
                 "Calendar Event".into(),
                 self.event_id.clone(),
             )),

@@ -1,7 +1,6 @@
 use crate::shared::usecase::{execute, UseCase};
 use crate::{error::NettuError, shared::auth::protect_account_route};
 use actix_web::{web, HttpRequest, HttpResponse};
-
 use nettu_scheduler_api_structs::delete_user::*;
 use nettu_scheduler_domain::{Account, User, ID};
 use nettu_scheduler_infra::NettuContext;
@@ -20,13 +19,7 @@ pub async fn delete_user_controller(
     execute(usecase, &ctx)
         .await
         .map(|usecase_res| HttpResponse::Ok().json(APIResponse::new(usecase_res.user)))
-        .map_err(|e| match e {
-            UseCaseErrors::StorageError => NettuError::InternalError,
-            UseCaseErrors::UserNotFound => NettuError::NotFound(format!(
-                "A user with id: {}, was not found.",
-                path_params.user_id
-            )),
-        })
+        .map_err(NettuError::from)
 }
 
 #[derive(Debug)]
@@ -41,28 +34,39 @@ struct UseCaseRes {
 }
 
 #[derive(Debug)]
-enum UseCaseErrors {
+enum UseCaseError {
     StorageError,
-    UserNotFound,
+    UserNotFound(ID),
+}
+
+impl From<UseCaseError> for NettuError {
+    fn from(e: UseCaseError) -> Self {
+        match e {
+            UseCaseError::StorageError => Self::InternalError,
+            UseCaseError::UserNotFound(id) => {
+                Self::NotFound(format!("A user with id: {}, was not found.", id))
+            }
+        }
+    }
 }
 
 #[async_trait::async_trait(?Send)]
 impl UseCase for DeleteUserUseCase {
     type Response = UseCaseRes;
 
-    type Errors = UseCaseErrors;
+    type Error = UseCaseError;
 
     const NAME: &'static str = "DeleteUser";
 
-    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Error> {
         let user = match ctx.repos.users.find(&self.user_id).await {
             Some(u) if u.account_id == self.account.id => {
                 match ctx.repos.users.delete(&self.user_id).await {
                     Some(u) => u,
-                    None => return Err(UseCaseErrors::StorageError),
+                    None => return Err(UseCaseError::StorageError),
                 }
             }
-            _ => return Err(UseCaseErrors::UserNotFound),
+            _ => return Err(UseCaseError::UserNotFound(self.user_id.clone())),
         };
 
         Ok(UseCaseRes { user })

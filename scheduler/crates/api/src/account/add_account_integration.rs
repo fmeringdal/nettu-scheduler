@@ -24,12 +24,7 @@ pub async fn add_account_integration_controller(
     execute(usecase, &ctx)
         .await
         .map(|_| HttpResponse::Ok().json(APIResponse::from("Integration enabled for account")))
-        .map_err(|e| match e {
-            UseCaseErrors::StorageError => NettuError::InternalError,
-            UseCaseErrors::IntegrationAlreadyExists => {
-                NettuError::Conflict("Account already has an integration for that provider".into())
-            }
-        })
+        .map_err(NettuError::from)
 }
 
 #[derive(Debug)]
@@ -42,20 +37,31 @@ pub struct AddAccountIntegrationUseCase {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum UseCaseErrors {
+pub enum UseCaseError {
     StorageError,
     IntegrationAlreadyExists,
+}
+
+impl From<UseCaseError> for NettuError {
+    fn from(e: UseCaseError) -> Self {
+        match e {
+            UseCaseError::StorageError => Self::InternalError,
+            UseCaseError::IntegrationAlreadyExists => {
+                Self::Conflict("Account already has an integration for that provider".into())
+            }
+        }
+    }
 }
 
 #[async_trait::async_trait(?Send)]
 impl UseCase for AddAccountIntegrationUseCase {
     type Response = ();
 
-    type Errors = UseCaseErrors;
+    type Error = UseCaseError;
 
     const NAME: &'static str = "AddAccountIntegration";
 
-    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Errors> {
+    async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Error> {
         // TODO: check if it is possible to validate client id or client secret
 
         let acc_integrations = ctx
@@ -63,9 +69,9 @@ impl UseCase for AddAccountIntegrationUseCase {
             .account_integrations
             .find(&self.account.id)
             .await
-            .map_err(|_| UseCaseErrors::StorageError)?;
+            .map_err(|_| UseCaseError::StorageError)?;
         if acc_integrations.iter().any(|i| i.provider == self.provider) {
-            return Err(UseCaseErrors::IntegrationAlreadyExists);
+            return Err(UseCaseError::IntegrationAlreadyExists);
         }
 
         let integration = AccountIntegration {
@@ -76,15 +82,11 @@ impl UseCase for AddAccountIntegrationUseCase {
             provider: self.provider.clone(),
         };
 
-        if ctx
-            .repos
+        ctx.repos
             .account_integrations
             .insert(&integration)
             .await
-            .is_err()
-        {
-            return Err(UseCaseErrors::StorageError);
-        }
+            .map_err(|_| UseCaseError::StorageError)?;
 
         Ok(())
     }

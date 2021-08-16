@@ -8,11 +8,10 @@ use repos::Repos;
 pub use repos::{
     BusyCalendarIdentifier, ExternalBusyCalendarIdentifier, KVMetadata, MetadataFindQuery,
 };
+pub use services::*;
 use std::sync::Arc;
 pub use system::ISys;
 use system::RealSys;
-
-pub use services::*;
 
 #[derive(Clone)]
 pub struct NettuContext {

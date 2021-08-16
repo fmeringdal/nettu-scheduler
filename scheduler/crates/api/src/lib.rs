@@ -12,7 +12,6 @@ mod user;
 use actix_cors::Cors;
 use actix_web::{dev::Server, middleware, web, App, HttpServer};
 use job_schedulers::{start_reminder_generation_job_scheduler, start_send_reminders_job};
-
 use nettu_scheduler_domain::{
     Account, AccountIntegration, AccountWebhookSettings, IntegrationProvider, PEMKey, ID,
 };
