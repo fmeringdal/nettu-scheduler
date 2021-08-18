@@ -12,6 +12,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.cargo/bin
+            scheduler/target/debug
+          key: cargo
+
       - name: Build docker compose stack
         run: |
           cd scheduler
@@ -21,7 +30,7 @@ jobs:
         run: |
           cd scheduler
           # https://github.com/xd009642/tarpaulin/issues/756
-          cargo install cargo-tarpaulin --version 0.18.0-alpha3
+          cargo install cargo-tarpaulin --version 0.18.0-alpha3 || true
           # cargo install cargo-tarpaulin
           cargo tarpaulin --avoid-cfg-tarpaulin --verbose --all-features --workspace --timeout 120 --out Xml
 
