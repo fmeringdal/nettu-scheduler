@@ -1,6 +1,6 @@
-name: Test
+name: PR
 
-on: [push]
+on: [pull_request]
 jobs:
   test:
     name: test
@@ -17,15 +17,8 @@ jobs:
           cd scheduler
           docker-compose -f ./integrations/docker-compose.yml up -d
 
-      - name: Generate code coverage
+      - name: Run tests
         run: |
           cd scheduler
           # https://github.com/xd009642/tarpaulin/issues/756
-          cargo install cargo-tarpaulin --version 0.18.0-alpha3
-          # cargo install cargo-tarpaulin
-          cargo tarpaulin --avoid-cfg-tarpaulin --verbose --all-features --workspace --timeout 120 --out Xml
-
-      - name: Upload to codecov.io
-        uses: codecov/codecov-action@v1
-        with:
-          fail_ci_if_error: true
+          cargo test --all
