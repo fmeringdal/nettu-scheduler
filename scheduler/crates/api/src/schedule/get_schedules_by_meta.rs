@@ -1,8 +1,8 @@
 use crate::{error::NettuError, shared::auth::protect_account_route};
 use actix_web::{web, HttpRequest, HttpResponse};
 use nettu_scheduler_api_structs::get_schedules_by_meta::*;
-use nettu_scheduler_infra::{ MetadataFindQuery, NettuContext};
 use nettu_scheduler_domain::Metadata;
+use nettu_scheduler_infra::{MetadataFindQuery, NettuContext};
 
 pub async fn get_schedules_by_meta_controller(
     http_req: HttpRequest,

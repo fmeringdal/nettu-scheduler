@@ -1,7 +1,7 @@
 mod helpers;
 
 use helpers::setup::spawn_app;
-use nettu_scheduler_domain::{PEMKey};
+use nettu_scheduler_domain::PEMKey;
 use nettu_scheduler_sdk::{
     AddServiceUserInput, CreateCalendarInput, CreateEventInput, CreateScheduleInput,
     CreateServiceInput, CreateUserInput, DeleteCalendarInput, DeleteEventInput,

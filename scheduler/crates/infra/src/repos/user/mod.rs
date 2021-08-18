@@ -18,7 +18,7 @@ pub trait IUserRepo: Send + Sync {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{setup_context};
+    use crate::setup_context;
     use nettu_scheduler_domain::{Account, Metadata};
 
     #[tokio::test]
@@ -50,7 +50,9 @@ mod tests {
 
         // Now add metadata
         let mut metadata = Metadata::default();
-        metadata.inner.insert("group_id".to_string(), "123".to_string());
+        metadata
+            .inner
+            .insert("group_id".to_string(), "123".to_string());
 
         user.metadata = metadata;
         ctx.repos.users.save(&user).await.expect("To save user");

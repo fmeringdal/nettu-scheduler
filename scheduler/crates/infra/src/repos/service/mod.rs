@@ -63,7 +63,10 @@ mod tests {
             .find_with_users(&service.id)
             .await
             .expect("To get service");
-        assert_eq!(*service.metadata.inner.get("foo").unwrap(), "bar".to_string());
+        assert_eq!(
+            *service.metadata.inner.get("foo").unwrap(),
+            "bar".to_string()
+        );
         assert_eq!(service.users.len(), 1);
 
         ctx.repos

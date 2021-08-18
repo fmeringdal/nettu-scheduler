@@ -5,9 +5,7 @@ mod system;
 
 pub use config::Config;
 use repos::Repos;
-pub use repos::{
-    BusyCalendarIdentifier, ExternalBusyCalendarIdentifier, MetadataFindQuery,
-};
+pub use repos::{BusyCalendarIdentifier, ExternalBusyCalendarIdentifier, MetadataFindQuery};
 pub use services::*;
 use std::sync::Arc;
 pub use system::ISys;
