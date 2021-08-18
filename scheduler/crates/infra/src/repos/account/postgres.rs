@@ -49,7 +49,11 @@ impl IAccountRepo for PostgresAccountRepo {
             Json(&account.settings) as _
         )
         .execute(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            println!("Unable to insert account : {:?}", e);
+            e
+        })?;
         Ok(())
     }
 
