@@ -9,8 +9,22 @@ pub struct Metadata {
 }
 
 impl Metadata {
-    pub fn new(inner: HashMap<String, String>) -> Self {
-        Self { inner }
+    pub fn new() -> Self {
+        Self { inner: HashMap::new() }
+    }
+
+    pub fn new_kv(key: String, value: String) -> Self {
+        let mut inner = HashMap::new();
+        inner.insert(key, value);
+        Self::from(inner)
+    }
+}
+
+impl From<HashMap<String, String>> for Metadata {
+    fn from(inner: HashMap<String, String>) -> Self {
+        Self {
+            inner
+        }
     }
 }
 

@@ -1,7 +1,7 @@
 mod helpers;
 
 use helpers::setup::spawn_app;
-use nettu_scheduler_domain::{Metadata, PEMKey};
+use nettu_scheduler_domain::{PEMKey};
 use nettu_scheduler_sdk::{
     AddServiceUserInput, CreateCalendarInput, CreateEventInput, CreateScheduleInput,
     CreateServiceInput, CreateUserInput, DeleteCalendarInput, DeleteEventInput,
@@ -62,7 +62,7 @@ async fn test_crud_user() {
     let res = admin_client
         .user
         .create(CreateUserInput {
-            metadata: Some(Metadata::new(metadata)),
+            metadata: Some(metadata.into()),
         })
         .await
         .expect("Expected to create user");

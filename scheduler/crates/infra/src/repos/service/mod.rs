@@ -49,7 +49,7 @@ mod tests {
         assert!(ctx.repos.service_users.insert(&resource).await.is_ok());
 
         let mut metadata = Metadata::new();
-        metadata.insert("foo".to_string(), "bar".to_string());
+        metadata.inner.insert("foo".to_string(), "bar".to_string());
         service.metadata = metadata;
         ctx.repos
             .services
@@ -63,7 +63,7 @@ mod tests {
             .find_with_users(&service.id)
             .await
             .expect("To get service");
-        assert_eq!(*service.metadata.get("foo").unwrap(), "bar".to_string());
+        assert_eq!(*service.metadata.inner.get("foo").unwrap(), "bar".to_string());
         assert_eq!(service.users.len(), 1);
 
         ctx.repos

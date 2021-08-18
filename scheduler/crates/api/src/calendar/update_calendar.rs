@@ -138,8 +138,6 @@ impl PermissionBoundary for UpdateCalendarUseCase {
 
 #[cfg(test)]
 mod test {
-    use std::collections::HashMap;
-
     use nettu_scheduler_domain::{Account, Calendar, User};
     use nettu_scheduler_infra::setup_context;
 
@@ -185,7 +183,7 @@ mod test {
             calendar_id: calendar.id.clone(),
             week_start: Some(new_wkst),
             timezone: None,
-            metadata: Some(Metadata::new(HashMap::new())),
+            metadata: Some(Metadata::new()),
         };
         let res = usecase.execute(&ctx).await;
         assert!(res.is_ok());
