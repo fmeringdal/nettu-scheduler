@@ -30,7 +30,7 @@ jobs:
         run: |
           cd scheduler
           # https://github.com/xd009642/tarpaulin/issues/756
-          cargo install cargo-tarpaulin --version 0.18.0-alpha3
+          cargo install cargo-tarpaulin --version 0.18.0-alpha3 || true
           # cargo install cargo-tarpaulin
           cargo tarpaulin --avoid-cfg-tarpaulin --verbose --all-features --workspace --timeout 120 --out Xml
 
