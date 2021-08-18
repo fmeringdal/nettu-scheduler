@@ -185,7 +185,7 @@ mod test {
             calendar_id: calendar.id.clone(),
             week_start: Some(new_wkst),
             timezone: None,
-            metadata: Some(HashMap::new()),
+            metadata: Some(Metadata::new(HashMap::new())),
         };
         let res = usecase.execute(&ctx).await;
         assert!(res.is_ok());
