@@ -389,7 +389,7 @@ mod tests {
             duration: None,
             exdates: None,
             metadata: None,
-            reminders: Some(vec![]),
+            reminders: Some(Vec::new()),
             recurrence: Some(Default::default()),
             service_id: None,
             start_ts: None,

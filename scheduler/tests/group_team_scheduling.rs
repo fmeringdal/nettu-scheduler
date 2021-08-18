@@ -98,8 +98,8 @@ async fn test_group_team_scheduling() {
                 .expect("To create service")
                 .service;
 
-            let mut hosts_with_calendar = vec![];
-            let mut hosts = vec![];
+            let mut hosts_with_calendar = Vec::new();
+            let mut hosts = Vec::new();
             for _ in 0..users_count {
                 let host = create_default_service_host(&admin_client, &service.id).await;
                 hosts.push(host.0.clone());
@@ -169,7 +169,7 @@ async fn test_group_team_scheduling() {
                     duration,
                     metadata: None,
                     recurrence: None,
-                    reminders: vec![],
+                    reminders: Vec::new(),
                     service_id: Some(service.id.clone()),
                     start_ts: available_slot,
                 };
@@ -480,7 +480,7 @@ async fn test_group_team_scheduling_increase_max_count() {
             duration,
             metadata: None,
             recurrence: None,
-            reminders: vec![],
+            reminders: Vec::new(),
             service_id: Some(service.id.clone()),
             start_ts: available_slot,
         };
@@ -889,7 +889,7 @@ async fn test_group_team_scheduling_decrease_max_count() {
             duration,
             metadata: None,
             recurrence: None,
-            reminders: vec![],
+            reminders: Vec::new(),
             service_id: Some(service.id.clone()),
             start_ts: available_slot,
         };
@@ -1086,7 +1086,7 @@ async fn test_combination_of_services() {
         duration,
         metadata: None,
         recurrence: None,
-        reminders: vec![],
+        reminders: Vec::new(),
         service_id: Some(group_service.id.clone()),
         start_ts: available_slot,
     };

@@ -43,7 +43,7 @@ impl RoundRobinAvailabilityAssignment {
             return None;
         }
         self.members.sort_by_key(|m| m.1);
-        let mut least_recently_booked_members: Vec<(ID, Option<i64>)> = vec![];
+        let mut least_recently_booked_members: Vec<(ID, Option<i64>)> = Vec::new();
         for member in self.members {
             if least_recently_booked_members.is_empty()
                 || member.1 == least_recently_booked_members[0].1
@@ -125,7 +125,9 @@ mod tests {
 
     #[test]
     fn round_robin_availability_assignment_without_members() {
-        let query = RoundRobinAvailabilityAssignment { members: vec![] };
+        let query = RoundRobinAvailabilityAssignment {
+            members: Vec::new(),
+        };
         assert!(query.assign().is_none());
     }
 
@@ -187,8 +189,8 @@ mod tests {
     #[test]
     fn round_robin_eq_distribution_assignment_without_members() {
         let query = RoundRobinEqualDistributionAssignment {
-            events: vec![],
-            user_ids: vec![],
+            events: Vec::new(),
+            user_ids: Vec::new(),
         };
         assert!(query.assign().is_none());
     }

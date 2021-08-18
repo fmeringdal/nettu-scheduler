@@ -50,9 +50,15 @@ pub struct GoogleCalendarEventAttributes {
 impl From<CalendarEvent> for GoogleCalendarEventAttributes {
     fn from(e: CalendarEvent) -> Self {
         let empty = "".to_string();
-        let summary = e.metadata.get("google.summary").unwrap_or(&empty).clone();
+        let summary = e
+            .metadata
+            .inner
+            .get("google.summary")
+            .unwrap_or(&empty)
+            .clone();
         let description = e
             .metadata
+            .inner
             .get("google.description")
             .unwrap_or(&empty)
             .clone();
@@ -68,7 +74,7 @@ impl From<CalendarEvent> for GoogleCalendarEventAttributes {
             // Recurrence sync not supported yet, so e.end_ts will not be correct if used
             end: GoogleCalendarEventDateTime::new(e.start_ts + e.duration),
             // Recurrence sync not supported yet
-            recurrence: vec![],
+            recurrence: Vec::new(),
             // Whether it blocks calendar time or not
             transparency,
         }

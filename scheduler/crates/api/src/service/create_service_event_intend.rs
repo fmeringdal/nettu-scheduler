@@ -141,7 +141,7 @@ impl UseCase for CreateServiceEventIntendUseCase {
             }
             host_user_ids.clone()
         } else {
-            let mut hosts_at_slot = vec![];
+            let mut hosts_at_slot = Vec::new();
             for date in booking_slots_dates {
                 for slot in date.slots {
                     if slot.start == self.timestamp {

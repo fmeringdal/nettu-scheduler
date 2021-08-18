@@ -18,7 +18,7 @@ pub trait IUserRepo: Send + Sync {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{repos::shared::query_structs::KVMetadata, setup_context};
+    use crate::setup_context;
     use nettu_scheduler_domain::{Account, Metadata};
 
     #[tokio::test]
@@ -37,10 +37,7 @@ mod tests {
         let mut query = MetadataFindQuery {
             account_id: account.id.clone(),
             limit: 100,
-            metadata: KVMetadata {
-                key: "group_id".into(),
-                value: "123".into(),
-            },
+            metadata: Metadata::new_kv("group_id".to_string(), "123".to_string()),
             skip: 0,
         };
 
@@ -53,7 +50,9 @@ mod tests {
 
         // Now add metadata
         let mut metadata = Metadata::default();
-        metadata.insert("group_id".to_string(), "123".to_string());
+        metadata
+            .inner
+            .insert("group_id".to_string(), "123".to_string());
 
         user.metadata = metadata;
         ctx.repos.users.save(&user).await.expect("To save user");

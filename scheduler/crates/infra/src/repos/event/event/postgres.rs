@@ -1,6 +1,7 @@
 use super::{IEventRepo, MostRecentCreatedServiceEvents};
-use crate::repos::{extract_metadata, shared::query_structs::MetadataFindQuery, to_metadata};
+use crate::repos::shared::query_structs::MetadataFindQuery;
 use nettu_scheduler_domain::{CalendarEvent, CalendarEventReminder, RRuleOptions, ID};
+use serde_json::Value;
 use sqlx::{
     types::{Json, Uuid},
     FromRow, PgPool,
@@ -44,11 +45,11 @@ struct EventRaw {
     end_ts: i64,
     created: i64,
     updated: i64,
-    recurrence: Option<serde_json::Value>,
+    recurrence: Option<Value>,
     exdates: Vec<i64>,
-    reminders: Option<serde_json::Value>,
+    reminders: Option<Value>,
     service_uid: Option<Uuid>,
-    metadata: Vec<String>,
+    metadata: Value,
 }
 
 impl From<EventRaw> for CalendarEvent {
@@ -59,7 +60,7 @@ impl From<EventRaw> for CalendarEvent {
         };
         let reminders: Vec<CalendarEventReminder> = match e.reminders {
             Some(json) => serde_json::from_value(json).unwrap(),
-            None => vec![],
+            None => Vec::new(),
         };
 
         Self {
@@ -77,7 +78,7 @@ impl From<EventRaw> for CalendarEvent {
             exdates: e.exdates,
             reminders,
             service_id: e.service_uid.map(|id| id.into()),
-            metadata: extract_metadata(e.metadata),
+            metadata: serde_json::from_value(e.metadata).unwrap(),
         }
     }
 }
@@ -85,7 +86,6 @@ impl From<EventRaw> for CalendarEvent {
 #[async_trait::async_trait]
 impl IEventRepo for PostgresEventRepo {
     async fn insert(&self, e: &CalendarEvent) -> anyhow::Result<()> {
-        let metadata = to_metadata(e.metadata.clone());
         sqlx::query!(
             r#"
             INSERT INTO calendar_events(
@@ -117,7 +117,7 @@ impl IEventRepo for PostgresEventRepo {
             &e.exdates,
             Json(&e.reminders) as _,
             e.service_id.as_ref().map(|id| id.inner_ref()),
-            &metadata
+            Json(&e.metadata) as _,
         )
         .execute(&self.pool)
         .await
@@ -131,7 +131,6 @@ impl IEventRepo for PostgresEventRepo {
     }
 
     async fn save(&self, e: &CalendarEvent) -> anyhow::Result<()> {
-        let metadata = to_metadata(e.metadata.clone());
         sqlx::query!(
             r#"
             UPDATE calendar_events SET
@@ -159,7 +158,7 @@ impl IEventRepo for PostgresEventRepo {
             &e.exdates,
             Json(&e.reminders) as _,
             e.service_id.as_ref().map(|id| id.inner_ref()),
-            &metadata
+            Json(&e.metadata) as _,
         )
         .execute(&self.pool)
         .await
@@ -295,7 +294,7 @@ impl IEventRepo for PostgresEventRepo {
                     service_id,
                     e
                 );
-                return vec![];
+                return Vec::new();
             }
         };
         events.into_iter().map(|e| e.into()).collect()
@@ -333,7 +332,7 @@ impl IEventRepo for PostgresEventRepo {
         .await
         {
             Ok(events) => events,
-            Err(_e) => return vec![],
+            Err(_e) => return Vec::new(),
         };
         events.into_iter().map(|e| e.into()).collect()
     }
@@ -367,7 +366,7 @@ impl IEventRepo for PostgresEventRepo {
         .await
         {
             Ok(events) => events,
-            Err(_e) => return vec![],
+            Err(_e) => return Vec::new(),
         };
         events.into_iter().map(|e| e.into()).collect()
     }
@@ -404,8 +403,6 @@ impl IEventRepo for PostgresEventRepo {
     }
 
     async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<CalendarEvent> {
-        let key = format!("{}_{}", query.metadata.key, query.metadata.value);
-
         let events: Vec<EventRaw> = sqlx::query_as!(
             EventRaw,
             r#"
@@ -414,12 +411,12 @@ impl IEventRepo for PostgresEventRepo {
                 ON c.calendar_uid = e.calendar_uid
             INNER JOIN users AS u
                 ON u.user_uid = c.user_uid
-            WHERE u.account_uid = $1 AND e.metadata @> ARRAY[$2]
+            WHERE u.account_uid = $1 AND e.metadata @> $2
             LIMIT $3
             OFFSET $4
             "#,
             query.account_id.inner_ref(),
-            key,
+            Json(&query.metadata) as _,
             query.limit as i64,
             query.skip as i64,
         )

@@ -62,12 +62,12 @@ async fn test_crud_user() {
     let res = admin_client
         .user
         .create(CreateUserInput {
-            metadata: Some(metadata.clone()),
+            metadata: Some(metadata.into()),
         })
         .await
         .expect("Expected to create user");
     assert_eq!(
-        res.user.metadata.get("group_id").unwrap().clone(),
+        res.user.metadata.inner.get("group_id").unwrap().clone(),
         "123".to_string()
     );
 
@@ -385,7 +385,7 @@ async fn test_crud_events() {
             CreateEventInput {
                 calendar_id: calendar.id.clone(),
                 duration: 1000 * 60 * 60,
-                reminders: vec![],
+                reminders: Vec::new(),
                 busy: None,
                 recurrence: None,
                 service_id: None,

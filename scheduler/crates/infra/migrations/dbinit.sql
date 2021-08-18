@@ -3,7 +3,7 @@
 -- \i ~/Projects/nettu-scheduler/scheduler/crates/infra/migrations/dbinit.sql;
 begin;
 
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp"; 
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- TODO: Better docs and comments on schema
 -- TODO: Better indexing strategy
@@ -32,13 +32,13 @@ COMMENT ON DOMAIN entity_version IS
 
 -- immutable_columns() will make the column names immutable which are passed as
 -- parameters when the trigger is created. It raises error code 23601 which is a
--- class 23 integrity constraint violation: immutable column  
+-- class 23 integrity constraint violation: immutable column
 create or replace function
   immutable_columns()
   returns trigger
 as $$
-declare 
-	col_name text; 
+declare
+	col_name text;
 	new_value text;
 	old_value text;
 begin
@@ -47,7 +47,7 @@ begin
     execute format('SELECT $1.%I', col_name) into old_value using old;
   	if new_value is distinct from old_value then
       raise exception 'immutable column: %.%', tg_table_name, col_name using
-        errcode = '23601', 
+        errcode = '23601',
         schema = tg_table_schema,
         table = tg_table_name,
         column = col_name;
@@ -98,7 +98,7 @@ update on account_integrations
 CREATE TABLE IF NOT EXISTS users (
     user_uid uuid PRIMARY KEY DEFAULT uuid_generate_v4() NOT NULL,
     account_uid uuid NOT NULL REFERENCES accounts(account_uid) ON DELETE CASCADE,
-    metadata text[] NOT NULL
+    metadata jsonb NOT NULL
 );
 CREATE INDEX IF NOT EXISTS user_metadata ON users USING GIN (metadata);
 
@@ -129,7 +129,7 @@ CREATE TABLE IF NOT EXISTS services (
     service_uid uuid PRIMARY KEY DEFAULT uuid_generate_v4() NOT NULL,
     account_uid uuid NOT NULL REFERENCES accounts(account_uid) ON DELETE CASCADE,
     multi_person JSON NOT NULL,
-    metadata text[] NOT NULL
+    metadata jsonb NOT NULL
 );
 CREATE INDEX IF NOT EXISTS service_metadata ON services USING GIN (metadata);
 
@@ -137,7 +137,7 @@ CREATE TABLE IF NOT EXISTS calendars (
     calendar_uid uuid PRIMARY KEY DEFAULT uuid_generate_v4() NOT NULL,
     user_uid uuid NOT NULL REFERENCES users(user_uid) ON DELETE CASCADE,
     settings JSON NOT NULL,
-    metadata text[] NOT NULL
+    metadata jsonb NOT NULL
 );
 CREATE INDEX IF NOT EXISTS metadata ON calendars USING GIN (metadata);
 create trigger
@@ -173,7 +173,7 @@ CREATE TABLE IF NOT EXISTS calendar_events (
     exdates BIGINT[] NOT NULL,
     reminders JSON,
     service_uid uuid REFERENCES services(service_uid) ON DELETE CASCADE,
-    metadata text[] NOT NULL
+    metadata jsonb NOT NULL
 );
 CREATE INDEX IF NOT EXISTS event_metadata ON calendar_events USING GIN (metadata);
 create trigger
@@ -209,11 +209,11 @@ before
 update on event_reminder_versions
     for each row execute procedure immutable_columns('event_uid', 'version');
 
-COMMENT ON TABLE event_reminder_versions IS 
-'There are three usecases which can generate event reminders. 
-1. API call to create an event with reminders. 
-2. API call to update an existing event. 
-3. A scheduled job from the calendar_event_reminder_generation_jobs table. 
+COMMENT ON TABLE event_reminder_versions IS
+'There are three usecases which can generate event reminders.
+1. API call to create an event with reminders.
+2. API call to update an existing event.
+3. A scheduled job from the calendar_event_reminder_generation_jobs table.
 
 If the update event and scheduled job happens at the same time it is possible that the scheduled job
 generates reminders for an outdated calendar event. Therefore the update event usecase
@@ -230,8 +230,8 @@ CREATE TABLE IF NOT EXISTS reminders (
     PRIMARY KEY(event_uid, remind_at, identifier),
     FOREIGN KEY(event_uid, "version") REFERENCES event_reminder_versions(event_uid, "version") ON DELETE CASCADE
 );
-COMMENT ON COLUMN reminders.identifier IS 
-'User defined identifier to be able to seperate reminders at same timestamp for 
+COMMENT ON COLUMN reminders.identifier IS
+'User defined identifier to be able to seperate reminders at same timestamp for
 the same event';
 
 create trigger
@@ -259,7 +259,7 @@ CREATE TABLE IF NOT EXISTS schedules (
     user_uid uuid NOT NULL REFERENCES users(user_uid) ON DELETE CASCADE,
     rules JSON NOT NULL,
     timezone text NOT NULL,
-    metadata text[] NOT NULL
+    metadata jsonb NOT NULL
 );
 CREATE INDEX IF NOT EXISTS schedule_metadata ON schedules USING GIN (metadata);
 create trigger
@@ -277,10 +277,10 @@ CREATE TABLE IF NOT EXISTS service_users (
     user_uid uuid NOT NULL REFERENCES users(user_uid) ON DELETE CASCADE,
     available_calendar_uid uuid REFERENCES calendars(calendar_uid) ON DELETE SET NULL,
     available_schedule_uid uuid REFERENCES schedules(schedule_uid) ON DELETE SET NULL,
-    buffer_after BIGINT NOT NULL, 
-    buffer_before BIGINT NOT NULL, 
-    closest_booking_time BIGINT NOT NULL, 
-    furthest_booking_time BIGINT, 
+    buffer_after BIGINT NOT NULL,
+    buffer_before BIGINT NOT NULL,
+    closest_booking_time BIGINT NOT NULL,
+    furthest_booking_time BIGINT,
 	PRIMARY KEY(service_uid, user_uid),
     CHECK (
         NOT (available_calendar_uid IS NOT NULL AND available_schedule_uid IS NOT NULL)

@@ -147,7 +147,7 @@ impl IServiceUserRepo for PostgresServiceUserRepo {
         .await
         {
             Ok(s) => s,
-            Err(_e) => return vec![],
+            Err(_e) => return Vec::new(),
         };
         service_users.into_iter().map(|u| u.into()).collect()
     }

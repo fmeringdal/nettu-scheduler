@@ -1,5 +1,6 @@
 use super::IAccountRepo;
 use nettu_scheduler_domain::{Account, PEMKey, ID};
+use serde_json::Value;
 use sqlx::{
     types::{Json, Uuid},
     FromRow, PgPool,
@@ -20,7 +21,7 @@ pub struct AccountRaw {
     account_uid: Uuid,
     secret_api_key: String,
     public_jwt_key: Option<String>,
-    settings: serde_json::Value,
+    settings: Value,
 }
 
 impl From<AccountRaw> for Account {

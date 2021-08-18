@@ -219,7 +219,7 @@ mod test {
             busy: false,
             calendar_id: calendar.id.clone(),
             user,
-            reminders: vec![],
+            reminders: Vec::new(),
             service_id: None,
             metadata: Default::default(),
         };
@@ -245,7 +245,7 @@ mod test {
             busy: false,
             calendar_id: calendar.id.clone(),
             user,
-            reminders: vec![],
+            reminders: Vec::new(),
             service_id: None,
             metadata: Default::default(),
         };
@@ -271,7 +271,7 @@ mod test {
             busy: false,
             calendar_id: ID::default(),
             user,
-            reminders: vec![],
+            reminders: Vec::new(),
             service_id: None,
             metadata: Default::default(),
         };
@@ -310,7 +310,7 @@ mod test {
                 busy: false,
                 calendar_id: calendar.id.clone(),
                 user: user.clone(),
-                reminders: vec![],
+                reminders: Vec::new(),
                 service_id: None,
                 metadata: Default::default(),
             };

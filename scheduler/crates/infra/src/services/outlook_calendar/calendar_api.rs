@@ -37,8 +37,18 @@ impl From<CalendarEvent> for OutlookCalendarEventAttributes {
         };
 
         let empty = "".to_string();
-        let subject = e.metadata.get("outlook.subject").unwrap_or(&empty).clone();
-        let content = e.metadata.get("outlook.content").unwrap_or(&empty).clone();
+        let subject = e
+            .metadata
+            .inner
+            .get("outlook.subject")
+            .unwrap_or(&empty)
+            .clone();
+        let content = e
+            .metadata
+            .inner
+            .get("outlook.content")
+            .unwrap_or(&empty)
+            .clone();
         OutlookCalendarEventAttributes {
             start: OutlookCalendarEventTime {
                 time_zone: "UTC".to_string(),

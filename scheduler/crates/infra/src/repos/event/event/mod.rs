@@ -737,7 +737,7 @@ mod tests {
         let events_in_service_with_no_users = ctx
             .repos
             .events
-            .find_by_service(&service.id, &vec![], start_ts, end_ts)
+            .find_by_service(&service.id, &Vec::new(), start_ts, end_ts)
             .await;
         assert_eq!(events_in_service_with_no_users.len(), 0);
     }
