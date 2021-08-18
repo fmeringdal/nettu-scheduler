@@ -1,6 +1,7 @@
 use super::IScheduleRepo;
 use crate::repos::shared::query_structs::MetadataFindQuery;
-use nettu_scheduler_domain::{Metadata, Schedule, ID};
+use nettu_scheduler_domain::{Schedule, ID};
+use serde_json::Value;
 use sqlx::{
     types::{Json, Uuid},
     Done, FromRow, PgPool,
@@ -21,26 +22,9 @@ struct ScheduleRaw {
     schedule_uid: Uuid,
     user_uid: Uuid,
     account_uid: Uuid,
-    rules: serde_json::Value,
+    rules: Value,
     timezone: String,
-    metadata: Vec<String>,
-}
-
-fn extract_metadata(entries: Vec<String>) -> Metadata {
-    entries
-        .into_iter()
-        .map(|row| {
-            let key_value = row.splitn(2, '_').collect::<Vec<_>>();
-            (key_value[0].to_string(), key_value[1].to_string())
-        })
-        .collect()
-}
-
-fn to_metadata(metadata: Metadata) -> Vec<String> {
-    metadata
-        .into_iter()
-        .map(|row| format!("{}_{}", row.0, row.1))
-        .collect()
+    metadata: Value,
 }
 
 impl From<ScheduleRaw> for Schedule {
@@ -54,7 +38,7 @@ impl From<ScheduleRaw> for Schedule {
                 .timezone
                 .parse()
                 .unwrap_or_else(|_| "UTC".parse().unwrap()),
-            metadata: extract_metadata(e.metadata),
+            metadata: serde_json::from_value(e.metadata).unwrap(),
         }
     }
 }
@@ -62,7 +46,6 @@ impl From<ScheduleRaw> for Schedule {
 #[async_trait::async_trait]
 impl IScheduleRepo for PostgresScheduleRepo {
     async fn insert(&self, schedule: &Schedule) -> anyhow::Result<()> {
-        let metadata = to_metadata(schedule.metadata.clone());
         sqlx::query!(
             r#"
             INSERT INTO schedules(schedule_uid, user_uid, rules, timezone, metadata)
@@ -72,7 +55,7 @@ impl IScheduleRepo for PostgresScheduleRepo {
             schedule.user_id.inner_ref(),
             Json(&schedule.rules) as _,
             schedule.timezone.to_string(),
-            &metadata
+            Json(&schedule.metadata) as _,
         )
         .execute(&self.pool)
         .await?;
@@ -81,7 +64,6 @@ impl IScheduleRepo for PostgresScheduleRepo {
     }
 
     async fn save(&self, schedule: &Schedule) -> anyhow::Result<()> {
-        let metadata = to_metadata(schedule.metadata.clone());
         sqlx::query!(
             r#"
             UPDATE schedules
@@ -93,7 +75,7 @@ impl IScheduleRepo for PostgresScheduleRepo {
             schedule.id.inner_ref(),
             Json(&schedule.rules) as _,
             schedule.timezone.to_string(),
-            &metadata
+            Json(&schedule.metadata) as _,
         )
         .execute(&self.pool)
         .await?
@@ -177,20 +159,18 @@ impl IScheduleRepo for PostgresScheduleRepo {
     }
 
     async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<Schedule> {
-        let key = format!("{}_{}", query.metadata.key, query.metadata.value);
-
         let schedules: Vec<ScheduleRaw> = sqlx::query_as!(
             ScheduleRaw,
             r#"
             SELECT s.*, u.account_uid FROM schedules AS s
             INNER JOIN users AS u
                 ON u.user_uid = s.user_uid
-            WHERE u.account_uid = $1 AND s.metadata @> ARRAY[$2]
+            WHERE u.account_uid = $1 AND s.metadata @> $2
             LIMIT $3
             OFFSET $4
             "#,
             query.account_id.inner_ref(),
-            key,
+            Json(&query.metadata) as _,
             query.limit as i64,
             query.skip as i64,
         )

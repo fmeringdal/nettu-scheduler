@@ -1,9 +1,7 @@
 use super::IServiceRepo;
-use crate::repos::{
-    extract_metadata, service_user::ServiceUserRaw, shared::query_structs::MetadataFindQuery,
-    to_metadata,
-};
+use crate::repos::{service_user::ServiceUserRaw, shared::query_structs::MetadataFindQuery};
 use nettu_scheduler_domain::{Service, ServiceWithUsers, ID};
+use serde_json::Value;
 use sqlx::{
     types::{Json, Uuid},
     FromRow, PgPool,
@@ -23,17 +21,17 @@ impl PostgresServiceRepo {
 struct ServiceRaw {
     service_uid: Uuid,
     account_uid: Uuid,
-    multi_person: serde_json::Value,
-    metadata: Vec<String>,
+    multi_person: Value,
+    metadata: Value,
 }
 
 #[derive(Debug, FromRow)]
 struct ServiceWithUsersRaw {
     service_uid: Uuid,
     account_uid: Uuid,
-    users: Option<serde_json::Value>,
-    multi_person: serde_json::Value,
-    metadata: Vec<String>,
+    users: Option<Value>,
+    multi_person: Value,
+    metadata: Value,
 }
 
 impl From<ServiceRaw> for Service {
@@ -42,7 +40,7 @@ impl From<ServiceRaw> for Service {
             id: e.service_uid.into(),
             account_id: e.account_uid.into(),
             multi_person: serde_json::from_value(e.multi_person).unwrap(),
-            metadata: extract_metadata(e.metadata),
+            metadata: serde_json::from_value(e.metadata).unwrap(),
         }
     }
 }
@@ -51,14 +49,14 @@ impl From<ServiceWithUsersRaw> for ServiceWithUsers {
     fn from(e: ServiceWithUsersRaw) -> Self {
         let users: Vec<ServiceUserRaw> = match e.users {
             Some(json) => serde_json::from_value(json).unwrap_or_default(),
-            None => vec![],
+            None => Vec::new(),
         };
         Self {
             id: e.service_uid.into(),
             account_id: e.account_uid.into(),
             users: users.into_iter().map(|u| u.into()).collect(),
             multi_person: serde_json::from_value(e.multi_person).unwrap(),
-            metadata: extract_metadata(e.metadata),
+            metadata: serde_json::from_value(e.metadata).unwrap(),
         }
     }
 }
@@ -74,7 +72,7 @@ impl IServiceRepo for PostgresServiceRepo {
             service.id.inner_ref(),
             service.account_id.inner_ref(),
             Json(&service.multi_person) as _,
-            &to_metadata(service.metadata.clone())
+            Json(&service.metadata) as _,
         )
         .execute(&self.pool)
         .await?;
@@ -92,7 +90,7 @@ impl IServiceRepo for PostgresServiceRepo {
             "#,
             service.id.inner_ref(),
             Json(&service.multi_person) as _,
-            &to_metadata(service.metadata.clone())
+            Json(&service.metadata) as _,
         )
         .execute(&self.pool)
         .await?;
@@ -153,18 +151,16 @@ impl IServiceRepo for PostgresServiceRepo {
     }
 
     async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<Service> {
-        let key = format!("{}_{}", query.metadata.key, query.metadata.value);
-
         let services: Vec<ServiceRaw> = sqlx::query_as!(
             ServiceRaw,
             r#"
             SELECT * FROM services AS s
-            WHERE s.account_uid = $1 AND metadata @> ARRAY[$2]
+            WHERE s.account_uid = $1 AND metadata @> $2
             LIMIT $3
             OFFSET $4
             "#,
             query.account_id.inner_ref(),
-            key,
+            Json(&query.metadata) as _,
             query.limit as i64,
             query.skip as i64,
         )

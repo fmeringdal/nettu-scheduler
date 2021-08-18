@@ -143,7 +143,7 @@ impl UseCase for GetServiceBookingSlotsUseCase {
 
         if ServiceMultiPersonOptions::Group(0) == service.multi_person {
             return Ok(UseCaseRes {
-                booking_slots: ServiceBookingSlots { dates: vec![] },
+                booking_slots: ServiceBookingSlots { dates: Vec::new() },
                 service,
             });
         }
@@ -256,7 +256,7 @@ impl GetServiceBookingSlotsUseCase {
             .await
         {
             Ok(val) => val,
-            Err(_) => return CompatibleInstances::new(vec![]),
+            Err(_) => return CompatibleInstances::new(Vec::new()),
         };
 
         let nettu_busy_calendar_ids = busy_calendars
@@ -573,7 +573,7 @@ mod test {
             recurrence: None,
             start_ts: 1000 * 60 * 60,
             user_id: resource1.user_id.to_owned(),
-            reminders: vec![],
+            reminders: Vec::new(),
             service_id: None,
             metadata: Default::default(),
             updated: Default::default(),
@@ -590,7 +590,7 @@ mod test {
             recurrence: None,
             start_ts: 1000 * 60 * 60,
             user_id: resource2.user_id.to_owned(),
-            reminders: vec![],
+            reminders: Vec::new(),
             service_id: None,
             metadata: Default::default(),
             updated: Default::default(),
@@ -607,7 +607,7 @@ mod test {
             recurrence: None,
             start_ts: 1000 * 60 * 60 * 4,
             user_id: resource2.user_id.to_owned(),
-            reminders: vec![],
+            reminders: Vec::new(),
             service_id: None,
             metadata: Default::default(),
             updated: Default::default(),

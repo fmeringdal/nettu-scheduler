@@ -11,11 +11,10 @@ nettu_scheduler_api_structs = { path = "../api_structs" }
 nettu_scheduler_domain = { path = "../domain" }
 nettu_scheduler_infra = { path = "../infra" }
 serde = { version = "1.0", features = ["derive"] }
-futures = "0.3" 
+futures = "0.3"
 actix-web = "3.3.2"
 actix-cors = "0.5.4"
 async-trait = "0.1.42"
-env_logger = "0.8.2"
 rrule="0.5.8"
 chrono = { version = "0.4.19", features = ["serde"] }
 chrono-tz = "0.5.3"

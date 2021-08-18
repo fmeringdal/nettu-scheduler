@@ -41,7 +41,7 @@ impl GoogleCalendarProvider {
                 .map(FreeBusyCalendar::new)
                 .collect(),
         };
-        let mut instances = vec![];
+        let mut instances = Vec::new();
         if let Ok(res) = self.api.freebusy(&body).await {
             for (_, calendar_busy) in res.calendars {
                 for instance in calendar_busy.busy {

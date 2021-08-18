@@ -1,6 +1,7 @@
 use super::ICalendarRepo;
-use crate::repos::shared::query_structs::{extract_metadata, to_metadata, MetadataFindQuery};
+use crate::repos::shared::query_structs::MetadataFindQuery;
 use nettu_scheduler_domain::{Calendar, ID};
+use serde_json::Value;
 use sqlx::{
     types::{Json, Uuid},
     Done, FromRow, PgPool,
@@ -22,8 +23,8 @@ struct CalendarRaw {
     calendar_uid: Uuid,
     user_uid: Uuid,
     account_uid: Uuid,
-    settings: serde_json::Value,
-    metadata: Vec<String>,
+    settings: Value,
+    metadata: Value,
 }
 
 impl From<CalendarRaw> for Calendar {
@@ -33,7 +34,7 @@ impl From<CalendarRaw> for Calendar {
             user_id: e.user_uid.into(),
             account_id: e.account_uid.into(),
             settings: serde_json::from_value(e.settings).unwrap(),
-            metadata: extract_metadata(e.metadata),
+            metadata: serde_json::from_value(e.metadata).unwrap(),
         }
     }
 }
@@ -41,7 +42,6 @@ impl From<CalendarRaw> for Calendar {
 #[async_trait::async_trait]
 impl ICalendarRepo for PostgresCalendarRepo {
     async fn insert(&self, calendar: &Calendar) -> anyhow::Result<()> {
-        let metadata = to_metadata(calendar.metadata.clone());
         sqlx::query!(
             r#"
             INSERT INTO calendars(calendar_uid, user_uid, settings, metadata)
@@ -50,7 +50,7 @@ impl ICalendarRepo for PostgresCalendarRepo {
             calendar.id.inner_ref(),
             calendar.user_id.inner_ref(),
             Json(&calendar.settings) as _,
-            &metadata
+            Json(&calendar.metadata) as _,
         )
         .execute(&self.pool)
         .await?;
@@ -59,7 +59,6 @@ impl ICalendarRepo for PostgresCalendarRepo {
     }
 
     async fn save(&self, calendar: &Calendar) -> anyhow::Result<()> {
-        let metadata = to_metadata(calendar.metadata.clone());
         sqlx::query!(
             r#"
             UPDATE calendars
@@ -69,7 +68,7 @@ impl ICalendarRepo for PostgresCalendarRepo {
             "#,
             calendar.id.inner_ref(),
             Json(&calendar.settings) as _,
-            &metadata
+            Json(&calendar.metadata) as _,
         )
         .execute(&self.pool)
         .await
@@ -134,20 +133,18 @@ impl ICalendarRepo for PostgresCalendarRepo {
     }
 
     async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<Calendar> {
-        let key = format!("{}_{}", query.metadata.key, query.metadata.value);
-
         let calendars: Vec<CalendarRaw> = sqlx::query_as!(
             CalendarRaw,
             r#"
             SELECT c.*, u.account_uid FROM calendars AS c
             INNER JOIN users AS u
                 ON u.user_uid = c.user_uid
-            WHERE u.account_uid = $1 AND c.metadata @> ARRAY[$2]
+            WHERE u.account_uid = $1 AND c.metadata @> $2
             LIMIT $3
             OFFSET $4
             "#,
             query.account_id.inner_ref(),
-            key,
+            Json(&query.metadata) as _,
             query.limit as i64,
             query.skip as i64,
         )
