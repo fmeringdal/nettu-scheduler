@@ -1,5 +1,4 @@
 use actix_web::{
-    dev::HttpResponseBuilder,
     http::{header, StatusCode},
     HttpResponse,
 };
@@ -36,8 +35,8 @@ impl actix_web::error::ResponseError for NettuError {
     }
 
     fn error_response(&self) -> HttpResponse {
-        HttpResponseBuilder::new(self.status_code())
-            .set_header(header::CONTENT_TYPE, "text/html; charset=utf-8")
+        HttpResponse::build(self.status_code())
+            .insert_header((header::CONTENT_TYPE, "text/html; charset=utf-8"))
             .body(self.to_string())
     }
 }

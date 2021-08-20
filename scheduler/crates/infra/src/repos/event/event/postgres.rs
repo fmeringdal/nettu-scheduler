@@ -197,14 +197,14 @@ impl IEventRepo for PostgresEventRepo {
             .iter()
             .map(|id| *id.inner_ref())
             .collect::<Vec<_>>();
+        // TODO remove it
+        // "NOW() > to_timestamp(0)" condition is there to fix the sqlx bug
         let events: Vec<EventRaw> = sqlx::query_as!(
             EventRaw,
             r#"
             SELECT e.*, u.user_uid, account_uid FROM calendar_events AS e
-            INNER JOIN calendars AS c
-                ON c.calendar_uid = e.calendar_uid
-            INNER JOIN users AS u
-                ON u.user_uid = c.user_uid
+            INNER JOIN calendars AS c ON c.calendar_uid = e.calendar_uid
+            INNER JOIN users AS u ON u.user_uid = c.user_uid
             WHERE e.event_uid = ANY($1)
             "#,
             &ids,

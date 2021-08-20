@@ -5,8 +5,8 @@ use crate::{
     },
     shared::usecase::execute,
 };
-use actix_web::client::Client;
-use actix_web::rt::time::{delay_until, interval, Instant};
+use actix_web::rt::time::{interval, sleep_until, Instant};
+use awc::Client;
 use nettu_scheduler_api_structs::send_event_reminders::AccountRemindersDTO;
 use nettu_scheduler_infra::NettuContext;
 use std::time::Duration;
@@ -41,7 +41,7 @@ pub fn start_send_reminders_job(ctx: NettuContext) {
         let secs_to_next_run = get_start_delay(now as usize, 0);
         let start = Instant::now() + Duration::from_secs(secs_to_next_run as u64);
 
-        delay_until(start).await;
+        sleep_until(start).await;
         let mut minutely_interval = interval(Duration::from_secs(60));
         loop {
             minutely_interval.tick().await;
@@ -63,7 +63,7 @@ async fn send_reminders(context: NettuContext) {
     };
 
     let send_instant = account_reminders.1;
-    delay_until(send_instant).await;
+    sleep_until(send_instant).await;
     println!(
         "Reminders to send at {} : {:?}",
         context.sys.get_timestamp_millis(),
@@ -76,7 +76,7 @@ async fn send_reminders(context: NettuContext) {
             Some(webhook) => {
                 if let Err(e) = client
                     .post(webhook.url)
-                    .header("nettu-scheduler-webhook-key", webhook.key)
+                    .insert_header(("nettu-scheduler-webhook-key", webhook.key))
                     .send_json(&AccountRemindersDTO::new(reminders))
                     .await
                 {

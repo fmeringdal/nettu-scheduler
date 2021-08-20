@@ -11,7 +11,7 @@ use nettu_scheduler_infra::NettuContext;
 pub async fn remove_service_event_intend_controller(
     http_req: HttpRequest,
     query_params: web::Query<QueryParams>,
-    path_params: web::Path<PathParams>,
+    mut path_params: web::Path<PathParams>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
@@ -19,7 +19,7 @@ pub async fn remove_service_event_intend_controller(
     let query = query_params.0;
     let usecase = RemoveServiceEventIntendUseCase {
         account,
-        service_id: path_params.service_id.to_owned(),
+        service_id: std::mem::take(&mut path_params.service_id),
         timestamp: query.timestamp,
     };
 

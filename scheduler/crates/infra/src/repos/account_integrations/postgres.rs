@@ -1,6 +1,6 @@
 use super::IAccountIntegrationRepo;
 use nettu_scheduler_domain::{AccountIntegration, IntegrationProvider, ID};
-use sqlx::{types::Uuid, Done, FromRow, PgPool};
+use sqlx::{types::Uuid, FromRow, PgPool};
 
 pub struct PostgresAccountIntegrationRepo {
     pool: PgPool,

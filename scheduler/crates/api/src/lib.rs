@@ -10,6 +10,7 @@ mod status;
 mod user;
 
 use actix_cors::Cors;
+use actix_web::web::Data;
 use actix_web::{dev::Server, middleware, web, App, HttpServer};
 use job_schedulers::{start_reminder_generation_job_scheduler, start_send_reminders_job};
 use nettu_scheduler_domain::{
@@ -69,8 +70,8 @@ impl Application {
             App::new()
                 .wrap(Cors::permissive())
                 .wrap(middleware::Compress::default())
-                .wrap(TracingLogger)
-                .data(ctx)
+                .wrap(TracingLogger::default())
+                .app_data(Data::new(ctx))
                 .service(web::scope("/api/v1").configure(|cfg| configure_server_api(cfg)))
         })
         .listen(listener)?

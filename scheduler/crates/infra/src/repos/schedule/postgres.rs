@@ -4,7 +4,7 @@ use nettu_scheduler_domain::{Schedule, ID};
 use serde_json::Value;
 use sqlx::{
     types::{Json, Uuid},
-    Done, FromRow, PgPool,
+    FromRow, PgPool,
 };
 
 pub struct PostgresScheduleRepo {
@@ -108,6 +108,8 @@ impl IScheduleRepo for PostgresScheduleRepo {
             .iter()
             .map(|id| *id.inner_ref())
             .collect::<Vec<_>>();
+        // TODO remove it
+        // "NOW() > to_timestamp(0)" condition is there to fix the sqlx bug
         sqlx::query_as!(
             ScheduleRaw,
             r#"
@@ -115,6 +117,7 @@ impl IScheduleRepo for PostgresScheduleRepo {
             INNER JOIN users AS u
                 ON u.user_uid = s.user_uid
             WHERE s.schedule_uid = ANY($1)
+            AND NOW() > to_timestamp(0)
             "#,
             &ids,
         )
