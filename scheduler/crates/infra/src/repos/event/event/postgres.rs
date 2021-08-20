@@ -206,6 +206,7 @@ impl IEventRepo for PostgresEventRepo {
             INNER JOIN calendars AS c ON c.calendar_uid = e.calendar_uid
             INNER JOIN users AS u ON u.user_uid = c.user_uid
             WHERE e.event_uid = ANY($1)
+            AND NOW() > to_timestamp(0)
             "#,
             &ids,
         )
