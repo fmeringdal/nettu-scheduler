@@ -1,6 +1,4 @@
 setup:
-	@echo $(CCFLAGS)
-	@echo $(shell uname -p)
 	@echo -e '\e[1;31mNot Yet Implemented\e[0m'
 
 test: 
