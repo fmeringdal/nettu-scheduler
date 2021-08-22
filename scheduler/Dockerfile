@@ -21,8 +21,8 @@ COPY . .
 ENV DATABASE_URL "postgresql://postgres:postgres@172.17.0.1:5432/nettuscheduler"
 
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
-	&& cargo build --release \
-	&& cp /home/rust/target/release/nettu_scheduler . \
+    && cargo build --release \
+    && cp /home/rust/target/release/nettu_scheduler . \
     && cp /home/rust/target/release/migrate . \
     && rm -rf /home/rust/target \
     && rustup self uninstall -y
