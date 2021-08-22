@@ -7,7 +7,7 @@ use nettu_scheduler_infra::NettuContext;
 
 pub async fn remove_account_integration_controller(
     http_req: web::HttpRequest,
-    mut path: web::Json<PathParams>,
+    mut path: web::Path<PathParams>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;

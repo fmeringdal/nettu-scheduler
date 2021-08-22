@@ -29,7 +29,7 @@ pub async fn remove_integration_admin_controller(
 
 pub async fn remove_integration_controller(
     http_req: HttpRequest,
-    mut path: web::Json<PathParams>,
+    mut path: web::Path<PathParams>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let (user, _) = protect_route(&http_req, &ctx).await?;
