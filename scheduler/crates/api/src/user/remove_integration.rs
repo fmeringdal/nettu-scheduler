@@ -10,7 +10,7 @@ use nettu_scheduler_infra::NettuContext;
 
 pub async fn remove_integration_admin_controller(
     http_req: HttpRequest,
-    path: web::Path<PathParams>,
+    mut path: web::Path<PathParams>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
@@ -18,7 +18,7 @@ pub async fn remove_integration_admin_controller(
 
     let usecase = OAuthIntegrationUseCase {
         user,
-        provider: path.0.provider,
+        provider: std::mem::take(&mut path.provider),
     };
 
     execute(usecase, &ctx)
@@ -29,14 +29,14 @@ pub async fn remove_integration_admin_controller(
 
 pub async fn remove_integration_controller(
     http_req: HttpRequest,
-    path: web::Json<PathParams>,
+    mut path: web::Path<PathParams>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let (user, _) = protect_route(&http_req, &ctx).await?;
 
     let usecase = OAuthIntegrationUseCase {
         user,
-        provider: path.0.provider,
+        provider: std::mem::take(&mut path.provider),
     };
 
     execute(usecase, &ctx)

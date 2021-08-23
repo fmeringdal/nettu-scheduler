@@ -19,17 +19,16 @@ use nettu_scheduler_infra::{BusyCalendarIdentifier, ExternalBusyCalendarIdentifi
 pub async fn add_busy_calendar_controller(
     http_req: HttpRequest,
     body: web::Json<RequestBody>,
-    path_params: web::Path<PathParams>,
+    mut path: web::Path<PathParams>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
 
-    let path = path_params.0;
     let body = body.0;
     let usecase = AddBusyCalendarUseCase {
         account,
-        service_id: path.service_id.to_owned(),
-        user_id: path.user_id.to_owned(),
+        service_id: std::mem::take(&mut path.service_id),
+        user_id: std::mem::take(&mut path.user_id),
         busy: body.busy,
     };
 

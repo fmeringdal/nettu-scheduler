@@ -12,15 +12,15 @@ use nettu_scheduler_infra::NettuContext;
 
 pub async fn remove_user_from_service_controller(
     http_req: HttpRequest,
-    path_params: web::Path<PathParams>,
+    mut path: web::Path<PathParams>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
 
     let usecase = RemoveUserFromServiceUseCase {
         account,
-        service_id: path_params.service_id.to_owned(),
-        user_id: path_params.user_id.to_owned(),
+        service_id: std::mem::take(&mut path.service_id),
+        user_id: std::mem::take(&mut path.user_id),
     };
 
     execute(usecase, &ctx)

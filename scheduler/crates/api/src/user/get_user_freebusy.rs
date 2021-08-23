@@ -22,7 +22,7 @@ pub fn parse_vec_query_value(val: &Option<String>) -> Option<Vec<ID>> {
 pub async fn get_freebusy_controller(
     http_req: HttpRequest,
     query_params: web::Query<QueryParams>,
-    params: web::Path<PathParams>,
+    mut params: web::Path<PathParams>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let _account = protect_public_account_route(&http_req, &ctx).await?;
@@ -30,7 +30,7 @@ pub async fn get_freebusy_controller(
     let calendar_ids = parse_vec_query_value(&query_params.calendar_ids);
 
     let usecase = GetFreeBusyUseCase {
-        user_id: params.0.user_id,
+        user_id: std::mem::take(&mut params.user_id),
         calendar_ids,
         start_ts: query_params.start_ts,
         end_ts: query_params.end_ts,

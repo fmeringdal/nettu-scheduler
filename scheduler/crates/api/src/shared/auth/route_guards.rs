@@ -295,8 +295,9 @@ mod test {
         ctx.repos.users.insert(&user).await.unwrap();
         let token = get_token(false, user.id.clone());
 
-        let req = TestRequest::with_header("nettu-account", account.id.to_string())
-            .header("Authorization", format!("Bearer {}", token))
+        let req = TestRequest::default()
+            .insert_header(("nettu-account", account.id.to_string()))
+            .insert_header(("Authorization", format!("Bearer {}", token)))
             .to_http_request();
         let res = protect_route(&req, &ctx).await;
         assert!(res.is_ok());
@@ -313,8 +314,9 @@ mod test {
         // account1 tries to sign a token with user_id that belongs to account2
         let token = get_token(false, user.id.clone());
 
-        let req = TestRequest::with_header("nettu-account", account.id.to_string())
-            .header("Authorization", format!("Bearer {}", token))
+        let req = TestRequest::default()
+            .insert_header(("nettu-account", account.id.to_string()))
+            .insert_header(("Authorization", format!("Bearer {}", token)))
             .to_http_request();
         let res = protect_route(&req, &ctx).await;
         assert!(res.is_err());
@@ -329,8 +331,9 @@ mod test {
         ctx.repos.users.insert(&user).await.unwrap();
         let token = get_token(true, user.id.clone());
 
-        let req = TestRequest::with_header("nettu-account", account.id.to_string())
-            .header("Authorization", format!("Bearer {}", token))
+        let req = TestRequest::default()
+            .insert_header(("nettu-account", account.id.to_string()))
+            .insert_header(("Authorization", format!("Bearer {}", token)))
             .to_http_request();
         let res = protect_route(&req, &ctx).await;
         assert!(res.is_err());
@@ -345,7 +348,8 @@ mod test {
         ctx.repos.users.insert(&user).await.unwrap();
         let token = get_token(true, user.id.clone());
 
-        let req = TestRequest::with_header("Authorization", format!("Bearer {}", token))
+        let req = TestRequest::default()
+            .insert_header(("Authorization", format!("Bearer {}", token)))
             .to_http_request();
         let res = protect_route(&req, &ctx).await;
         assert!(res.is_err());
@@ -360,8 +364,9 @@ mod test {
         ctx.repos.users.insert(&user).await.unwrap();
         let token = get_token(true, user.id.clone());
 
-        let req = TestRequest::with_header("nettu-account", account.id.to_string() + "s")
-            .header("Authorization", format!("Bearer {}", token))
+        let req = TestRequest::default()
+            .insert_header(("nettu-account", account.id.to_string() + "s"))
+            .insert_header(("Authorization", format!("Bearer {}", token)))
             .to_http_request();
         let res = protect_route(&req, &ctx).await;
         assert!(res.is_err());
@@ -374,7 +379,8 @@ mod test {
         let _account = setup_account(&ctx).await;
         let token = "sajfosajfposajfopaso12";
 
-        let req = TestRequest::with_header("Authorization", format!("Bearer {}", token))
+        let req = TestRequest::default()
+            .insert_header(("Authorization", format!("Bearer {}", token)))
             .to_http_request();
         let res = protect_route(&req, &ctx).await;
         assert!(res.is_err());
@@ -388,8 +394,9 @@ mod test {
         let user = User::new(account.id.clone());
         ctx.repos.users.insert(&user).await.unwrap();
 
-        let req = TestRequest::with_header("nettu-account", account.id.to_string())
-            .header("Authorization", "Bea")
+        let req = TestRequest::default()
+            .insert_header(("nettu-account", account.id.to_string()))
+            .insert_header(("Authorization", "Bea"))
             .to_http_request();
         let res = protect_route(&req, &ctx).await;
         assert!(res.is_err());

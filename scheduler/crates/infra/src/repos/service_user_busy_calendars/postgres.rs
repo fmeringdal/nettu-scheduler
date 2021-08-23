@@ -1,6 +1,6 @@
 use super::{BusyCalendarIdentifier, ExternalBusyCalendarIdentifier, IServiceUserBusyCalendarRepo};
 use nettu_scheduler_domain::{BusyCalendar, ID};
-use sqlx::{Done, FromRow, PgPool};
+use sqlx::{FromRow, PgPool};
 
 pub struct PostgresServiceUseBusyCalendarRepo {
     pool: PgPool,

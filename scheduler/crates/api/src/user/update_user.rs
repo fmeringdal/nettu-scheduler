@@ -8,14 +8,14 @@ use nettu_scheduler_infra::NettuContext;
 pub async fn update_user_controller(
     http_req: HttpRequest,
     body: web::Json<RequestBody>,
-    path: web::Path<PathParams>,
+    mut path: web::Path<PathParams>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
 
     let usecase = UpdateUserUseCase {
         account_id: account.id,
-        user_id: path.0.user_id,
+        user_id: std::mem::take(&mut path.user_id),
         metadata: body.0.metadata,
     };
 

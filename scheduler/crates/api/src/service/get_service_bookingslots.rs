@@ -21,7 +21,7 @@ use tracing::error;
 pub async fn get_service_bookingslots_controller(
     _http_req: HttpRequest,
     query_params: web::Query<QueryParams>,
-    path_params: web::Path<PathParams>,
+    mut path_params: web::Path<PathParams>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let query_params = query_params.0;
@@ -29,7 +29,7 @@ pub async fn get_service_bookingslots_controller(
 
     let host_user_ids = parse_vec_query_value(&query_params.host_user_ids);
     let usecase = GetServiceBookingSlotsUseCase {
-        service_id: path_params.0.service_id,
+        service_id: std::mem::take(&mut path_params.service_id),
         iana_tz: query_params.iana_tz,
         start_date: query_params.start_date,
         end_date: query_params.end_date,

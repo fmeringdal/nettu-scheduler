@@ -10,17 +10,17 @@ use nettu_scheduler_infra::NettuContext;
 
 pub async fn add_user_to_service_controller(
     http_req: HttpRequest,
-    body: web::Json<RequestBody>,
-    path_params: web::Path<PathParams>,
+    mut body: web::Json<RequestBody>,
+    mut path: web::Path<PathParams>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
 
     let usecase = AddUserToServiceUseCase {
         account,
-        service_id: path_params.service_id.to_owned(),
-        user_id: body.user_id.to_owned(),
-        availability: body.availability.to_owned(),
+        service_id: std::mem::take(&mut path.service_id),
+        user_id: std::mem::take(&mut body.user_id),
+        availability: std::mem::take(&mut body.availability),
         buffer_before: body.buffer_before,
         buffer_after: body.buffer_after,
         closest_booking_time: body.closest_booking_time,

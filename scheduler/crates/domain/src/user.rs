@@ -53,6 +53,12 @@ pub enum IntegrationProvider {
     Outlook,
 }
 
+impl Default for IntegrationProvider {
+    fn default() -> Self {
+        IntegrationProvider::Google
+    }
+}
+
 impl From<IntegrationProvider> for String {
     fn from(e: IntegrationProvider) -> Self {
         match e {

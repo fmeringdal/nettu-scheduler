@@ -4,7 +4,7 @@ use nettu_scheduler_domain::{Schedule, ID};
 use serde_json::Value;
 use sqlx::{
     types::{Json, Uuid},
-    Done, FromRow, PgPool,
+    FromRow, PgPool,
 };
 
 pub struct PostgresScheduleRepo {
@@ -108,22 +108,20 @@ impl IScheduleRepo for PostgresScheduleRepo {
             .iter()
             .map(|id| *id.inner_ref())
             .collect::<Vec<_>>();
-        sqlx::query_as!(
-            ScheduleRaw,
+        let schedule_raw: Vec<ScheduleRaw> = sqlx::query_as(
             r#"
             SELECT s.*, u.account_uid FROM schedules AS s
             INNER JOIN users AS u
                 ON u.user_uid = s.user_uid
             WHERE s.schedule_uid = ANY($1)
             "#,
-            &ids,
         )
+        .bind(ids)
         .fetch_all(&self.pool)
         .await
-        .unwrap_or_default()
-        .into_iter()
-        .map(|e| e.into())
-        .collect()
+        .unwrap_or_default();
+
+        schedule_raw.into_iter().map(|e| e.into()).collect()
     }
 
     async fn find_by_user(&self, user_id: &ID) -> Vec<Schedule> {

@@ -20,7 +20,7 @@ members = [
 nettu_scheduler_api = { path = "./crates/api" }
 nettu_scheduler_domain = { path = "./crates/domain" }
 nettu_scheduler_infra = { path = "./crates/infra" }
-actix-web = "3.3.2"
+actix-web = "4.0.0-beta.8"
 tracing = "0.1.19"
 tracing-subscriber = { version = "0.2.12", features = ["registry", "env-filter"] }
 tracing-bunyan-formatter = "0.2.4"

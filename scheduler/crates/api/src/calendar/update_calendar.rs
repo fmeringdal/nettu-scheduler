@@ -37,14 +37,14 @@ pub async fn update_calendar_admin_controller(
 pub async fn update_calendar_controller(
     http_req: web::HttpRequest,
     ctx: web::Data<NettuContext>,
-    path: web::Path<PathParams>,
+    mut path: web::Path<PathParams>,
     body: web::Json<RequestBody>,
 ) -> Result<HttpResponse, NettuError> {
     let (user, policy) = protect_route(&http_req, &ctx).await?;
 
     let usecase = UpdateCalendarUseCase {
         user,
-        calendar_id: path.0.calendar_id,
+        calendar_id: std::mem::take(&mut path.calendar_id),
         week_start: body.0.settings.week_start,
         timezone: body.0.settings.timezone,
         metadata: body.0.metadata,

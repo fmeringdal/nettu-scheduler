@@ -42,7 +42,7 @@ pub async fn update_schedule_admin_controller(
 pub async fn update_schedule_controller(
     http_req: web::HttpRequest,
     ctx: web::Data<NettuContext>,
-    path: web::Path<PathParams>,
+    mut path: web::Path<PathParams>,
     body: web::Json<RequestBody>,
 ) -> Result<HttpResponse, NettuError> {
     let (user, policy) = protect_route(&http_req, &ctx).await?;
@@ -50,7 +50,7 @@ pub async fn update_schedule_controller(
     let body = body.0;
     let usecase = UpdateScheduleUseCase {
         user_id: user.id,
-        schedule_id: path.0.schedule_id,
+        schedule_id: std::mem::take(&mut path.schedule_id),
         timezone: body.timezone,
         rules: body.rules,
         metadata: body.metadata,

@@ -23,7 +23,7 @@ use nettu_scheduler_infra::NettuContext;
 pub async fn create_service_event_intend_controller(
     http_req: HttpRequest,
     body: web::Json<RequestBody>,
-    path_params: web::Path<PathParams>,
+    mut path: web::Path<PathParams>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
@@ -31,7 +31,7 @@ pub async fn create_service_event_intend_controller(
     let body = body.0;
     let usecase = CreateServiceEventIntendUseCase {
         account,
-        service_id: path_params.service_id.to_owned(),
+        service_id: std::mem::take(&mut path.service_id),
         host_user_ids: body.host_user_ids,
         duration: body.duration,
         timestamp: body.timestamp,

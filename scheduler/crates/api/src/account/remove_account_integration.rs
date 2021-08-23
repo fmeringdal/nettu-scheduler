@@ -7,14 +7,14 @@ use nettu_scheduler_infra::NettuContext;
 
 pub async fn remove_account_integration_controller(
     http_req: web::HttpRequest,
-    path: web::Json<PathParams>,
+    mut path: web::Path<PathParams>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
     let account = protect_account_route(&http_req, &ctx).await?;
 
     let usecase = RemoveAccountIntegrationUseCase {
         account,
-        provider: path.0.provider,
+        provider: std::mem::take(&mut path.provider),
     };
 
     execute(usecase, &ctx)
