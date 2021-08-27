@@ -17,10 +17,20 @@ jobs:
           POSTGRES_DB: nettuscheduler
         ports:
         - 5432:5432
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost/nettuscheduler
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.cargo/bin
+            scheduler/target/debug
+          key: cargo
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
@@ -30,11 +40,13 @@ jobs:
         with:
           username: fmeringdal
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Run migrations
         run: |
           cd scheduler
           cargo install sqlx-cli --no-default-features --features postgres || true
           (cd crates/infra && sqlx migrate run)
+
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
