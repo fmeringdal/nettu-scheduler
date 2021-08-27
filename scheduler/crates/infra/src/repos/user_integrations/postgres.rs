@@ -56,7 +56,10 @@ impl IUserIntegrationRepo for PostgresUserIntegrationRepo {
         .execute(&self.pool)
         .await
         .map_err(|e| {
-            error!("Unable to insert user integration : {:?}", e);
+            error!(
+                "Unable to insert user integration: {:?}. DB returned error: {:?}",
+                integration, e
+            );
             e
         })?;
         Ok(())
@@ -82,7 +85,10 @@ impl IUserIntegrationRepo for PostgresUserIntegrationRepo {
         .execute(&self.pool)
         .await
         .map_err(|e| {
-            error!("Unable to save user integration : {:?}", e);
+            error!(
+                "Unable to save user integration: {:?}. DB returned error: {:?}",
+                integration, e
+            );
             e
         })?;
 
@@ -90,7 +96,7 @@ impl IUserIntegrationRepo for PostgresUserIntegrationRepo {
     }
 
     async fn find(&self, user_id: &ID) -> anyhow::Result<Vec<UserIntegration>> {
-        let integrations: Vec<UserIntegrationRaw> = sqlx::query_as!(
+        let integrations = sqlx::query_as!(
             UserIntegrationRaw,
             r#"
             SELECT * FROM user_integrations
@@ -99,7 +105,14 @@ impl IUserIntegrationRepo for PostgresUserIntegrationRepo {
             user_id.inner_ref(),
         )
         .fetch_all(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(
+                "Find user integrations for user_id: {} failed. DB returned error: {:?}",
+                user_id, e
+            );
+            e
+        })?;
         Ok(integrations.into_iter().map(|i| i.into()).collect())
     }
 
@@ -117,8 +130,21 @@ impl IUserIntegrationRepo for PostgresUserIntegrationRepo {
         .execute(&self.pool)
         .await
         {
-            Ok(res) if res.rows_affected() == 1 => Ok(()),
-            _ => Err(anyhow::Error::msg("Unable to delete user integration")),
+            Ok(res) => {
+                if res.rows_affected() == 1 {
+                    Ok(())
+                } else {
+                    Err(anyhow::Error::msg("Unable to delete user integration"))
+                }
+            }
+            Err(e) => {
+                error!(
+                    "Delete user integration for user id: {} and provider: {:?} failed. DB returned error: {:?}",
+                    user_id,  provider, e
+                );
+
+                Err(anyhow::Error::new(e))
+            }
         }
     }
 }

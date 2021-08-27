@@ -54,8 +54,10 @@ impl ICalendarSyncedRepo for PostgresCalendarSyncedRepo {
         .execute(&self.pool)
         .await
         .map_err(|e| {
-            println!("Unable to insert sync calendar : {:?}", e);
-            error!("Unable to insert sync calendar : {:?}", e);
+            error!(
+                "Unable to insert sync calendar: {:?}. DB returned error: {:?}",
+                c, e
+            );
             e
         })?;
 
@@ -78,7 +80,15 @@ impl ICalendarSyncedRepo for PostgresCalendarSyncedRepo {
             provider as _
         )
         .execute(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(
+                "Delete sync calendar: {:?} failed. DB returned error: {:?}",
+                c, e
+            );
+
+            e
+        })?;
         if rows.rows_affected() == 1 {
             Ok(())
         } else {
@@ -96,7 +106,14 @@ impl ICalendarSyncedRepo for PostgresCalendarSyncedRepo {
             calendar_id.inner_ref(),
         )
         .fetch_all(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(
+                "Find synced calendars by calendar id: {:?} failed. DB returned error: {:?}",
+                calendar_id, e
+            );
+            e
+        })?;
 
         Ok(synced_calendars.into_iter().map(|c| c.into()).collect())
     }

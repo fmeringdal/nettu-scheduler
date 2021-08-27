@@ -6,6 +6,7 @@ use sqlx::{
     types::{Json, Uuid},
     FromRow, PgPool,
 };
+use tracing::error;
 
 pub struct PostgresScheduleRepo {
     pool: PgPool,
@@ -58,7 +59,14 @@ impl IScheduleRepo for PostgresScheduleRepo {
             Json(&schedule.metadata) as _,
         )
         .execute(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(
+                "Unable to insert schedule: {:?}. DB returned error: {:?}",
+                schedule, e
+            );
+            e
+        })?;
 
         Ok(())
     }
@@ -78,13 +86,20 @@ impl IScheduleRepo for PostgresScheduleRepo {
             Json(&schedule.metadata) as _,
         )
         .execute(&self.pool)
-        .await?
+        .await
+        .map_err(|e| {
+            error!(
+                "Unable to save schedule: {:?}. DB returned error: {:?}",
+                schedule, e
+            );
+            e
+        })?
         .rows_affected();
         Ok(())
     }
 
     async fn find(&self, schedule_id: &ID) -> Option<Schedule> {
-        let schedule: ScheduleRaw = match sqlx::query_as!(
+        let res: Option<ScheduleRaw> = sqlx::query_as!(
             ScheduleRaw,
             r#"
             SELECT s.*, u.account_uid FROM schedules AS s
@@ -94,13 +109,18 @@ impl IScheduleRepo for PostgresScheduleRepo {
             "#,
             schedule_id.inner_ref(),
         )
-        .fetch_one(&self.pool)
+        .fetch_optional(&self.pool)
         .await
-        {
-            Ok(s) => s,
-            Err(_) => return None,
-        };
-        Some(schedule.into())
+        .map_err(|e| {
+            error!(
+                "Find schedule with id: {:?} failed. DB returned error: {:?}",
+                schedule_id, e
+            );
+            e
+        })
+        .ok()?;
+
+        res.map(|schedule| schedule.into())
     }
 
     async fn find_many(&self, schedule_ids: &[ID]) -> Vec<Schedule> {
@@ -119,6 +139,13 @@ impl IScheduleRepo for PostgresScheduleRepo {
         .bind(ids)
         .fetch_all(&self.pool)
         .await
+        .map_err(|e| {
+            error!(
+                "Find schedules with ids: {:?} failed. DB returned error: {:?}",
+                schedule_ids, e
+            );
+            e
+        })
         .unwrap_or_default();
 
         schedule_raw.into_iter().map(|e| e.into()).collect()
@@ -137,13 +164,20 @@ impl IScheduleRepo for PostgresScheduleRepo {
         )
         .fetch_all(&self.pool)
         .await
+        .map_err(|e| {
+            error!(
+                "Find schedules for user id: {:?} failed. DB returned error: {:?}",
+                user_id, e
+            );
+            e
+        })
         .unwrap_or_default();
 
         schedules.into_iter().map(|s| s.into()).collect()
     }
 
     async fn delete(&self, schedule_id: &ID) -> anyhow::Result<()> {
-        sqlx::query!(
+        match sqlx::query!(
             r#"
             DELETE FROM schedules AS s
             WHERE s.schedule_uid = $1
@@ -151,9 +185,25 @@ impl IScheduleRepo for PostgresScheduleRepo {
             "#,
             schedule_id.inner_ref(),
         )
-        .fetch_one(&self.pool)
-        .await?;
-        Ok(())
+        .fetch_optional(&self.pool)
+        .await
+        {
+            Ok(res) => {
+                if res.is_some() {
+                    Ok(())
+                } else {
+                    Err(anyhow::Error::msg("Unable to delete schedule"))
+                }
+            }
+            Err(e) => {
+                error!(
+                    "Delete schedule with id: {:?} failed. DB returned error: {:?}",
+                    schedule_id, e
+                );
+
+                Err(anyhow::Error::new(e))
+            }
+        }
     }
 
     async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<Schedule> {
@@ -174,6 +224,13 @@ impl IScheduleRepo for PostgresScheduleRepo {
         )
         .fetch_all(&self.pool)
         .await
+        .map_err(|e| {
+            error!(
+                "Find schedules by metadata: {:?} failed. DB returned error: {:?}",
+                query, e
+            );
+            e
+        })
         .unwrap_or_default();
 
         schedules.into_iter().map(|s| s.into()).collect()

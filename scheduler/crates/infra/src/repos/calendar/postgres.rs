@@ -53,7 +53,14 @@ impl ICalendarRepo for PostgresCalendarRepo {
             Json(&calendar.metadata) as _,
         )
         .execute(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(
+                "Unable to insert calendar: {:?}. DB returned error: {:?}",
+                calendar, e
+            );
+            e
+        })?;
 
         Ok(())
     }
@@ -73,7 +80,10 @@ impl ICalendarRepo for PostgresCalendarRepo {
         .execute(&self.pool)
         .await
         .map_err(|e| {
-            error!("Unable to update calendar: {:?}", e);
+            error!(
+                "Unable to save calendar: {:?}. DB returned error: {:?}",
+                calendar, e
+            );
             e
         })?
         .rows_affected();
@@ -81,7 +91,7 @@ impl ICalendarRepo for PostgresCalendarRepo {
     }
 
     async fn find(&self, calendar_id: &ID) -> Option<Calendar> {
-        let calendar: CalendarRaw = match sqlx::query_as!(
+        let res: Option<CalendarRaw> = sqlx::query_as!(
             CalendarRaw,
             r#"
             SELECT c.*, u.account_uid FROM calendars AS c
@@ -91,13 +101,18 @@ impl ICalendarRepo for PostgresCalendarRepo {
             "#,
             calendar_id.inner_ref(),
         )
-        .fetch_one(&self.pool)
+        .fetch_optional(&self.pool)
         .await
-        {
-            Ok(cal) => cal,
-            Err(_) => return None,
-        };
-        Some(calendar.into())
+        .map_err(|e| {
+            error!(
+                "Find calendar with id: {:?} failed. DB returned error: {:?}",
+                calendar_id, e
+            );
+            e
+        })
+        .ok()?;
+
+        res.map(|cal| cal.into())
     }
 
     async fn find_by_user(&self, user_id: &ID) -> Vec<Calendar> {
@@ -113,6 +128,13 @@ impl ICalendarRepo for PostgresCalendarRepo {
         )
         .fetch_all(&self.pool)
         .await
+        .map_err(|e| {
+            error!(
+                "Find calendar by user id: {:?} failed. DB returned error: {:?}",
+                user_id, e
+            );
+            e
+        })
         .unwrap_or_default();
 
         calendars.into_iter().map(|c| c.into()).collect()
@@ -129,7 +151,14 @@ impl ICalendarRepo for PostgresCalendarRepo {
         .execute(&self.pool)
         .await
         .map(|_| ())
-        .map_err(anyhow::Error::new)
+        .map_err(|e| {
+            error!(
+                "Delete calendar with id: {:?} failed. DB returned error: {:?}",
+                calendar_id, e
+            );
+
+            anyhow::Error::new(e)
+        })
     }
 
     async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<Calendar> {
@@ -150,6 +179,13 @@ impl ICalendarRepo for PostgresCalendarRepo {
         )
         .fetch_all(&self.pool)
         .await
+        .map_err(|e| {
+            error!(
+                "Find calendars by metadata: {:?} failed. DB returned error: {:?}",
+                query, e
+            );
+            e
+        })
         .unwrap_or_default();
 
         calendars.into_iter().map(|c| c.into()).collect()

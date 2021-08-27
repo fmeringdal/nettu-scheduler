@@ -1,6 +1,7 @@
 use super::IAccountIntegrationRepo;
 use nettu_scheduler_domain::{AccountIntegration, IntegrationProvider, ID};
 use sqlx::{types::Uuid, FromRow, PgPool};
+use tracing::error;
 
 pub struct PostgresAccountIntegrationRepo {
     pool: PgPool,
@@ -49,7 +50,14 @@ impl IAccountIntegrationRepo for PostgresAccountIntegrationRepo {
             provider as _
         )
         .execute(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(
+                "Unable to insert account integration: {:?}. DB returned error: {:?}",
+                integration, e
+            );
+            e
+        })?;
         Ok(())
     }
 
@@ -63,7 +71,14 @@ impl IAccountIntegrationRepo for PostgresAccountIntegrationRepo {
             account_id.inner_ref(),
         )
         .fetch_all(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(
+                "Unable to query account integrations for account: {:?}. DB returned error: {:?}",
+                account_id, e
+            );
+            e
+        })?;
         Ok(integrations.into_iter().map(|i| i.into()).collect())
     }
 
@@ -82,7 +97,15 @@ impl IAccountIntegrationRepo for PostgresAccountIntegrationRepo {
         .await
         {
             Ok(res) if res.rows_affected() == 1 => Ok(()),
-            _ => Err(anyhow::Error::msg("Unable to delete account integration")),
+            Ok(_) => Err(anyhow::Error::msg("Unable to delete account integration")),
+            Err(e) => {
+                error!(
+                    "Unable to delete account integration for account: {:?} and provider: {:?}. DB returned error: {:?}",
+                    account_id, provider, e
+                );
+
+                Err(anyhow::Error::msg("Unable to delete account integration"))
+            }
         }
     }
 }

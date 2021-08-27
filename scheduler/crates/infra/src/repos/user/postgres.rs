@@ -6,6 +6,7 @@ use sqlx::{
     types::{Json, Uuid},
     FromRow, PgPool,
 };
+use tracing::error;
 
 pub struct PostgresUserRepo {
     pool: PgPool,
@@ -47,7 +48,14 @@ impl IUserRepo for PostgresUserRepo {
             Json(&user.metadata) as _,
         )
         .execute(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(
+                "Unable to insert user: {:?}. DB returned error: {:?}",
+                user, e
+            );
+            e
+        })?;
 
         Ok(())
     }
@@ -65,12 +73,19 @@ impl IUserRepo for PostgresUserRepo {
             Json(&user.metadata) as _,
         )
         .execute(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(
+                "Unable to save user: {:?}. DB returned error: {:?}",
+                user, e
+            );
+            e
+        })?;
         Ok(())
     }
 
     async fn delete(&self, user_id: &ID) -> Option<User> {
-        match sqlx::query_as!(
+        let res = sqlx::query_as!(
             UserRaw,
             r#"
             DELETE FROM users AS u
@@ -79,16 +94,22 @@ impl IUserRepo for PostgresUserRepo {
             "#,
             user_id.inner_ref(),
         )
-        .fetch_one(&self.pool)
+        .fetch_optional(&self.pool)
         .await
-        {
-            Ok(user) => Some(user.into()),
-            Err(_) => None,
-        }
+        .map_err(|e| {
+            error!(
+                "Delete user with id: {} failed. DB returned error: {:?}",
+                user_id, e
+            );
+            e
+        })
+        .ok()?;
+
+        res.map(|user| user.into())
     }
 
     async fn find(&self, user_id: &ID) -> Option<User> {
-        let user: UserRaw = match sqlx::query_as!(
+        let res = sqlx::query_as!(
             UserRaw,
             r#"
             SELECT * FROM users AS u
@@ -96,13 +117,18 @@ impl IUserRepo for PostgresUserRepo {
             "#,
             user_id.inner_ref(),
         )
-        .fetch_one(&self.pool)
+        .fetch_optional(&self.pool)
         .await
-        {
-            Ok(s) => s,
-            Err(_) => return None,
-        };
-        Some(user.into())
+        .map_err(|e| {
+            error!(
+                "Find user with user_id: {} failed. DB returned error: {:?}",
+                user_id, e
+            );
+            e
+        })
+        .ok()?;
+
+        res.map(|user| user.into())
     }
 
     async fn find_many(&self, user_ids: &[ID]) -> Vec<User> {
@@ -121,13 +147,20 @@ impl IUserRepo for PostgresUserRepo {
         )
         .fetch_all(&self.pool)
         .await
+        .map_err(|e| {
+            error!(
+                "Find users with user_ids: {:?} failed. DB returned error: {:?}",
+                user_ids, e
+            );
+            e
+        })
         .unwrap_or_default();
 
         users.into_iter().map(|u| u.into()).collect()
     }
 
     async fn find_by_account_id(&self, user_id: &ID, account_id: &ID) -> Option<User> {
-        let user: UserRaw = match sqlx::query_as!(
+        let res = sqlx::query_as!(
             UserRaw,
             r#"
             SELECT * FROM users AS u
@@ -137,13 +170,18 @@ impl IUserRepo for PostgresUserRepo {
             user_id.inner_ref(),
             account_id.inner_ref()
         )
-        .fetch_one(&self.pool)
+        .fetch_optional(&self.pool)
         .await
-        {
-            Ok(s) => s,
-            Err(_) => return None,
-        };
-        Some(user.into())
+        .map_err(|e| {
+            error!(
+                "Find user with user_id: {} failed. DB returned error: {:?}",
+                user_id, e
+            );
+            e
+        })
+        .ok()?;
+
+        res.map(|user| user.into())
     }
 
     async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<User> {
@@ -162,6 +200,13 @@ impl IUserRepo for PostgresUserRepo {
         )
         .fetch_all(&self.pool)
         .await
+        .map_err(|e| {
+            error!(
+                "Find users by metadata: {:?} failed. DB returned error: {:?}",
+                query, e
+            );
+            e
+        })
         .unwrap_or_default();
 
         users.into_iter().map(|u| u.into()).collect()
