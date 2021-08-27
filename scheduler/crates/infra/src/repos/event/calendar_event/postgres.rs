@@ -422,7 +422,7 @@ impl IEventRepo for PostgresEventRepo {
     }
 
     async fn delete(&self, event_id: &ID) -> anyhow::Result<()> {
-        sqlx::query!(
+        let res = sqlx::query!(
             r#"
             DELETE FROM calendar_events AS c
             WHERE c.event_uid = $1
@@ -430,7 +430,7 @@ impl IEventRepo for PostgresEventRepo {
             "#,
             event_id.inner_ref(),
         )
-        .fetch_one(&self.pool)
+        .fetch_optional(&self.pool)
         .await
         .map_err(|e| {
             error!(
@@ -439,7 +439,12 @@ impl IEventRepo for PostgresEventRepo {
             );
             e
         })?;
-        Ok(())
+
+        if res.is_some() {
+            Ok(())
+        } else {
+            Err(anyhow::Error::new("Unable to delete calendar event"))
+        }
     }
 
     async fn delete_by_service(&self, service_id: &ID) -> anyhow::Result<()> {
