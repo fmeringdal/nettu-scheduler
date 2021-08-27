@@ -14,10 +14,6 @@ WORKDIR /home/rust/
 
 COPY . .
 
-# USER root
-# RUN chown -R rust:rust .
-# USER rust
-
 ENV DATABASE_URL "postgresql://postgres:postgres@172.17.0.1:5432/nettuscheduler"
 
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \

@@ -9,6 +9,14 @@ on:
 jobs:
   docker:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nettuscheduler
+        ports:
+        - 5432:5432
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout
@@ -22,10 +30,11 @@ jobs:
         with:
           username: fmeringdal
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Build docker compose stack
+      - name: Run migrations
         run: |
           cd scheduler
-          docker-compose -f ./integrations/docker-compose.yml up -d
+          cargo install sqlx-cli --no-default-features --features postgres || true
+          (cd crates/infra && sqlx migrate run)
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
