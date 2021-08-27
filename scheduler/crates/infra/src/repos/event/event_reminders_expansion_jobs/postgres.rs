@@ -1,6 +1,7 @@
 use super::IEventRemindersGenerationJobsRepo;
 use nettu_scheduler_domain::EventRemindersExpansionJob;
 use sqlx::{types::Uuid, FromRow, PgPool};
+use tracing::error;
 
 pub struct PostgresEventReminderGenerationJobsRepo {
     pool: PgPool,
@@ -44,7 +45,14 @@ impl IEventRemindersGenerationJobsRepo for PostgresEventReminderGenerationJobsRe
                 job.version as _
             )
             .execute(&self.pool)
-            .await?;
+            .await
+            .map_err(|e| {
+                error!(
+                    "Unable to insert calendar event reminder expansion job: {:?}. DB returned error: {:?}",
+                    job, e
+                );
+                e
+            })?;
         }
         Ok(())
     }
@@ -61,6 +69,13 @@ impl IEventRemindersGenerationJobsRepo for PostgresEventReminderGenerationJobsRe
         )
         .fetch_all(&self.pool)
         .await
+        .map_err(|e| {
+            error!(
+                "Unable to delete calendar event reminder expansion job before timestamp: {}. DB returned error: {:?}",
+                before, e
+            );
+            e
+        })
         .unwrap_or_default()
         .into_iter()
         .map(|job| job.into())

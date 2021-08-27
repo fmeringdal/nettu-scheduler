@@ -4,7 +4,7 @@ use nettu_scheduler_domain::CalendarEvent;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use tracing::warn;
+use tracing::error;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -172,7 +172,7 @@ impl GoogleCalendarRestApi {
         &self,
         body: &impl Serialize,
         path: String,
-    ) -> Result<T, ()> {
+    ) -> anyhow::Result<T> {
         match self
             .client
             .put(&format!("{}/{}", GOOGLE_API_BASE_URL, path))
@@ -182,11 +182,18 @@ impl GoogleCalendarRestApi {
             .await
         {
             Ok(res) => res.json::<T>().await.map_err(|e| {
-                warn!("Google calendar api PUT deserialize error: {:?}", e);
+                error!(
+                    "[Unexpected Response] Google Calendar API PUT error. Error message: {:?}",
+                    e
+                );
+                anyhow::Error::new(e)
             }),
             Err(e) => {
-                warn!("Google calendar api PUT error: {:?}", e);
-                Err(())
+                error!(
+                    "[Network Error] Google Calendar API PUT error. Error message: {:?}",
+                    e
+                );
+                Err(anyhow::Error::new(e))
             }
         }
     }
@@ -195,7 +202,7 @@ impl GoogleCalendarRestApi {
         &self,
         body: &impl Serialize,
         path: String,
-    ) -> Result<T, ()> {
+    ) -> anyhow::Result<T> {
         match self
             .client
             .post(&format!("{}/{}", GOOGLE_API_BASE_URL, path))
@@ -205,18 +212,23 @@ impl GoogleCalendarRestApi {
             .await
         {
             Ok(res) => res.json::<T>().await.map_err(|e| {
-                println!("Google calendar api POST deserialize error: {:?}", e);
-                warn!("Google calendar api POST deserialize error: {:?}", e);
+                error!(
+                    "[Unexpected Response] Google Calendar API POST error. Error message: {:?}",
+                    e
+                );
+                anyhow::Error::new(e)
             }),
             Err(e) => {
-                println!("Google calendar api POST error: {:?}", e);
-                warn!("Google calendar api POST error: {:?}", e);
-                Err(())
+                error!(
+                    "[Network Error] Google Calendar API POST error. Error message: {:?}",
+                    e
+                );
+                Err(anyhow::Error::new(e))
             }
         }
     }
 
-    async fn get<T: for<'de> Deserialize<'de>>(&self, path: String) -> Result<T, ()> {
+    async fn get<T: for<'de> Deserialize<'de>>(&self, path: String) -> anyhow::Result<T> {
         match self
             .client
             .get(&format!("{}/{}", GOOGLE_API_BASE_URL, path))
@@ -225,16 +237,23 @@ impl GoogleCalendarRestApi {
             .await
         {
             Ok(res) => res.json::<T>().await.map_err(|e| {
-                warn!("Google calendar api GET deserialize error: {:?}", e);
+                error!(
+                    "[Unexpected Response] Google Calendar API GET error. Error message: {:?}",
+                    e
+                );
+                anyhow::Error::new(e)
             }),
             Err(e) => {
-                warn!("Google calendar api get error: {:?}", e);
-                Err(())
+                error!(
+                    "[Network Error] Google Calendar API GET error. Error message: {:?}",
+                    e
+                );
+                Err(anyhow::Error::new(e))
             }
         }
     }
 
-    async fn delete<T: for<'de> Deserialize<'de>>(&self, path: String) -> Result<T, ()> {
+    async fn delete<T: for<'de> Deserialize<'de>>(&self, path: String) -> anyhow::Result<T> {
         match self
             .client
             .delete(&format!("{}/{}", GOOGLE_API_BASE_URL, path))
@@ -243,14 +262,28 @@ impl GoogleCalendarRestApi {
             .await
         {
             Ok(res) => res.json::<T>().await.map_err(|e| {
-                warn!("Error: {:?}", e);
+                error!(
+                    "[Unexpected Response] Google Calendar API DELETE error. Error message: {:?}",
+                    e
+                );
+                anyhow::Error::new(e)
             }),
-            Err(_) => Err(()),
+            Err(e) => {
+                error!(
+                    "[Network Error] Google Calendar API DELETE error. Error message: {:?}",
+                    e
+                );
+                Err(anyhow::Error::new(e))
+            }
         }
     }
 
     pub async fn freebusy(&self, body: &FreeBusyRequest) -> Result<FreeBusyResponse, ()> {
         self.post(body, "freeBusy".into()).await
+            .map_err(|e| {
+                error!("Failed to get freebusy from google calendar with request: {:?}. Error message: {:?}", body, e);
+                ()
+            })
     }
 
     pub async fn insert(
@@ -260,6 +293,10 @@ impl GoogleCalendarRestApi {
     ) -> Result<GoogleCalendarEvent, ()> {
         self.post(body, format!("calendars/{}/events", calendar_id))
             .await
+            .map_err(|e| {
+                error!("Failed to insert google calendar event to google calendar id: {} with body: {:?}. Error message: {:?}", calendar_id, body, e);
+                ()
+            })
     }
 
     pub async fn update(
@@ -273,11 +310,19 @@ impl GoogleCalendarRestApi {
             format!("calendars/{}/events/{}", calendar_id, event_id),
         )
         .await
+            .map_err(|e| {
+                error!("Failed to update google calendar event in google calendar id: {} and google event id: {} and with body: {:?}. Error message: {:?}", calendar_id, event_id, body, e);
+                ()
+            })
     }
 
     pub async fn remove(&self, calendar_id: String, event_id: String) -> Result<(), ()> {
         self.delete(format!("calendars/{}/events/{}", calendar_id, event_id))
             .await
+                .map_err(|e| {
+                error!("Failed to delete google calendar event with google calendar id: {} and google event id: {}. Error message: {:?}", calendar_id, event_id, e);
+                ()
+            })
     }
 
     pub async fn list(
@@ -289,5 +334,12 @@ impl GoogleCalendarRestApi {
             min_access_role
         ))
         .await
+        .map_err(|e| {
+            error!(
+                "Failed to list google calendars with access role: {:?}. Error message: {:?}",
+                min_access_role, e
+            );
+            ()
+        })
     }
 }

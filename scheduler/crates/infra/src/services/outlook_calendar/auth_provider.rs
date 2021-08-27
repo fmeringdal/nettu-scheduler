@@ -34,7 +34,7 @@ struct RefreshTokenResponse {
     expires_in: i64,
 }
 
-async fn refresh_access_token(req: RefreshTokenRequest) -> Result<RefreshTokenResponse, ()> {
+async fn refresh_access_token(req: RefreshTokenRequest) -> anyhow::Result<RefreshTokenResponse> {
     let params = [
         ("client_id", req.client_id.as_str()),
         ("client_secret", req.client_secret.as_str()),
@@ -49,9 +49,23 @@ async fn refresh_access_token(req: RefreshTokenRequest) -> Result<RefreshTokenRe
         .form(&params)
         .send()
         .await
-        .map_err(|_| ())?;
+        .map_err(|e| {
+            error!(
+                "[Network Error] Outlook OAuth refresh token failed with error: {:?}",
+                e
+            );
 
-    res.json::<RefreshTokenResponse>().await.map_err(|_| ())
+            e
+        })?;
+
+    res.json::<RefreshTokenResponse>().await.map_err(|e| {
+        error!(
+            "[Unexpected Response] Google OAuth refresh token failed with error: {:?}",
+            e
+        );
+
+        anyhow::Error::new(e)
+    })
 }
 
 pub async fn exchange_code_token(req: CodeTokenRequest) -> Result<CodeTokenResponse, ()> {
@@ -63,7 +77,6 @@ pub async fn exchange_code_token(req: CodeTokenRequest) -> Result<CodeTokenRespo
         ("scope", &REQUIRED_OAUTH_SCOPES.join(" ")),
         ("grant_type", "authorization_code"),
     ];
-    println!("Params : {:?}", params);
 
     let client = reqwest::Client::new();
 
@@ -73,13 +86,17 @@ pub async fn exchange_code_token(req: CodeTokenRequest) -> Result<CodeTokenRespo
         .send()
         .await
         .map_err(|e| {
-            println!("------------------------------------------------------");
-            println!("Error got : {:?}", e);
+            error!(
+                "[Network Error] Outlook OAuth code token exchange failed with error: {:?}",
+                e
+            );
         })?;
 
     let res = res.json::<CodeTokenResponse>().await.map_err(|e| {
-        println!("------------------------------------------------------");
-        println!("2. Error got : {:?}", e);
+        error!(
+            "[Unexpected Response] Outlook OAuth code token exchange failed with error: {:?}",
+            e
+        );
     })?;
 
     let scopes = res
@@ -93,8 +110,10 @@ pub async fn exchange_code_token(req: CodeTokenRequest) -> Result<CodeTokenRespo
             continue;
         }
         if !scopes.contains(&required_scope.to_string()) {
-            println!("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            println!("Scopes : {:?}", scopes);
+            error!(
+                "[Missing scopes] Outlook OAuth code token exchange failed. Missing scope: {:?}, got the following scopes: {:?}",
+                required_scope, scopes
+            );
 
             return Err(());
         }
@@ -146,8 +165,8 @@ pub async fn get_access_token(user: &User, ctx: &NettuContext) -> Option<String>
             // Update user with updated google tokens
             if let Err(e) = ctx.repos.user_integrations.save(integration).await {
                 error!(
-                    "Unable to save updated outlook credentials for user. Error: {:?}",
-                    e
+                    "Unable to save updated google credentials for user: {}. Error: {:?}",
+                    user.id, e
                 );
             }
 
@@ -155,7 +174,10 @@ pub async fn get_access_token(user: &User, ctx: &NettuContext) -> Option<String>
             Some(access_token)
         }
         Err(e) => {
-            error!("Unable to refresh access token for user. Error: {:?}", e);
+            error!(
+                "Unable to refresh outlook oauth access token for user: {}. Error: {:?}",
+                user.id, e
+            );
             None
         }
     }

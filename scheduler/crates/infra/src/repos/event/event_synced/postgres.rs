@@ -59,10 +59,12 @@ impl IEventSyncedRepo for PostgresEventSyncedRepo {
         )
         .execute(&self.pool)
         .await
-        .map_err(|e| {
-            println!("Unable to insert synced calendar event : {:?}", e);
-            error!("Unable to insert synced calendar event : {:?}", e);
-            e
+        .map_err(|err| {
+            error!(
+                "Unable to insert syunced calendar event: {:?}. DB returned error: {:?}",
+                e, err
+            );
+            err
         })?;
 
         Ok(())
@@ -80,7 +82,15 @@ impl IEventSyncedRepo for PostgresEventSyncedRepo {
             event_id.inner_ref(),
         )
         .fetch_all(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(
+                "Unable to find synced calendar events for calendar event with id: {}. DB returned error: {:?}",
+                event_id, e
+            );
+            e
+        })
+        ?;
 
         Ok(synced_events.into_iter().map(|e| e.into()).collect())
     }

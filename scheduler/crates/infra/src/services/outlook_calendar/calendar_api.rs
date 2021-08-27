@@ -10,7 +10,7 @@ use nettu_scheduler_domain::{
 };
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use tracing::warn;
+use tracing::{error, warn};
 
 const API_BASE_URL: &str = "https://graph.microsoft.com/v1.0/";
 
@@ -111,7 +111,7 @@ impl OutlookCalendarRestApi {
         &self,
         body: &impl Serialize,
         path: String,
-    ) -> Result<T, ()> {
+    ) -> anyhow::Result<T> {
         match self
             .client
             .put(&format!("{}/{}", API_BASE_URL, path))
@@ -121,11 +121,18 @@ impl OutlookCalendarRestApi {
             .await
         {
             Ok(res) => res.json::<T>().await.map_err(|e| {
-                warn!("Outlook calendar api PUT deserialize error: {:?}", e);
+                error!(
+                    "[Unexpected Response] Outlook Calendar API PUT error. Error message: {:?}",
+                    e
+                );
+                anyhow::Error::new(e)
             }),
             Err(e) => {
-                warn!("Outlook calendar api PUT error: {:?}", e);
-                Err(())
+                error!(
+                    "[Network Error] Outlook Calendar API PUT error. Error message: {:?}",
+                    e
+                );
+                Err(anyhow::Error::new(e))
             }
         }
     }
@@ -134,7 +141,7 @@ impl OutlookCalendarRestApi {
         &self,
         body: &impl Serialize,
         path: String,
-    ) -> Result<T, ()> {
+    ) -> anyhow::Result<T> {
         match self
             .client
             .post(&format!("{}/{}", API_BASE_URL, path))
@@ -144,16 +151,23 @@ impl OutlookCalendarRestApi {
             .await
         {
             Ok(res) => res.json::<T>().await.map_err(|e| {
-                warn!("Outlook calendar api POST deserialize error: {:?}", e);
+                error!(
+                    "[Unexpected Response] Outlook Calendar API POST error. Error message: {:?}",
+                    e
+                );
+                anyhow::Error::new(e)
             }),
             Err(e) => {
-                warn!("Outlook calendar api POST error: {:?}", e);
-                Err(())
+                error!(
+                    "[Network Error] Outlook Calendar API POST error. Error message: {:?}",
+                    e
+                );
+                Err(anyhow::Error::new(e))
             }
         }
     }
 
-    async fn delete<T: for<'de> Deserialize<'de>>(&self, path: String) -> Result<T, ()> {
+    async fn delete<T: for<'de> Deserialize<'de>>(&self, path: String) -> anyhow::Result<T> {
         match self
             .client
             .delete(&format!("{}/{}", API_BASE_URL, path))
@@ -162,13 +176,23 @@ impl OutlookCalendarRestApi {
             .await
         {
             Ok(res) => res.json::<T>().await.map_err(|e| {
-                warn!("Error: {:?}", e);
+                error!(
+                    "[Unexpected Response] Outlook Calendar API DELETE error. Error message: {:?}",
+                    e
+                );
+                anyhow::Error::new(e)
             }),
-            Err(_) => Err(()),
+            Err(e) => {
+                error!(
+                    "[Network Error] Outlook Calendar API DELETE error. Error message: {:?}",
+                    e
+                );
+                Err(anyhow::Error::new(e))
+            }
         }
     }
 
-    async fn get<T: for<'de> Deserialize<'de>>(&self, path: String) -> Result<T, ()> {
+    async fn get<T: for<'de> Deserialize<'de>>(&self, path: String) -> anyhow::Result<T> {
         match self
             .client
             .get(&format!("{}/{}", API_BASE_URL, path))
@@ -177,22 +201,36 @@ impl OutlookCalendarRestApi {
             .await
         {
             Ok(res) => res.json::<T>().await.map_err(|e| {
-                println!("Outlook calendar api GET deserialize error: {:?}", e);
+                error!(
+                    "[Unexpected Response] Outlook Calendar API GET error. Error message: {:?}",
+                    e
+                );
+                anyhow::Error::new(e)
             }),
             Err(e) => {
-                println!("Outlook calendar api get error: {:?}", e);
-                Err(())
+                error!(
+                    "[Network Error] Outlook Calendar API GET error. Error message: {:?}",
+                    e
+                );
+                Err(anyhow::Error::new(e))
             }
         }
     }
 
     pub async fn list(&self) -> Result<ListCalendarsResponse, ()> {
-        self.get("me/calendars".to_string()).await
+        self.get("me/calendars".to_string()).await.map_err(|e| {
+            error!("Failed to list outlook calendars. Error message: {:?}", e);
+            ()
+        })
     }
 
     pub async fn remove(&self, calendar_id: String, event_id: String) -> Result<(), ()> {
         self.delete(format!("me/calendars/{}/events/{}", calendar_id, event_id))
             .await
+            .map_err(|e| {
+                error!("Failed to delete outlook calendar event with outlook calendar id: {} and outlook event id: {}. Error message: {:?}", calendar_id, event_id, e);
+                ()
+            })
     }
 
     pub async fn update(
@@ -206,6 +244,10 @@ impl OutlookCalendarRestApi {
             format!("calendars/{}/events/{}", calendar_id, event_id),
         )
         .await
+            .map_err(|e| {
+                error!("Failed to update outlook calendar event in outlook calendar id: {} and outlook event id: {} and with body: {:?}. Error message: {:?}", calendar_id, event_id, body, e);
+                ()
+            })
     }
 
     pub async fn insert(
@@ -215,6 +257,10 @@ impl OutlookCalendarRestApi {
     ) -> Result<OutlookCalendarEvent, ()> {
         self.post(body, format!("me/calendars/{}/events", calendar_id))
             .await
+            .map_err(|e| {
+                error!("Failed to insert outlook calendar event to outlook calendar id: {} with body: {:?}. Error message: {:?}", calendar_id, body, e);
+                ()
+            })
     }
 
     pub async fn freebusy(&self, body: &FreeBusyRequest) -> Result<CompatibleInstances, ()> {

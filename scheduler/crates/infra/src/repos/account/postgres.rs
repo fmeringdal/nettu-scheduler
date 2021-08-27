@@ -5,6 +5,7 @@ use sqlx::{
     types::{Json, Uuid},
     FromRow, PgPool,
 };
+use tracing::error;
 
 pub struct PostgresAccountRepo {
     pool: PgPool,
@@ -51,7 +52,10 @@ impl IAccountRepo for PostgresAccountRepo {
         .execute(&self.pool)
         .await
         .map_err(|e| {
-            println!("Unable to insert account : {:?}", e);
+            error!(
+                "Unable to insert account: {:?}. DB returned error: {:?}",
+                account, e
+            );
             e
         })?;
         Ok(())
@@ -72,12 +76,19 @@ impl IAccountRepo for PostgresAccountRepo {
             Json(&account.settings) as _
         )
         .execute(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(
+                "Unable to save account: {:?}. DB returned error: {:?}",
+                account, e
+            );
+            e
+        })?;
         Ok(())
     }
 
     async fn find(&self, account_id: &ID) -> Option<Account> {
-        let account: AccountRaw = match sqlx::query_as!(
+        let res: Option<AccountRaw> = sqlx::query_as!(
             AccountRaw,
             r#"
             SELECT * FROM accounts
@@ -85,13 +96,17 @@ impl IAccountRepo for PostgresAccountRepo {
             "#,
             account_id.inner_ref(),
         )
-        .fetch_one(&self.pool)
+        .fetch_optional(&self.pool)
         .await
-        {
-            Ok(a) => a,
-            Err(_) => return None,
-        };
-        Some(account.into())
+        .map_err(|e| {
+            error!(
+                "Find account with id: {:?} failed. DB returned error: {:?}",
+                account_id, e
+            );
+            e
+        })
+        .ok()?;
+        res.map(|account| account.into())
     }
 
     async fn find_many(&self, accounts_ids: &[ID]) -> anyhow::Result<Vec<Account>> {
@@ -108,13 +123,20 @@ impl IAccountRepo for PostgresAccountRepo {
             &ids
         )
         .fetch_all(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(
+                "Find accounts with ids: {:?} failed. DB returned error: {:?}",
+                accounts_ids, e
+            );
+            e
+        })?;
 
         Ok(accounts_raw.into_iter().map(|acc| acc.into()).collect())
     }
 
     async fn delete(&self, account_id: &ID) -> Option<Account> {
-        let account: AccountRaw = match sqlx::query_as!(
+        let res: Option<AccountRaw> = sqlx::query_as!(
             AccountRaw,
             "
             DELETE FROM accounts
@@ -123,17 +145,21 @@ impl IAccountRepo for PostgresAccountRepo {
             ",
             account_id.inner_ref()
         )
-        .fetch_one(&self.pool)
+        .fetch_optional(&self.pool)
         .await
-        {
-            Ok(acc) => acc,
-            Err(_) => return None,
-        };
-        Some(account.into())
+        .map_err(|e| {
+            error!(
+                "Delete account with id: {:?} failed. DB returned error: {:?}",
+                account_id, e
+            );
+            e
+        })
+        .ok()?;
+        res.map(|acc| acc.into())
     }
 
     async fn find_by_apikey(&self, api_key: &str) -> Option<Account> {
-        let account: AccountRaw = match sqlx::query_as!(
+        let res: Option<AccountRaw> = sqlx::query_as!(
             AccountRaw,
             "
             SELECT * FROM accounts
@@ -141,12 +167,17 @@ impl IAccountRepo for PostgresAccountRepo {
             ",
             api_key
         )
-        .fetch_one(&self.pool)
+        .fetch_optional(&self.pool)
         .await
-        {
-            Ok(acc) => acc,
-            Err(_) => return None,
-        };
-        Some(account.into())
+        .map_err(|e| {
+            error!(
+                "Find account with api_key: {:?} failed. DB returned error: {:?}",
+                api_key, e
+            );
+            e
+        })
+        .ok()?;
+
+        res.map(|acc| acc.into())
     }
 }
