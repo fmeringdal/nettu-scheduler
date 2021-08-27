@@ -1,7 +1,6 @@
 export DATABASE_URL=postgresql://postgres:postgres@localhost:5432/nettuscheduler
 
 setup: _setup_db
-	@echo -e '\e[1;31mNot Yet Implemented\e[0m'
 
 test: _setup_db
 	@cd scheduler && cargo test --all
