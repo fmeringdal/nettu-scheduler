@@ -1,6 +1,5 @@
 use super::IScheduleRepo;
 use crate::repos::shared::query_structs::MetadataFindQuery;
-use futures::FutureExt;
 use nettu_scheduler_domain::{Schedule, ID};
 use serde_json::Value;
 use sqlx::{

@@ -282,7 +282,6 @@ impl GoogleCalendarRestApi {
         self.post(body, "freeBusy".into()).await
             .map_err(|e| {
                 error!("Failed to get freebusy from google calendar with request: {:?}. Error message: {:?}", body, e);
-                ()
             })
     }
 
@@ -295,7 +294,6 @@ impl GoogleCalendarRestApi {
             .await
             .map_err(|e| {
                 error!("Failed to insert google calendar event to google calendar id: {} with body: {:?}. Error message: {:?}", calendar_id, body, e);
-                ()
             })
     }
 
@@ -312,7 +310,6 @@ impl GoogleCalendarRestApi {
         .await
             .map_err(|e| {
                 error!("Failed to update google calendar event in google calendar id: {} and google event id: {} and with body: {:?}. Error message: {:?}", calendar_id, event_id, body, e);
-                ()
             })
     }
 
@@ -321,7 +318,6 @@ impl GoogleCalendarRestApi {
             .await
                 .map_err(|e| {
                 error!("Failed to delete google calendar event with google calendar id: {} and google event id: {}. Error message: {:?}", calendar_id, event_id, e);
-                ()
             })
     }
 
@@ -339,7 +335,6 @@ impl GoogleCalendarRestApi {
                 "Failed to list google calendars with access role: {:?}. Error message: {:?}",
                 min_access_role, e
             );
-            ()
         })
     }
 }

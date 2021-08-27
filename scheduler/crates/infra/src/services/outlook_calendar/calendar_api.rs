@@ -10,7 +10,7 @@ use nettu_scheduler_domain::{
 };
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use tracing::{error, warn};
+use tracing::error;
 
 const API_BASE_URL: &str = "https://graph.microsoft.com/v1.0/";
 
@@ -220,7 +220,6 @@ impl OutlookCalendarRestApi {
     pub async fn list(&self) -> Result<ListCalendarsResponse, ()> {
         self.get("me/calendars".to_string()).await.map_err(|e| {
             error!("Failed to list outlook calendars. Error message: {:?}", e);
-            ()
         })
     }
 
@@ -229,7 +228,6 @@ impl OutlookCalendarRestApi {
             .await
             .map_err(|e| {
                 error!("Failed to delete outlook calendar event with outlook calendar id: {} and outlook event id: {}. Error message: {:?}", calendar_id, event_id, e);
-                ()
             })
     }
 
@@ -246,7 +244,6 @@ impl OutlookCalendarRestApi {
         .await
             .map_err(|e| {
                 error!("Failed to update outlook calendar event in outlook calendar id: {} and outlook event id: {} and with body: {:?}. Error message: {:?}", calendar_id, event_id, body, e);
-                ()
             })
     }
 
@@ -259,7 +256,6 @@ impl OutlookCalendarRestApi {
             .await
             .map_err(|e| {
                 error!("Failed to insert outlook calendar event to outlook calendar id: {} with body: {:?}. Error message: {:?}", calendar_id, body, e);
-                ()
             })
     }
 

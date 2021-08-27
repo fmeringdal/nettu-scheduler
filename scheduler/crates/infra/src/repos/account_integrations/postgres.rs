@@ -97,7 +97,7 @@ impl IAccountIntegrationRepo for PostgresAccountIntegrationRepo {
         .await
         {
             Ok(res) if res.rows_affected() == 1 => Ok(()),
-            Ok(res) => Err(anyhow::Error::msg("Unable to delete account integration")),
+            Ok(_) => Err(anyhow::Error::msg("Unable to delete account integration")),
             Err(e) => {
                 error!(
                     "Unable to delete account integration for account: {:?} and provider: {:?}. DB returned error: {:?}",
