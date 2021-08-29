@@ -443,7 +443,7 @@ impl IEventRepo for PostgresEventRepo {
         if res.is_some() {
             Ok(())
         } else {
-            Err(anyhow::Error::new("Unable to delete calendar event"))
+            Err(anyhow::Error::msg("Unable to delete calendar event"))
         }
     }
 
