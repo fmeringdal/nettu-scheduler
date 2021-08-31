@@ -9,8 +9,8 @@ mod status;
 mod user;
 
 use account::AccountClient;
-pub use base::{APIResponse, APIError, APIErrorVariant};
 pub(crate) use base::BaseClient;
+pub use base::{APIError, APIErrorVariant, APIResponse};
 use calendar::CalendarClient;
 pub use calendar::{
     CreateCalendarInput, DeleteCalendarInput, GetCalendarEventsInput, GetCalendarInput,
@@ -20,6 +20,7 @@ use event::CalendarEventClient;
 pub use event::{
     CreateEventInput, DeleteEventInput, GetEventInput, GetEventsInstancesInput, UpdateEventInput,
 };
+pub use nettu_scheduler_api_structs::dtos::*;
 pub use nettu_scheduler_api_structs::send_event_reminders::AccountRemindersDTO as AccountReminders;
 pub use nettu_scheduler_domain::{
     providers::google::*, providers::outlook::*, scheduling::RoundRobinAlgorithm, BusyCalendar,
