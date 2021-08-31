@@ -9,7 +9,8 @@ mod status;
 mod user;
 
 use account::AccountClient;
-pub(crate) use base::{APIResponse, BaseClient};
+pub use base::{APIResponse, APIError, APIErrorVariant};
+pub(crate) use base::BaseClient;
 use calendar::CalendarClient;
 pub use calendar::{
     CreateCalendarInput, DeleteCalendarInput, GetCalendarEventsInput, GetCalendarInput,
