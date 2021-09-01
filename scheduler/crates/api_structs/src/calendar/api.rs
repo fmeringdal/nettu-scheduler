@@ -245,7 +245,7 @@ pub mod get_user_freebusy {
         pub calendar_ids: Option<String>,
     }
 
-    #[derive(Debug, Serialize)]
+    #[derive(Debug, Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct APIResponse {
         pub busy: VecDeque<EventInstance>,

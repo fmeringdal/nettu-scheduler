@@ -6,8 +6,9 @@ use nettu_scheduler_sdk::{
     AddServiceUserInput, CreateCalendarInput, CreateEventInput, CreateScheduleInput,
     CreateServiceInput, CreateUserInput, DeleteCalendarInput, DeleteEventInput,
     GetCalendarEventsInput, GetCalendarInput, GetEventInput, GetEventsInstancesInput,
-    GetServiceBookingSlotsInput, KVMetadata, MetadataFindInput, NettuSDK, RemoveServiceUserInput,
-    UpdateCalendarInput, UpdateEventInput, UpdateScheduleInput, UpdateServiceUserInput,
+    GetServiceBookingSlotsInput, GetUserFreeBusyInput, KVMetadata, MetadataFindInput, NettuSDK,
+    RemoveServiceUserInput, UpdateCalendarInput, UpdateEventInput, UpdateScheduleInput,
+    UpdateServiceUserInput,
 };
 use std::collections::HashMap;
 
@@ -70,6 +71,17 @@ async fn test_crud_user() {
         res.user.metadata.inner.get("group_id").unwrap().clone(),
         "123".to_string()
     );
+
+    let free_busy_req = GetUserFreeBusyInput {
+        start_ts: 0,
+        end_ts: 10,
+        calendar_ids: None,
+    };
+    let free_busy_res = admin_client
+        .user
+        .free_busy(res.user.id.clone(), free_busy_req)
+        .await;
+    assert!(free_busy_res.is_ok());
 
     let metadata = KVMetadata {
         key: "group_id".to_string(),
