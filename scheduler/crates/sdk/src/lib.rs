@@ -36,8 +36,8 @@ pub use service::{
 pub use shared::{KVMetadata, MetadataFindInput};
 use status::StatusClient;
 use std::sync::Arc;
-pub use user::CreateUserInput;
 use user::UserClient;
+pub use user::{CreateUserInput, GetUserFreeBusyInput, UpdateUserInput};
 
 // Domain
 pub use nettu_scheduler_api_structs::dtos::AccountDTO as Account;

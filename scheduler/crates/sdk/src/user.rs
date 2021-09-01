@@ -15,6 +15,28 @@ pub struct UpdateUserInput {
 
 pub type CreateUserInput = create_user::RequestBody;
 
+pub struct GetUserFreeBusyInput {
+    pub start_ts: i64,
+    pub end_ts: i64,
+    pub calendar_ids: Option<Vec<ID>>,
+}
+
+impl Into<String> for GetUserFreeBusyInput {
+    fn into(self) -> String {
+        let mut query = format!("?startTs={}&endTs={}", self.start_ts, self.end_ts);
+        if let Some(calendar_ids) = self.calendar_ids {
+            let calendar_ids = calendar_ids
+                .into_iter()
+                .map(|id| id.to_string())
+                .collect::<Vec<_>>()
+                .join(",");
+            query = format!("{}&calendarIds={}", query, calendar_ids);
+        }
+
+        query
+    }
+}
+
 impl UserClient {
     pub(crate) fn new(base: Arc<BaseClient>) -> Self {
         Self { base }
@@ -44,6 +66,20 @@ impl UserClient {
         };
         self.base
             .put(body, format!("user/{}", input.user_id), StatusCode::OK)
+            .await
+    }
+
+    pub async fn free_busy(
+        &self,
+        user_id: ID,
+        req: GetUserFreeBusyInput,
+    ) -> APIResponse<get_user_freebusy::APIResponse> {
+        let query: String = req.into();
+        self.base
+            .get(
+                format!("user/{}/freebusy{}", user_id.to_string(), query),
+                StatusCode::OK,
+            )
             .await
     }
 
