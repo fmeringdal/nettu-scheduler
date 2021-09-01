@@ -40,7 +40,7 @@ impl IEventRemindersGenerationJobsRepo for PostgresEventReminderGenerationJobsRe
             (event_uid, timestamp, version)
             VALUES($1, $2, $3)
             "#,
-                job.event_id.inner_ref(),
+                job.event_id.as_ref(),
                 job.timestamp,
                 job.version as _
             )

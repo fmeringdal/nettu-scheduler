@@ -46,8 +46,8 @@ impl ICalendarSyncedRepo for PostgresCalendarSyncedRepo {
             )
             VALUES($1, $2, $3, $4)
             "#,
-            c.calendar_id.inner_ref(),
-            c.user_id.inner_ref(),
+            c.calendar_id.as_ref(),
+            c.user_id.as_ref(),
             c.ext_calendar_id,
             provider as _
         )
@@ -74,8 +74,8 @@ impl ICalendarSyncedRepo for PostgresCalendarSyncedRepo {
                 ext_calendar_id = $3 AND
                 provider = $4
             "#,
-            c.calendar_id.inner_ref(),
-            c.user_id.inner_ref(),
+            c.calendar_id.as_ref(),
+            c.user_id.as_ref(),
             c.ext_calendar_id,
             provider as _
         )
@@ -103,7 +103,7 @@ impl ICalendarSyncedRepo for PostgresCalendarSyncedRepo {
             SELECT * FROM externally_synced_calendars AS c
             WHERE c.calendar_uid = $1
             "#,
-            calendar_id.inner_ref(),
+            calendar_id.as_ref(),
         )
         .fetch_all(&self.pool)
         .await

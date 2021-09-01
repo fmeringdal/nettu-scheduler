@@ -43,8 +43,8 @@ impl IUserRepo for PostgresUserRepo {
             INSERT INTO users(user_uid, account_uid, metadata)
             VALUES($1, $2, $3)
             "#,
-            user.id.inner_ref(),
-            user.account_id.inner_ref(),
+            user.id.as_ref(),
+            user.account_id.as_ref(),
             Json(&user.metadata) as _,
         )
         .execute(&self.pool)
@@ -68,8 +68,8 @@ impl IUserRepo for PostgresUserRepo {
             metadata = $3
             WHERE user_uid = $1
             "#,
-            user.id.inner_ref(),
-            user.account_id.inner_ref(),
+            user.id.as_ref(),
+            user.account_id.as_ref(),
             Json(&user.metadata) as _,
         )
         .execute(&self.pool)
@@ -92,7 +92,7 @@ impl IUserRepo for PostgresUserRepo {
             WHERE u.user_uid = $1
             RETURNING *
             "#,
-            user_id.inner_ref(),
+            user_id.as_ref(),
         )
         .fetch_optional(&self.pool)
         .await
@@ -115,7 +115,7 @@ impl IUserRepo for PostgresUserRepo {
             SELECT * FROM users AS u
             WHERE u.user_uid = $1
             "#,
-            user_id.inner_ref(),
+            user_id.as_ref(),
         )
         .fetch_optional(&self.pool)
         .await
@@ -132,10 +132,7 @@ impl IUserRepo for PostgresUserRepo {
     }
 
     async fn find_many(&self, user_ids: &[ID]) -> Vec<User> {
-        let user_ids = user_ids
-            .iter()
-            .map(|id| *id.inner_ref())
-            .collect::<Vec<_>>();
+        let user_ids = user_ids.iter().map(|id| *id.as_ref()).collect::<Vec<_>>();
 
         let users: Vec<UserRaw> = sqlx::query_as!(
             UserRaw,
@@ -167,8 +164,8 @@ impl IUserRepo for PostgresUserRepo {
             WHERE u.user_uid = $1 AND
             u.account_uid = $2
             "#,
-            user_id.inner_ref(),
-            account_id.inner_ref()
+            user_id.as_ref(),
+            account_id.as_ref()
         )
         .fetch_optional(&self.pool)
         .await
@@ -193,7 +190,7 @@ impl IUserRepo for PostgresUserRepo {
             LIMIT $3
             OFFSET $4
             "#,
-            query.account_id.inner_ref(),
+            query.account_id.as_ref(),
             Json(&query.metadata) as _,
             query.limit as i64,
             query.skip as i64,

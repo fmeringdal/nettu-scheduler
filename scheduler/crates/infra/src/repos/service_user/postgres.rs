@@ -52,8 +52,8 @@ impl From<ServiceUserRaw> for ServiceResource {
 impl IServiceUserRepo for PostgresServiceUserRepo {
     async fn insert(&self, user: &ServiceResource) -> anyhow::Result<()> {
         let (available_calendar_id, available_schedule_id) = match &user.availability {
-            TimePlan::Calendar(id) => (Some(id.inner_ref()), None),
-            TimePlan::Schedule(id) => (None, Some(id.inner_ref())),
+            TimePlan::Calendar(id) => (Some(id.as_ref()), None),
+            TimePlan::Schedule(id) => (None, Some(id.as_ref())),
             _ => (None, None),
         };
 
@@ -62,8 +62,8 @@ impl IServiceUserRepo for PostgresServiceUserRepo {
             INSERT INTO service_users(service_uid, user_uid, available_calendar_uid, available_schedule_uid, buffer_after, buffer_before, closest_booking_time, furthest_booking_time)
             VALUES($1, $2, $3, $4, $5, $6, $7, $8)
             "#,
-            user.service_id.inner_ref(),
-            user.user_id.inner_ref(),
+            user.service_id.as_ref(),
+            user.user_id.as_ref(),
             available_calendar_id,
             available_schedule_id,
             user.buffer_after,
@@ -86,8 +86,8 @@ impl IServiceUserRepo for PostgresServiceUserRepo {
 
     async fn save(&self, user: &ServiceResource) -> anyhow::Result<()> {
         let (available_calendar_id, available_schedule_id) = match &user.availability {
-            TimePlan::Calendar(id) => (Some(id.inner_ref()), None),
-            TimePlan::Schedule(id) => (None, Some(id.inner_ref())),
+            TimePlan::Calendar(id) => (Some(id.as_ref()), None),
+            TimePlan::Schedule(id) => (None, Some(id.as_ref())),
             _ => (None, None),
         };
 
@@ -102,8 +102,8 @@ impl IServiceUserRepo for PostgresServiceUserRepo {
                 furthest_booking_time = $8
             WHERE service_uid = $1 AND user_uid = $2
             "#,
-            user.service_id.inner_ref(),
-            user.user_id.inner_ref(),
+            user.service_id.as_ref(),
+            user.user_id.as_ref(),
             available_calendar_id,
             available_schedule_id,
             user.buffer_after,
@@ -135,8 +135,8 @@ impl IServiceUserRepo for PostgresServiceUserRepo {
             GROUP BY su.service_uid, su.user_uid
             "#,
         )
-        .bind(service_id.inner_ref())
-        .bind(user_id.inner_ref())
+        .bind(service_id.as_ref())
+        .bind(user_id.as_ref())
         .fetch_optional(&self.pool)
         .await
         .map_err(|e| {
@@ -163,7 +163,7 @@ impl IServiceUserRepo for PostgresServiceUserRepo {
             GROUP BY su.service_uid, su.user_uid
             "#,
         )
-        .bind(user_id.inner_ref())
+        .bind(user_id.as_ref())
         .fetch_all(&self.pool)
         .await
         .map_err(|e| {
@@ -184,8 +184,8 @@ impl IServiceUserRepo for PostgresServiceUserRepo {
             WHERE busy.service_uid = $1 AND
             busy.user_uid = $2
             "#,
-            service_id.inner_ref(),
-            user_id.inner_ref()
+            service_id.as_ref(),
+            user_id.as_ref()
         )
         .execute(&self.pool)
         .await?;
@@ -196,8 +196,8 @@ impl IServiceUserRepo for PostgresServiceUserRepo {
             WHERE s.service_uid = $1 AND
             s.user_uid = $2
             "#,
-            service_id.inner_ref(),
-            user_id.inner_ref()
+            service_id.as_ref(),
+            user_id.as_ref()
         )
         .execute(&self.pool)
         .await

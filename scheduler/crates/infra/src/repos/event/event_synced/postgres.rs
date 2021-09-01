@@ -51,8 +51,8 @@ impl IEventSyncedRepo for PostgresEventSyncedRepo {
             )
             VALUES($1, $2, $3, $4, $5)
             "#,
-            e.event_id.inner_ref(),
-            e.calendar_id.inner_ref(),
+            e.event_id.as_ref(),
+            e.calendar_id.as_ref(),
             e.ext_calendar_id,
             e.ext_event_id,
             provider as _
@@ -79,7 +79,7 @@ impl IEventSyncedRepo for PostgresEventSyncedRepo {
                 ON c.calendar_uid = e.calendar_uid
             WHERE e.event_uid = $1
             "#,
-            event_id.inner_ref(),
+            event_id.as_ref(),
         )
         .fetch_all(&self.pool)
         .await

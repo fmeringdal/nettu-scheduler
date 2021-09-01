@@ -43,7 +43,7 @@ impl IAccountIntegrationRepo for PostgresAccountIntegrationRepo {
             INSERT INTO account_integrations(account_uid, client_id, client_secret, redirect_uri, provider)
             VALUES($1, $2, $3, $4, $5)
             "#,
-            integration.account_id.inner_ref(),
+            integration.account_id.as_ref(),
             integration.client_id,
             integration.client_secret,
             integration.redirect_uri,
@@ -68,7 +68,7 @@ impl IAccountIntegrationRepo for PostgresAccountIntegrationRepo {
             SELECT * FROM account_integrations
             WHERE account_uid = $1
             "#,
-            account_id.inner_ref(),
+            account_id.as_ref(),
         )
         .fetch_all(&self.pool)
         .await
@@ -90,7 +90,7 @@ impl IAccountIntegrationRepo for PostgresAccountIntegrationRepo {
             WHERE account_uid = $1 AND
             provider = $2
             ",
-            account_id.inner_ref(),
+            account_id.as_ref(),
             provider
         )
         .execute(&self.pool)
