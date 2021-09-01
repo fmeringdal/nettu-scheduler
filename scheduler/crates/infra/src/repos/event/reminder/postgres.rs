@@ -1,6 +1,7 @@
 use super::IReminderRepo;
 use nettu_scheduler_domain::{Reminder, ID};
 use sqlx::{types::Uuid, FromRow, PgPool};
+use tracing::error;
 
 pub struct PostgresReminderRepo {
     pool: PgPool,
@@ -56,7 +57,14 @@ impl IReminderRepo for PostgresReminderRepo {
                 reminder.identifier,
             )
             .execute(&self.pool)
-            .await?;
+            .await
+            .map_err(|e| {
+                error!(
+                    "Unable to insert calendar event reminder: {:?}. DB returned error: {:?}",
+                    reminder, e
+                );
+                e
+            })?;
         }
         Ok(())
     }
@@ -74,7 +82,14 @@ impl IReminderRepo for PostgresReminderRepo {
             event_id.inner_ref(),
         )
         .fetch_one(&self.pool)
-        .await?;
+        .await
+        .map_err(|err| {
+            error!(
+                "Unable to insert calendar event reminder version for event id: {}. DB returned error: {:?}",
+                event_id, err
+            );
+            err
+        })?;
 
         Ok(r_version.version)
     }
@@ -96,7 +111,14 @@ impl IReminderRepo for PostgresReminderRepo {
             event_id.inner_ref(),
         )
         .fetch_one(&self.pool)
-        .await?;
+        .await
+        .map_err(|err| {
+            error!(
+                "Unable to increment calendar event reminder version for event id: {}. DB returned error: {:?}",
+                event_id, err
+            );
+            err
+        })?;
 
         Ok(r_version.version)
     }
@@ -113,6 +135,13 @@ impl IReminderRepo for PostgresReminderRepo {
         )
         .fetch_all(&self.pool)
         .await
+        .map_err(|e| {
+            error!(
+                "Unable to delete calendar event reminders before timestamp: {}. DB returned error: {:?}",
+                before, e
+            );
+            e
+        })
         .unwrap_or_default()
         .into_iter()
         .map(|reminder| reminder.into())

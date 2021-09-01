@@ -6,6 +6,7 @@ use sqlx::{
     types::{Json, Uuid},
     FromRow, PgPool,
 };
+use tracing::error;
 
 pub struct PostgresServiceRepo {
     pool: PgPool,
@@ -75,7 +76,14 @@ impl IServiceRepo for PostgresServiceRepo {
             Json(&service.metadata) as _,
         )
         .execute(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(
+                "Unable to insert service: {:?}. DB returned error: {:?}",
+                service, e
+            );
+            e
+        })?;
 
         Ok(())
     }
@@ -93,13 +101,20 @@ impl IServiceRepo for PostgresServiceRepo {
             Json(&service.metadata) as _,
         )
         .execute(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(
+                "Unable to save service: {:?}. DB returned error: {:?}",
+                service, e
+            );
+            e
+        })?;
 
         Ok(())
     }
 
     async fn find(&self, service_id: &ID) -> Option<Service> {
-        let service: ServiceRaw = match sqlx::query_as!(
+        let res: Option<ServiceRaw> = sqlx::query_as!(
             ServiceRaw,
             r#"
             SELECT * FROM services AS s
@@ -107,17 +122,22 @@ impl IServiceRepo for PostgresServiceRepo {
             "#,
             service_id.inner_ref()
         )
-        .fetch_one(&self.pool)
+        .fetch_optional(&self.pool)
         .await
-        {
-            Ok(s) => s,
-            Err(_) => return None,
-        };
-        Some(service.into())
+        .map_err(|e| {
+            error!(
+                "Find service with id: {:?} failed. DB returned error: {:?}",
+                service_id, e
+            );
+            e
+        })
+        .ok()?;
+
+        res.map(|service| service.into())
     }
 
     async fn find_with_users(&self, service_id: &ID) -> Option<ServiceWithUsers> {
-        let service: ServiceWithUsersRaw = match sqlx::query_as(
+        let res: Option<ServiceWithUsersRaw> = sqlx::query_as(
             r#"
             SELECT s.*, jsonb_agg((su.*)) AS users FROM services AS s
             LEFT JOIN service_users AS su
@@ -127,14 +147,18 @@ impl IServiceRepo for PostgresServiceRepo {
             "#,
         )
         .bind(service_id.inner_ref())
-        .fetch_one(&self.pool)
+        .fetch_optional(&self.pool)
         .await
-        {
-            Ok(s) => s,
-            Err(_) => return None,
-        };
+        .map_err(|e| {
+            error!(
+                "Find service with id: {:?} failed. DB returned error: {:?}",
+                service_id, e
+            );
+            e
+        })
+        .ok()?;
 
-        Some(service.into())
+        res.map(|service| service.into())
     }
 
     async fn delete(&self, service_id: &ID) -> anyhow::Result<()> {
@@ -146,8 +170,15 @@ impl IServiceRepo for PostgresServiceRepo {
             service_id.inner_ref(),
         )
         .execute(&self.pool)
-        .await?;
-        Ok(())
+        .await
+        .map(|_| ())
+        .map_err(|e| {
+            error!(
+                "Delete service with id: {:?} failed. DB returned error: {:?}",
+                service_id, e
+            );
+            anyhow::Error::new(e)
+        })
     }
 
     async fn find_by_metadata(&self, query: MetadataFindQuery) -> Vec<Service> {
@@ -166,6 +197,13 @@ impl IServiceRepo for PostgresServiceRepo {
         )
         .fetch_all(&self.pool)
         .await
+        .map_err(|e| {
+            error!(
+                "Find services by metadata: {:?} failed. DB returned error: {:?}",
+                query, e
+            );
+            e
+        })
         .unwrap_or_default();
 
         services.into_iter().map(|s| s.into()).collect()

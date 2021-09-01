@@ -17,8 +17,8 @@ pub enum APIErrorVariant {
 }
 #[derive(Debug)]
 pub struct APIError {
-    variant: APIErrorVariant,
-    message: String,
+    pub variant: APIErrorVariant,
+    pub message: String,
 }
 pub type APIResponse<T> = Result<T, APIError>;
 

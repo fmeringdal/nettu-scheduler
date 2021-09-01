@@ -2,6 +2,7 @@ use super::IServiceUserRepo;
 use nettu_scheduler_domain::{ServiceResource, TimePlan, ID};
 use serde::Deserialize;
 use sqlx::{types::Uuid, FromRow, PgPool};
+use tracing::error;
 
 pub struct PostgresServiceUserRepo {
     pool: PgPool,
@@ -71,7 +72,14 @@ impl IServiceUserRepo for PostgresServiceUserRepo {
             user.furthest_booking_time,
         )
         .execute(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(
+                "Unable to insert service user: {:?}. DB returned error: {:?}",
+                user, e
+            );
+            e
+        })?;
 
         Ok(())
     }
@@ -104,14 +112,21 @@ impl IServiceUserRepo for PostgresServiceUserRepo {
             user.furthest_booking_time,
         )
         .execute(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(
+                "Unable to save service user: {:?}. DB returned error: {:?}",
+                user, e
+            );
+            e
+        })?;
 
         Ok(())
     }
 
     async fn find(&self, service_id: &ID, user_id: &ID) -> Option<ServiceResource> {
         // https://github.com/launchbadge/sqlx/issues/367
-        let service_user: ServiceUserRaw = match sqlx::query_as(
+        let res: Option<ServiceUserRaw> = sqlx::query_as(
             r#"
             SELECT su.*, array_agg(c.calendar_uid) AS busy FROM service_users as su
             LEFT JOIN service_user_busy_calendars AS c
@@ -122,18 +137,24 @@ impl IServiceUserRepo for PostgresServiceUserRepo {
         )
         .bind(service_id.inner_ref())
         .bind(user_id.inner_ref())
-        .fetch_one(&self.pool)
+        .fetch_optional(&self.pool)
         .await
-        {
-            Ok(s) => s,
-            Err(_e) => return None,
-        };
-        Some(service_user.into())
+        .map_err(|e| {
+            error!(
+                "Find service user for service id: {:?} and user id: {:?} failed. DB returned error: {:?}",
+                service_id,  user_id, e
+            );
+
+            e
+        })
+        .ok()?;
+
+        res.map(|s_user| s_user.into())
     }
 
     async fn find_by_user(&self, user_id: &ID) -> Vec<ServiceResource> {
         // https://github.com/launchbadge/sqlx/issues/367
-        let service_users: Vec<ServiceUserRaw> = match sqlx::query_as(
+        let service_users: Vec<ServiceUserRaw> = sqlx::query_as(
             r#"
             SELECT su.*, array_agg(c.calendar_uid) AS busy FROM service_users as su
             LEFT JOIN service_user_busy_calendars AS c
@@ -145,10 +166,14 @@ impl IServiceUserRepo for PostgresServiceUserRepo {
         .bind(user_id.inner_ref())
         .fetch_all(&self.pool)
         .await
-        {
-            Ok(s) => s,
-            Err(_e) => return Vec::new(),
-        };
+        .map_err(|e| {
+            error!(
+                "Find services by user id: {:?} failed. DB returned error: {:?}",
+                user_id, e
+            );
+            e
+        })
+        .unwrap_or_default();
         service_users.into_iter().map(|u| u.into()).collect()
     }
 
@@ -175,7 +200,14 @@ impl IServiceUserRepo for PostgresServiceUserRepo {
             user_id.inner_ref()
         )
         .execute(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(
+                "Delete service user for service id: {:?} and user id: {:?} failed. DB returned error: {:?}",
+                service_id, user_id, e
+            );
+            e
+        })?;
         Ok(())
     }
 }

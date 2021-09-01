@@ -1,6 +1,7 @@
 use super::IReservationRepo;
 use nettu_scheduler_domain::ID;
 use sqlx::{types::Uuid, FromRow, PgPool};
+use tracing::error;
 
 pub struct PostgresReservationRepo {
     pool: PgPool,
@@ -33,9 +34,12 @@ impl IReservationRepo for PostgresReservationRepo {
         )
         .execute(&self.pool)
         .await
-        .map_err(|e| {
-            println!("Unable to increment service reservation: {:?}", e);
-            e
+        .map_err(|err| {
+            error!(
+                "Unable to increment reservation count for service id: {} at timestamp {}. DB returned error: {:?}",
+                service_id, timestamp, err
+            );
+            err
         })?;
 
         Ok(())
@@ -54,9 +58,12 @@ impl IReservationRepo for PostgresReservationRepo {
         )
         .execute(&self.pool)
         .await
-        .map_err(|e| {
-            println!("Error : {:?}", e);
-            e
+        .map_err(|err| {
+            error!(
+                "Unable to decrement reservation count for service id: {} at timestamp {}. DB returned error: {:?}",
+                service_id, timestamp, err
+            );
+            err
         })?;
         Ok(())
     }
@@ -73,7 +80,14 @@ impl IReservationRepo for PostgresReservationRepo {
             timestamp,
         )
         .fetch_optional(&self.pool)
-        .await?;
+        .await
+        .map_err(|err| {
+            error!(
+                "Unable to retrieve reservation count for service id: {} at timestamp {}. DB returned error: {:?}",
+                service_id, timestamp, err
+            );
+            err
+        })?;
 
         let count = reservation.map(|r| r.count).unwrap_or(0);
         Ok(count as usize)

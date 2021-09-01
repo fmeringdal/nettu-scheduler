@@ -1,6 +1,7 @@
 use super::{BusyCalendarIdentifier, ExternalBusyCalendarIdentifier, IServiceUserBusyCalendarRepo};
 use nettu_scheduler_domain::{BusyCalendar, ID};
 use sqlx::{FromRow, PgPool};
+use tracing::error;
 
 pub struct PostgresServiceUseBusyCalendarRepo {
     pool: PgPool,
@@ -44,7 +45,14 @@ impl IServiceUserBusyCalendarRepo for PostgresServiceUseBusyCalendarRepo {
             input.calendar_id.inner_ref(),
         )
         .execute(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(
+                "Unable to check if nettu busy calendar: {:?} exists. DB returned error: {:?}",
+                input, e
+            );
+            e
+        })?;
 
         Ok(res.rows_affected() == 1)
     }
@@ -62,7 +70,14 @@ impl IServiceUserBusyCalendarRepo for PostgresServiceUseBusyCalendarRepo {
             input.ext_calendar_id,
         )
         .execute(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(
+                "Unable to check if external busy calendar: {:?} exists. DB returned error: {:?}",
+                input, e
+            );
+            e
+        })?;
 
         Ok(res.rows_affected() == 1)
     }
@@ -78,13 +93,20 @@ impl IServiceUserBusyCalendarRepo for PostgresServiceUseBusyCalendarRepo {
             input.calendar_id.inner_ref(),
         )
         .execute(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(
+                "Unable to insert nettu busy calendar: {:?}. DB returned error: {:?}",
+                input, e
+            );
+            e
+        })?;
 
         Ok(())
     }
 
     async fn insert_ext(&self, input: ExternalBusyCalendarIdentifier) -> anyhow::Result<()> {
-        let provider: String = input.provider.into();
+        let provider: String = input.provider.clone().into();
         sqlx::query!(
                 r#"
             INSERT INTO service_user_external_busy_calendars(service_uid, user_uid, ext_calendar_id, provider)
@@ -96,7 +118,14 @@ impl IServiceUserBusyCalendarRepo for PostgresServiceUseBusyCalendarRepo {
                 provider as _
             )
             .execute(&self.pool)
-            .await?;
+            .await
+            .map_err(|e| {
+                error!(
+                    "Unable to insert external busy calendar: {:?}. DB returned error: {:?}",
+                    input, e
+                );
+                e
+            })?;
 
         Ok(())
     }
@@ -114,13 +143,20 @@ impl IServiceUserBusyCalendarRepo for PostgresServiceUseBusyCalendarRepo {
             input.calendar_id.inner_ref(),
         )
         .execute(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(
+                "Delete nettu busy calendar: {:?} failed. DB returned error: {:?}",
+                input, e
+            );
+            e
+        })?;
 
         Ok(())
     }
 
     async fn delete_ext(&self, input: ExternalBusyCalendarIdentifier) -> anyhow::Result<()> {
-        let provider: String = input.provider.into();
+        let provider: String = input.provider.clone().into();
         sqlx::query!(
             r#"
             DELETE FROM service_user_external_busy_calendars AS busy
@@ -135,7 +171,14 @@ impl IServiceUserBusyCalendarRepo for PostgresServiceUseBusyCalendarRepo {
             provider as _,
         )
         .execute(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(
+                "Delete external busy calendar: {:?} failed. DB returned error: {:?}",
+                input, e
+            );
+            e
+        })?;
 
         Ok(())
     }
@@ -155,7 +198,14 @@ impl IServiceUserBusyCalendarRepo for PostgresServiceUseBusyCalendarRepo {
         .bind(service_id.inner_ref())
         .bind(user_id.inner_ref())
         .fetch_all(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(
+                "Find busy calendars for service user in service_id: {} and user_id: {} failed. DB returned error: {:?}",
+                service_id, user_id, e
+            );
+            e
+        })?;
 
         Ok(busy_calendars.into_iter().map(|bc| bc.into()).collect())
     }
