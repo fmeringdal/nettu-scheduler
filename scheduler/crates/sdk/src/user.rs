@@ -21,10 +21,10 @@ pub struct GetUserFreeBusyInput {
     pub calendar_ids: Option<Vec<ID>>,
 }
 
-impl Into<String> for GetUserFreeBusyInput {
-    fn into(self) -> String {
-        let mut query = format!("?startTs={}&endTs={}", self.start_ts, self.end_ts);
-        if let Some(calendar_ids) = self.calendar_ids {
+impl From<GetUserFreeBusyInput> for String {
+    fn from(inp: GetUserFreeBusyInput) -> Self {
+        let mut query = format!("?startTs={}&endTs={}", inp.start_ts, inp.end_ts);
+        if let Some(calendar_ids) = inp.calendar_ids {
             let calendar_ids = calendar_ids
                 .into_iter()
                 .map(|id| id.to_string())

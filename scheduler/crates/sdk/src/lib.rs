@@ -24,8 +24,8 @@ pub use nettu_scheduler_api_structs::dtos::*;
 pub use nettu_scheduler_api_structs::send_event_reminders::AccountRemindersDTO as AccountReminders;
 pub use nettu_scheduler_domain::{
     providers::google::*, providers::outlook::*, scheduling::RoundRobinAlgorithm, BusyCalendar,
-    CalendarEventReminder, IntegrationProvider, RRuleOptions, ScheduleRule,
-    ServiceMultiPersonOptions, SyncedCalendar, TimePlan, ID, Metadata
+    CalendarEventReminder, IntegrationProvider, Metadata, RRuleOptions, ScheduleRule,
+    ServiceMultiPersonOptions, SyncedCalendar, TimePlan, ID,
 };
 use schedule::ScheduleClient;
 pub use schedule::{CreateScheduleInput, UpdateScheduleInput};
@@ -80,7 +80,7 @@ impl NettuSDK {
         let schedule = ScheduleClient::new(base.clone());
         let service = ServiceClient::new(base.clone());
         let status = StatusClient::new(base.clone());
-        let user = UserClient::new(base.clone());
+        let user = UserClient::new(base);
 
         Self {
             account,
