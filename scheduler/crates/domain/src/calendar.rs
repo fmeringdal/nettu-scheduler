@@ -3,7 +3,7 @@ use crate::{
         entity::{Entity, ID},
         metadata::Metadata,
     },
-    IntegrationProvider, Meta,
+    IntegrationProvider, Meta, Weekday,
 };
 use chrono_tz::{Tz, UTC};
 use serde::{Deserialize, Serialize};
@@ -36,35 +36,14 @@ pub struct SyncedCalendar {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CalendarSettings {
-    pub week_start: isize,
+    pub week_start: Weekday,
     pub timezone: Tz,
-}
-
-impl CalendarSettings {
-    pub fn set_week_start(&mut self, wkst: isize) -> bool {
-        if (0..=6).contains(&wkst) {
-            self.week_start = wkst;
-            true
-        } else {
-            false
-        }
-    }
-
-    pub fn set_timezone(&mut self, timezone: &str) -> bool {
-        match timezone.parse::<Tz>() {
-            Ok(tzid) => {
-                self.timezone = tzid;
-                true
-            }
-            Err(_) => false,
-        }
-    }
 }
 
 impl Default for CalendarSettings {
     fn default() -> Self {
         Self {
-            week_start: 0,
+            week_start: Weekday::Mon,
             timezone: UTC,
         }
     }

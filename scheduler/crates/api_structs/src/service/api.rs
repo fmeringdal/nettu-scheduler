@@ -1,6 +1,6 @@
 use crate::dtos::{ServiceDTO, ServiceResourceDTO, ServiceWithUsersDTO};
 use nettu_scheduler_domain::{
-    BusyCalendar, Service, ServiceResource, ServiceWithUsers, TimePlan, ID,
+    BusyCalendar, Service, ServiceResource, ServiceWithUsers, TimePlan, Tz, ID,
 };
 use serde::{Deserialize, Serialize};
 
@@ -225,7 +225,7 @@ pub mod get_service_bookingslots {
     #[derive(Debug, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct QueryParams {
-        pub iana_tz: Option<String>,
+        pub timezone: Option<Tz>,
         pub duration: i64,
         pub interval: i64,
         pub start_date: String,

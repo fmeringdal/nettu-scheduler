@@ -1,6 +1,7 @@
 use crate::{
     base::{APIResponse, BaseClient},
     shared::MetadataFindInput,
+    Tz, Weekday,
 };
 use nettu_scheduler_api_structs::*;
 use nettu_scheduler_domain::{
@@ -17,8 +18,8 @@ pub struct CalendarClient {
 
 pub struct CreateCalendarInput {
     pub user_id: ID,
-    pub timezone: String,
-    pub week_start: isize,
+    pub timezone: Tz,
+    pub week_start: Weekday,
     pub metadata: Option<Metadata>,
 }
 
@@ -52,8 +53,8 @@ pub struct DeleteCalendarInput {
 
 pub struct UpdateCalendarInput {
     pub calendar_id: ID,
-    pub week_start: Option<isize>,
-    pub timezone: Option<String>,
+    pub week_start: Option<Weekday>,
+    pub timezone: Option<Tz>,
     pub metadata: Option<Metadata>,
 }
 

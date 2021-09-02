@@ -1,6 +1,6 @@
 mod helpers;
 
-use chrono::{Duration, Utc};
+use chrono::{Duration, Utc, Weekday};
 use helpers::setup::spawn_app;
 use helpers::utils::{assert_equal_user_lists, format_datetime};
 use nettu_scheduler_domain::{BusyCalendar, ServiceMultiPersonOptions, TimePlan, ID};
@@ -22,7 +22,7 @@ async fn create_default_service_host(admin_client: &NettuSDK, service_id: &ID) -
     let input = CreateScheduleInput {
         metadata: None,
         rules: None,
-        timezone: "UTC".to_string(),
+        timezone: chrono_tz::UTC,
         user_id: host.id.clone(),
     };
     let schedule = admin_client
@@ -33,9 +33,9 @@ async fn create_default_service_host(admin_client: &NettuSDK, service_id: &ID) -
         .schedule;
     let input = CreateCalendarInput {
         metadata: None,
-        timezone: "UTC".to_string(),
+        timezone: chrono_tz::UTC,
         user_id: host.id.clone(),
-        week_start: 0,
+        week_start: Weekday::Mon,
     };
     let busy_calendar = admin_client
         .calendar
@@ -117,7 +117,7 @@ async fn test_round_robin_scheduling_simple_test() {
                 duration,
                 interval,
                 service_id: service.id.clone(),
-                iana_tz: Some("UTC".into()),
+                timezone: Some(chrono_tz::UTC),
                 end_date: format_datetime(&next_week),
                 start_date: format_datetime(&tomorrow),
                 host_user_ids: None,
@@ -254,7 +254,7 @@ async fn test_round_robin_equal_distribution_scheduling() {
             duration,
             interval,
             service_id: service.id.clone(),
-            iana_tz: Some("UTC".into()),
+            timezone: Some(chrono_tz::UTC),
             end_date: format_datetime(&next_week),
             start_date: format_datetime(&tomorrow),
             host_user_ids: None,
@@ -406,7 +406,7 @@ async fn test_round_robin_availability_scheduling() {
             duration,
             interval,
             service_id: service.id.clone(),
-            iana_tz: Some("UTC".into()),
+            timezone: Some(chrono_tz::UTC),
             end_date: format_datetime(&next_week),
             start_date: format_datetime(&tomorrow),
             host_user_ids: None,

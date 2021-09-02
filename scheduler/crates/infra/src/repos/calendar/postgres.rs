@@ -85,8 +85,7 @@ impl ICalendarRepo for PostgresCalendarRepo {
                 calendar, e
             );
             e
-        })?
-        .rows_affected();
+        })?;
         Ok(())
     }
 

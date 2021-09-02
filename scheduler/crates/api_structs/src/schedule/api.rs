@@ -1,5 +1,5 @@
 use crate::dtos::ScheduleDTO;
-use nettu_scheduler_domain::{Schedule, ID};
+use nettu_scheduler_domain::{Schedule, Tz, ID};
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize)]
@@ -29,7 +29,7 @@ pub mod create_schedule {
     #[derive(Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
-        pub timezone: String,
+        pub timezone: Tz,
         pub rules: Option<Vec<ScheduleRule>>,
         pub metadata: Option<Metadata>,
     }
@@ -71,7 +71,7 @@ pub mod update_schedule {
     #[derive(Deserialize, Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
-        pub timezone: Option<String>,
+        pub timezone: Option<Tz>,
         pub rules: Option<Vec<ScheduleRule>>,
         pub metadata: Option<Metadata>,
     }

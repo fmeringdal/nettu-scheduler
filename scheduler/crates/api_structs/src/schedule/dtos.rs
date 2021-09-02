@@ -1,4 +1,4 @@
-use nettu_scheduler_domain::{Metadata, Schedule, ScheduleRule, ID};
+use nettu_scheduler_domain::{Metadata, Schedule, ScheduleRule, Tz, ID};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -7,7 +7,7 @@ pub struct ScheduleDTO {
     pub id: ID,
     pub user_id: ID,
     pub rules: Vec<ScheduleRule>,
-    pub timezone: String,
+    pub timezone: Tz,
     pub metadata: Metadata,
 }
 
@@ -17,7 +17,7 @@ impl ScheduleDTO {
             id: schedule.id.clone(),
             user_id: schedule.user_id.clone(),
             rules: schedule.rules,
-            timezone: schedule.timezone.to_string(),
+            timezone: schedule.timezone,
             metadata: schedule.metadata,
         }
     }

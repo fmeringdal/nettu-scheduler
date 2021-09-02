@@ -192,7 +192,7 @@ mod test {
     fn daily_calendar_event() {
         let settings = CalendarSettings {
             timezone: UTC,
-            week_start: 0,
+            week_start: Weekday::Mon,
         };
         let event = CalendarEvent {
             id: Default::default(),
@@ -225,7 +225,7 @@ mod test {
     fn calendar_event_without_recurrence() {
         let settings = CalendarSettings {
             timezone: UTC,
-            week_start: 0,
+            week_start: Weekday::Mon,
         };
         let mut event = CalendarEvent {
             id: Default::default(),
@@ -258,7 +258,7 @@ mod test {
     fn rejects_event_with_invalid_recurrence() {
         let settings = CalendarSettings {
             timezone: UTC,
-            week_start: 0,
+            week_start: Weekday::Mon,
         };
         let mut invalid_rrules = Vec::new();
         invalid_rrules.push(RRuleOptions {
@@ -302,7 +302,7 @@ mod test {
     fn allows_event_with_valid_recurrence() {
         let settings = CalendarSettings {
             timezone: UTC,
-            week_start: 0,
+            week_start: Weekday::Mon,
         };
         let mut valid_rrules = Vec::new();
         let start_ts = 1521317491239;

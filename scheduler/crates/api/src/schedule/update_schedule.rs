@@ -66,7 +66,7 @@ pub async fn update_schedule_controller(
 struct UpdateScheduleUseCase {
     pub user_id: ID,
     pub schedule_id: ID,
-    pub timezone: Option<String>,
+    pub timezone: Option<Tz>,
     pub rules: Option<Vec<ScheduleRule>>,
     pub metadata: Option<Metadata>,
 }
@@ -75,7 +75,6 @@ struct UpdateScheduleUseCase {
 enum UseCaseError {
     ScheduleNotFound(ID),
     StorageError,
-    InvalidSettings(String),
 }
 
 impl From<UseCaseError> for NettuError {
@@ -86,10 +85,6 @@ impl From<UseCaseError> for NettuError {
                 schedule_id
             )),
             UseCaseError::StorageError => Self::InternalError,
-            UseCaseError::InvalidSettings(err) => Self::BadClientData(format!(
-                "Bad schedule settings provided. Error message: {}",
-                err
-            )),
         }
     }
 }
@@ -113,16 +108,8 @@ impl UseCase for UpdateScheduleUseCase {
             _ => return Err(UseCaseError::ScheduleNotFound(self.schedule_id.clone())),
         };
 
-        if let Some(tz) = &self.timezone {
-            match tz.parse::<Tz>() {
-                Ok(tz) => schedule.timezone = tz,
-                Err(_) => {
-                    return Err(UseCaseError::InvalidSettings(format!(
-                        "Invalid timezone provided: {}",
-                        tz
-                    )))
-                }
-            }
+        if let Some(tz) = self.timezone {
+            schedule.timezone = tz;
         };
         if let Some(rules) = &self.rules {
             schedule.set_rules(rules);
