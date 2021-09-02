@@ -26,8 +26,8 @@ pub async fn create_calendar_admin_controller(
     let usecase = CreateCalendarUseCase {
         user_id: user.id,
         account_id: account.id,
-        week_start: body.0.week_start.into(),
-        timezone: body.0.timezone.parse().unwrap_or(chrono_tz::UTC),
+        week_start: body.0.week_start,
+        timezone: body.0.timezone,
         metadata: body.0.metadata.unwrap_or_default(),
     };
 
@@ -47,8 +47,8 @@ pub async fn create_calendar_controller(
     let usecase = CreateCalendarUseCase {
         user_id: user.id,
         account_id: user.account_id,
-        week_start: body.0.week_start.into(),
-        timezone: body.0.timezone.parse().unwrap_or(chrono_tz::UTC),
+        week_start: body.0.week_start,
+        timezone: body.0.timezone,
         metadata: body.0.metadata.unwrap_or_default(),
     };
 

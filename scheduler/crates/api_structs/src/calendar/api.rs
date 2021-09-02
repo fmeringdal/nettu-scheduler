@@ -1,5 +1,5 @@
 use crate::dtos::{CalendarDTO, EventWithInstancesDTO};
-use nettu_scheduler_domain::{Calendar, EventInstance, Tz, ID};
+use nettu_scheduler_domain::{Calendar, EventInstance, Tz, Weekday, ID};
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize)]
@@ -18,7 +18,7 @@ impl CalendarResponse {
 
 pub mod create_calendar {
     use super::*;
-    use nettu_scheduler_domain::Metadata;
+    use nettu_scheduler_domain::{Metadata, Weekday};
 
     #[derive(Deserialize)]
     pub struct PathParams {
@@ -28,13 +28,17 @@ pub mod create_calendar {
     #[derive(Deserialize, Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
-        pub timezone: String,
-        #[serde(default)]
-        pub week_start: isize,
+        pub timezone: Tz,
+        #[serde(default = "default_weekday")]
+        pub week_start: Weekday,
         pub metadata: Option<Metadata>,
     }
 
     pub type APIResponse = CalendarResponse;
+}
+
+fn default_weekday() -> Weekday {
+    Weekday::Mon
 }
 
 pub mod add_sync_calendar {
