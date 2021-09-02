@@ -105,8 +105,8 @@ impl IEventRepo for PostgresEventRepo {
             )
             VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
             "#,
-            e.id.inner_ref(),
-            e.calendar_id.inner_ref(),
+            e.id.as_ref(),
+            e.calendar_id.as_ref(),
             e.start_ts,
             e.duration,
             e.end_ts,
@@ -116,7 +116,7 @@ impl IEventRepo for PostgresEventRepo {
             Json(&e.recurrence) as _,
             &e.exdates,
             Json(&e.reminders) as _,
-            e.service_id.as_ref().map(|id| id.inner_ref()),
+            e.service_id.as_ref().map(|id| id.as_ref()),
             Json(&e.metadata) as _,
         )
         .execute(&self.pool)
@@ -149,7 +149,7 @@ impl IEventRepo for PostgresEventRepo {
                 metadata = $12
             WHERE event_uid = $1
             "#,
-            e.id.inner_ref(),
+            e.id.as_ref(),
             e.start_ts,
             e.duration,
             e.end_ts,
@@ -159,7 +159,7 @@ impl IEventRepo for PostgresEventRepo {
             Json(&e.recurrence) as _,
             &e.exdates,
             Json(&e.reminders) as _,
-            e.service_id.as_ref().map(|id| id.inner_ref()),
+            e.service_id.as_ref().map(|id| id.as_ref()),
             Json(&e.metadata) as _,
         )
         .execute(&self.pool)
@@ -186,7 +186,7 @@ impl IEventRepo for PostgresEventRepo {
                 ON u.user_uid = c.user_uid
             WHERE e.event_uid = $1
             "#,
-            event_id.inner_ref(),
+            event_id.as_ref(),
         )
         .fetch_optional(&self.pool)
         .await
@@ -204,10 +204,7 @@ impl IEventRepo for PostgresEventRepo {
     }
 
     async fn find_many(&self, event_ids: &[ID]) -> anyhow::Result<Vec<CalendarEvent>> {
-        let ids = event_ids
-            .iter()
-            .map(|id| *id.inner_ref())
-            .collect::<Vec<_>>();
+        let ids = event_ids.iter().map(|id| *id.as_ref()).collect::<Vec<_>>();
         let events: Vec<EventRaw> = sqlx::query_as(
             r#"
             SELECT e.*, u.user_uid, account_uid FROM calendar_events AS e
@@ -248,7 +245,7 @@ impl IEventRepo for PostgresEventRepo {
                     WHERE e.calendar_uid = $1 AND
                     e.start_ts <= $2 AND e.end_ts >= $3
                     "#,
-                calendar_id.inner_ref(),
+                calendar_id.as_ref(),
                 timespan.end(),
                 timespan.start()
             )
@@ -272,7 +269,7 @@ impl IEventRepo for PostgresEventRepo {
                         ON u.user_uid = c.user_uid
                     WHERE e.calendar_uid = $1
                     "#,
-                calendar_id.inner_ref(),
+                calendar_id.as_ref(),
             )
             .fetch_all(&self.pool)
             .await
@@ -293,10 +290,7 @@ impl IEventRepo for PostgresEventRepo {
         service_id: &ID,
         user_ids: &[ID],
     ) -> Vec<MostRecentCreatedServiceEvents> {
-        let user_ids = user_ids
-            .iter()
-            .map(|id| *id.inner_ref())
-            .collect::<Vec<_>>();
+        let user_ids = user_ids.iter().map(|id| *id.as_ref()).collect::<Vec<_>>();
         // https://github.com/launchbadge/sqlx/issues/367
         let events: Vec<MostRecentCreatedServiceEventsRaw> = match sqlx::query_as(
             r#"
@@ -311,7 +305,7 @@ impl IEventRepo for PostgresEventRepo {
             WHERE users.user_uid = ANY($2)
             "#,
         )
-        .bind(service_id.inner_ref())
+        .bind(service_id.as_ref())
         .bind(&user_ids)
         .fetch_all(&self.pool)
         .await
@@ -335,10 +329,7 @@ impl IEventRepo for PostgresEventRepo {
         min_ts: i64,
         max_ts: i64,
     ) -> Vec<CalendarEvent> {
-        let user_ids = user_ids
-            .iter()
-            .map(|id| *id.inner_ref())
-            .collect::<Vec<_>>();
+        let user_ids = user_ids.iter().map(|id| *id.as_ref()).collect::<Vec<_>>();
         let events: Vec<EventRaw> = match sqlx::query_as!(
             EventRaw,
             r#"
@@ -351,7 +342,7 @@ impl IEventRepo for PostgresEventRepo {
             u.user_uid = ANY($2) AND
             e.start_ts <= $3 AND e.end_ts >= $4
             "#,
-            service_id.inner_ref(),
+            service_id.as_ref(),
             &user_ids,
             max_ts,
             min_ts,
@@ -396,7 +387,7 @@ impl IEventRepo for PostgresEventRepo {
             e.service_uid IS NOT NULL AND
             e.start_ts <= $3 AND e.end_ts >= $4
             "#,
-            user_id.inner_ref(),
+            user_id.as_ref(),
             busy,
             max_ts,
             min_ts,
@@ -428,7 +419,7 @@ impl IEventRepo for PostgresEventRepo {
             WHERE c.event_uid = $1
             RETURNING *
             "#,
-            event_id.inner_ref(),
+            event_id.as_ref(),
         )
         .fetch_optional(&self.pool)
         .await
@@ -453,7 +444,7 @@ impl IEventRepo for PostgresEventRepo {
             DELETE FROM calendar_events AS c
             WHERE c.service_uid = $1
             "#,
-            service_id.inner_ref(),
+            service_id.as_ref(),
         )
         .execute(&self.pool)
         .await
@@ -480,7 +471,7 @@ impl IEventRepo for PostgresEventRepo {
             LIMIT $3
             OFFSET $4
             "#,
-            query.account_id.inner_ref(),
+            query.account_id.as_ref(),
             Json(&query.metadata) as _,
             query.limit as i64,
             query.skip as i64,

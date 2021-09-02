@@ -31,7 +31,7 @@ async fn get_accounts_from_reminders(
         .await
         .unwrap()
         .into_iter()
-        .map(|a| (a.id.as_string(), a))
+        .map(|a| (a.id.to_string(), a))
         .collect()
 }
 
@@ -45,18 +45,18 @@ async fn create_reminders_for_accounts(
     let mut account_reminders: HashMap<String, (&Account, AccountReminders)> = HashMap::new();
 
     for reminder in reminders {
-        let account = match account_lookup.get(&reminder.account_id.as_string()) {
+        let account = match account_lookup.get(&reminder.account_id.to_string()) {
             Some(a) => a,
             None => continue,
         };
 
         // Remove instead of get because there shouldn't be multiple reminders for the same event id
         // and also we get ownership over calendar_event
-        let calendar_event = match event_lookup.get(&reminder.event_id.as_string()) {
+        let calendar_event = match event_lookup.get(&reminder.event_id.to_string()) {
             Some(e) => e.clone(),
             None => continue,
         };
-        match account_reminders.get_mut(&account.id.as_string()) {
+        match account_reminders.get_mut(&account.id.to_string()) {
             Some(acc_reminders) => {
                 acc_reminders.1.reminders.push(AccountEventReminder {
                     event: calendar_event,
@@ -65,7 +65,7 @@ async fn create_reminders_for_accounts(
             }
             None => {
                 account_reminders.insert(
-                    account.id.as_string(),
+                    account.id.to_string(),
                     (
                         account,
                         AccountReminders {
@@ -114,7 +114,7 @@ impl UseCase for GetUpcomingRemindersUseCase {
             .await
             .unwrap()
             .into_iter()
-            .map(|e| (e.id.as_string(), e))
+            .map(|e| (e.id.to_string(), e))
             .collect::<HashMap<_, _>>();
 
         let grouped_reminders = create_reminders_for_accounts(reminders, event_lookup, ctx).await;

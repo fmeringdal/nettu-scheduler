@@ -47,8 +47,8 @@ impl ICalendarRepo for PostgresCalendarRepo {
             INSERT INTO calendars(calendar_uid, user_uid, settings, metadata)
             VALUES($1, $2, $3, $4)
             "#,
-            calendar.id.inner_ref(),
-            calendar.user_id.inner_ref(),
+            calendar.id.as_ref(),
+            calendar.user_id.as_ref(),
             Json(&calendar.settings) as _,
             Json(&calendar.metadata) as _,
         )
@@ -73,7 +73,7 @@ impl ICalendarRepo for PostgresCalendarRepo {
             metadata = $3
             WHERE calendar_uid = $1
             "#,
-            calendar.id.inner_ref(),
+            calendar.id.as_ref(),
             Json(&calendar.settings) as _,
             Json(&calendar.metadata) as _,
         )
@@ -98,7 +98,7 @@ impl ICalendarRepo for PostgresCalendarRepo {
                 ON u.user_uid = c.user_uid
             WHERE c.calendar_uid = $1
             "#,
-            calendar_id.inner_ref(),
+            calendar_id.as_ref(),
         )
         .fetch_optional(&self.pool)
         .await
@@ -123,7 +123,7 @@ impl ICalendarRepo for PostgresCalendarRepo {
                 ON u.user_uid = c.user_uid
             WHERE c.user_uid = $1
             "#,
-            user_id.inner_ref(),
+            user_id.as_ref(),
         )
         .fetch_all(&self.pool)
         .await
@@ -145,7 +145,7 @@ impl ICalendarRepo for PostgresCalendarRepo {
             DELETE FROM calendars AS c
             WHERE c.calendar_uid = $1
             "#,
-            calendar_id.inner_ref(),
+            calendar_id.as_ref(),
         )
         .execute(&self.pool)
         .await
@@ -171,7 +171,7 @@ impl ICalendarRepo for PostgresCalendarRepo {
             LIMIT $3
             OFFSET $4
             "#,
-            query.account_id.inner_ref(),
+            query.account_id.as_ref(),
             Json(&query.metadata) as _,
             query.limit as i64,
             query.skip as i64,

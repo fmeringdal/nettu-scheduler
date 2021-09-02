@@ -29,7 +29,7 @@ impl IReservationRepo for PostgresReservationRepo {
             VALUES($1, $2)
             ON CONFLICT(service_uid, timestamp) DO UPDATE SET count = service_reservations.count + 1
             "#,
-            service_id.inner_ref(),
+            service_id.as_ref(),
             timestamp
         )
         .execute(&self.pool)
@@ -53,7 +53,7 @@ impl IReservationRepo for PostgresReservationRepo {
             SET count = count - 1
             WHERE r.service_uid = $1 AND r.timestamp = $2
             "#,
-            service_id.inner_ref(),
+            service_id.as_ref(),
             timestamp,
         )
         .execute(&self.pool)
@@ -76,7 +76,7 @@ impl IReservationRepo for PostgresReservationRepo {
             WHERE r.service_uid = $1 AND
             r.timestamp = $2
             "#,
-            service_id.inner_ref(),
+            service_id.as_ref(),
             timestamp,
         )
         .fetch_optional(&self.pool)
