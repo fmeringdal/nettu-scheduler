@@ -137,8 +137,8 @@ impl CalendarClient {
         input: CreateCalendarInput,
     ) -> APIResponse<create_calendar::APIResponse> {
         let body = create_calendar::RequestBody {
-            timezone: input.timezone.clone(),
-            week_start: input.week_start,
+            timezone: input.timezone.parse().unwrap_or(Tz::UTC),
+            week_start: input.week_start.into(),
             metadata: input.metadata,
         };
         self.base
