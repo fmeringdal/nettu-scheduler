@@ -70,8 +70,8 @@ impl IServiceRepo for PostgresServiceRepo {
             INSERT INTO services(service_uid, account_uid, multi_person, metadata)
             VALUES($1, $2, $3, $4)
             "#,
-            service.id.inner_ref(),
-            service.account_id.inner_ref(),
+            service.id.as_ref(),
+            service.account_id.as_ref(),
             Json(&service.multi_person) as _,
             Json(&service.metadata) as _,
         )
@@ -96,7 +96,7 @@ impl IServiceRepo for PostgresServiceRepo {
                 metadata = $3
             WHERE service_uid = $1
             "#,
-            service.id.inner_ref(),
+            service.id.as_ref(),
             Json(&service.multi_person) as _,
             Json(&service.metadata) as _,
         )
@@ -120,7 +120,7 @@ impl IServiceRepo for PostgresServiceRepo {
             SELECT * FROM services AS s
             WHERE s.service_uid = $1
             "#,
-            service_id.inner_ref()
+            service_id.as_ref()
         )
         .fetch_optional(&self.pool)
         .await
@@ -146,7 +146,7 @@ impl IServiceRepo for PostgresServiceRepo {
             GROUP BY s.service_uid
             "#,
         )
-        .bind(service_id.inner_ref())
+        .bind(service_id.as_ref())
         .fetch_optional(&self.pool)
         .await
         .map_err(|e| {
@@ -167,7 +167,7 @@ impl IServiceRepo for PostgresServiceRepo {
             DELETE FROM services AS s
             WHERE s.service_uid = $1
             "#,
-            service_id.inner_ref(),
+            service_id.as_ref(),
         )
         .execute(&self.pool)
         .await
@@ -190,7 +190,7 @@ impl IServiceRepo for PostgresServiceRepo {
             LIMIT $3
             OFFSET $4
             "#,
-            query.account_id.inner_ref(),
+            query.account_id.as_ref(),
             Json(&query.metadata) as _,
             query.limit as i64,
             query.skip as i64,

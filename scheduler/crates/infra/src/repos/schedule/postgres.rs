@@ -52,8 +52,8 @@ impl IScheduleRepo for PostgresScheduleRepo {
             INSERT INTO schedules(schedule_uid, user_uid, rules, timezone, metadata)
             VALUES($1, $2, $3, $4, $5)
             "#,
-            schedule.id.inner_ref(),
-            schedule.user_id.inner_ref(),
+            schedule.id.as_ref(),
+            schedule.user_id.as_ref(),
             Json(&schedule.rules) as _,
             schedule.timezone.to_string(),
             Json(&schedule.metadata) as _,
@@ -80,7 +80,7 @@ impl IScheduleRepo for PostgresScheduleRepo {
             metadata = $4
             WHERE schedule_uid = $1
             "#,
-            schedule.id.inner_ref(),
+            schedule.id.as_ref(),
             Json(&schedule.rules) as _,
             schedule.timezone.to_string(),
             Json(&schedule.metadata) as _,
@@ -107,7 +107,7 @@ impl IScheduleRepo for PostgresScheduleRepo {
                 ON u.user_uid = s.user_uid
             WHERE s.schedule_uid = $1
             "#,
-            schedule_id.inner_ref(),
+            schedule_id.as_ref(),
         )
         .fetch_optional(&self.pool)
         .await
@@ -126,7 +126,7 @@ impl IScheduleRepo for PostgresScheduleRepo {
     async fn find_many(&self, schedule_ids: &[ID]) -> Vec<Schedule> {
         let ids = schedule_ids
             .iter()
-            .map(|id| *id.inner_ref())
+            .map(|id| *id.as_ref())
             .collect::<Vec<_>>();
         let schedule_raw: Vec<ScheduleRaw> = sqlx::query_as(
             r#"
@@ -160,7 +160,7 @@ impl IScheduleRepo for PostgresScheduleRepo {
                 ON u.user_uid = s.user_uid
             WHERE s.user_uid = $1
             "#,
-            user_id.inner_ref(),
+            user_id.as_ref(),
         )
         .fetch_all(&self.pool)
         .await
@@ -183,7 +183,7 @@ impl IScheduleRepo for PostgresScheduleRepo {
             WHERE s.schedule_uid = $1
             RETURNING *
             "#,
-            schedule_id.inner_ref(),
+            schedule_id.as_ref(),
         )
         .fetch_optional(&self.pool)
         .await
@@ -217,7 +217,7 @@ impl IScheduleRepo for PostgresScheduleRepo {
             LIMIT $3
             OFFSET $4
             "#,
-            query.account_id.inner_ref(),
+            query.account_id.as_ref(),
             Json(&query.metadata) as _,
             query.limit as i64,
             query.skip as i64,

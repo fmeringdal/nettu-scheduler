@@ -40,9 +40,9 @@ impl IServiceUserBusyCalendarRepo for PostgresServiceUseBusyCalendarRepo {
             user_uid = $2 AND
             calendar_uid = $3
             "#,
-            input.service_id.inner_ref(),
-            input.user_id.inner_ref(),
-            input.calendar_id.inner_ref(),
+            input.service_id.as_ref(),
+            input.user_id.as_ref(),
+            input.calendar_id.as_ref(),
         )
         .execute(&self.pool)
         .await
@@ -65,8 +65,8 @@ impl IServiceUserBusyCalendarRepo for PostgresServiceUseBusyCalendarRepo {
             user_uid = $2 AND
             ext_calendar_id = $3
             "#,
-            input.service_id.inner_ref(),
-            input.user_id.inner_ref(),
+            input.service_id.as_ref(),
+            input.user_id.as_ref(),
             input.ext_calendar_id,
         )
         .execute(&self.pool)
@@ -88,9 +88,9 @@ impl IServiceUserBusyCalendarRepo for PostgresServiceUseBusyCalendarRepo {
             INSERT INTO service_user_busy_calendars(service_uid, user_uid, calendar_uid)
             VALUES($1, $2, $3)
             "#,
-            input.service_id.inner_ref(),
-            input.user_id.inner_ref(),
-            input.calendar_id.inner_ref(),
+            input.service_id.as_ref(),
+            input.user_id.as_ref(),
+            input.calendar_id.as_ref(),
         )
         .execute(&self.pool)
         .await
@@ -112,8 +112,8 @@ impl IServiceUserBusyCalendarRepo for PostgresServiceUseBusyCalendarRepo {
             INSERT INTO service_user_external_busy_calendars(service_uid, user_uid, ext_calendar_id, provider)
             VALUES($1, $2, $3, $4)
             "#,
-                input.service_id.inner_ref(),
-                input.user_id.inner_ref(),
+                input.service_id.as_ref(),
+                input.user_id.as_ref(),
                 &input.ext_calendar_id,
                 provider as _
             )
@@ -138,9 +138,9 @@ impl IServiceUserBusyCalendarRepo for PostgresServiceUseBusyCalendarRepo {
             busy.user_uid = $2 AND
             busy.calendar_uid = $3
             "#,
-            input.service_id.inner_ref(),
-            input.user_id.inner_ref(),
-            input.calendar_id.inner_ref(),
+            input.service_id.as_ref(),
+            input.user_id.as_ref(),
+            input.calendar_id.as_ref(),
         )
         .execute(&self.pool)
         .await
@@ -165,8 +165,8 @@ impl IServiceUserBusyCalendarRepo for PostgresServiceUseBusyCalendarRepo {
             busy.ext_calendar_id = $3 AND
             busy.provider = $4
             "#,
-            input.service_id.inner_ref(),
-            input.user_id.inner_ref(),
+            input.service_id.as_ref(),
+            input.user_id.as_ref(),
             input.ext_calendar_id,
             provider as _,
         )
@@ -195,8 +195,8 @@ impl IServiceUserBusyCalendarRepo for PostgresServiceUseBusyCalendarRepo {
             WHERE bc.service_uid = $1 AND bc.user_uid = $2
             "#,
         )
-        .bind(service_id.inner_ref())
-        .bind(user_id.inner_ref())
+        .bind(service_id.as_ref())
+        .bind(user_id.as_ref())
         .fetch_all(&self.pool)
         .await
         .map_err(|e| {

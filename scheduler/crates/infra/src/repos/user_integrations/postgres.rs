@@ -46,8 +46,8 @@ impl IUserIntegrationRepo for PostgresUserIntegrationRepo {
             INSERT INTO user_integrations(account_uid, user_uid, provider, refresh_token, access_token, access_token_expires_ts)
             VALUES($1, $2, $3, $4, $5, $6)
             "#,
-            integration.account_id.inner_ref(),
-            integration.user_id.inner_ref(),
+            integration.account_id.as_ref(),
+            integration.user_id.as_ref(),
             provider as _,
             integration.refresh_token,
             integration.access_token,
@@ -78,7 +78,7 @@ impl IUserIntegrationRepo for PostgresUserIntegrationRepo {
             integration.access_token,
             integration.access_token_expires_ts,
             integration.refresh_token,
-            integration.user_id.inner_ref(),
+            integration.user_id.as_ref(),
             // https://github.com/launchbadge/sqlx/issues/1004#issuecomment-764964043
             provider as _
         )
@@ -102,7 +102,7 @@ impl IUserIntegrationRepo for PostgresUserIntegrationRepo {
             SELECT * FROM user_integrations
             WHERE user_uid = $1
             "#,
-            user_id.inner_ref(),
+            user_id.as_ref(),
         )
         .fetch_all(&self.pool)
         .await
@@ -124,7 +124,7 @@ impl IUserIntegrationRepo for PostgresUserIntegrationRepo {
             WHERE user_uid = $1 AND
             provider = $2
             ",
-            user_id.inner_ref(),
+            user_id.as_ref(),
             provider
         )
         .execute(&self.pool)

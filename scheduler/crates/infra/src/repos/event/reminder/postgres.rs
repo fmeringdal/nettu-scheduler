@@ -50,8 +50,8 @@ impl IReminderRepo for PostgresReminderRepo {
             (event_uid, account_uid, remind_at, version, identifier)
             VALUES($1, $2, $3, $4, $5)
             "#,
-                reminder.event_id.inner_ref(),
-                reminder.account_id.inner_ref(),
+                reminder.event_id.as_ref(),
+                reminder.account_id.as_ref(),
                 reminder.remind_at,
                 reminder.version as _,
                 reminder.identifier,
@@ -79,7 +79,7 @@ impl IReminderRepo for PostgresReminderRepo {
                 ($1)
             RETURNING *
             "#,
-            event_id.inner_ref(),
+            event_id.as_ref(),
         )
         .fetch_one(&self.pool)
         .await
@@ -108,7 +108,7 @@ impl IReminderRepo for PostgresReminderRepo {
             SELECT $1, version + 1 from prev_v
             RETURNING *
             "#,
-            event_id.inner_ref(),
+            event_id.as_ref(),
         )
         .fetch_one(&self.pool)
         .await

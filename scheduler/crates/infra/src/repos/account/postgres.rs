@@ -44,7 +44,7 @@ impl IAccountRepo for PostgresAccountRepo {
             INSERT INTO accounts(account_uid, secret_api_key, public_jwt_key, settings)
             VALUES($1, $2, $3, $4)
             "#,
-            account.id.inner_ref(),
+            account.id.as_ref(),
             account.secret_api_key,
             account.public_jwt_key.clone().map(|key| key.inner()),
             Json(&account.settings) as _
@@ -70,7 +70,7 @@ impl IAccountRepo for PostgresAccountRepo {
             settings = $4
             WHERE account_uid = $1
             "#,
-            account.id.inner_ref(),
+            account.id.as_ref(),
             account.secret_api_key,
             account.public_jwt_key.clone().map(|key| key.inner()),
             Json(&account.settings) as _
@@ -94,7 +94,7 @@ impl IAccountRepo for PostgresAccountRepo {
             SELECT * FROM accounts
             WHERE account_uid = $1
             "#,
-            account_id.inner_ref(),
+            account_id.as_ref(),
         )
         .fetch_optional(&self.pool)
         .await
@@ -112,7 +112,7 @@ impl IAccountRepo for PostgresAccountRepo {
     async fn find_many(&self, accounts_ids: &[ID]) -> anyhow::Result<Vec<Account>> {
         let ids = accounts_ids
             .iter()
-            .map(|id| *id.inner_ref())
+            .map(|id| *id.as_ref())
             .collect::<Vec<_>>();
         let accounts_raw: Vec<AccountRaw> = sqlx::query_as!(
             AccountRaw,
@@ -143,7 +143,7 @@ impl IAccountRepo for PostgresAccountRepo {
             WHERE account_uid = $1
             RETURNING *
             ",
-            account_id.inner_ref()
+            account_id.as_ref()
         )
         .fetch_optional(&self.pool)
         .await
