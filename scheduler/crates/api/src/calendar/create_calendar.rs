@@ -13,6 +13,7 @@ use chrono_tz::Tz;
 use nettu_scheduler_api_structs::create_calendar::{APIResponse, PathParams, RequestBody};
 use nettu_scheduler_domain::{Calendar, CalendarSettings, Metadata, ID};
 use nettu_scheduler_infra::NettuContext;
+use num_traits::FromPrimitive;
 
 pub async fn create_calendar_admin_controller(
     http_req: web::HttpRequest,
@@ -26,7 +27,7 @@ pub async fn create_calendar_admin_controller(
     let usecase = CreateCalendarUseCase {
         user_id: user.id,
         account_id: account.id,
-        week_start: body.0.week_start.into(),
+        week_start: Weekday::from_isize(body.0.week_start).unwrap_or(Weekday::Mon),
         timezone: body.0.timezone.parse().unwrap_or(chrono_tz::UTC),
         metadata: body.0.metadata.unwrap_or_default(),
     };
@@ -47,7 +48,7 @@ pub async fn create_calendar_controller(
     let usecase = CreateCalendarUseCase {
         user_id: user.id,
         account_id: user.account_id,
-        week_start: body.0.week_start.into(),
+        week_start: Weekday::from_isize(body.0.week_start).unwrap_or(Weekday::Mon),
         timezone: body.0.timezone.parse().unwrap_or(chrono_tz::UTC),
         metadata: body.0.metadata.unwrap_or_default(),
     };

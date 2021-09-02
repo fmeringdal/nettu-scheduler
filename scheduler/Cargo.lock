@@ -1236,6 +1236,7 @@ dependencies = [
  "nettu_scheduler_api_structs",
  "nettu_scheduler_domain",
  "nettu_scheduler_infra",
+ "num-traits",
  "rrule",
  "serde",
  "serial_test",
