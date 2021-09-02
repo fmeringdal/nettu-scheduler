@@ -25,7 +25,6 @@ thiserror = "1.0"
 tracing = "0.1.25"
 tracing-actix-web = "0.4.0-beta.10"
 tracing-futures = "0.2.5"
-num-traits = "0.2.14"
 
 [dev-dependencies]
 serial_test = "*"
