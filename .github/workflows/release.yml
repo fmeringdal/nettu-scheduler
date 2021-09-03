@@ -100,14 +100,14 @@ jobs:
 
           cd crates/utils
           echo "first"
-          sed -i "s/\(version *= *\).*/\1\"$VERSION\"/" ./Cargo.toml
+          sed -i "0,/\(version *= *\).*/{s/\(version *= *\).*/\1\"$VERSION\"/}" ./Cargo.toml
           echo "after"
           echo "utils toml"
           cat Cargo.toml
           cd ../../
 
           cd crates/domain
-          sed -i "s/\(version *= *\).*/\1\"$VERSION\"/" ./Cargo.toml
+          sed -i "0,/\(version *= *\).*/{s/\(version *= *\).*/\1\"$VERSION\"/}" ./Cargo.toml
           echo "before domain toml update"
           cat Cargo.toml
           echo "before domain toml update DONE"
