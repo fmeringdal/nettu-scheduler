@@ -120,6 +120,9 @@ jobs:
           sed -i "s/path = \"..\/api_structs\", version = \"0.2.1\"/path = \"..\/domain\", version = \"$VERSION\"/" ./Cargo.toml
           # cargo update -p nettu_scheduler_domain --precise $VERSION
           # cargo update -p nettu_scheduler_api_structs --precise $VERSION
+          cd ../../
+
+          cargo check --all
 
       - name: Run migrations
         run: |
