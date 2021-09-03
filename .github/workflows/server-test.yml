@@ -70,7 +70,6 @@ jobs:
       - name: Outdated dependencies
         run: |
           cd scheduler
-          cargo install cargo-outdated --locked
           cargo outdated --exit-code 1 --workspace
 
       - name: Run server tests
