@@ -19,6 +19,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+          cache: "npm"
+          cache-dependency-path: scheduler/clients/javascript/package-lock.json
 
       - name: Start server
         run: |
@@ -33,12 +38,6 @@ jobs:
 
           cargo run --bin nettu_scheduler &
           sleep 10
-
-      - uses: actions/setup-node@v2
-        with:
-          node-version: "14"
-          cache: "npm"
-          cache-dependency-path: scheduler/clients/javascript/package-lock.json
 
       - name: Run JS Client tests
         run: |
