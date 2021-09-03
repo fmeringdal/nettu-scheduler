@@ -1,4 +1,4 @@
-name: PR
+name: javascript-client-tests
 
 on: [pull_request]
 jobs:
