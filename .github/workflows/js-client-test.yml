@@ -1,4 +1,4 @@
-name: javascript-client-tests
+name: JavaScript client tests
 
 on: [pull_request]
 jobs:
@@ -25,7 +25,17 @@ jobs:
           cache: "npm"
           cache-dependency-path: scheduler/clients/javascript/package-lock.json
 
-      - name: Start server
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            scheduler/target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Start server and run JS client tests
         run: |
           cd scheduler
 
@@ -36,12 +46,10 @@ jobs:
           export CREATE_ACCOUNT_SECRET_CODE=opqI5r3e7v1z2h3P
           export RUST_LOG=error,tracing=info
 
-          cargo run --bin nettu_scheduler
+          cargo run --bin nettu_scheduler &
 
           sleep 10
 
-      - name: Run JS Client tests
-        run: |
           cd scheduler/clients/javascript
 
           npm i -g typescript
