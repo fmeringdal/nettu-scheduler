@@ -35,10 +35,7 @@ impl From<ScheduleRaw> for Schedule {
             user_id: e.user_uid.into(),
             account_id: e.account_uid.into(),
             rules: serde_json::from_value(e.rules).unwrap_or_default(),
-            timezone: e
-                .timezone
-                .parse()
-                .unwrap_or_else(|_| "UTC".parse().unwrap()),
+            timezone: e.timezone.parse().unwrap_or(chrono_tz::UTC),
             metadata: serde_json::from_value(e.metadata).unwrap(),
         }
     }
@@ -93,8 +90,7 @@ impl IScheduleRepo for PostgresScheduleRepo {
                 schedule, e
             );
             e
-        })?
-        .rows_affected();
+        })?;
         Ok(())
     }
 

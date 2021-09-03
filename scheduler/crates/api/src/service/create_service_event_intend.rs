@@ -103,7 +103,7 @@ impl UseCase for CreateServiceEventIntendUseCase {
             service_id: self.service_id.clone(),
             end_date,
             start_date,
-            iana_tz: Some("UTC".to_string()),
+            timezone: Some(chrono_tz::UTC),
             interval: self.interval,
             host_user_ids: self.host_user_ids.clone(),
         };

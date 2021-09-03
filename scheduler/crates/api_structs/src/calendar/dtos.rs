@@ -1,4 +1,4 @@
-use nettu_scheduler_domain::{Calendar, CalendarSettings, Metadata, ID};
+use nettu_scheduler_domain::{Calendar, CalendarSettings, Metadata, Tz, Weekday, ID};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -13,8 +13,8 @@ pub struct CalendarDTO {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CalendarSettingsDTO {
-    pub week_start: isize,
-    pub timezone: String,
+    pub week_start: Weekday,
+    pub timezone: Tz,
 }
 
 impl CalendarDTO {
@@ -32,7 +32,7 @@ impl CalendarSettingsDTO {
     pub fn new(settings: &CalendarSettings) -> Self {
         Self {
             week_start: settings.week_start,
-            timezone: settings.timezone.to_string(),
+            timezone: settings.timezone,
         }
     }
 }

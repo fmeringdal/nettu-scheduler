@@ -1,4 +1,4 @@
-use crate::{shared::MetadataFindInput, APIResponse, BaseClient, TimePlan, ID};
+use crate::{shared::MetadataFindInput, APIResponse, BaseClient, TimePlan, Tz, ID};
 use nettu_scheduler_api_structs::*;
 use nettu_scheduler_domain::{BusyCalendar, Metadata, ServiceMultiPersonOptions};
 use reqwest::StatusCode;
@@ -63,7 +63,7 @@ pub struct RemoveServiceUserInput {
 #[derive(Debug, Clone)]
 pub struct GetServiceBookingSlotsInput {
     pub service_id: ID,
-    pub iana_tz: Option<String>,
+    pub timezone: Option<Tz>,
     pub duration: i64,
     pub interval: i64,
     pub start_date: String,
@@ -105,7 +105,7 @@ impl ServiceClient {
             input.duration, input.interval, input.start_date, input.end_date
         );
 
-        if let Some(timezone) = input.iana_tz {
+        if let Some(timezone) = input.timezone {
             query_string = format!("{}&ianaTz={}", query_string, timezone);
         }
         if let Some(host_user_ids) = input.host_user_ids {

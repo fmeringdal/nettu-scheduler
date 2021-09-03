@@ -1,7 +1,7 @@
 mod helpers;
 
 use helpers::setup::spawn_app;
-use nettu_scheduler_domain::PEMKey;
+use nettu_scheduler_domain::{PEMKey, Weekday};
 use nettu_scheduler_sdk::{
     AddServiceUserInput, CreateCalendarInput, CreateEventInput, CreateScheduleInput,
     CreateServiceInput, CreateUserInput, DeleteCalendarInput, DeleteEventInput,
@@ -143,21 +143,21 @@ async fn test_crud_schedule() {
         .create(CreateScheduleInput {
             user_id: create_user_res.user.id.clone(),
             rules: None,
-            timezone: "UTC".into(),
+            timezone: chrono_tz::UTC,
             metadata: None,
         })
         .await
         .expect("Expected to create schedule")
         .schedule;
     assert_eq!(schedule.user_id, create_user_res.user.id);
-    assert_eq!(schedule.timezone, "UTC");
+    assert_eq!(schedule.timezone, chrono_tz::UTC);
     assert_eq!(schedule.rules.len(), 7);
 
     let schedule = admin_client
         .schedule
         .update(UpdateScheduleInput {
             rules: Some(Vec::new()),
-            timezone: Some("Europe/Oslo".into()),
+            timezone: Some(chrono_tz::Europe::Oslo),
             schedule_id: schedule.id.clone(),
             metadata: None,
         })
@@ -173,7 +173,7 @@ async fn test_crud_schedule() {
         .schedule;
 
     assert_eq!(get_schedule.rules.len(), 0);
-    assert_eq!(get_schedule.timezone, "Europe/Oslo");
+    assert_eq!(get_schedule.timezone, chrono_tz::Europe::Oslo);
 
     assert!(admin_client
         .schedule
@@ -297,8 +297,8 @@ async fn test_crud_calendars() {
         .calendar
         .create(CreateCalendarInput {
             user_id: user.id.clone(),
-            timezone: "UTC".into(),
-            week_start: 0,
+            timezone: chrono_tz::UTC,
+            week_start: Weekday::Mon,
             metadata: None,
         })
         .await
@@ -328,13 +328,13 @@ async fn test_crud_calendars() {
 
     assert_eq!(events.events.len(), 0);
 
-    let week_start = 2;
+    let week_start = Weekday::Wed;
     let calendar_with_new_settings = admin_client
         .calendar
         .update(UpdateCalendarInput {
             calendar_id: calendar.id.clone(),
             timezone: None,
-            week_start: Some(week_start.clone()),
+            week_start: Some(week_start),
             metadata: None,
         })
         .await
@@ -382,8 +382,8 @@ async fn test_crud_events() {
         .calendar
         .create(CreateCalendarInput {
             user_id: user.id.clone(),
-            timezone: "UTC".into(),
-            week_start: 0,
+            timezone: chrono_tz::UTC,
+            week_start: Weekday::Mon,
             metadata: None,
         })
         .await
@@ -562,7 +562,7 @@ async fn test_crud_service() {
             start_date: "2030-1-1".to_string(),
             end_date: "2030-1-2".to_string(),
             duration: 1000 * 60 * 30,
-            iana_tz: Some("UTC".to_string()),
+            timezone: Some(chrono_tz::UTC),
             interval: 1000 * 60 * 15,
             host_user_ids: None,
             service_id: service.id.clone(),
@@ -579,7 +579,7 @@ async fn test_crud_service() {
             start_date: "2030-1-1".to_string(),
             end_date: "2030-4-1".to_string(),
             duration: 1000 * 60 * 30,
-            iana_tz: Some("UTC".to_string()),
+            timezone: Some(chrono_tz::UTC),
             interval: 1000 * 60 * 15,
             host_user_ids: None,
             service_id: service.id.clone(),

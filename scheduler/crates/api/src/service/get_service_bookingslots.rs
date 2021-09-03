@@ -10,7 +10,7 @@ use nettu_scheduler_domain::{
         UserFreeEvents,
     },
     get_free_busy, BusyCalendar, Calendar, CompatibleInstances, EventInstance,
-    ServiceMultiPersonOptions, ServiceResource, ServiceWithUsers, TimePlan, TimeSpan, ID,
+    ServiceMultiPersonOptions, ServiceResource, ServiceWithUsers, TimePlan, TimeSpan, Tz, ID,
 };
 use nettu_scheduler_infra::{
     google_calendar::GoogleCalendarProvider, outlook_calendar::OutlookCalendarProvider,
@@ -30,7 +30,7 @@ pub async fn get_service_bookingslots_controller(
     let host_user_ids = parse_vec_query_value(&query_params.host_user_ids);
     let usecase = GetServiceBookingSlotsUseCase {
         service_id: std::mem::take(&mut path_params.service_id),
-        iana_tz: query_params.iana_tz,
+        timezone: query_params.timezone,
         start_date: query_params.start_date,
         end_date: query_params.end_date,
         duration: query_params.duration,
@@ -49,7 +49,7 @@ pub(crate) struct GetServiceBookingSlotsUseCase {
     pub service_id: ID,
     pub start_date: String,
     pub end_date: String,
-    pub iana_tz: Option<String>,
+    pub timezone: Option<Tz>,
     pub duration: i64,
     pub interval: i64,
     pub host_user_ids: Option<Vec<ID>>,
@@ -61,12 +61,6 @@ impl From<UseCaseError> for NettuError {
             UseCaseError::InvalidDate(msg) => {
                 Self::BadClientData(format!(
                     "Invalid datetime: {}. Should be YYYY-MM-DD, e.g. January 1. 2020 => 2020-1-1",
-                    msg
-                ))
-            }
-            UseCaseError::InvalidTimezone(msg) => {
-                Self::BadClientData(format!(
-                    "Invalid timezone: {}. It should be a valid IANA TimeZone.",
                     msg
                 ))
             }
@@ -95,7 +89,6 @@ pub(crate) enum UseCaseError {
     InvalidInterval,
     InvalidTimespan,
     InvalidDate(String),
-    InvalidTimezone(String),
 }
 
 impl From<BookingQueryError> for UseCaseError {
@@ -104,7 +97,6 @@ impl From<BookingQueryError> for UseCaseError {
             BookingQueryError::InvalidInterval => Self::InvalidInterval,
             BookingQueryError::InvalidTimespan => Self::InvalidTimespan,
             BookingQueryError::InvalidDate(d) => Self::InvalidDate(d),
-            BookingQueryError::InvalidTimezone(d) => Self::InvalidTimezone(d),
         }
     }
 }
@@ -125,16 +117,11 @@ impl UseCase for GetServiceBookingSlotsUseCase {
         let query = BookingSlotsQuery {
             start_date: self.start_date.clone(),
             end_date: self.end_date.clone(),
-            iana_tz: self.iana_tz.clone(),
+            timezone: self.timezone,
             interval: self.interval,
             duration: self.duration,
         };
         let booking_timespan = validate_bookingslots_query(&query)?;
-        let timezone: chrono_tz::Tz = query
-            .iana_tz
-            .unwrap_or_else(|| "UTC".into())
-            .parse()
-            .unwrap();
 
         let service = match ctx.repos.services.find_with_users(&self.service_id).await {
             Some(s) => s,
@@ -196,7 +183,7 @@ impl UseCase for GetServiceBookingSlotsUseCase {
         };
 
         Ok(UseCaseRes {
-            booking_slots: ServiceBookingSlots::new(booking_slots, timezone),
+            booking_slots: ServiceBookingSlots::new(booking_slots, chrono_tz::UTC),
             service,
         })
     }
@@ -639,7 +626,7 @@ mod test {
             start_date: "2010-1-1".into(),
             end_date: "2010-1-1".into(),
             duration: 1000 * 60 * 60,
-            iana_tz: Utc.to_string().into(),
+            timezone: Some(chrono_tz::UTC),
             interval: 1000 * 60 * 15,
             service_id: service.id,
             host_user_ids: None,
@@ -664,7 +651,7 @@ mod test {
             start_date: "2010-1-1".into(),
             end_date: "2010-1-1".into(),
             duration: 1000 * 60 * 60,
-            iana_tz: Utc.to_string().into(),
+            timezone: Some(chrono_tz::UTC),
             interval: 1000 * 60 * 15,
             service_id: service.id.clone(),
             host_user_ids: None,
@@ -692,7 +679,7 @@ mod test {
             start_date: "1970-1-1".into(),
             end_date: "1970-1-1".into(),
             duration: 1000 * 60 * 60,
-            iana_tz: Utc.to_string().into(),
+            timezone: Some(chrono_tz::UTC),
             interval: 1000 * 60 * 15,
             service_id: service.id,
             host_user_ids: None,

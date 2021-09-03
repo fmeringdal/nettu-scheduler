@@ -8,6 +8,8 @@ use crate::{
     shared::usecase::{execute, UseCase},
 };
 use actix_web::{web, HttpResponse};
+use chrono::Weekday;
+use chrono_tz::Tz;
 use nettu_scheduler_api_structs::create_calendar::{APIResponse, PathParams, RequestBody};
 use nettu_scheduler_domain::{Calendar, CalendarSettings, Metadata, ID};
 use nettu_scheduler_infra::NettuContext;
@@ -60,15 +62,14 @@ pub async fn create_calendar_controller(
 struct CreateCalendarUseCase {
     pub user_id: ID,
     pub account_id: ID,
-    pub week_start: isize,
-    pub timezone: String,
+    pub week_start: Weekday,
+    pub timezone: Tz,
     pub metadata: Metadata,
 }
 
 #[derive(Debug)]
 enum UseCaseError {
     UserNotFound,
-    InvalidCalendarSetting(String),
     StorageError,
 }
 
@@ -76,7 +77,6 @@ impl From<UseCaseError> for NettuError {
     fn from(e: UseCaseError) -> Self {
         match e {
             UseCaseError::StorageError => Self::InternalError,
-            UseCaseError::InvalidCalendarSetting(e) => Self::BadClientData(e),
             UseCaseError::UserNotFound => {
                 Self::NotFound("The requested user was not found.".to_string())
             }
@@ -98,20 +98,10 @@ impl UseCase for CreateCalendarUseCase {
             _ => return Err(UseCaseError::UserNotFound),
         };
 
-        let mut settings = CalendarSettings::default();
-        if !settings.set_timezone(&self.timezone) {
-            return Err(UseCaseError::InvalidCalendarSetting(format!(
-                "Invalid timezone given: {:?}",
-                self.timezone
-            )));
-        }
-        if !settings.set_week_start(self.week_start) {
-            return Err(UseCaseError::InvalidCalendarSetting(format!(
-                "Invalid week_start given: {:?}",
-                self.week_start
-            )));
-        }
-
+        let settings = CalendarSettings {
+            week_start: self.week_start,
+            timezone: self.timezone,
+        };
         let mut calendar = Calendar::new(&self.user_id, &user.account_id);
         calendar.settings = settings;
         calendar.metadata = self.metadata.clone();

@@ -27,7 +27,7 @@ pub async fn create_schedule_admin_controller(
     let usecase = CreateScheduleUseCase {
         user_id: user.id,
         account_id: account.id,
-        tzid: body_params.0.timezone,
+        timezone: body_params.0.timezone,
         rules: body_params.0.rules,
         metadata: body_params.0.metadata,
     };
@@ -48,7 +48,7 @@ pub async fn create_schedule_controller(
     let usecase = CreateScheduleUseCase {
         user_id: user.id,
         account_id: user.account_id,
-        tzid: body_params.0.timezone,
+        timezone: body_params.0.timezone,
         rules: body_params.0.rules,
         metadata: body_params.0.metadata,
     };
@@ -63,14 +63,13 @@ pub async fn create_schedule_controller(
 struct CreateScheduleUseCase {
     pub user_id: ID,
     pub account_id: ID,
-    pub tzid: String,
+    pub timezone: Tz,
     pub rules: Option<Vec<ScheduleRule>>,
     pub metadata: Option<Metadata>,
 }
 
 #[derive(Debug)]
 enum UseCaseError {
-    InvalidTimezone(String),
     UserNotFound(ID),
     Storage,
 }
@@ -78,10 +77,6 @@ enum UseCaseError {
 impl From<UseCaseError> for NettuError {
     fn from(e: UseCaseError) -> Self {
         match e {
-            UseCaseError::InvalidTimezone(msg) => Self::BadClientData(format!(
-                "Invalid timezone: {}. It should be a valid IANA TimeZone.",
-                msg
-            )),
             UseCaseError::Storage => Self::InternalError,
             UseCaseError::UserNotFound(user_id) => {
                 Self::NotFound(format!("The user with id: {}, was not found.", user_id))
@@ -104,11 +99,6 @@ impl UseCase for CreateScheduleUseCase {
     const NAME: &'static str = "CreateSchedule";
 
     async fn execute(&mut self, ctx: &NettuContext) -> Result<Self::Response, Self::Error> {
-        let tz: Tz = match self.tzid.parse() {
-            Ok(tz) => tz,
-            Err(_) => return Err(UseCaseError::InvalidTimezone(self.tzid.to_string())),
-        };
-
         let user = ctx
             .repos
             .users
@@ -119,7 +109,7 @@ impl UseCase for CreateScheduleUseCase {
         }
         let user = user.unwrap();
 
-        let mut schedule = Schedule::new(user.id, user.account_id, &tz);
+        let mut schedule = Schedule::new(user.id, user.account_id, &self.timezone);
         if let Some(rules) = &self.rules {
             schedule.rules = rules.clone();
         }

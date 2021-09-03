@@ -56,8 +56,7 @@ mod tests {
 
         // Insert
         assert!(ctx.repos.calendars.insert(&calendar).await.is_ok());
-
-        calendar.settings.week_start += 1;
+        calendar.settings.week_start = calendar.settings.week_start.succ();
 
         // Save
         assert!(ctx.repos.calendars.save(&calendar).await.is_ok());

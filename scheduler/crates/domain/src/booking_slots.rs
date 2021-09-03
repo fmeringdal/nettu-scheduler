@@ -176,7 +176,7 @@ pub fn validate_slots_interval(interval: i64) -> bool {
 pub struct BookingSlotsQuery {
     pub start_date: String,
     pub end_date: String,
-    pub iana_tz: Option<String>,
+    pub timezone: Option<Tz>,
     pub duration: i64,
     pub interval: i64,
 }
@@ -184,7 +184,6 @@ pub struct BookingSlotsQuery {
 pub enum BookingQueryError {
     InvalidInterval,
     InvalidDate(String),
-    InvalidTimezone(String),
     InvalidTimespan,
 }
 
@@ -200,11 +199,7 @@ pub fn validate_bookingslots_query(
         return Err(BookingQueryError::InvalidInterval);
     }
 
-    let iana_tz = query.iana_tz.clone().unwrap_or_else(|| "UTC".into());
-    let tz: Tz = match iana_tz.parse() {
-        Ok(tz) => tz,
-        Err(_) => return Err(BookingQueryError::InvalidTimezone(iana_tz)),
-    };
+    let tz = query.timezone.unwrap_or(chrono_tz::UTC);
 
     let parsed_start_date = match date::is_valid_date(&query.start_date) {
         Ok(val) => val,

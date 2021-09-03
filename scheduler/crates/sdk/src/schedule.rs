@@ -1,6 +1,7 @@
 use crate::{APIResponse, BaseClient, ScheduleRule, ID};
 use nettu_scheduler_api_structs::*;
 use nettu_scheduler_domain::Metadata;
+use nettu_scheduler_domain::Tz;
 use reqwest::StatusCode;
 use std::sync::Arc;
 
@@ -10,14 +11,14 @@ pub struct ScheduleClient {
 }
 
 pub struct CreateScheduleInput {
-    pub timezone: String,
+    pub timezone: Tz,
     pub rules: Option<Vec<ScheduleRule>>,
     pub user_id: ID,
     pub metadata: Option<Metadata>,
 }
 
 pub struct UpdateScheduleInput {
-    pub timezone: Option<String>,
+    pub timezone: Option<Tz>,
     pub rules: Option<Vec<ScheduleRule>>,
     pub schedule_id: ID,
     pub metadata: Option<Metadata>,
