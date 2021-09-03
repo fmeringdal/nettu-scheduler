@@ -1,0 +1,55 @@
+name: Server docker deploy
+
+on:
+  workflow_run:
+    workflows: ["Server test"]
+    branches: [master]
+    types:
+      - completed
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nettuscheduler
+        ports:
+          - 5432:5432
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost/nettuscheduler
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.cargo/bin
+            scheduler/target/debug
+          key: cargo
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: fmeringdal
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Run migrations
+        run: |
+          cd scheduler
+          cargo install sqlx-cli --no-default-features --features postgres || true
+          (cd crates/infra && sqlx migrate run)
+
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: ./scheduler
+          push: true
+          tags: fmeringdal/nettu-scheduler:latest
