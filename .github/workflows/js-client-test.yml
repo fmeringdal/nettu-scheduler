@@ -5,6 +5,11 @@ jobs:
   test:
     name: test
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [10, 12, 14]
+
     services:
       postgres:
         image: postgres:13
@@ -19,9 +24,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
         with:
-          node-version: "14"
+          node-version: ${{ matrix.node-version }}
           cache: "npm"
           cache-dependency-path: scheduler/clients/javascript/package-lock.json
 
