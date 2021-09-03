@@ -122,6 +122,9 @@ jobs:
           cd crates/api_structs
           sed -i "0,/\(version *= *\).*/{s/\(version *= *\).*/\1\"$VERSION\"/}" ./Cargo.toml
           sed -i "s/path = \"..\/domain\", version = \"*.*.*\"/path = \"..\/domain\", version = \"$VERSION\"/" ./Cargo.toml
+          echo "api_structs toml"
+          cat ./Cargo.toml
+          echo "api_structs toml DONE"
           cd ../../
 
           cd crates/infra
@@ -136,6 +139,9 @@ jobs:
           sed -i "0,/\(version *= *\).*/{s/\(version *= *\).*/\1\"$VERSION\"/}" ./Cargo.toml
           sed -i "s/path = \"..\/domain\", version = \"*.*.*\"/path = \"..\/domain\", version = \"$VERSION\"/" ./Cargo.toml
           sed -i "s/path = \"..\/api_structs\", version = \"*.*.*\"/path = \"..\/api_structs\", version = \"$VERSION\"/" ./Cargo.toml
+          echo "SDK toml"
+          cat ./Cargo.toml
+          echo "SDK toml DONE"
           cd ../../
 
           # Root Cargo.toml
