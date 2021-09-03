@@ -54,13 +54,17 @@ jobs:
           #     -e DATABASE_URL="postgresql://postgres:postgres@localhost:5432/nettuscheduler" \ 
           #     fmeringdal/nettu-scheduler:latest 
           cargo run --bin nettu_scheduler &
+          echo "Done compiling"
 
           sleep 10
-          lsof -i :5000
+          echo "Going to test"
 
           cd clients/javascript
 
+          echo "Install test deps"
           npm i -g typescript
           npm i
+          echo "Install test deps DONE"
 
           npm run test
+          echo "Testing done"
