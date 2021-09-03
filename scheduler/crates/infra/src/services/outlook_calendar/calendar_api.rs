@@ -260,12 +260,6 @@ impl OutlookCalendarRestApi {
     }
 
     pub async fn freebusy(&self, body: &FreeBusyRequest) -> Result<CompatibleInstances, ()> {
-        println!("Free busy query params");
-        println!(
-            "{}",
-            Utc.timestamp_millis(body.time_min)
-                .to_rfc3339_opts(SecondsFormat::Secs, true)
-        );
         let cal_futures = body
             .calendars
             .iter()
@@ -285,10 +279,6 @@ impl OutlookCalendarRestApi {
         let calendar_views = join_all(cal_futures)
             .await
             .into_iter()
-            .map(|res| {
-                println!("Response from view: {:?}", res);
-                res
-            })
             .filter_map(|res| res.ok())
             .map(|view| {
                 view.value

@@ -1,8 +1,9 @@
-import { NettuClient, NettuUserClient } from "@nettu/sdk-scheduler";
+import { NettuClient, NettuUserClient } from "../../lib";
 import { readPrivateKey, readPublicKey } from "./utils";
-import jwt from "jsonwebtoken";
+import * as jwt from "jsonwebtoken";
 
-export const CREATE_ACCOUNT_CODE = "opqI5r3e7v1z2h3P";
+export const CREATE_ACCOUNT_CODE =
+  process.env["CREATE_ACCOUNT_CODE"] || "opqI5r3e7v1z2h3P";
 
 export const setupAccount = async () => {
   const client = NettuClient();

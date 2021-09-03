@@ -1,4 +1,4 @@
-import { INettuClient, NettuClient, config, INettuUserClient } from "@nettu/sdk-scheduler";
+import { INettuClient, NettuClient, config, INettuUserClient } from "../lib";
 import { setupUserClient } from "./helpers/fixtures";
 
 describe("Calendar API", () => {
@@ -14,14 +14,14 @@ describe("Calendar API", () => {
 
   it("should not create calendar for unauthenticated user", async () => {
     const res = await unauthClient.calendar.create(userId, {
-      timezone: "UTC"
+      timezone: "UTC",
     });
     expect(res.status).toBe(401);
   });
 
   it("should create calendar for authenticated user", async () => {
     const res = await client.calendar.create({
-      timezone: "UTC"
+      timezone: "UTC",
     });
     expect(res.status).toBe(201);
     expect(res.data!.calendar.id).toBeDefined();
@@ -29,7 +29,7 @@ describe("Calendar API", () => {
 
   it("should delete calendar for authenticated user and not for unauthenticated user", async () => {
     let res = await client.calendar.create({
-      timezone: "UTC"
+      timezone: "UTC",
     });
     const calendarId = res.data!.calendar.id;
     res = await unauthClient.calendar.remove(calendarId);

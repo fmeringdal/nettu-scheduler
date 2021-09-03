@@ -3,7 +3,7 @@ import {
   INettuUserClient,
   ScheduleRuleVariant,
   Weekday,
-} from "@nettu/sdk-scheduler";
+} from "../lib";
 import { setupAccount, setupUserClient } from "./helpers/fixtures";
 
 describe("Service API", () => {
@@ -24,7 +24,7 @@ describe("Service API", () => {
     expect(res.status).toBe(201);
 
     const serviceRes = await client.service.find(res.data!.service.id);
-    expect(serviceRes.data!.service.id).toBe(res.data!.service.id);
+    expect(serviceRes.data!.id).toBe(res.data!.service.id);
   });
 
   it("should add user to service", async () => {
@@ -37,7 +37,7 @@ describe("Service API", () => {
     });
 
     const service = await client.service.find(serviceRes.data!.service.id);
-    expect(service.data!.service.users.length).toBe(1);
+    expect(service.data!.users.length).toBe(1);
   });
 
   it("should remove user from service", async () => {
@@ -54,7 +54,7 @@ describe("Service API", () => {
     );
 
     const service = await client.service.find(serviceRes.data!.service.id);
-    expect(service.data!.service.users.length).toBe(0);
+    expect(service.data!.users.length).toBe(0);
   });
 
   it("should get service bookingslots with no users", async () => {
@@ -119,6 +119,7 @@ describe("Service API", () => {
       },
       closestBookingTime,
     });
+
     const now = new Date();
     const today = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
 

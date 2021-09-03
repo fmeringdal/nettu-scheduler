@@ -1,4 +1,4 @@
-import { NettuClient } from "@nettu/sdk-scheduler";
+import { NettuClient } from "../lib";
 
 describe("Health API", () => {
   const client = NettuClient();

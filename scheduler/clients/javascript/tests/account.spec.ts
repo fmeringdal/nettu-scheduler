@@ -1,4 +1,4 @@
-import { NettuClient } from "@nettu/sdk-scheduler";
+import { NettuClient } from "../lib";
 import {
   setupAccount,
   setupUserClientForAccount,
@@ -54,7 +54,9 @@ describe("Account API", () => {
     res = await client.account.me();
     expect(res.data!.account.publicJwtKey).toBeNull();
 
-    const { status: status2 } = await userClient.calendar.create({ timezone: "UTC" });
+    const { status: status2 } = await userClient.calendar.create({
+      timezone: "UTC",
+    });
     expect(status2).toBe(401);
   });
 });

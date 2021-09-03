@@ -3,7 +3,7 @@ import {
   NettuClient,
   ScheduleRuleVariant,
   Weekday,
-} from "@nettu/sdk-scheduler";
+} from "../lib";
 import { setupUserClient } from "./helpers/fixtures";
 
 describe("Schedule API", () => {

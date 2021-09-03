@@ -1,4 +1,5 @@
 target/
 cobertura.xml
 node_modules/
+dist/
 playground/

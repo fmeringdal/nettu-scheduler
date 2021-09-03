@@ -1,5 +1,4 @@
-//@ts-nocheck
-import { INettuClient, NettuClient, Frequenzy, INettuUserClient } from "@nettu/sdk-scheduler";
+import { INettuClient, NettuClient, Frequenzy, INettuUserClient } from "../lib";
 import { setupUserClient } from "./helpers/fixtures";
 
 describe("User API", () => {
@@ -24,7 +23,6 @@ describe("User API", () => {
     const { user } = res.data!;
     const userId = user.id;
 
-
     res = await accountClient.user.find(userId);
     expect(res.status).toBe(200);
     expect(res.data!.user.id).toBe(userId);
@@ -35,7 +33,6 @@ describe("User API", () => {
     res = await accountClient.user.find(userId);
     expect(res.status).toBe(404);
   });
-
 
   it("should not show any freebusy with no events", async () => {
     const res = await accountClient.user.freebusy(userId, {

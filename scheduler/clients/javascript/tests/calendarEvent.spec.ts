@@ -1,8 +1,7 @@
-import { INettuClient, NettuClient, Frequenzy, INettuUserClient } from "@nettu/sdk-scheduler";
+import { INettuClient, NettuClient, Frequenzy, INettuUserClient } from "../lib";
 import { setupUserClient } from "./helpers/fixtures";
 
-
-describe("CalendarEvent API", () => {
+describe.only("CalendarEvent API", () => {
   let calendarId: string;
   let userId: string;
   let client: INettuUserClient;
@@ -12,7 +11,7 @@ describe("CalendarEvent API", () => {
     client = data.userClient;
     unauthClient = NettuClient({ nettuAccount: data.accountId });
     const calendarRes = await client.calendar.create({
-      timezone: "UTC"
+      timezone: "UTC",
     });
     calendarId = calendarRes.data!.calendar.id;
     userId = data.userId;
@@ -90,9 +89,11 @@ describe("CalendarEvent API", () => {
       return res.data!.instances;
     };
     const instancesBeforeException = await getInstances();
+    expect(instancesBeforeException.length).toBe(count);
 
     // do create exception
     const res2 = await client.events.update(eventId, {
+      recurrence: event.recurrence,
       exdates: [event.startTs + 24 * 60 * 60 * 1000],
     });
     expect(res2.status).toBe(200);
@@ -128,6 +129,7 @@ describe("CalendarEvent API", () => {
     const instancesBeforeException = await getInstances();
     // do create exception
     const res2 = await client.events.update(eventId, {
+      recurrence: event.recurrence,
       exdates: [event.startTs + 24 * 60 * 60 * 1000],
     });
     expect(res2.status).toBe(200);
@@ -137,6 +139,7 @@ describe("CalendarEvent API", () => {
       instancesBeforeException.length - 1
     );
     await client.events.update(eventId, {
+      recurrence: event.recurrence,
       startTs: event.startTs + 24 * 60 * 60 * 1000,
     });
     const instancesAfterExceptionDeleted = await getInstances();
