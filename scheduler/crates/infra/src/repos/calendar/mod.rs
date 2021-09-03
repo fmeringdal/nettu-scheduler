@@ -52,11 +52,11 @@ mod tests {
         ctx.repos.accounts.insert(&account).await.unwrap();
         let user = User::new(account.id.clone());
         ctx.repos.users.insert(&user).await.unwrap();
-        let calendar = Calendar::new(&user.id, &account.id);
+        let mut calendar = Calendar::new(&user.id, &account.id);
 
         // Insert
         assert!(ctx.repos.calendars.insert(&calendar).await.is_ok());
-        calendar.settings.week_start.succ();
+        calendar.settings.week_start = calendar.settings.week_start.succ();
 
         // Save
         assert!(ctx.repos.calendars.save(&calendar).await.is_ok());
