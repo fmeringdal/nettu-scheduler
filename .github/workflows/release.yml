@@ -100,6 +100,12 @@ jobs:
           cargo install sqlx-cli --no-default-features --features postgres || true
           (cd crates/infra && sqlx migrate run)
 
+      - name: Login to crates.io
+        env:
+          CRATE_PUBLISH_TOKEN: ${{secrets.CRATE_PUBLISH_TOKEN}}
+        run: |
+          cargo login $CRATE_PUBLISH_TOKEN
+
       - name: Set version numbers
         run: |
           cd scheduler
@@ -136,8 +142,40 @@ jobs:
           sed -i "0,/\(version *= *\).*/{s/\(version *= *\).*/\1\"$VERSION\"/}" ./Cargo.toml
 
           cargo check --all
+
+      - name: Publish crates
+        run: |
+          cd scheduler
+
+          cd crates/utils
+          cargo publish --allow-dirty
+          cd ../../
+
+          # Make sure published version is available at crates.io
+          sleep 15
+
+          cd crates/domain
+          cargo publish --allow-dirty
+          cd ../../
+
+          # Make sure published version is available at crates.io
+          sleep 15
+
+          cd crates/api_structs
+          cargo publish --allow-dirty
+          cd ../../
+
+          # Make sure published version is available at crates.io
+          sleep 15
+
+          cd clients/rust
+          cargo publish --allow-dirty
+          cd ../../
+
       - name: Commit & Push version changes
         uses: actions-js/push@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: testing-v
+          message: |
+            Autopublish: Update cargo workspace deps on release
