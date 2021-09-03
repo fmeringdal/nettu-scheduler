@@ -152,21 +152,21 @@ jobs:
           cd ../../
 
           # Make sure published version is available at crates.io
-          sleep 15
+          sleep 30
 
           cd crates/domain
           cargo publish --allow-dirty
           cd ../../
 
           # Make sure published version is available at crates.io
-          sleep 15
+          sleep 30
 
           cd crates/api_structs
           cargo publish --allow-dirty
           cd ../../
 
           # Make sure published version is available at crates.io
-          sleep 15
+          sleep 30
 
           cd clients/rust
           cargo publish --allow-dirty

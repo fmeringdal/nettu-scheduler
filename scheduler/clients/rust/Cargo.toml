@@ -9,7 +9,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-nettu_scheduler_api_structs = { path = "../../crates/api_structs"}
-nettu_scheduler_domain = { path = "../../crates/domain"}
+nettu_scheduler_api_structs = { path = "../../crates/api_structs", version = "0.3.1" }
+nettu_scheduler_domain = { path = "../../crates/domain", version = "0.2.1" }
 reqwest = { version = "0.11.4", features = ["json"] }
 serde = "1.0.123"
