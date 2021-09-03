@@ -102,28 +102,31 @@ jobs:
           echo "first"
           sed -i "s/\(version *= *\).*/\1\"$VERSION\"/" ./Cargo.toml
           echo "after"
-
           echo "utils toml"
           cat Cargo.toml
           cd ../../
 
           cd crates/domain
           sed -i "s/\(version *= *\).*/\1\"$VERSION\"/" ./Cargo.toml
+          echo "before domain toml update"
+          cat Cargo.toml
+          echo "before domain toml update DONE"
           cargo update -p nettu_scheduler_utils --precise $VERSION
           echo "domain toml"
           cat Cargo.toml
           cd ../../
 
           cd crates/api_structs
+          sed -i "s/\(version *= *\).*/\1\"$VERSION\"/" ./Cargo.toml
           cargo update -p nettu_scheduler_domain --precise $VERSION
           echo "api structs toml"
           cat Cargo.toml
           cd ../../
 
           cd clients/rust
+          sed -i "s/\(version *= *\).*/\1\"$VERSION\"/" ./Cargo.toml
           cargo update -p nettu_scheduler_domain --precise $VERSION
           cargo update -p nettu_scheduler_api_structs --precise $VERSION
-          cargo bump $VERSION
           echo "sdk toml"
           cat Cargo.toml
 
