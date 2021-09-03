@@ -3,7 +3,7 @@ import { readPrivateKey, readPublicKey } from "./utils";
 import * as jwt from "jsonwebtoken";
 
 export const CREATE_ACCOUNT_CODE =
-  process.env["CREATE_ACCOUNT_CODE"] || "opqI5r3e7v1z2h3P";
+  process.env["CREATE_ACCOUNT_SECRET_CODE"] || "opqI5r3e7v1z2h3P";
 
 export const setupAccount = async () => {
   const client = NettuClient();
