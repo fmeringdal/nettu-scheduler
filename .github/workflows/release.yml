@@ -137,8 +137,8 @@ jobs:
 
           cd clients/rust
           sed -i "0,/\(version *= *\).*/{s/\(version *= *\).*/\1\"$VERSION\"/}" ./Cargo.toml
-          sed -i "s/path = \"..\/domain\", version = \"*.*.*\"/path = \"..\/domain\", version = \"$VERSION\"/" ./Cargo.toml
-          sed -i "s/path = \"..\/api_structs\", version = \"*.*.*\"/path = \"..\/api_structs\", version = \"$VERSION\"/" ./Cargo.toml
+          sed -i "s/path = \"..\/..\/crates\/domain\", version = \"*.*.*\"/path = \"..\/..\/crates\/domain\", version = \"$VERSION\"/" ./Cargo.toml
+          sed -i "s/path = \"..\/..\/crates\/api_structs\", version = \"*.*.*\"/path = \"..\/..\/crates\/api_structs\", version = \"$VERSION\"/" ./Cargo.toml
           echo "SDK toml"
           cat ./Cargo.toml
           echo "SDK toml DONE"
