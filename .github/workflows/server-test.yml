@@ -43,6 +43,12 @@ jobs:
           cargo install sqlx-cli --no-default-features --features postgres || true
           (cd crates/infra && sqlx migrate run)
 
+      - name: Install nighly toolchain
+        run: |
+          rustup default nightly
+          # Go back to stable
+          rustup default stable
+
       - name: Formatting
         run: |
           cd scheduler
