@@ -36,6 +36,8 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Start server and run JS client tests
+        env:
+          PORT: 5000
         run: |
           cd scheduler
 
