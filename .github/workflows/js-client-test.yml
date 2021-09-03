@@ -50,6 +50,8 @@ jobs:
 
           cargo build
           echo "Done compiling"
+          ./target/debug/migrate
+          echo "Done migrating"
           ./target/debug/nettu_scheduler &
           echo "Started server in background"
 
