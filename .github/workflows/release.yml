@@ -102,6 +102,7 @@ jobs:
           echo "first"
           sed -i "s/\(version *= *\).*/\1\"$VERSION\"/" ./Cargo.toml
           echo "after"
+
           echo "utils toml"
           cat Cargo.toml
           cd ../../
