@@ -48,13 +48,10 @@ jobs:
           export CREATE_ACCOUNT_SECRET_CODE=opqI5r3e7v1z2h3P
           export RUST_LOG=error,tracing=info
 
-          # docker run -e CREATE_ACCOUNT_SECRET_CODE="opqI5r3e7v1z2h3P" \ 
-          #     -e PORT="5000" \ 
-          #     -e RUST_LOG="error,tracing=info" \ 
-          #     -e DATABASE_URL="postgresql://postgres:postgres@localhost:5432/nettuscheduler" \ 
-          #     fmeringdal/nettu-scheduler:latest 
-          cargo run --bin nettu_scheduler &
+          cargo build
           echo "Done compiling"
+          ./target/debug/nettu_scheduler &
+          echo "Started server in background"
 
           sleep 10
           echo "Going to test"
