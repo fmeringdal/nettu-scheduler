@@ -49,19 +49,15 @@ jobs:
           export RUST_LOG=error,tracing=info
 
           cargo build
-          echo "Done compiling"
           ./target/debug/nettu_scheduler &> output.log &
           echo "Started server in background"
 
           sleep 10
-          echo "Going to test"
 
-          cd clients/javascript
-
-          echo "Install test deps"
+      - name: Run JavaScript client tests
+        run: |
+          cd scheduler/clients/javascript
           npm i -g typescript
           npm i
-          echo "Install test deps DONE"
 
           npm run test
-          echo "Testing done"

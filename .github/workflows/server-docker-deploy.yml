@@ -2,7 +2,7 @@ name: Server docker deploy
 
 on:
   workflow_run:
-    workflows: ["Server test"]
+    workflows: ["Server test and code coverage"]
     branches: [master]
     types:
       - completed
@@ -23,14 +23,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+
       - uses: actions/cache@v2
         with:
           path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            ~/.cargo/bin
-            scheduler/target/debug
-          key: cargo
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            scheduler/target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx

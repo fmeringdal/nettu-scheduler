@@ -1,9 +1,6 @@
 name: Server test
 
-on:
-  push:
-    branches:
-      - master
+on: [pull_request]
 jobs:
   test:
     name: test
@@ -18,7 +15,7 @@ jobs:
           - 5432:5432
     env:
       PORT: 5000
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nettuscheduler
+      DATABASE_URL: postgresql://postgres:postgres@localhost/nettuscheduler
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -26,27 +23,19 @@ jobs:
       - uses: actions/cache@v2
         with:
           path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            ~/.cargo/bin
-            scheduler/target/debug
-          key: cargo
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            scheduler/target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Generate code coverage
+      - name: Run tests
         run: |
           cd scheduler
-
-          # https://github.com/xd009642/tarpaulin/issues/756
-          cargo install cargo-tarpaulin --version 0.18.0-alpha3 || true
 
           # run the migrations first
           cargo install sqlx-cli --no-default-features --features postgres || true
           (cd crates/infra && sqlx migrate run)
 
-          # cargo install cargo-tarpaulin
-          cargo tarpaulin --avoid-cfg-tarpaulin --verbose --all-features --workspace --timeout 120 --out Xml
-
-      - name: Upload to codecov.io
-        uses: codecov/codecov-action@v1
-        with:
-          fail_ci_if_error: true
+          cargo test --all
