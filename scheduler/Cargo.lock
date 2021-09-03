@@ -1173,7 +1173,7 @@ dependencies = [
 
 [[package]]
 name = "nettu_scheduler"
-version = "0.1.0"
+version = "5.6.7"
 dependencies = [
  "actix-web",
  "chrono",
