@@ -105,19 +105,19 @@ jobs:
           cd crates/domain
           sed -i "0,/\(version *= *\).*/{s/\(version *= *\).*/\1\"$VERSION\"/}" ./Cargo.toml
           # cargo update -p nettu_scheduler_utils --precise $VERSION
-          sed -i "s/path = \"..\/utils\", version = \"0.2.1\"/path = \"..\/domain\", version = \"$VERSION\"/" ./Cargo.toml
+          sed -i "s/path = \"..\/utils\", version = \"*.*.*\"/path = \"..\/domain\", version = \"$VERSION\"/" ./Cargo.toml
           cd ../../
 
           cd crates/api_structs
           sed -i "0,/\(version *= *\).*/{s/\(version *= *\).*/\1\"$VERSION\"/}" ./Cargo.toml
           # cargo update -p nettu_scheduler_domain --precise $VERSION
-          sed -i "s/path = \"..\/domain\", version = \"0.2.1\"/path = \"..\/domain\", version = \"$VERSION\"/" ./Cargo.toml
+          sed -i "s/path = \"..\/domain\", version = \"*.*.*\"/path = \"..\/domain\", version = \"$VERSION\"/" ./Cargo.toml
           cd ../../
 
           cd clients/rust
           sed -i "0,/\(version *= *\).*/{s/\(version *= *\).*/\1\"$VERSION\"/}" ./Cargo.toml
-          sed -i "s/path = \"..\/domain\", version = \"0.2.1\"/path = \"..\/domain\", version = \"$VERSION\"/" ./Cargo.toml
-          sed -i "s/path = \"..\/api_structs\", version = \"0.2.1\"/path = \"..\/domain\", version = \"$VERSION\"/" ./Cargo.toml
+          sed -i "s/path = \"..\/domain\", version = \"*.*.*\"/path = \"..\/domain\", version = \"$VERSION\"/" ./Cargo.toml
+          sed -i "s/path = \"..\/api_structs\", version = \"*.*.*\"/path = \"..\/domain\", version = \"$VERSION\"/" ./Cargo.toml
           # cargo update -p nettu_scheduler_domain --precise $VERSION
           # cargo update -p nettu_scheduler_api_structs --precise $VERSION
           cd ../../
