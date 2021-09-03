@@ -61,6 +61,74 @@ jobs:
         with:
           context: ./scheduler
           push: true
+          # fmeringdal/nettu-scheduler:latest
           tags: |
-            # fmeringdal/nettu-scheduler:latest
             fmeringdal/nettu-scheduler:${{ env.VERSION }}
+
+  rust-client-release:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nettuscheduler
+        ports:
+          - 5432:5432
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost/nettuscheduler
+    # if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Set env
+        run: echo "VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            scheduler/target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run migrations
+        run: |
+          cd scheduler
+          cargo install sqlx-cli --no-default-features --features postgres || true
+          (cd crates/infra && sqlx migrate run)
+
+      - name: Set version numbers
+        run: |
+          cd scheduler
+
+          cargo install cargo-bump
+
+          cd crates/utils
+          cargo bump $VERSION
+          echo "utils toml"
+          cat Cargo.toml
+          cd ../../
+
+          cd crates/domain
+          cargo bump $VERSION
+          cargo update -p nettu_scheduler_utils --precise $VERSION
+          echo "domain toml"
+          cat Cargo.toml
+          cd ../../
+
+          cd crates/api_structs
+          cargo bump $VERSION
+          cargo update -p nettu_scheduler_domain --precise $VERSION
+          echo "api structs toml"
+          cat Cargo.toml
+          cd ../../
+
+          cd clients/rust
+          cargo update -p nettu_scheduler_domain --precise $VERSION
+          cargo update -p nettu_scheduler_api_structs --precise $VERSION
+          cargo bump $VERSION
+          echo "sdk toml"
+          cat Cargo.toml
