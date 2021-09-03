@@ -99,13 +99,15 @@ jobs:
           cd scheduler
 
           cd crates/utils
-          sed -i '' "s/\(version *= *\).*/\1\"$VERSION\"/" ./Cargo.toml
+          echo "first"
+          sed -i "s/\(version *= *\).*/\1\"$VERSION\"/" ./Cargo.toml
+          echo "after"
           echo "utils toml"
           cat Cargo.toml
           cd ../../
 
           cd crates/domain
-          sed -i '' "s/\(version *= *\).*/\1\"$VERSION\"/" ./Cargo.toml
+          sed -i "s/\(version *= *\).*/\1\"$VERSION\"/" ./Cargo.toml
           cargo update -p nettu_scheduler_utils --precise $VERSION
           echo "domain toml"
           cat Cargo.toml
