@@ -8,7 +8,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [Ubuntu 20.04, Ubuntu 18.04]
 
     services:
       postgres:
@@ -62,11 +62,13 @@ jobs:
       - name: Unused dependencies
         run: |
           cd scheduler
+          cargo install cargo-udeps --locked
           cargo +nightly udeps --all-targets
 
       - name: Outdated dependencies
         run: |
           cd scheduler
+          cargo install cargo-outdated --locked
           cargo outdated --exit-code 1 --workspace
 
       - name: Run server tests
