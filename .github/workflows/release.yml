@@ -63,4 +63,4 @@ jobs:
           push: true
           tags: |
             # fmeringdal/nettu-scheduler:latest
-            fmeringdal/nettu-scheduler:$VERSION
+            fmeringdal/nettu-scheduler:${{ env.VERSION }}
