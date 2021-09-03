@@ -37,18 +37,10 @@ pub struct StopCalendarSyncInput {
     pub provider: IntegrationProvider,
 }
 
-pub struct GetCalendarInput {
-    pub calendar_id: ID,
-}
-
 pub struct GetCalendarEventsInput {
     pub calendar_id: ID,
     pub start_ts: i64,
     pub end_ts: i64,
-}
-
-pub struct DeleteCalendarInput {
-    pub calendar_id: ID,
 }
 
 pub struct UpdateCalendarInput {
@@ -56,6 +48,16 @@ pub struct UpdateCalendarInput {
     pub week_start: Option<Weekday>,
     pub timezone: Option<Tz>,
     pub metadata: Option<Metadata>,
+}
+
+pub struct GetGoogleCalendars {
+    pub user_id: ID,
+    pub min_access_role: GoogleCalendarAccessRole,
+}
+
+pub struct GetOutlookCalendars {
+    pub user_id: ID,
+    pub min_access_role: OutlookCalendarAccessRole,
 }
 
 impl CalendarClient {
@@ -84,24 +86,15 @@ impl CalendarClient {
             .await
     }
 
-    pub async fn delete(
-        &self,
-        input: DeleteCalendarInput,
-    ) -> APIResponse<delete_calendar::APIResponse> {
+    pub async fn delete(&self, calendar_id: ID) -> APIResponse<delete_calendar::APIResponse> {
         self.base
-            .delete(
-                format!("user/calendar/{}", input.calendar_id),
-                StatusCode::OK,
-            )
+            .delete(format!("user/calendar/{}", calendar_id), StatusCode::OK)
             .await
     }
 
-    pub async fn get(&self, input: GetCalendarInput) -> APIResponse<get_calendar::APIResponse> {
+    pub async fn get(&self, calendar_id: ID) -> APIResponse<get_calendar::APIResponse> {
         self.base
-            .get(
-                format!("user/calendar/{}", input.calendar_id),
-                StatusCode::OK,
-            )
+            .get(format!("user/calendar/{}", calendar_id), StatusCode::OK)
             .await
     }
 
@@ -188,14 +181,13 @@ impl CalendarClient {
 
     pub async fn get_google(
         &self,
-        user_id: ID,
-        min_access_role: GoogleCalendarAccessRole,
+        input: GetGoogleCalendars,
     ) -> APIResponse<get_google_calendars::APIResponse> {
         self.base
             .get(
                 format!(
                     "user/{:?}/calendar/provider/google?minAccessRole={:?}",
-                    user_id, min_access_role
+                    input.user_id, input.min_access_role
                 ),
                 StatusCode::OK,
             )
@@ -204,14 +196,13 @@ impl CalendarClient {
 
     pub async fn get_outlook(
         &self,
-        user_id: ID,
-        min_access_role: OutlookCalendarAccessRole,
+        input: GetOutlookCalendars,
     ) -> APIResponse<get_outlook_calendars::APIResponse> {
         self.base
             .get(
                 format!(
                     "user/{:?}/calendar/provider/outlook?minAccessRole={:?}",
-                    user_id, min_access_role
+                    input.user_id, input.min_access_role
                 ),
                 StatusCode::OK,
             )

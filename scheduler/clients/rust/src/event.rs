@@ -3,6 +3,7 @@ use crate::{CalendarEventReminder, RRuleOptions, ID};
 use nettu_scheduler_api_structs::*;
 use nettu_scheduler_domain::Metadata;
 use reqwest::StatusCode;
+use serde::Serialize;
 use std::sync::Arc;
 
 #[derive(Clone)]
@@ -10,20 +11,29 @@ pub struct CalendarEventClient {
     base: Arc<BaseClient>,
 }
 
-pub type CreateEventInput = create_event::RequestBody;
-
-pub struct GetEventInput {
-    pub event_id: ID,
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateEventInput {
+    pub user_id: ID,
+    pub calendar_id: ID,
+    pub start_ts: i64,
+    pub duration: i64,
+    #[serde(default)]
+    pub busy: Option<bool>,
+    #[serde(default)]
+    pub recurrence: Option<RRuleOptions>,
+    #[serde(default)]
+    pub reminders: Vec<CalendarEventReminder>,
+    #[serde(default)]
+    pub service_id: Option<ID>,
+    #[serde(default)]
+    pub metadata: Option<Metadata>,
 }
 
 pub struct GetEventsInstancesInput {
     pub event_id: ID,
     pub start_ts: i64,
     pub end_ts: i64,
-}
-
-pub struct DeleteEventInput {
-    pub event_id: ID,
 }
 
 pub struct UpdateEventInput {
@@ -43,15 +53,15 @@ impl CalendarEventClient {
         Self { base }
     }
 
-    pub async fn delete(&self, input: DeleteEventInput) -> APIResponse<delete_event::APIResponse> {
+    pub async fn delete(&self, event_id: ID) -> APIResponse<delete_event::APIResponse> {
         self.base
-            .delete(format!("user/events/{}", input.event_id), StatusCode::OK)
+            .delete(format!("user/events/{}", event_id), StatusCode::OK)
             .await
     }
 
-    pub async fn get(&self, input: GetEventInput) -> APIResponse<get_event::APIResponse> {
+    pub async fn get(&self, event_id: ID) -> APIResponse<get_event::APIResponse> {
         self.base
-            .get(format!("user/events/{}", input.event_id), StatusCode::OK)
+            .get(format!("user/events/{}", event_id), StatusCode::OK)
             .await
     }
 
@@ -70,14 +80,22 @@ impl CalendarEventClient {
             .await
     }
 
-    pub async fn create(
-        &self,
-        user_id: ID,
-        input: CreateEventInput,
-    ) -> APIResponse<create_event::APIResponse> {
+    pub async fn create(&self, input: CreateEventInput) -> APIResponse<create_event::APIResponse> {
+        let user_id = input.user_id.clone();
+        let body = create_event::RequestBody {
+            calendar_id: input.calendar_id,
+            start_ts: input.start_ts,
+            duration: input.duration,
+            busy: input.busy,
+            recurrence: input.recurrence,
+            reminders: input.reminders,
+            service_id: input.service_id,
+            metadata: input.metadata,
+        };
+
         self.base
             .post(
-                input,
+                body,
                 format!("user/{}/events", user_id),
                 StatusCode::CREATED,
             )

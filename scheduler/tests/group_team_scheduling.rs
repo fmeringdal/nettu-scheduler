@@ -6,7 +6,7 @@ use helpers::utils::{assert_equal_user_lists, format_datetime};
 use nettu_scheduler_domain::{BusyCalendar, ServiceMultiPersonOptions, TimePlan, ID};
 use nettu_scheduler_sdk::{
     AddBusyCalendar, AddServiceUserInput, Calendar, CreateBookingIntendInput, CreateCalendarInput,
-    CreateEventInput, CreateScheduleInput, CreateServiceInput, CreateUserInput, GetEventInput,
+    CreateEventInput, CreateScheduleInput, CreateServiceInput, CreateUserInput,
     GetServiceBookingSlotsInput, NettuSDK, UpdateServiceInput, User,
 };
 
@@ -164,6 +164,7 @@ async fn test_group_team_scheduling() {
             assert_eq!(booking_intend.create_event_for_hosts, true);
             for (host, calendar) in hosts_with_calendar {
                 let service_event = CreateEventInput {
+                    user_id: host.id.clone(),
                     busy: Some(true),
                     calendar_id: calendar.id.clone(),
                     duration,
@@ -175,7 +176,7 @@ async fn test_group_team_scheduling() {
                 };
                 admin_client
                     .event
-                    .create(host.id.clone(), service_event)
+                    .create(service_event)
                     .await
                     .expect("To create service event");
             }
@@ -475,6 +476,7 @@ async fn test_group_team_scheduling_increase_max_count() {
         );
         assert_eq!(booking_intend.create_event_for_hosts, true);
         let service_event = CreateEventInput {
+            user_id: host.id.clone(),
             busy: Some(true),
             calendar_id: busy_calendar.id.clone(),
             duration,
@@ -486,7 +488,7 @@ async fn test_group_team_scheduling_increase_max_count() {
         };
         let service_event = admin_client
             .event
-            .create(host.id.clone(), service_event)
+            .create(service_event)
             .await
             .expect("To create service event")
             .event;
@@ -507,10 +509,11 @@ async fn test_group_team_scheduling_increase_max_count() {
             .expect("To update service");
 
         // The current service event be deleted
-        let input = GetEventInput {
-            event_id: service_event.id.clone(),
-        };
-        assert!(admin_client.event.get(input).await.is_err());
+        assert!(admin_client
+            .event
+            .get(service_event.id.clone())
+            .await
+            .is_err());
 
         for _ in 0..booking_spots_inc - 1 {
             let input = CreateBookingIntendInput {
@@ -884,6 +887,7 @@ async fn test_group_team_scheduling_decrease_max_count() {
         );
         assert_eq!(booking_intend.create_event_for_hosts, true);
         let service_event = CreateEventInput {
+            user_id: host.id.clone(),
             busy: Some(true),
             calendar_id: busy_calendar.id.clone(),
             duration,
@@ -895,7 +899,7 @@ async fn test_group_team_scheduling_decrease_max_count() {
         };
         let service_event = admin_client
             .event
-            .create(host.id.clone(), service_event)
+            .create(service_event)
             .await
             .expect("To create service event")
             .event;
@@ -916,10 +920,11 @@ async fn test_group_team_scheduling_decrease_max_count() {
             .expect("To update service");
 
         // The current service event should still be there
-        let input = GetEventInput {
-            event_id: service_event.id.clone(),
-        };
-        assert!(admin_client.event.get(input).await.is_ok());
+        assert!(admin_client
+            .event
+            .get(service_event.id.clone())
+            .await
+            .is_ok());
         let input = CreateBookingIntendInput {
             service_id: service.id.clone(),
             host_user_ids: None,
@@ -1081,6 +1086,7 @@ async fn test_combination_of_services() {
 
     // And then create service event which is not busy
     let service_event = CreateEventInput {
+        user_id: host.id.clone(),
         busy: Some(false),
         calendar_id: busy_calendar.id.clone(),
         duration,
@@ -1092,7 +1098,7 @@ async fn test_combination_of_services() {
     };
     admin_client
         .event
-        .create(host.id.clone(), service_event)
+        .create(service_event)
         .await
         .expect("To create service event");
 

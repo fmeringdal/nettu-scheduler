@@ -147,6 +147,7 @@ async fn test_collective_team_scheduling() {
 
         for (host, calendar) in hosts_with_calendar {
             let service_event = CreateEventInput {
+                user_id: host.id.clone(),
                 busy: Some(true),
                 calendar_id: calendar.id.clone(),
                 duration,
@@ -158,7 +159,7 @@ async fn test_collective_team_scheduling() {
             };
             admin_client
                 .event
-                .create(host.id.clone(), service_event)
+                .create(service_event)
                 .await
                 .expect("To create service event");
         }

@@ -13,13 +13,11 @@ pub(crate) use base::BaseClient;
 pub use base::{APIError, APIErrorVariant, APIResponse};
 use calendar::CalendarClient;
 pub use calendar::{
-    CreateCalendarInput, DeleteCalendarInput, GetCalendarEventsInput, GetCalendarInput,
+    CreateCalendarInput, GetCalendarEventsInput, GetGoogleCalendars, GetOutlookCalendars,
     StopCalendarSyncInput, SyncCalendarInput, UpdateCalendarInput,
 };
 use event::CalendarEventClient;
-pub use event::{
-    CreateEventInput, DeleteEventInput, GetEventInput, GetEventsInstancesInput, UpdateEventInput,
-};
+pub use event::{CreateEventInput, GetEventsInstancesInput, UpdateEventInput};
 pub use nettu_scheduler_api_structs::dtos::*;
 pub use nettu_scheduler_api_structs::send_event_reminders::AccountRemindersDTO as AccountReminders;
 pub use nettu_scheduler_domain::{
@@ -39,7 +37,9 @@ pub use shared::{KVMetadata, MetadataFindInput};
 use status::StatusClient;
 use std::sync::Arc;
 use user::UserClient;
-pub use user::{CreateUserInput, GetUserFreeBusyInput, UpdateUserInput};
+pub use user::{
+    CreateUserInput, GetUserFreeBusyInput, OAuthInput, RemoveUserIntegrationInput, UpdateUserInput,
+};
 
 // Domain
 pub use nettu_scheduler_api_structs::dtos::AccountDTO as Account;

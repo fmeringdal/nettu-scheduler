@@ -16,6 +16,7 @@ pub struct UpdateUserInput {
 pub type CreateUserInput = create_user::RequestBody;
 
 pub struct GetUserFreeBusyInput {
+    pub user_id: ID,
     pub start_ts: i64,
     pub end_ts: i64,
     pub calendar_ids: Option<Vec<ID>>,
@@ -35,6 +36,17 @@ impl From<GetUserFreeBusyInput> for String {
 
         query
     }
+}
+
+pub struct OAuthInput {
+    pub user_id: ID,
+    pub code: String,
+    pub provider: IntegrationProvider,
+}
+
+pub struct RemoveUserIntegrationInput {
+    pub user_id: ID,
+    pub provider: IntegrationProvider,
 }
 
 impl UserClient {
@@ -71,10 +83,10 @@ impl UserClient {
 
     pub async fn free_busy(
         &self,
-        user_id: ID,
-        req: GetUserFreeBusyInput,
+        input: GetUserFreeBusyInput,
     ) -> APIResponse<get_user_freebusy::APIResponse> {
-        let query: String = req.into();
+        let user_id = input.user_id.clone();
+        let query: String = input.into();
         self.base
             .get(
                 format!("user/{}/freebusy{}", user_id.to_string(), query),
@@ -83,13 +95,12 @@ impl UserClient {
             .await
     }
 
-    pub async fn oauth(
-        &self,
-        user_id: ID,
-        code: String,
-        provider: IntegrationProvider,
-    ) -> APIResponse<oauth_integration::APIResponse> {
-        let body = oauth_integration::RequestBody { code, provider };
+    pub async fn oauth(&self, input: OAuthInput) -> APIResponse<oauth_integration::APIResponse> {
+        let user_id = input.user_id.clone();
+        let body = oauth_integration::RequestBody {
+            code: input.code,
+            provider: input.provider,
+        };
         self.base
             .post(
                 body,
@@ -101,13 +112,12 @@ impl UserClient {
 
     pub async fn remove_integration(
         &self,
-        user_id: ID,
-        provider: IntegrationProvider,
+        input: RemoveUserIntegrationInput,
     ) -> APIResponse<remove_integration::APIResponse> {
-        let provider: String = provider.into();
+        let provider: String = input.provider.clone().into();
         self.base
             .delete(
-                format!("user/{}/oauth/{}", user_id.to_string(), provider),
+                format!("user/{}/oauth/{}", input.user_id.to_string(), provider),
                 StatusCode::OK,
             )
             .await
