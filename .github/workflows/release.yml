@@ -26,46 +26,41 @@ jobs:
     # if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Set env
-        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
-      - name: Test
+        run: echo "VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            scheduler/target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: fmeringdal
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Run migrations
         run: |
-          echo "before"
-          echo $RELEASE_VERSION
-          echo "after"
-          echo ${{ env.RELEASE_VERSION }}
-          echo "last"
-      # - name: Checkout
-      #   uses: actions/checkout@v2
+          cd scheduler
+          cargo install sqlx-cli --no-default-features --features postgres || true
+          (cd crates/infra && sqlx migrate run)
 
-      # - uses: actions/cache@v2
-      #   with:
-      #     path: |
-      #       ~/.cargo/bin/
-      #       ~/.cargo/registry/index/
-      #       ~/.cargo/registry/cache/
-      #       ~/.cargo/git/db/
-      #       scheduler/target/
-      #     key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-
-      # - name: Set up QEMU
-      #   uses: docker/setup-qemu-action@v1
-      # - name: Set up Docker Buildx
-      #   uses: docker/setup-buildx-action@v1
-      # - name: Login to DockerHub
-      #   uses: docker/login-action@v1
-      #   with:
-      #     username: fmeringdal
-      #     password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      # - name: Run migrations
-      #   run: |
-      #     cd scheduler
-      #     cargo install sqlx-cli --no-default-features --features postgres || true
-      #     (cd crates/infra && sqlx migrate run)
-
-      # - name: Build and push
-      #   uses: docker/build-push-action@v2
-      #   with:
-      #     context: ./scheduler
-      #     push: true
-      #     tags: fmeringdal/nettu-scheduler:latest
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: ./scheduler
+          push: true
+          tags: |
+            # fmeringdal/nettu-scheduler:latest
+            fmeringdal/nettu-scheduler:$VERSION
