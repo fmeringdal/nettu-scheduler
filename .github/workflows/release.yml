@@ -94,12 +94,6 @@ jobs:
             scheduler/target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Run migrations
-        run: |
-          cd scheduler
-          cargo install sqlx-cli --no-default-features --features postgres || true
-          (cd crates/infra && sqlx migrate run)
-
       - name: Set version numbers
         run: |
           cd scheduler
@@ -107,20 +101,19 @@ jobs:
           cargo install cargo-bump
 
           cd crates/utils
-          cargo bump $VERSION
+          sed -i "s/\(version *= *\).*/\1\"$VERSION\"/" ./Cargo.toml
           echo "utils toml"
           cat Cargo.toml
           cd ../../
 
           cd crates/domain
-          cargo bump $VERSION
+          sed -i '' "s/\(version *= *\).*/\1\"$VERSION\"/" ./Cargo.toml
           cargo update -p nettu_scheduler_utils --precise $VERSION
           echo "domain toml"
           cat Cargo.toml
           cd ../../
 
           cd crates/api_structs
-          cargo bump $VERSION
           cargo update -p nettu_scheduler_domain --precise $VERSION
           echo "api structs toml"
           cat Cargo.toml
@@ -132,3 +125,9 @@ jobs:
           cargo bump $VERSION
           echo "sdk toml"
           cat Cargo.toml
+
+      - name: Run migrations
+        run: |
+          cd scheduler
+          cargo install sqlx-cli --no-default-features --features postgres || true
+          (cd crates/infra && sqlx migrate run)
