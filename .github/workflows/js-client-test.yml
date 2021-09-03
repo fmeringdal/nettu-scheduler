@@ -36,7 +36,8 @@ jobs:
           export CREATE_ACCOUNT_SECRET_CODE=opqI5r3e7v1z2h3P
           export RUST_LOG=error,tracing=info
 
-          cargo run --bin nettu_scheduler &
+          cargo run --bin nettu_scheduler
+
           sleep 10
 
       - name: Run JS Client tests
