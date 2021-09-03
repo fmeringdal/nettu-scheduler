@@ -94,24 +94,24 @@ jobs:
             scheduler/target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
+      - name: Run migrations
+        run: |
+          cd scheduler
+          cargo install sqlx-cli --no-default-features --features postgres || true
+          (cd crates/infra && sqlx migrate run)
+
       - name: Set version numbers
         run: |
           cd scheduler
 
           cd crates/utils
           sed -i "0,/\(version *= *\).*/{s/\(version *= *\).*/\1\"$VERSION\"/}" ./Cargo.toml
-          echo "Utils ########################"
-          cat ./Cargo.toml
-          echo "Utils done"
           cd ../../
 
           cd crates/domain
           sed -i "0,/\(version *= *\).*/{s/\(version *= *\).*/\1\"$VERSION\"/}" ./Cargo.toml
           # cargo update -p nettu_scheduler_utils --precise $VERSION
           sed -i "s/path = \"..\/utils\", version = \"*.*.*\"/path = \"..\/utils\", version = \"$VERSION\"/" ./Cargo.toml
-          echo "Domain ########################"
-          cat ./Cargo.toml
-          echo "Domain done"
           cd ../../
 
           cd crates/api_structs
@@ -129,9 +129,8 @@ jobs:
           cd ../../
 
           cargo check --all
-
-      - name: Run migrations
-        run: |
-          cd scheduler
-          cargo install sqlx-cli --no-default-features --features postgres || true
-          (cd crates/infra && sqlx migrate run)
+      - name: Commit & Push version changes
+        uses: actions-js/push@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: testing-v
