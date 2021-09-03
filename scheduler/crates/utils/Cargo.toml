@@ -2,7 +2,7 @@
 name = "nettu_scheduler_utils"
 description = "Nettu scheduler utils"
 license = "MIT"
-version = "0.0.3"
+version = "0.0.1"
 authors = ["Fredrik Meringdal"]
 edition = "2018"
 

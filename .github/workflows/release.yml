@@ -98,10 +98,8 @@ jobs:
         run: |
           cd scheduler
 
-          cargo install cargo-bump
-
           cd crates/utils
-          sed -i "s/\(version *= *\).*/\1\"$VERSION\"/" ./Cargo.toml
+          sed -i '' "s/\(version *= *\).*/\1\"$VERSION\"/" ./Cargo.toml
           echo "utils toml"
           cat Cargo.toml
           cd ../../
