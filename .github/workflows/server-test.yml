@@ -67,11 +67,11 @@ jobs:
           cargo install cargo-udeps --locked
           cargo +nightly udeps --all-targets
 
-      - name: Outdated dependencies
-        run: |
-          cd scheduler
-          # cargo outdated --exit-code 1 --workspace
-          cargo outdated --workspace
+      # - name: Outdated dependencies
+      #   run: |
+      #     cd scheduler
+      #     # cargo outdated --exit-code 1 --workspace
+      #     cargo outdated --workspace
 
       - name: Run server tests
         run: |
