@@ -70,7 +70,7 @@ impl CalendarClient {
         input: UpdateCalendarInput,
     ) -> APIResponse<update_calendar::APIResponse> {
         let settings = update_calendar::CalendarSettings {
-            timezone: input.timezone.clone(),
+            timezone: input.timezone,
             week_start: input.week_start,
         };
         let body = update_calendar::RequestBody {
@@ -130,7 +130,7 @@ impl CalendarClient {
         input: CreateCalendarInput,
     ) -> APIResponse<create_calendar::APIResponse> {
         let body = create_calendar::RequestBody {
-            timezone: input.timezone.clone(),
+            timezone: input.timezone,
             week_start: input.week_start,
             metadata: input.metadata,
         };

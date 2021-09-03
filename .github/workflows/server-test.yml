@@ -35,7 +35,7 @@ jobs:
             scheduler/target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Run tests
+      - name: Run migrations
         run: |
           cd scheduler
 
@@ -43,4 +43,27 @@ jobs:
           cargo install sqlx-cli --no-default-features --features postgres || true
           (cd crates/infra && sqlx migrate run)
 
+      - name: Formatting
+        run: |
+          cd scheduler
+          cargo fmt --all -- --check
+
+      - name: Clippy
+        run: |
+          cd scheduler
+          cargo clippy --all -- --deny "warnings"
+
+      - name: Unused dependencies
+        run: |
+          cd scheduler
+          cargo +nightly udeps --all-targets
+
+      - name: Outdated dependencies
+        run: |
+          cd scheduler
+          cargo outdated --exit-code 1 --workspace
+
+      - name: Run server tests
+        run: |
+          cd scheduler
           cargo test --all
