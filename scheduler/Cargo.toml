@@ -1,6 +1,6 @@
 [package]
 name = "nettu_scheduler"
-version = "5.6.7"
+version = "0.1.0"
 authors = ["Fredrik Meringdal"]
 edition = "2018"
 
