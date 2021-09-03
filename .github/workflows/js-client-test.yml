@@ -38,8 +38,9 @@ jobs:
         with:
           node-version: "14"
           cache: "npm"
+          cache-dependency-path: scheduler/clients/javascript/package-lock.json
 
-      - name: Start server
+      - name: Run JS Client tests
         run: |
           cd scheduler/clients/javascript
 
