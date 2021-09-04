@@ -12,7 +12,8 @@ on:
 jobs:
   docker-release:
     runs-on: ubuntu-latest
-    if: ${{ github.ref == 'refs/heads/master' }}
+    if: github.ref == 'refs/heads/master'
+    # if: ${{ github.ref == 'refs/heads/master' }}
     services:
       postgres:
         image: postgres:13

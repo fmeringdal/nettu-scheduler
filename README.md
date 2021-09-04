@@ -4,7 +4,7 @@
 
 # Nettu scheduler
 [![MIT licensed](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Build status](https://github.com/fmeringdal/nettu-scheduler/actions/workflows/main.yml/badge.svg)](https://github.com/fmeringdal/nettu-scheduler/actions/workflows/main.yml/badge.svg)
+[![Build status](https://github.com/fmeringdal/nettu-scheduler/actions/workflows/release.yml.yml/badge.svg)](https://github.com/fmeringdal/nettu-scheduler/actions/workflows/release.yml.yml/badge.svg)
 [![codecov](https://codecov.io/gh/fmeringdal/nettu-scheduler/branch/master/graph/badge.svg?token=l5z2mzzdHu)](https://codecov.io/gh/fmeringdal/nettu-scheduler)
 
 ## Overview
