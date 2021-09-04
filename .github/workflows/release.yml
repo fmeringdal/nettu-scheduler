@@ -29,7 +29,7 @@ jobs:
         run: |
           echo "VERSION=${GITHUB_REF#refs/v*/}" >> $GITHUB_ENV
           echo "VERSION2=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
-          echo "VERSION3=${GITHUB_REF#refs/*/}" 
+          VERSION3=${GITHUB_REF#refs/*/} 
           echo "VERSION3=${VERSION3:1}" >> $GITHUB_ENV
       - name: Echo env
         run: |
