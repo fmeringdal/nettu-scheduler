@@ -25,18 +25,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Check git master branch
-        run: |
-          HEAD="$(cat .git/HEAD)"
-          MASTER="$(cat .git/refs/heads/master)"
-          echo "Head ref is $HEAD"
-          echo "Master ref is $MASTER"
-          if [ "$HEAD" = "$MASTER" ]; then
-              echo "On master branch."
-          else
-              echo "Not on master branch. Aborting."
-              exit 1
-          fi
       - name: Set version env
         run: |
           # v1.0.0 --> 1.0.0
@@ -94,13 +82,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Check git master branch
-        run: |
-          BRANCH="$(git rev-parse --abbrev-ref HEAD)"
-          if [[ "$BRANCH" != "master" ]]; then
-            echo "This is not the master branch. Aborting.";
-            exit 1;
-          fi
       - name: Set version env
         run: |
           # v1.0.0 --> 1.0.0
@@ -225,13 +206,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Check git master branch
-        run: |
-          BRANCH="$(git rev-parse --abbrev-ref HEAD)"
-          if [[ "$BRANCH" != "master" ]]; then
-            echo "This is not the master branch. Aborting.";
-            exit 1;
-          fi
       - name: Set version env
         run: |
           # v1.0.0 --> 1.0.0
