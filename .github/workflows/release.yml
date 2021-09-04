@@ -214,6 +214,7 @@ jobs:
       - name: Publish package
         run: |
           cd scheduler/clients/javascript
+          echo "//registry.npmjs.org/:_authToken=$NODE_AUTH_TOKEN" > ~/.npmrc
           npm run deploy
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
