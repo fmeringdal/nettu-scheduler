@@ -23,6 +23,8 @@ jobs:
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost/nettuscheduler
     steps:
+      - name: Checkout
+        uses: actions/checkout@v2
       - name: Check git master branch
         run: |
           BRANCH="$(git rev-parse --abbrev-ref HEAD)"
@@ -35,8 +37,6 @@ jobs:
           # v1.0.0 --> 1.0.0
           VERSION=${GITHUB_REF#refs/*/} 
           echo "VERSION=${VERSION:1}" >> $GITHUB_ENV
-      - name: Checkout
-        uses: actions/checkout@v2
 
       - uses: actions/cache@v2
         with:
@@ -87,6 +87,8 @@ jobs:
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost/nettuscheduler
     steps:
+      - name: Checkout
+        uses: actions/checkout@v2
       - name: Check git master branch
         run: |
           BRANCH="$(git rev-parse --abbrev-ref HEAD)"
@@ -105,8 +107,6 @@ jobs:
           echo "sleeping $duration seconds ..."
           sleep $duration
           echo "sleeping $duration seconds ... DONE"
-      - name: Checkout
-        uses: actions/checkout@v2
 
       - uses: actions/cache@v2
         with:
@@ -218,6 +218,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: docker-release
     steps:
+      - name: Checkout
+        uses: actions/checkout@v2
       - name: Check git master branch
         run: |
           BRANCH="$(git rev-parse --abbrev-ref HEAD)"
@@ -230,9 +232,6 @@ jobs:
           # v1.0.0 --> 1.0.0
           VERSION=${GITHUB_REF#refs/*/} 
           echo "VERSION=${VERSION:1}" >> $GITHUB_ENV
-      - name: Checkout
-        uses: actions/checkout@v2
-
       - name: Setup Node.js 14
         uses: actions/setup-node@v2
         with:
