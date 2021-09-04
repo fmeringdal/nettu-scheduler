@@ -2,8 +2,6 @@ name: Release
 
 on:
   push:
-    branches:
-      - clients
     # Sequence of patterns matched against refs/tags
     # Unfortunately, regex are not fully supported in YAML files, so we cannot
     # use the officially recommended regex to verify the semantic versioning tag
@@ -14,6 +12,7 @@ on:
 jobs:
   docker-release:
     runs-on: ubuntu-latest
+    if: ${{ github.ref == 'refs/heads/master' }}
     services:
       postgres:
         image: postgres:13
@@ -25,17 +24,11 @@ jobs:
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost/nettuscheduler
     steps:
-      - name: Set env
+      - name: Set version env
         run: |
-          echo "VERSION=${GITHUB_REF#refs/v*/}" >> $GITHUB_ENV
-          echo "VERSION2=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
-          VERSION3=${GITHUB_REF#refs/*/} 
-          echo "VERSION3=${VERSION3:1}" >> $GITHUB_ENV
-      - name: Echo env
-        run: |
-          echo "Version is $VERSION"
-          echo "Version2 is $VERSION2"
-          echo "Version3 is $VERSION3"
+          # v1.0.0 --> 1.0.0
+          VERSION=${GITHUB_REF#refs/*/} 
+          echo "VERSION=${VERSION:1}" >> $GITHUB_ENV
       - name: Checkout
         uses: actions/checkout@v2
 
@@ -76,6 +69,7 @@ jobs:
 
   rust-client-release:
     runs-on: ubuntu-latest
+    if: ${{ github.ref == 'refs/heads/master' }}
     needs: javascript-client-release
     services:
       postgres:
@@ -88,8 +82,11 @@ jobs:
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost/nettuscheduler
     steps:
-      - name: Set env
-        run: echo "VERSION=${GITHUB_REF#refs/v*/}" >> $GITHUB_ENV
+      - name: Set version env
+        run: |
+          # v1.0.0 --> 1.0.0
+          VERSION=${GITHUB_REF#refs/*/} 
+          echo "VERSION=${VERSION:1}" >> $GITHUB_ENV
       - name: Wait for remote to become up to date
         run: |
           duration=15
@@ -207,10 +204,14 @@ jobs:
 
   javascript-client-release:
     runs-on: ubuntu-latest
+    if: ${{ github.ref == 'refs/heads/master' }}
     needs: docker-release
     steps:
-      - name: Set env
-        run: echo "VERSION=${GITHUB_REF#refs/v*/}" >> $GITHUB_ENV
+      - name: Set version env
+        run: |
+          # v1.0.0 --> 1.0.0
+          VERSION=${GITHUB_REF#refs/*/} 
+          echo "VERSION=${VERSION:1}" >> $GITHUB_ENV
       - name: Checkout
         uses: actions/checkout@v2
 
