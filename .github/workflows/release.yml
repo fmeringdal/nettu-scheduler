@@ -12,8 +12,6 @@ on:
 jobs:
   docker-release:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master'
-    # if: ${{ github.ref == 'refs/heads/master' }}
     services:
       postgres:
         image: postgres:13
@@ -25,6 +23,13 @@ jobs:
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost/nettuscheduler
     steps:
+      - name: Check git master branch
+        run: |
+          BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+          if [[ "$BRANCH" != "master" ]]; then
+            echo "This is not the master branch. Aborting.";
+            exit 1;
+          fi
       - name: Set version env
         run: |
           # v1.0.0 --> 1.0.0
@@ -70,7 +75,6 @@ jobs:
 
   rust-client-release:
     runs-on: ubuntu-latest
-    if: ${{ github.ref == 'refs/heads/master' }}
     needs: javascript-client-release
     services:
       postgres:
@@ -83,6 +87,13 @@ jobs:
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost/nettuscheduler
     steps:
+      - name: Check git master branch
+        run: |
+          BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+          if [[ "$BRANCH" != "master" ]]; then
+            echo "This is not the master branch. Aborting.";
+            exit 1;
+          fi
       - name: Set version env
         run: |
           # v1.0.0 --> 1.0.0
@@ -205,9 +216,15 @@ jobs:
 
   javascript-client-release:
     runs-on: ubuntu-latest
-    if: ${{ github.ref == 'refs/heads/master' }}
     needs: docker-release
     steps:
+      - name: Check git master branch
+        run: |
+          BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+          if [[ "$BRANCH" != "master" ]]; then
+            echo "This is not the master branch. Aborting.";
+            exit 1;
+          fi
       - name: Set version env
         run: |
           # v1.0.0 --> 1.0.0
