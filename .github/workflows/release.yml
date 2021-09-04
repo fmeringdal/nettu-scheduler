@@ -185,3 +185,39 @@ jobs:
           branch: testing-v
           message: |
             Autopublish: Update cargo workspace deps on release
+
+  javascript-client-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set env
+        run: echo "VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Node.js 14
+        uses: actions/setup-node@v2
+        with:
+          node-version: 14
+          cache: "npm"
+          cache-dependency-path: scheduler/clients/javascript/package-lock.json
+
+      - name: Install deps
+        run: |
+          npm install
+
+      - name: Set version number
+        run: |
+          npm version $VERSION
+
+      - name: Publish package
+        run: npm run deploy
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
+
+      - name: Commit & Push version changes
+        uses: actions-js/push@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: testing-v
+          message: |
+            Autopublish: Update cargo workspace deps on release
