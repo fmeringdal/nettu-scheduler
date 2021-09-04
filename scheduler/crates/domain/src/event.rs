@@ -79,7 +79,7 @@ impl CalendarEvent {
                     || rrule_options.until.is_some()
                 {
                     let expand = self.expand(None, calendar_settings);
-                    self.end_ts = expand.last().unwrap().end_ts;
+                    self.end_ts = expand.last().map(|l| l.end_ts).unwrap_or(0);
                 } else {
                     self.end_ts = Self::get_max_timestamp();
                 }

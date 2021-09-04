@@ -169,6 +169,7 @@ async fn test_round_robin_scheduling_simple_test() {
 
                 // Create service event
                 let service_event = CreateEventInput {
+                    user_id: selected_host.id.clone(),
                     busy: Some(true),
                     calendar_id: busy_calendar.id.clone(),
                     duration,
@@ -180,7 +181,7 @@ async fn test_round_robin_scheduling_simple_test() {
                 };
                 admin_client
                     .event
-                    .create(selected_host.id.clone(), service_event)
+                    .create(service_event)
                     .await
                     .expect("To create service event");
             }
@@ -280,6 +281,7 @@ async fn test_round_robin_equal_distribution_scheduling() {
             for _ in 0..*upcoming_service_events {
                 // Create service event
                 let service_event = CreateEventInput {
+                    user_id: host.id.clone(),
                     busy: Some(true),
                     calendar_id: busy_calendar.id.clone(),
                     duration,
@@ -291,7 +293,7 @@ async fn test_round_robin_equal_distribution_scheduling() {
                 };
                 admin_client
                     .event
-                    .create(host.id.clone(), service_event)
+                    .create(service_event)
                     .await
                     .expect("To create service event");
             }
@@ -334,6 +336,7 @@ async fn test_round_robin_equal_distribution_scheduling() {
                 .find(|(h, _)| h.id == booking_intend.selected_hosts[0].id)
                 .expect("To find selected host");
             let service_event = CreateEventInput {
+                user_id: host.id.clone(),
                 busy: Some(true),
                 calendar_id: busy_calendar.id.clone(),
                 duration,
@@ -345,7 +348,7 @@ async fn test_round_robin_equal_distribution_scheduling() {
             };
             admin_client
                 .event
-                .create(host.id.clone(), service_event)
+                .create(service_event)
                 .await
                 .expect("To create service event");
         }
@@ -431,6 +434,7 @@ async fn test_round_robin_availability_scheduling() {
         {
             // Create service event
             let service_event = CreateEventInput {
+                user_id: host.id.clone(),
                 busy: Some(true),
                 calendar_id: busy_calendar.id.clone(),
                 duration,
@@ -442,7 +446,7 @@ async fn test_round_robin_availability_scheduling() {
             };
             let event_id = admin_client
                 .event
-                .create(host.id.clone(), service_event)
+                .create(service_event)
                 .await
                 .expect("To create service event")
                 .event
@@ -503,6 +507,7 @@ async fn test_round_robin_availability_scheduling() {
                 .expect("To find selected host");
 
             let service_event = CreateEventInput {
+                user_id: host.id.clone(),
                 busy: Some(true),
                 calendar_id: busy_calendar.id.clone(),
                 duration,
@@ -514,7 +519,7 @@ async fn test_round_robin_availability_scheduling() {
             };
             admin_client
                 .event
-                .create(host.id.clone(), service_event)
+                .create(service_event)
                 .await
                 .expect("To create service event");
         }

@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "module": "CommonJS",
+    "target": "ES5",
+    "declaration": true,
+    "declarationDir": "dist",
+    "outDir": "dist",
+    "strict": true,
+    "alwaysStrict": true,
+    "sourceMap": true,
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "node",
+    "downlevelIteration": true,
+    "lib": [
+      "es2015",
+      "dom",
+      "esnext.asynciterable",
+      "es2017.object",
+    ],
+    "noImplicitAny": true,
+    "resolveJsonModule": true
+  },
+  "include": [
+    "lib/**/*",
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

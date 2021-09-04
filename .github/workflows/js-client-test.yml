@@ -1,0 +1,70 @@
+name: JavaScript client tests
+
+on: [pull_request]
+jobs:
+  test:
+    name: test
+    runs-on: ${{matrix.os}}
+
+    strategy:
+      matrix:
+        os: [ubuntu-20.04, ubuntu-18.04]
+        node-version: [10, 12, 14]
+
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nettuscheduler
+        ports:
+          - 5432:5432
+    env:
+      PORT: 5000
+      DATABASE_URL: postgresql://postgres:postgres@localhost/nettuscheduler
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+          cache-dependency-path: scheduler/clients/javascript/package-lock.json
+
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            scheduler/target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Start server and run JS client tests
+        env:
+          PORT: 5000
+        run: |
+          cd scheduler
+
+          # run the migrations first
+          cargo install sqlx-cli --no-default-features --features postgres || true
+          (cd crates/infra && sqlx migrate run)
+
+          export CREATE_ACCOUNT_SECRET_CODE=opqI5r3e7v1z2h3P
+          export RUST_LOG=error,tracing=info
+
+          cargo build
+          ./target/debug/nettu_scheduler &> output.log &
+          echo "Started server in background"
+
+          sleep 10
+
+      - name: Run JavaScript client tests
+        run: |
+          cd scheduler/clients/javascript
+          npm i -g typescript
+          npm i
+
+          npm run test

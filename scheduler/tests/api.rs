@@ -4,8 +4,7 @@ use helpers::setup::spawn_app;
 use nettu_scheduler_domain::{PEMKey, Weekday};
 use nettu_scheduler_sdk::{
     AddServiceUserInput, CreateCalendarInput, CreateEventInput, CreateScheduleInput,
-    CreateServiceInput, CreateUserInput, DeleteCalendarInput, DeleteEventInput,
-    GetCalendarEventsInput, GetCalendarInput, GetEventInput, GetEventsInstancesInput,
+    CreateServiceInput, CreateUserInput, GetCalendarEventsInput, GetEventsInstancesInput,
     GetServiceBookingSlotsInput, GetUserFreeBusyInput, KVMetadata, MetadataFindInput, NettuSDK,
     RemoveServiceUserInput, UpdateCalendarInput, UpdateEventInput, UpdateScheduleInput,
     UpdateServiceUserInput,
@@ -76,11 +75,9 @@ async fn test_crud_user() {
         start_ts: 0,
         end_ts: 10,
         calendar_ids: None,
+        user_id: res.user.id.clone(),
     };
-    let free_busy_res = admin_client
-        .user
-        .free_busy(res.user.id.clone(), free_busy_req)
-        .await;
+    let free_busy_res = admin_client.user.free_busy(free_busy_req).await;
     assert!(free_busy_res.is_ok());
 
     let metadata = KVMetadata {
@@ -307,9 +304,7 @@ async fn test_crud_calendars() {
 
     let calendar_get_res = admin_client
         .calendar
-        .get(GetCalendarInput {
-            calendar_id: calendar.id.clone(),
-        })
+        .get(calendar.id.clone())
         .await
         .unwrap()
         .calendar;
@@ -345,18 +340,14 @@ async fn test_crud_calendars() {
     // Delete calendar
     assert!(admin_client
         .calendar
-        .delete(DeleteCalendarInput {
-            calendar_id: calendar.id.clone(),
-        })
+        .delete(calendar.id.clone())
         .await
         .is_ok());
 
     // Get now returns 404
     assert!(admin_client
         .calendar
-        .get(GetCalendarInput {
-            calendar_id: calendar.id.clone(),
-        })
+        .get(calendar.id.clone())
         .await
         .is_err());
 }
@@ -392,19 +383,17 @@ async fn test_crud_events() {
 
     let event = admin_client
         .event
-        .create(
-            user.id.clone(),
-            CreateEventInput {
-                calendar_id: calendar.id.clone(),
-                duration: 1000 * 60 * 60,
-                reminders: Vec::new(),
-                busy: None,
-                recurrence: None,
-                service_id: None,
-                start_ts: 0,
-                metadata: None,
-            },
-        )
+        .create(CreateEventInput {
+            user_id: user.id.clone(),
+            calendar_id: calendar.id.clone(),
+            duration: 1000 * 60 * 60,
+            reminders: Vec::new(),
+            busy: None,
+            recurrence: None,
+            service_id: None,
+            start_ts: 0,
+            metadata: None,
+        })
         .await
         .unwrap()
         .event;
@@ -412,9 +401,7 @@ async fn test_crud_events() {
 
     let event = admin_client
         .event
-        .get(GetEventInput {
-            event_id: event.id.clone(),
-        })
+        .get(event.id.clone())
         .await
         .unwrap()
         .event;
@@ -459,21 +446,13 @@ async fn test_crud_events() {
 
     let event = admin_client
         .event
-        .delete(DeleteEventInput {
-            event_id: event.id.clone(),
-        })
+        .delete(event.id.clone())
         .await
         .unwrap()
         .event;
     assert_eq!(event.calendar_id, calendar.id);
 
-    assert!(admin_client
-        .event
-        .get(GetEventInput {
-            event_id: event.id.clone(),
-        })
-        .await
-        .is_err())
+    assert!(admin_client.event.get(event.id.clone()).await.is_err())
 }
 
 #[actix_web::main]

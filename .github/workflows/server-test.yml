@@ -1,0 +1,79 @@
+name: Server test
+
+on: [pull_request]
+jobs:
+  test:
+    name: test
+    runs-on: ${{matrix.os}}
+
+    strategy:
+      matrix:
+        os: [ubuntu-20.04, ubuntu-18.04]
+
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nettuscheduler
+        ports:
+          - 5432:5432
+
+    env:
+      PORT: 5000
+      DATABASE_URL: postgresql://postgres:postgres@localhost/nettuscheduler
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            scheduler/target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run migrations
+        run: |
+          cd scheduler
+
+          # run the migrations first
+          cargo install sqlx-cli --no-default-features --features postgres || true
+          (cd crates/infra && sqlx migrate run)
+
+      - name: Install nighly toolchain
+        run: |
+          rustup default nightly
+          # Go back to stable
+          rustup default stable
+
+      - name: Formatting
+        run: |
+          cd scheduler
+          cargo fmt --all -- --check
+
+      - name: Clippy
+        run: |
+          cd scheduler
+          cargo clippy --all -- --deny "warnings"
+
+      - name: Unused dependencies
+        run: |
+          cd scheduler
+          cargo install cargo-udeps --locked
+          cargo +nightly udeps --all-targets
+
+      # - name: Outdated dependencies
+      #   run: |
+      #     cd scheduler
+      #     # cargo outdated --exit-code 1 --workspace
+      #     cargo outdated --workspace
+
+      - name: Run server tests
+        run: |
+          cd scheduler
+          cargo test --all

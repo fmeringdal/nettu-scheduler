@@ -1,0 +1,35 @@
+{
+  "name": "@nettu/sdk-scheduler",
+  "version": "0.5.3",
+  "description": "The Nettu Scheduler Javascript library provides convenient access to the Nettu Scheudler API from server-side JavaScript applications or web applications",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "node_modules/.bin/tsc --p ./tsconfig.release.json",
+    "deploy": "npm run build && npm publish",
+    "test": "jest tests/ -i --verbose"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fmeringdal/nettu-scheduler-js-client.git"
+  },
+  "contributors": [
+    "Fredrik Meringdal <fredrik@nettu.no>"
+  ],
+  "files": [
+    "dist/"
+  ],
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.21.1"
+  },
+  "devDependencies": {
+    "@types/jest": "^26.0.24",
+    "@types/jsonwebtoken": "^8.5.0",
+    "jest": "^26.6.3",
+    "jsonwebtoken": "^8.5.1",
+    "ts-jest": "^26.4.4",
+    "typescript": "^4.1.3"
+  }
+}
