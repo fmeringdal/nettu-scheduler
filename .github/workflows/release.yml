@@ -1,14 +1,15 @@
-# https://birtony.medium.com/setting-up-automated-release-workflow-with-github-actions-628dbca2446e
 name: Release
 
 on:
   push:
+    branches:
+      - clients
     # Sequence of patterns matched against refs/tags
     # Unfortunately, regex are not fully supported in YAML files, so we cannot
     # use the officially recommended regex to verify the semantic versioning tag
     # https://github.com/semver/semver/blob/master/semver.md#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
     tags:
-      - "[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
   docker-release:
@@ -23,10 +24,11 @@ jobs:
           - 5432:5432
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost/nettuscheduler
-    # if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Set env
-        run: echo "VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+        run: echo "VERSION=${GITHUB_REF#refs/v*/}" >> $GITHUB_ENV
+      - name: Echo env
+        run: echo "Version is $VERSION"
       - name: Checkout
         uses: actions/checkout@v2
 
@@ -61,12 +63,13 @@ jobs:
         with:
           context: ./scheduler
           push: true
-          # fmeringdal/nettu-scheduler:latest
           tags: |
+            fmeringdal/nettu-scheduler:latest
             fmeringdal/nettu-scheduler:${{ env.VERSION }}
 
   rust-client-release:
     runs-on: ubuntu-latest
+    needs: javascript-client-release
     services:
       postgres:
         image: postgres:13
@@ -77,10 +80,15 @@ jobs:
           - 5432:5432
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost/nettuscheduler
-    # if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Set env
-        run: echo "VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+        run: echo "VERSION=${GITHUB_REF#refs/v*/}" >> $GITHUB_ENV
+      - name: Wait for remote to become up to date
+        run: |
+          duration=15
+          echo "sleeping $duration seconds ..."
+          sleep $duration
+          echo "sleeping $duration seconds ... DONE"
       - name: Checkout
         uses: actions/checkout@v2
 
@@ -108,6 +116,10 @@ jobs:
 
       - name: Set version numbers
         run: |
+          # What follows is a lot of search and replace magic for Cargo.toml to update
+          # version number for a crate and its dependenices. It seems like there
+          # is no good tool that can bump version numbers in a cargo workspace yet.
+
           cd scheduler
 
           cd crates/utils
@@ -182,15 +194,16 @@ jobs:
         uses: actions-js/push@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: testing-v
+          branch: master
           message: |
             Autopublish: Update cargo workspace deps on release
 
   javascript-client-release:
     runs-on: ubuntu-latest
+    needs: docker-release
     steps:
       - name: Set env
-        run: echo "VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+        run: echo "VERSION=${GITHUB_REF#refs/v*/}" >> $GITHUB_ENV
       - name: Checkout
         uses: actions/checkout@v2
 
@@ -214,15 +227,15 @@ jobs:
       - name: Publish package
         run: |
           cd scheduler/clients/javascript
-          echo "//registry.npmjs.org/:_authToken=$NODE_AUTH_TOKEN" > ~/.npmrc
+          echo "//registry.npmjs.org/:_authToken=$NPM_PUBLISH_TOKEN" > ~/.npmrc
           npm run deploy
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
+          NPM_PUBLISH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
 
       - name: Commit & Push version changes
         uses: actions-js/push@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: testing-v
+          branch: master
           message: |
             Autopublish: Update cargo workspace deps on release
