@@ -26,9 +26,16 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@localhost/nettuscheduler
     steps:
       - name: Set env
-        run: echo "VERSION=${GITHUB_REF#refs/v*/}" >> $GITHUB_ENV
+        run: |
+          echo "VERSION=${GITHUB_REF#refs/v*/}" >> $GITHUB_ENV
+          echo "VERSION2=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+          echo "VERSION3=${GITHUB_REF#refs/*/}" 
+          echo "VERSION3=${VERSION3:1}" >> $GITHUB_ENV
       - name: Echo env
-        run: echo "Version is $VERSION"
+        run: |
+          echo "Version is $VERSION"
+          echo "Version2 is $VERSION2"
+          echo "Version3 is $VERSION3"
       - name: Checkout
         uses: actions/checkout@v2
 
