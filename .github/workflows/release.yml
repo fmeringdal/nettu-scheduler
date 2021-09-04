@@ -203,14 +203,18 @@ jobs:
 
       - name: Install deps
         run: |
+          cd scheduler/clients/javascript
           npm install
 
       - name: Set version number
         run: |
+          cd scheduler/clients/javascript
           npm version $VERSION
 
       - name: Publish package
-        run: npm run deploy
+        run: |
+          cd scheduler/clients/javascript
+          npm run deploy
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
 
