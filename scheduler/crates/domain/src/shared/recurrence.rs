@@ -25,7 +25,7 @@ pub struct RRuleOptions {
     pub bysetpos: Option<Vec<isize>>,
     pub byweekday: Option<Vec<WeekDay>>,
     pub bymonthday: Option<Vec<isize>>,
-    pub bymonth: Option<Vec<usize>>,
+    pub bymonth: Option<Vec<Month>>,
     pub byyearday: Option<Vec<isize>>,
     pub byweekno: Option<Vec<isize>>,
 }
@@ -116,7 +116,12 @@ impl RRuleOptions {
             freq: freq_convert(&self.freq),
             count,
             dtstart,
-            bymonth: self.bymonth.unwrap_or_default(),
+            bymonth: self
+                .bymonth
+                .unwrap_or_default()
+                .into_iter()
+                .map(|m| m as usize)
+                .collect::<Vec<_>>(),
             bymonthday,
             bynmonthday,
             byweekday,
@@ -215,19 +220,17 @@ impl FromStr for WeekDay {
 
         let e = Malformed(day.to_string());
         match day.len() {
-            d if d != 3 => Err(e),
+            0..=2 => Err(e),
             3 => {
-                let wday = Weekday::from_str(day)
-                    .map_err(|_| Malformed(day.to_string()))?;
+                let wday = Weekday::from_str(day).map_err(|_| Malformed(day.to_string()))?;
                 WeekDay::new(wday).map_err(|_| e)
             }
             _ => {
                 let wday = Weekday::from_str(&day[day.len() - 3..])
                     .map_err(|_| Malformed(day.to_string()))?;
-                let n = match day[0..day.len() - 3].parse::<isize>() {
-                    Ok(n) => n,
-                    Err(_) => return Err(e),
-                };
+                let n = day[0..day.len() - 3]
+                    .parse::<isize>()
+                    .map_err(|_| Malformed(day.to_string()))?;
                 WeekDay::new_nth(wday, n).map_err(|_| e)
             }
         }
@@ -278,39 +281,39 @@ mod test {
     #[test]
     fn parses_valid_weekday_str_correctly() {
         assert_eq!(
-            "mo".parse::<WeekDay>().unwrap(),
+            "mon".parse::<WeekDay>().unwrap(),
             WeekDay::new(Weekday::Mon).unwrap()
         );
         assert_eq!(
-            "su".parse::<WeekDay>().unwrap(),
+            "sun".parse::<WeekDay>().unwrap(),
             WeekDay::new(Weekday::Sun).unwrap()
         );
         assert_eq!(
-            "1mo".parse::<WeekDay>().unwrap(),
+            "1mon".parse::<WeekDay>().unwrap(),
             WeekDay::new_nth(Weekday::Mon, 1).unwrap()
         );
         assert_eq!(
-            "17mo".parse::<WeekDay>().unwrap(),
+            "17mon".parse::<WeekDay>().unwrap(),
             WeekDay::new_nth(Weekday::Mon, 17).unwrap()
         );
         assert_eq!(
-            "170mo".parse::<WeekDay>().unwrap(),
+            "170mon".parse::<WeekDay>().unwrap(),
             WeekDay::new_nth(Weekday::Mon, 170).unwrap()
         );
         assert_eq!(
-            "+2mo".parse::<WeekDay>().unwrap(),
+            "+2mon".parse::<WeekDay>().unwrap(),
             WeekDay::new_nth(Weekday::Mon, 2).unwrap()
         );
         assert_eq!(
-            "+22mo".parse::<WeekDay>().unwrap(),
+            "+22mon".parse::<WeekDay>().unwrap(),
             WeekDay::new_nth(Weekday::Mon, 22).unwrap()
         );
         assert_eq!(
-            "-2mo".parse::<WeekDay>().unwrap(),
+            "-2mon".parse::<WeekDay>().unwrap(),
             WeekDay::new_nth(Weekday::Mon, -2).unwrap()
         );
         assert_eq!(
-            "-22mo".parse::<WeekDay>().unwrap(),
+            "-22mon".parse::<WeekDay>().unwrap(),
             WeekDay::new_nth(Weekday::Mon, -22).unwrap()
         );
     }
@@ -322,13 +325,13 @@ mod test {
         assert!("7".parse::<WeekDay>().is_err());
         assert!("00".parse::<WeekDay>().is_err());
         assert!("-1!?".parse::<WeekDay>().is_err());
-        assert!("-1WED".parse::<WeekDay>().is_err());
-        assert!("-1mon".parse::<WeekDay>().is_err());
-        assert!("mon".parse::<WeekDay>().is_err());
-        assert!("1000mo".parse::<WeekDay>().is_err());
-        assert!("0mo".parse::<WeekDay>().is_err());
-        assert!("000mo".parse::<WeekDay>().is_err());
-        assert!("+0mo".parse::<WeekDay>().is_err());
+        assert!("-1WEDn".parse::<WeekDay>().is_err());
+        assert!("-1mond".parse::<WeekDay>().is_err());
+        assert!("mond".parse::<WeekDay>().is_err());
+        assert!("1000mon".parse::<WeekDay>().is_err());
+        assert!("0mon".parse::<WeekDay>().is_err());
+        assert!("000mon".parse::<WeekDay>().is_err());
+        assert!("+0mon".parse::<WeekDay>().is_err());
     }
 
     #[test]

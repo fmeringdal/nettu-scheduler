@@ -31,5 +31,5 @@ pub use shared::recurrence::{RRuleFrequency, RRuleOptions};
 pub use timespan::TimeSpan;
 pub use user::{IntegrationProvider, User, UserIntegration};
 
-pub use chrono::Weekday;
+pub use chrono::{Month, Weekday};
 pub use chrono_tz::Tz;

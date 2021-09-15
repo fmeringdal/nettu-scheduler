@@ -316,11 +316,11 @@ mod test {
             ..Default::default()
         });
         valid_rrules.push(RRuleOptions {
-            byweekday: Some(vec![WeekDay::new(1).unwrap()]),
+            byweekday: Some(vec![WeekDay::new(Weekday::Tue).unwrap()]),
             ..Default::default()
         });
         valid_rrules.push(RRuleOptions {
-            byweekday: Some(vec![WeekDay::new_nth(1, 1).unwrap()]),
+            byweekday: Some(vec![WeekDay::new_nth(Weekday::Tue, 1).unwrap()]),
             freq: RRuleFrequency::Monthly,
             ..Default::default()
         });
