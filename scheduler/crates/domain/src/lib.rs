@@ -30,6 +30,7 @@ pub use shared::metadata::{Meta, Metadata};
 pub use shared::recurrence::{RRuleFrequency, RRuleOptions};
 pub use timespan::TimeSpan;
 pub use user::{IntegrationProvider, User, UserIntegration};
+pub use WeekDay;
 
 pub use chrono::{Month, Weekday};
 pub use chrono_tz::Tz;
