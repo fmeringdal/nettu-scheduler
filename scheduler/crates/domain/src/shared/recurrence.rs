@@ -16,7 +16,6 @@ pub enum RRuleFrequency {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct RRuleOptions {
     pub freq: RRuleFrequency,
     pub interval: isize,
@@ -165,13 +164,13 @@ pub struct WeekDay {
 }
 
 impl WeekDay {
-    fn create(weekday: Weekday, n: Option<isize>) -> Result<Self, ()> {
+    fn create(weekday: Weekday, n: Option<isize>) -> Option<Self> {
         if let Some(n) = n {
             if !Self::is_valid_n(n) {
-                return Err(());
+                return None;
             }
         }
-        Ok(Self { n, weekday })
+        Some(Self { n, weekday })
     }
 
     pub fn nth(&self) -> Option<isize> {
@@ -181,11 +180,11 @@ impl WeekDay {
         self.weekday
     }
 
-    pub fn new(weekday: Weekday) -> Result<Self, ()> {
+    pub fn new(weekday: Weekday) -> Option<Self> {
         Self::create(weekday, None)
     }
 
-    pub fn new_nth(weekday: Weekday, n: isize) -> Result<Self, ()> {
+    pub fn new_nth(weekday: Weekday, n: isize) -> Option<Self> {
         Self::create(weekday, Some(n))
     }
 
@@ -223,7 +222,7 @@ impl FromStr for WeekDay {
             0..=2 => Err(e),
             3 => {
                 let wday = Weekday::from_str(day).map_err(|_| Malformed(day.to_string()))?;
-                WeekDay::new(wday).map_err(|_| e)
+                WeekDay::new(wday).ok_or(e)
             }
             _ => {
                 let wday = Weekday::from_str(&day[day.len() - 3..])
@@ -231,7 +230,7 @@ impl FromStr for WeekDay {
                 let n = day[0..day.len() - 3]
                     .parse::<isize>()
                     .map_err(|_| Malformed(day.to_string()))?;
-                WeekDay::new_nth(wday, n).map_err(|_| e)
+                WeekDay::new_nth(wday, n).ok_or(e)
             }
         }
     }

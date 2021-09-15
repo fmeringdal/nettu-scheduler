@@ -4,7 +4,6 @@ use nettu_scheduler_domain::{CalendarEventReminder, RRuleOptions, ID};
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
 pub struct CalendarEventResponse {
     pub event: CalendarEventDTO,
 }
@@ -75,7 +74,6 @@ pub mod get_event_instances {
     }
 
     #[derive(Deserialize, Serialize)]
-    #[serde(rename_all = "camelCase")]
     pub struct APIResponse {
         pub event: CalendarEventDTO,
         pub instances: Vec<EventInstance>,
@@ -106,7 +104,6 @@ pub mod get_events_by_meta {
     use super::*;
 
     #[derive(Deserialize)]
-    #[serde(rename_all = "camelCase")]
     pub struct QueryParams {
         pub key: String,
         pub value: String,
@@ -173,7 +170,6 @@ pub mod send_event_reminders {
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
-    #[serde(rename_all = "camelCase")]
     pub struct AccountEventRemindersDTO {
         event: CalendarEventDTO,
         identifier: String,
@@ -194,7 +190,6 @@ pub mod send_event_reminders {
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
-    #[serde(rename_all = "camelCase")]
     pub struct AccountRemindersDTO {
         reminders: Vec<AccountEventRemindersDTO>,
     }

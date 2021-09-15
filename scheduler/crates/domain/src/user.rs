@@ -47,7 +47,6 @@ pub struct UserIntegration {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[serde(rename_all = "camelCase")]
 pub enum IntegrationProvider {
     Google,
     Outlook,

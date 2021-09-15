@@ -3,7 +3,6 @@ use nettu_scheduler_domain::{User, ID};
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
 pub struct UserResponse {
     pub user: UserDTO,
 }
@@ -28,7 +27,6 @@ pub mod create_user {
     use super::*;
 
     #[derive(Debug, Deserialize, Serialize)]
-    #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
         #[serde(default)]
         pub metadata: Option<Metadata>,
@@ -43,7 +41,6 @@ pub mod oauth_integration {
     use super::*;
 
     #[derive(Debug, Deserialize, Serialize)]
-    #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
         pub code: String,
         pub provider: IntegrationProvider,
@@ -74,7 +71,6 @@ pub mod oauth_outlook {
     use super::*;
 
     #[derive(Debug, Deserialize, Serialize)]
-    #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
         pub code: String,
     }
@@ -92,7 +88,6 @@ pub mod update_user {
     use nettu_scheduler_domain::Metadata;
 
     #[derive(Debug, Deserialize, Serialize)]
-    #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
         #[serde(default)]
         pub metadata: Option<Metadata>,
@@ -132,7 +127,6 @@ pub mod get_users_by_meta {
     use super::*;
 
     #[derive(Deserialize)]
-    #[serde(rename_all = "camelCase")]
     pub struct QueryParams {
         pub key: String,
         pub value: String,

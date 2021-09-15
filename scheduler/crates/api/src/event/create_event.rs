@@ -105,6 +105,12 @@ impl From<UseCaseError> for NettuError {
     }
 }
 
+impl From<anyhow::Error> for UseCaseError {
+    fn from(_: anyhow::Error) -> Self {
+        UseCaseError::StorageError
+    }
+}
+
 #[async_trait::async_trait(?Send)]
 impl UseCase for CreateEventUseCase {
     type Response = CalendarEvent;
@@ -150,11 +156,7 @@ impl UseCase for CreateEventUseCase {
             }
         }
 
-        ctx.repos
-            .events
-            .insert(&e)
-            .await
-            .map_err(|_| UseCaseError::StorageError)?;
+        ctx.repos.events.insert(&e).await?;
 
         Ok(e)
     }

@@ -40,7 +40,6 @@ impl CalendarEventDTO {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
 pub struct EventWithInstancesDTO {
     pub event: CalendarEventDTO,
     pub instances: Vec<EventInstance>,

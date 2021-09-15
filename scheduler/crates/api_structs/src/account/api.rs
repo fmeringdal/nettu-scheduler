@@ -3,7 +3,6 @@ use nettu_scheduler_domain::Account;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
 pub struct AccountResponse {
     pub account: AccountDTO,
 }
@@ -20,7 +19,6 @@ pub mod create_account {
     use super::*;
 
     #[derive(Deserialize, Serialize)]
-    #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
         pub code: String,
     }

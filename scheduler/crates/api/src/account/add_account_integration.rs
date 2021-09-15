@@ -27,13 +27,25 @@ pub async fn add_account_integration_controller(
         .map_err(NettuError::from)
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AddAccountIntegrationUseCase {
     pub account: Account,
     pub client_id: String,
     pub client_secret: String,
     pub redirect_uri: String,
     pub provider: IntegrationProvider,
+}
+
+impl From<AddAccountIntegrationUseCase> for AccountIntegration {
+    fn from(e: AddAccountIntegrationUseCase) -> Self {
+        Self {
+            account_id: e.account.id,
+            client_id: e.client_id,
+            client_secret: e.client_secret,
+            redirect_uri: e.redirect_uri,
+            provider: e.provider,
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -53,6 +65,12 @@ impl From<UseCaseError> for NettuError {
     }
 }
 
+impl From<anyhow::Error> for UseCaseError {
+    fn from(_: anyhow::Error) -> Self {
+        UseCaseError::StorageError
+    }
+}
+
 #[async_trait::async_trait(?Send)]
 impl UseCase for AddAccountIntegrationUseCase {
     type Response = ();
@@ -68,25 +86,15 @@ impl UseCase for AddAccountIntegrationUseCase {
             .repos
             .account_integrations
             .find(&self.account.id)
-            .await
-            .map_err(|_| UseCaseError::StorageError)?;
+            .await?;
         if acc_integrations.iter().any(|i| i.provider == self.provider) {
             return Err(UseCaseError::IntegrationAlreadyExists);
         }
 
-        let integration = AccountIntegration {
-            account_id: self.account.id.clone(),
-            client_id: self.client_id.clone(),
-            client_secret: self.client_secret.clone(),
-            redirect_uri: self.redirect_uri.clone(),
-            provider: self.provider.clone(),
-        };
-
         ctx.repos
             .account_integrations
-            .insert(&integration)
-            .await
-            .map_err(|_| UseCaseError::StorageError)?;
+            .insert(&self.clone().into())
+            .await?;
 
         Ok(())
     }

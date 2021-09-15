@@ -89,6 +89,5 @@ impl UseCase for GetOutlookCalendarsUseCase {
             .list(self.min_access_role.clone())
             .await
             .map_err(|_| UseCaseError::OutlookQuery)
-            .map(|res| res.value)
     }
 }

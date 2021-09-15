@@ -10,7 +10,7 @@ use chrono::{prelude::*, Duration};
 use rrule::{RRule, RRuleSet};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct CalendarEvent {
     pub id: ID,
     pub start_ts: i64,
@@ -55,7 +55,6 @@ impl Meta<ID> for CalendarEvent {
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
 pub struct CalendarEventReminder {
     pub delta: i64, // In minutes
     pub identifier: String,
@@ -195,9 +194,7 @@ mod test {
             week_start: Weekday::Mon,
         };
         let event = CalendarEvent {
-            id: Default::default(),
             start_ts: 1521317491239,
-            busy: false,
             duration: 1000 * 60 * 60,
             recurrence: Some(RRuleOptions {
                 freq: RRuleFrequency::Daily,
@@ -207,14 +204,7 @@ mod test {
             }),
             end_ts: 2521317491239,
             exdates: vec![1521317491239],
-            calendar_id: Default::default(),
-            user_id: Default::default(),
-            account_id: Default::default(),
-            reminders: Default::default(),
-            service_id: None,
-            metadata: Default::default(),
-            created: Default::default(),
-            updated: Default::default(),
+            ..Default::default()
         };
 
         let oc = event.expand(None, &settings);
@@ -228,21 +218,10 @@ mod test {
             week_start: Weekday::Mon,
         };
         let mut event = CalendarEvent {
-            id: Default::default(),
             start_ts: 1521317491239,
-            busy: false,
             duration: 1000 * 60 * 60,
-            recurrence: None,
             end_ts: 2521317491239,
-            exdates: Vec::new(),
-            calendar_id: Default::default(),
-            user_id: Default::default(),
-            account_id: Default::default(),
-            reminders: Default::default(),
-            service_id: None,
-            metadata: Default::default(),
-            created: Default::default(),
-            updated: Default::default(),
+            ..Default::default()
         };
 
         let oc = event.expand(None, &settings);
@@ -277,21 +256,10 @@ mod test {
         });
         for rrule in invalid_rrules {
             let mut event = CalendarEvent {
-                id: Default::default(),
                 start_ts: 1521317491239,
-                busy: false,
                 duration: 1000 * 60 * 60,
                 end_ts: 2521317491239,
-                exdates: Vec::new(),
-                calendar_id: Default::default(),
-                user_id: Default::default(),
-                account_id: Default::default(),
-                recurrence: None,
-                reminders: Default::default(),
-                service_id: None,
-                metadata: Default::default(),
-                created: Default::default(),
-                updated: Default::default(),
+                ..Default::default()
             };
 
             assert!(!event.set_recurrence(rrule, &settings, true));
@@ -326,21 +294,10 @@ mod test {
         });
         for rrule in valid_rrules {
             let mut event = CalendarEvent {
-                id: Default::default(),
                 start_ts: start_ts as i64,
-                busy: false,
                 duration: 1000 * 60 * 60,
                 end_ts: 2521317491239,
-                exdates: Vec::new(),
-                calendar_id: Default::default(),
-                account_id: Default::default(),
-                user_id: Default::default(),
-                recurrence: None,
-                reminders: Default::default(),
-                service_id: None,
-                metadata: Default::default(),
-                created: Default::default(),
-                updated: Default::default(),
+                ..Default::default()
             };
 
             assert!(event.set_recurrence(rrule, &settings, true));

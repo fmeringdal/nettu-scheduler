@@ -20,7 +20,6 @@ impl AccountDTO {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
 pub struct AccountSettingsDTO {
     pub webhook: Option<AccountWebhookSettingsDTO>,
 }
@@ -39,7 +38,6 @@ impl AccountSettingsDTO {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
 pub struct AccountWebhookSettingsDTO {
     pub url: String,
     pub key: String,

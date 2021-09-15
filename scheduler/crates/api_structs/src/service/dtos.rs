@@ -28,7 +28,6 @@ impl ServiceResourceDTO {
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
 pub struct ServiceDTO {
     pub id: ID,
     pub metadata: Metadata,
@@ -44,7 +43,6 @@ impl ServiceDTO {
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
 pub struct ServiceWithUsersDTO {
     pub id: ID,
     pub users: Vec<ServiceResourceDTO>,
