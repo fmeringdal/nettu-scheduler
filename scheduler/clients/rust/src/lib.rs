@@ -54,8 +54,7 @@ pub use nettu_scheduler_api_structs::dtos::ServiceResourceDTO as ServiceResource
 pub use nettu_scheduler_api_structs::dtos::ServiceWithUsersDTO as Service;
 pub use nettu_scheduler_api_structs::dtos::UserDTO as User;
 
-pub use nettu_scheduler_domain::Tz;
-pub use nettu_scheduler_domain::Weekday;
+pub use nettu_scheduler_domain::{Tz, Weekday, Month, WeekDay};
 
 /// Nettu Scheduler Server SDK
 ///
