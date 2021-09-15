@@ -27,10 +27,9 @@ pub use service::{
 };
 pub use shared::entity::{Entity, ID};
 pub use shared::metadata::{Meta, Metadata};
-pub use shared::recurrence::{RRuleFrequency, RRuleOptions};
+pub use shared::recurrence::{RRuleFrequency, RRuleOptions, WeekDay};
 pub use timespan::TimeSpan;
 pub use user::{IntegrationProvider, User, UserIntegration};
-pub use WeekDay;
 
 pub use chrono::{Month, Weekday};
 pub use chrono_tz::Tz;
