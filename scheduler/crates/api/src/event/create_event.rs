@@ -265,7 +265,6 @@ mod test {
             recurrence: Some(Default::default()),
             user,
             ..Default::default()
-
         };
 
         let res = usecase.execute(&ctx).await;

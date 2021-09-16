@@ -246,7 +246,6 @@ mod test {
             duration: Some(800),
             busy: Some(false),
             ..Default::default()
-
         };
         let ctx = setup_context().await;
         let res = usecase.execute(&ctx).await;

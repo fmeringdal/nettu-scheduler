@@ -375,7 +375,6 @@ mod tests {
             reminders: Some(Vec::new()),
             recurrence: Some(Default::default()),
             ..Default::default()
-
         };
         execute(update_event_usecase, &ctx).await.unwrap();
         let new_reminders = ctx.repos.reminders.delete_all_before(remind_at).await;
