@@ -550,59 +550,30 @@ mod test {
         ctx.repos.calendars.insert(&calendar_user_2).await.unwrap();
 
         let availability_event1 = CalendarEvent {
-            id: Default::default(),
             account_id: account_id.clone(),
-            busy: false,
             calendar_id: calendar_user_1.id,
             duration: 1000 * 60 * 60,
-            end_ts: 0,
-            exdates: Vec::new(),
-            recurrence: None,
             start_ts: 1000 * 60 * 60,
             user_id: resource1.user_id.to_owned(),
-            reminders: Vec::new(),
-            service_id: None,
-            metadata: Default::default(),
-            updated: Default::default(),
-            created: Default::default(),
-        };
-        let availability_event2 = CalendarEvent {
-            id: ID::default(),
-            account_id: account_id.clone(),
-            busy: false,
-            calendar_id: calendar_user_2.id.clone(),
-            duration: 1000 * 60 * 60,
-            end_ts: 0,
-            exdates: Vec::new(),
-            recurrence: None,
-            start_ts: 1000 * 60 * 60,
-            user_id: resource2.user_id.to_owned(),
-            reminders: Vec::new(),
-            service_id: None,
-            metadata: Default::default(),
-            updated: Default::default(),
-            created: Default::default(),
-        };
-        let mut availability_event3 = CalendarEvent {
-            id: ID::default(),
-            account_id: account_id.clone(),
-            busy: false,
-            calendar_id: calendar_user_2.id,
-            duration: 1000 * 60 * 105,
-            end_ts: 0,
-            exdates: Vec::new(),
-            recurrence: None,
-            start_ts: 1000 * 60 * 60 * 4,
-            user_id: resource2.user_id.to_owned(),
-            reminders: Vec::new(),
-            service_id: None,
-            metadata: Default::default(),
-            updated: Default::default(),
-            created: Default::default(),
-        };
-        let recurrence = RRuleOptions {
             ..Default::default()
         };
+        let availability_event2 = CalendarEvent {
+            account_id: account_id.clone(),
+            calendar_id: calendar_user_2.id.clone(),
+            duration: 1000 * 60 * 60,
+            start_ts: 1000 * 60 * 60,
+            user_id: resource2.user_id.to_owned(),
+            ..Default::default()
+        };
+        let mut availability_event3 = CalendarEvent {
+            account_id: account_id.clone(),
+            calendar_id: calendar_user_2.id,
+            duration: 1000 * 60 * 105,
+            start_ts: 1000 * 60 * 60 * 4,
+            user_id: resource2.user_id.to_owned(),
+            ..Default::default()
+        };
+        let recurrence = RRuleOptions::default();
         availability_event3.set_recurrence(recurrence, &calendar_user_2.settings, true);
 
         ctx.repos.events.insert(&availability_event1).await.unwrap();

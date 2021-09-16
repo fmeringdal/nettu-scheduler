@@ -4,7 +4,7 @@ use crate::{
 };
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct User {
     pub id: ID,
     pub account_id: ID,
@@ -14,9 +14,8 @@ pub struct User {
 impl User {
     pub fn new(account_id: ID) -> Self {
         Self {
-            id: Default::default(),
             account_id,
-            metadata: Default::default(),
+            ..Default::default()
         }
     }
 }

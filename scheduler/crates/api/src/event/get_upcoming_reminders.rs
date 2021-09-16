@@ -199,7 +199,6 @@ mod tests {
             calendar_id: calendar.id.clone(),
             start_ts: ctx.sys.get_timestamp_millis(),
             duration: 1000 * 60 * 60 * 2,
-            busy: false,
             recurrence: Some(Default::default()),
             reminders: vec![
                 CalendarEventReminder {
@@ -211,8 +210,7 @@ mod tests {
                     identifier: "".into(),
                 },
             ],
-            service_id: None,
-            metadata: Default::default(),
+            ..Default::default()
         };
 
         execute(usecase, &ctx).await.unwrap();
@@ -223,14 +221,11 @@ mod tests {
             user,
             start_ts: sys3.get_timestamp_millis() + 1000 * 60 * 5,
             duration: 1000 * 60 * 60 * 2,
-            busy: false,
-            recurrence: None,
             reminders: vec![CalendarEventReminder {
                 delta: -10,
                 identifier: "".into(),
             }],
-            service_id: None,
-            metadata: Default::default(),
+            ..Default::default()
         };
 
         execute(usecase, &ctx).await.unwrap();
@@ -290,14 +285,12 @@ mod tests {
             user: user.clone(),
             start_ts: initial_start_ts,
             duration: 1000 * 60 * 60 * 2,
-            busy: false,
             recurrence: Some(Default::default()),
             reminders: vec![CalendarEventReminder {
                 delta,
                 identifier: "".into(),
             }],
-            service_id: None,
-            metadata: Default::default(),
+            ..Default::default()
         };
 
         let calendar_event = execute(usecase, &ctx).await.unwrap();
@@ -318,17 +311,13 @@ mod tests {
         let update_event_usecase = UpdateEventUseCase {
             event_id: calendar_event.id,
             user,
-            busy: None,
-            duration: None,
-            exdates: None,
-            metadata: None,
             reminders: Some(vec![CalendarEventReminder {
                 delta,
                 identifier: "".into(),
             }]),
             recurrence: Some(Default::default()),
-            service_id: None,
             start_ts: Some(new_start),
+            ..Default::default()
         };
         execute(update_event_usecase, &ctx).await.unwrap();
         let new_reminders = ctx.repos.reminders.delete_all_before(new_start).await;
@@ -359,14 +348,12 @@ mod tests {
             calendar_id: calendar.id.clone(),
             start_ts: now,
             duration: 1000 * 60 * 60 * 2,
-            busy: false,
             recurrence: Some(Default::default()),
             reminders: vec![CalendarEventReminder {
                 delta,
                 identifier: "".into(),
             }],
-            service_id: None,
-            metadata: Default::default(),
+            ..Default::default()
         };
 
         let calendar_event = execute(usecase, &ctx).await.unwrap();
@@ -385,14 +372,10 @@ mod tests {
         let update_event_usecase = UpdateEventUseCase {
             user: user.clone(),
             event_id: calendar_event.id.clone(),
-            busy: None,
-            duration: None,
-            exdates: None,
-            metadata: None,
             reminders: Some(Vec::new()),
             recurrence: Some(Default::default()),
-            service_id: None,
-            start_ts: None,
+            ..Default::default()
+
         };
         execute(update_event_usecase, &ctx).await.unwrap();
         let new_reminders = ctx.repos.reminders.delete_all_before(remind_at).await;
@@ -421,14 +404,12 @@ mod tests {
             calendar_id: calendar.id.clone(),
             start_ts: now,
             duration: 1000 * 60 * 60 * 2,
-            busy: false,
             recurrence: Some(Default::default()),
             reminders: vec![CalendarEventReminder {
                 delta,
                 identifier: "".into(),
             }],
-            service_id: None,
-            metadata: Default::default(),
+            ..Default::default()
         };
 
         let calendar_event = execute(usecase, &ctx).await.unwrap();

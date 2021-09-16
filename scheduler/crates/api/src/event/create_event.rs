@@ -66,7 +66,7 @@ pub async fn create_event_controller(
         .map_err(NettuError::from)
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct CreateEventUseCase {
     pub calendar_id: ID,
     pub user: User,
@@ -217,13 +217,9 @@ mod test {
         let mut usecase = CreateEventUseCase {
             start_ts: 500,
             duration: 800,
-            recurrence: None,
-            busy: false,
             calendar_id: calendar.id.clone(),
             user,
-            reminders: Vec::new(),
-            service_id: None,
-            metadata: Default::default(),
+            ..Default::default()
         };
 
         let res = usecase.execute(&ctx).await;
@@ -244,12 +240,9 @@ mod test {
             start_ts: 500,
             duration: 800,
             recurrence: Some(Default::default()),
-            busy: false,
             calendar_id: calendar.id.clone(),
             user,
-            reminders: Vec::new(),
-            service_id: None,
-            metadata: Default::default(),
+            ..Default::default()
         };
 
         let res = usecase.execute(&ctx).await;
@@ -270,12 +263,9 @@ mod test {
             start_ts: 500,
             duration: 800,
             recurrence: Some(Default::default()),
-            busy: false,
-            calendar_id: ID::default(),
             user,
-            reminders: Vec::new(),
-            service_id: None,
-            metadata: Default::default(),
+            ..Default::default()
+
         };
 
         let res = usecase.execute(&ctx).await;
@@ -309,12 +299,9 @@ mod test {
                 start_ts: 500,
                 duration: 800,
                 recurrence: Some(rrule),
-                busy: false,
                 calendar_id: calendar.id.clone(),
                 user: user.clone(),
-                reminders: Vec::new(),
-                service_id: None,
-                metadata: Default::default(),
+                ..Default::default()
             };
 
             let res = usecase.execute(&ctx).await;

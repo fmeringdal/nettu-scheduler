@@ -15,7 +15,7 @@ pub enum RRuleFrequency {
     Daily,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct RRuleOptions {
     pub freq: RRuleFrequency,
     pub interval: isize,
