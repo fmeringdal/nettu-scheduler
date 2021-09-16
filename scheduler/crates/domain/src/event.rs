@@ -284,7 +284,7 @@ mod test {
             ..Default::default()
         });
         valid_rrules.push(RRuleOptions {
-            byweekday: Some(vec![WeekDay::new(Weekday::Tue).unwrap()]),
+            byweekday: Some(vec![WeekDay::new(Weekday::Tue)]),
             ..Default::default()
         });
         valid_rrules.push(RRuleOptions {
