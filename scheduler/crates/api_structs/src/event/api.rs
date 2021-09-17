@@ -168,7 +168,6 @@ pub mod send_event_reminders {
     use super::*;
 
     #[derive(Debug)]
-    #[serde(rename_all = "camelCase")]
     pub struct AccountEventReminder {
         pub event: CalendarEvent,
         pub identifier: String,
@@ -191,7 +190,6 @@ pub mod send_event_reminders {
     }
 
     #[derive(Debug)]
-    #[serde(rename_all = "camelCase")]
     pub struct AccountReminders {
         pub reminders: Vec<AccountEventReminder>,
     }
