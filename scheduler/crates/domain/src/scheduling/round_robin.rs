@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 /// Round robin algorithm to decide which member should be assigned a
 /// `Service Event` when there are multiple members of a `Service`
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub enum RoundRobinAlgorithm {
     /// Optimizes for availability
     ///

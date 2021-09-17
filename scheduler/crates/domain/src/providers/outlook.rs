@@ -3,6 +3,7 @@ use chrono_tz::{Tz, UTC};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub enum OutlookCalendarAccessRole {
     Writer,
     Reader,
@@ -49,6 +50,7 @@ pub enum OutlookOnlineMeetingProvider {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub enum OutlookCalendarEventShowAs {
     Free,
     Tentative,
@@ -82,6 +84,7 @@ pub struct OutlookCalendarEvent {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub enum OutlookCalendarEventBodyContentType {
     #[serde(rename = "html")]
     HTML,
@@ -113,6 +116,7 @@ pub struct OutlookCalendar {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct OutlookCalendarOwner {
     name: String,
     address: String,

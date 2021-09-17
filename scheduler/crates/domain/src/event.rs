@@ -55,6 +55,7 @@ impl Meta<ID> for CalendarEvent {
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct CalendarEventReminder {
     pub delta: i64, // In minutes
     pub identifier: String,

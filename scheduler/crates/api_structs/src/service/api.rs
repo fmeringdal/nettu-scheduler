@@ -5,6 +5,7 @@ use nettu_scheduler_domain::{
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ServiceResponse {
     pub service: ServiceDTO,
 }
@@ -18,6 +19,7 @@ impl ServiceResponse {
 }
 
 #[derive(Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ServiceWithUsersResponse {
     pub service: ServiceWithUsersDTO,
 }
@@ -31,6 +33,7 @@ impl ServiceWithUsersResponse {
 }
 
 #[derive(Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ServiceResourceResponse {
     pub user: ServiceResourceDTO,
 }
@@ -77,6 +80,7 @@ pub mod add_busy_calendar {
     }
 
     #[derive(Serialize, Deserialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
         pub busy: BusyCalendar,
     }
@@ -94,6 +98,7 @@ pub mod remove_busy_calendar {
     }
 
     #[derive(Serialize, Deserialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
         pub busy: BusyCalendar,
     }
@@ -110,11 +115,13 @@ pub mod remove_service_event_intend {
     }
 
     #[derive(Deserialize, Serialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct QueryParams {
         pub timestamp: i64,
     }
 
     #[derive(Deserialize, Serialize, Debug)]
+    #[serde(rename_all = "camelCase")]
     pub struct APIResponse {
         message: String,
     }
@@ -265,6 +272,7 @@ pub mod get_service_bookingslots {
     }
 
     #[derive(Deserialize, Serialize, Debug)]
+    #[serde(rename_all = "camelCase")]
     pub struct APIResponse {
         pub dates: Vec<ServiceBookingSlotsDateDTO>,
     }
@@ -299,6 +307,7 @@ pub mod get_services_by_meta {
     use super::*;
 
     #[derive(Deserialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct QueryParams {
         pub key: String,
         pub value: String,
@@ -308,6 +317,7 @@ pub mod get_services_by_meta {
     }
 
     #[derive(Deserialize, Serialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct APIResponse {
         pub services: Vec<ServiceDTO>,
     }

@@ -23,6 +23,7 @@ impl GoogleCalendarEventDateTime {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GoogleCalendarEvent {
     pub id: String,
     pub start: GoogleCalendarEventDateTime,
@@ -36,6 +37,7 @@ pub struct GoogleCalendarEvent {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GoogleCalendarEventAttributes {
     pub start: GoogleCalendarEventDateTime,
     pub end: GoogleCalendarEventDateTime,
@@ -112,11 +114,13 @@ impl GoogleDateTime {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct FreeBusyCalendarResponse {
     pub busy: Vec<FreeBusyTimeSpanResponse>,
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct FreeBusyTimeSpanResponse {
     pub start: GoogleDateTime,
     pub end: GoogleDateTime,
@@ -132,6 +136,7 @@ pub struct FreeBusyResponse {
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct FreeBusyCalendar {
     pub id: String,
 }
@@ -152,6 +157,7 @@ pub struct FreeBusyRequest {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ListCalendarsResponse {
     kind: String,
     etag: GoogleDateTime,

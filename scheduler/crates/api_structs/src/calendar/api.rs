@@ -3,6 +3,7 @@ use nettu_scheduler_domain::{Calendar, EventInstance, Tz, Weekday, ID};
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CalendarResponse {
     pub calendar: CalendarDTO,
 }
@@ -111,6 +112,7 @@ pub mod get_calendar_events {
     }
 
     #[derive(Serialize, Deserialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct APIResponse {
         pub calendar: CalendarDTO,
         pub events: Vec<EventWithInstancesDTO>,
@@ -147,6 +149,7 @@ pub mod get_calendars_by_meta {
     use super::*;
 
     #[derive(Deserialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct QueryParams {
         pub key: String,
         pub value: String,
@@ -156,6 +159,7 @@ pub mod get_calendars_by_meta {
     }
 
     #[derive(Deserialize, Serialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct APIResponse {
         pub calendars: Vec<CalendarDTO>,
     }
@@ -188,6 +192,7 @@ pub mod get_google_calendars {
     }
 
     #[derive(Deserialize, Serialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct APIResponse {
         pub calendars: Vec<GoogleCalendarListEntry>,
     }
@@ -216,6 +221,7 @@ pub mod get_outlook_calendars {
     }
 
     #[derive(Deserialize, Serialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct APIResponse {
         pub calendars: Vec<OutlookCalendar>,
     }
@@ -271,6 +277,7 @@ pub mod update_calendar {
     }
 
     #[derive(Deserialize, Serialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct RequestBody {
         pub settings: CalendarSettings,
         #[serde(default)]

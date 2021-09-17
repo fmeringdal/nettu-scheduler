@@ -16,6 +16,7 @@ pub enum RRuleFrequency {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RRuleOptions {
     pub freq: RRuleFrequency,
     pub interval: isize,

@@ -88,6 +88,7 @@ pub struct FreeBusyRequest {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CalendarViewResponse {
     pub value: Vec<OutlookCalendarEvent>,
 }
