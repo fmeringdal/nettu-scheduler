@@ -84,7 +84,6 @@ pub struct OutlookCalendarEvent {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub enum OutlookCalendarEventBodyContentType {
     #[serde(rename = "html")]
     HTML,

@@ -62,7 +62,6 @@ pub mod remove_integration {
     use nettu_scheduler_domain::IntegrationProvider;
 
     #[derive(Debug, Serialize, Deserialize)]
-    #[serde(rename_all = "camelCase")]
     pub struct PathParams {
         pub provider: IntegrationProvider,
         pub user_id: ID,
