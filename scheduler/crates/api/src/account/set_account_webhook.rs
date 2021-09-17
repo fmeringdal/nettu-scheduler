@@ -45,6 +45,7 @@ impl From<UseCaseError> for NettuError {
         }
     }
 }
+
 #[async_trait::async_trait(?Send)]
 impl UseCase for SetAccountWebhookUseCase {
     type Response = Account;

@@ -62,7 +62,7 @@ mod tests {
         assert_eq!(res[0].id, user.id);
 
         // Different account id should give no results
-        query.account_id = Default::default();
+        query.account_id = ID::default();
         assert!(ctx.repos.users.find_by_metadata(query).await.is_empty());
     }
 

@@ -93,6 +93,7 @@ pub mod get_schedules_by_meta {
     }
 
     #[derive(Deserialize, Serialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct APIResponse {
         pub schedules: Vec<ScheduleDTO>,
     }

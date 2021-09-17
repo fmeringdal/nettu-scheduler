@@ -318,6 +318,7 @@ pub mod get_services_by_meta {
     }
 
     #[derive(Deserialize, Serialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct APIResponse {
         pub services: Vec<ServiceDTO>,
     }

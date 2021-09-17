@@ -75,7 +75,7 @@ pub async fn update_event_controller(
         .map_err(NettuError::from)
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct UpdateEventUseCase {
     pub user: User,
     pub event_id: ID,
@@ -242,16 +242,10 @@ mod test {
     #[test]
     async fn update_nonexisting_event() {
         let mut usecase = UpdateEventUseCase {
-            user: User::new(Default::default()),
-            event_id: Default::default(),
             start_ts: Some(500),
             duration: Some(800),
-            reminders: None,
-            recurrence: None,
             busy: Some(false),
-            service_id: None,
-            exdates: None,
-            metadata: None,
+            ..Default::default()
         };
         let ctx = setup_context().await;
         let res = usecase.execute(&ctx).await;

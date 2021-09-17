@@ -26,57 +26,30 @@ mod tests {
         let calendar = Calendar::new(&user.id, &account.id);
         ctx.repos.calendars.insert(&calendar).await.unwrap();
         let e1 = CalendarEvent {
-            id: Default::default(),
             account_id: account.id.clone(),
-            busy: false,
             calendar_id: calendar.id.clone(),
             duration: 1000 * 60 * 60,
-            end_ts: 0,
-            exdates: Vec::new(),
-            recurrence: None,
             start_ts: 1000 * 60 * 60,
             user_id: user.id.clone(),
-            reminders: Vec::new(),
-            service_id: None,
-            metadata: Default::default(),
-            updated: Default::default(),
-            created: Default::default(),
+            ..Default::default()
         };
         ctx.repos.events.insert(&e1).await.unwrap();
         let e2 = CalendarEvent {
-            id: Default::default(),
             account_id: account.id.clone(),
-            busy: false,
             calendar_id: calendar.id.clone(),
             duration: 1000 * 60 * 60,
-            end_ts: 0,
-            exdates: Vec::new(),
-            recurrence: None,
             start_ts: 1000 * 60 * 60,
             user_id: user.id.clone(),
-            reminders: Vec::new(),
-            service_id: None,
-            metadata: Default::default(),
-            updated: Default::default(),
-            created: Default::default(),
+            ..Default::default()
         };
         ctx.repos.events.insert(&e2).await.unwrap();
         let e3 = CalendarEvent {
-            id: Default::default(),
             account_id: account.id.clone(),
-            busy: false,
             calendar_id: calendar.id.clone(),
             duration: 1000 * 60 * 60,
-            end_ts: 0,
-            exdates: Vec::new(),
-            recurrence: None,
             start_ts: 1000 * 60 * 60,
             user_id: user.id.clone(),
-            reminders: Vec::new(),
-            service_id: None,
-            metadata: Default::default(),
-            updated: Default::default(),
-            created: Default::default(),
+            ..Default::default()
         };
         ctx.repos.events.insert(&e3).await.unwrap();
 

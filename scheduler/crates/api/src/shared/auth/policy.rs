@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 /// claims. Every `UseCase` contains a list of `Permission`s that is required
 /// for a `User` to execute it, if the `User`s `Policy` is not authorized
 /// some of these `Permission`s the request will be rejected.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Policy {
     /// `Permission`s allowed by the `Policy`
     allow: Option<Vec<Permission>>,
@@ -50,19 +50,6 @@ impl Policy {
 
         false
     }
-
-    pub fn empty() -> Self {
-        Self {
-            allow: None,
-            reject: None,
-        }
-    }
-}
-
-impl Default for Policy {
-    fn default() -> Self {
-        Self::empty()
-    }
 }
 
 /// `Permission` are different kind of actions that can be performed.
@@ -87,7 +74,7 @@ mod test {
 
     #[test]
     fn permissions() {
-        let policy = Policy::empty();
+        let policy = Policy::default();
         assert!(policy.authorize(&Vec::new()));
         assert!(!policy.authorize(&vec![Permission::CreateCalendar]));
 

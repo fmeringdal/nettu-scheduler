@@ -143,7 +143,7 @@ async fn test_collective_team_scheduling() {
             .await
             .expect("To create booking intend");
         assert_equal_user_lists(&booking_intend.selected_hosts, &hosts);
-        assert_eq!(booking_intend.create_event_for_hosts, true);
+        assert!(booking_intend.create_event_for_hosts);
 
         for (host, calendar) in hosts_with_calendar {
             let service_event = CreateEventInput {

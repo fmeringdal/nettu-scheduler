@@ -142,6 +142,7 @@ pub mod get_users_by_meta {
     }
 
     #[derive(Deserialize, Serialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct APIResponse {
         pub users: Vec<UserDTO>,
     }

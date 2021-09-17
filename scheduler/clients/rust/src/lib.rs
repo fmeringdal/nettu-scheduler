@@ -22,8 +22,8 @@ pub use nettu_scheduler_api_structs::dtos::*;
 pub use nettu_scheduler_api_structs::send_event_reminders::AccountRemindersDTO as AccountReminders;
 pub use nettu_scheduler_domain::{
     providers::google::*, providers::outlook::*, scheduling::RoundRobinAlgorithm, BusyCalendar,
-    CalendarEventReminder, IntegrationProvider, Metadata, RRuleOptions, ScheduleRule,
-    ServiceMultiPersonOptions, SyncedCalendar, TimePlan, ID,
+    CalendarEventReminder, IntegrationProvider, Metadata, RRuleFrequency, RRuleOptions,
+    ScheduleRule, ServiceMultiPersonOptions, SyncedCalendar, TimePlan, ID,
 };
 use schedule::ScheduleClient;
 pub use schedule::{CreateScheduleInput, UpdateScheduleInput};
@@ -54,8 +54,7 @@ pub use nettu_scheduler_api_structs::dtos::ServiceResourceDTO as ServiceResource
 pub use nettu_scheduler_api_structs::dtos::ServiceWithUsersDTO as Service;
 pub use nettu_scheduler_api_structs::dtos::UserDTO as User;
 
-pub use nettu_scheduler_domain::Tz;
-pub use nettu_scheduler_domain::Weekday;
+pub use nettu_scheduler_domain::{Month, Tz, WeekDay, Weekday};
 
 /// Nettu Scheduler Server SDK
 ///

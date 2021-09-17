@@ -81,6 +81,12 @@ enum UseCaseError {
     StorageError,
 }
 
+impl From<anyhow::Error> for UseCaseError {
+    fn from(_: anyhow::Error) -> Self {
+        UseCaseError::StorageError
+    }
+}
+
 #[async_trait::async_trait(?Send)]
 impl UseCase for RemoveSyncCalendarUseCase {
     type Response = ();
@@ -95,17 +101,13 @@ impl UseCase for RemoveSyncCalendarUseCase {
             .repos
             .calendar_synced
             .find_by_calendar(&self.calendar_id)
-            .await
-            .map_err(|_| UseCaseError::StorageError)?
+            .await?
             .into_iter()
             .find(|c| c.provider == self.provider && c.ext_calendar_id == self.ext_calendar_id)
             .ok_or(UseCaseError::SyncNotFound)?;
 
-        ctx.repos
-            .calendar_synced
-            .delete(&sync_calendar)
-            .await
-            .map_err(|_| UseCaseError::StorageError)
+        ctx.repos.calendar_synced.delete(&sync_calendar).await?;
+        Ok(())
     }
 }
 

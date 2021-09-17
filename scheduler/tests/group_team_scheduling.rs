@@ -145,7 +145,7 @@ async fn test_group_team_scheduling() {
                     .await
                     .expect("To create booking intend");
                 assert_equal_user_lists(&booking_intend.selected_hosts, &hosts);
-                assert_eq!(booking_intend.create_event_for_hosts, false);
+                assert!(!booking_intend.create_event_for_hosts);
             }
             // Last spot
             let input = CreateBookingIntendInput {
@@ -161,7 +161,7 @@ async fn test_group_team_scheduling() {
                 .await
                 .expect("To create booking intend");
             assert_equal_user_lists(&booking_intend.selected_hosts, &hosts);
-            assert_eq!(booking_intend.create_event_for_hosts, true);
+            assert!(booking_intend.create_event_for_hosts);
             for (host, calendar) in hosts_with_calendar {
                 let service_event = CreateEventInput {
                     user_id: host.id.clone(),
@@ -451,7 +451,7 @@ async fn test_group_team_scheduling_increase_max_count() {
                     .collect::<Vec<_>>(),
                 vec![host.id.clone()]
             );
-            assert_eq!(booking_intend.create_event_for_hosts, false);
+            assert!(!booking_intend.create_event_for_hosts);
         }
         // Last spot
         let input = CreateBookingIntendInput {
@@ -474,7 +474,7 @@ async fn test_group_team_scheduling_increase_max_count() {
                 .collect::<Vec<_>>(),
             vec![host.id.clone()]
         );
-        assert_eq!(booking_intend.create_event_for_hosts, true);
+        assert!(booking_intend.create_event_for_hosts);
         let service_event = CreateEventInput {
             user_id: host.id.clone(),
             busy: Some(true),
@@ -536,7 +536,7 @@ async fn test_group_team_scheduling_increase_max_count() {
                     .collect::<Vec<_>>(),
                 vec![host.id.clone()]
             );
-            assert_eq!(booking_intend.create_event_for_hosts, false);
+            assert!(!booking_intend.create_event_for_hosts);
         }
         // And now the last spot
         let input = CreateBookingIntendInput {
@@ -559,7 +559,7 @@ async fn test_group_team_scheduling_increase_max_count() {
                 .collect::<Vec<_>>(),
             vec![host.id.clone()]
         );
-        assert_eq!(booking_intend.create_event_for_hosts, true);
+        assert!(booking_intend.create_event_for_hosts);
     }
 
     // Increases from 0
@@ -709,7 +709,7 @@ async fn test_group_team_scheduling_increase_max_count() {
                     .collect::<Vec<_>>(),
                 vec![host.id.clone()]
             );
-            assert_eq!(booking_intend.create_event_for_hosts, false);
+            assert!(!booking_intend.create_event_for_hosts);
         }
         // And now the last spot
         let input = CreateBookingIntendInput {
@@ -732,7 +732,7 @@ async fn test_group_team_scheduling_increase_max_count() {
                 .collect::<Vec<_>>(),
             vec![host.id.clone()]
         );
-        assert_eq!(booking_intend.create_event_for_hosts, true);
+        assert!(booking_intend.create_event_for_hosts);
     }
 }
 
@@ -862,7 +862,7 @@ async fn test_group_team_scheduling_decrease_max_count() {
                     .collect::<Vec<_>>(),
                 vec![host.id.clone()]
             );
-            assert_eq!(booking_intend.create_event_for_hosts, false);
+            assert!(!booking_intend.create_event_for_hosts);
         }
         // Last spot
         let input = CreateBookingIntendInput {
@@ -885,7 +885,7 @@ async fn test_group_team_scheduling_decrease_max_count() {
                 .collect::<Vec<_>>(),
             vec![host.id.clone()]
         );
-        assert_eq!(booking_intend.create_event_for_hosts, true);
+        assert!(booking_intend.create_event_for_hosts);
         let service_event = CreateEventInput {
             user_id: host.id.clone(),
             busy: Some(true),

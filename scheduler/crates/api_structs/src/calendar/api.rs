@@ -159,6 +159,7 @@ pub mod get_calendars_by_meta {
     }
 
     #[derive(Deserialize, Serialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct APIResponse {
         pub calendars: Vec<CalendarDTO>,
     }
@@ -191,6 +192,7 @@ pub mod get_google_calendars {
     }
 
     #[derive(Deserialize, Serialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct APIResponse {
         pub calendars: Vec<GoogleCalendarListEntry>,
     }
@@ -219,6 +221,7 @@ pub mod get_outlook_calendars {
     }
 
     #[derive(Deserialize, Serialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct APIResponse {
         pub calendars: Vec<OutlookCalendar>,
     }

@@ -172,7 +172,6 @@ impl UseCase for AddBusyCalendarUseCase {
                     .map_err(|_| UseCaseError::StorageError)?;
 
                 if !o_calendars
-                    .value
                     .into_iter()
                     .any(|o_calendar| o_calendar.id == *o_cal_id)
                 {

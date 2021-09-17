@@ -116,6 +116,7 @@ pub mod get_events_by_meta {
     }
 
     #[derive(Deserialize, Serialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct APIResponse {
         pub events: Vec<CalendarEventDTO>,
     }
