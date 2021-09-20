@@ -153,7 +153,6 @@ impl UseCase for AddSyncCalendarUseCase {
                     .map_err(|_| UseCaseError::StorageError)?;
 
                 if !outlook_calendars
-                    .value
                     .into_iter()
                     .map(|c| c.id)
                     .any(|outlook_calendar_id| outlook_calendar_id == self.ext_calendar_id)

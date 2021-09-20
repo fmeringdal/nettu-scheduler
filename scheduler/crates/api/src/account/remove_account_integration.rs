@@ -49,6 +49,13 @@ impl From<UseCaseError> for NettuError {
         }
     }
 }
+
+impl From<anyhow::Error> for UseCaseError {
+    fn from(_: anyhow::Error) -> Self {
+        UseCaseError::StorageError
+    }
+}
+
 #[async_trait::async_trait(?Send)]
 impl UseCase for RemoveAccountIntegrationUseCase {
     type Response = ();
@@ -62,8 +69,7 @@ impl UseCase for RemoveAccountIntegrationUseCase {
             .repos
             .account_integrations
             .find(&self.account.id)
-            .await
-            .map_err(|_| UseCaseError::StorageError)?;
+            .await?;
         if !acc_integrations.iter().any(|i| i.provider == self.provider) {
             return Err(UseCaseError::IntegrationNotFound);
         }
@@ -71,7 +77,7 @@ impl UseCase for RemoveAccountIntegrationUseCase {
         ctx.repos
             .account_integrations
             .delete(&self.account.id, self.provider.clone())
-            .await
-            .map_err(|_| UseCaseError::StorageError)
+            .await?;
+        Ok(())
     }
 }

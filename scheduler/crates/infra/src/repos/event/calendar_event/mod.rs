@@ -55,20 +55,9 @@ mod tests {
     fn generate_default_event(account_id: &ID, calendar_id: &ID, user_id: &ID) -> CalendarEvent {
         CalendarEvent {
             account_id: account_id.clone(),
-            busy: Default::default(),
             calendar_id: calendar_id.clone(),
-            created: Default::default(),
-            duration: Default::default(),
-            end_ts: Default::default(),
-            exdates: Default::default(),
-            id: Default::default(),
-            service_id: Default::default(),
-            metadata: Default::default(),
-            recurrence: Default::default(),
-            reminders: Default::default(),
-            start_ts: Default::default(),
-            updated: Default::default(),
             user_id: user_id.clone(),
+            ..Default::default()
         }
     }
 

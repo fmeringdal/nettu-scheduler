@@ -71,11 +71,7 @@ impl From<CalendarEvent> for OutlookCalendarEventAttributes {
     }
 }
 
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ListCalendarsResponse {
-    pub value: Vec<OutlookCalendar>,
-}
+pub type ListCalendarsResponse = Vec<OutlookCalendar>;
 
 pub struct OutlookCalendarRestApi {
     client: Client,

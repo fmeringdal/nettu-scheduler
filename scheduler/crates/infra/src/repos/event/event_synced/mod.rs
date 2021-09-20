@@ -83,21 +83,10 @@ mod tests {
         }
 
         let e = CalendarEvent {
-            id: Default::default(),
             account_id: account.id.clone(),
-            busy: Default::default(),
             calendar_id: calendar.id.clone(),
-            created: Default::default(),
-            duration: Default::default(),
-            end_ts: Default::default(),
-            exdates: Default::default(),
-            service_id: Default::default(),
-            metadata: Default::default(),
-            recurrence: Default::default(),
-            reminders: Default::default(),
-            start_ts: Default::default(),
-            updated: Default::default(),
             user_id: user.id.clone(),
+            ..Default::default()
         };
         assert!(ctx.repos.events.insert(&e).await.is_ok());
 

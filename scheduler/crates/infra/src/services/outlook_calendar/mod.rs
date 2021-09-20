@@ -67,7 +67,7 @@ impl OutlookCalendarProvider {
         min_access_role: OutlookCalendarAccessRole,
     ) -> Result<ListCalendarsResponse, ()> {
         let mut calendars = self.api.list().await?;
-        calendars.value.retain(|cal| match min_access_role {
+        calendars.retain(|cal| match min_access_role {
             OutlookCalendarAccessRole::Reader => true,
             OutlookCalendarAccessRole::Writer => cal.can_edit,
         });

@@ -202,15 +202,7 @@ mod test {
             busy: true,
             duration: one_hour,
             end_ts: CalendarEvent::get_max_timestamp(),
-            exdates: Vec::new(),
-            id: Default::default(),
-            start_ts: 0,
-            recurrence: None,
-            reminders: Vec::new(),
-            service_id: None,
-            metadata: Default::default(),
-            updated: Default::default(),
-            created: Default::default(),
+            ..Default::default()
         };
         let e1rr = RRuleOptions {
             count: Some(100),
@@ -225,15 +217,8 @@ mod test {
             busy: true,
             duration: one_hour,
             end_ts: CalendarEvent::get_max_timestamp(),
-            exdates: Vec::new(),
-            id: Default::default(),
             start_ts: one_hour * 4,
-            recurrence: None,
-            reminders: Vec::new(),
-            service_id: None,
-            metadata: Default::default(),
-            updated: Default::default(),
-            created: Default::default(),
+            ..Default::default()
         };
         let e2rr = RRuleOptions {
             count: Some(100),
@@ -248,15 +233,7 @@ mod test {
             busy: true,
             duration: one_hour,
             end_ts: one_hour,
-            exdates: Vec::new(),
-            id: Default::default(),
-            start_ts: 0,
-            recurrence: None,
-            reminders: Vec::new(),
-            service_id: None,
-            metadata: Default::default(),
-            updated: Default::default(),
-            created: Default::default(),
+            ..Default::default()
         };
         let e3rr = RRuleOptions {
             count: Some(100),

@@ -57,7 +57,7 @@ mod tests {
     #[tokio::test]
     async fn update() {
         let ctx = setup_context().await;
-        let mut account = Default::default();
+        let mut account = Account::default();
 
         // Insert
         assert!(ctx.repos.accounts.insert(&account).await.is_ok());

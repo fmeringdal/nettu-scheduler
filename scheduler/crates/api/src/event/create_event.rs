@@ -66,7 +66,7 @@ pub async fn create_event_controller(
         .map_err(NettuError::from)
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct CreateEventUseCase {
     pub calendar_id: ID,
     pub user: User,
@@ -102,6 +102,12 @@ impl From<UseCaseError> for NettuError {
             }
             UseCaseError::StorageError => Self::InternalError,
         }
+    }
+}
+
+impl From<anyhow::Error> for UseCaseError {
+    fn from(_: anyhow::Error) -> Self {
+        UseCaseError::StorageError
     }
 }
 
@@ -150,11 +156,7 @@ impl UseCase for CreateEventUseCase {
             }
         }
 
-        ctx.repos
-            .events
-            .insert(&e)
-            .await
-            .map_err(|_| UseCaseError::StorageError)?;
+        ctx.repos.events.insert(&e).await?;
 
         Ok(e)
     }
@@ -215,13 +217,9 @@ mod test {
         let mut usecase = CreateEventUseCase {
             start_ts: 500,
             duration: 800,
-            recurrence: None,
-            busy: false,
             calendar_id: calendar.id.clone(),
             user,
-            reminders: Vec::new(),
-            service_id: None,
-            metadata: Default::default(),
+            ..Default::default()
         };
 
         let res = usecase.execute(&ctx).await;
@@ -242,12 +240,9 @@ mod test {
             start_ts: 500,
             duration: 800,
             recurrence: Some(Default::default()),
-            busy: false,
             calendar_id: calendar.id.clone(),
             user,
-            reminders: Vec::new(),
-            service_id: None,
-            metadata: Default::default(),
+            ..Default::default()
         };
 
         let res = usecase.execute(&ctx).await;
@@ -268,12 +263,8 @@ mod test {
             start_ts: 500,
             duration: 800,
             recurrence: Some(Default::default()),
-            busy: false,
-            calendar_id: ID::default(),
             user,
-            reminders: Vec::new(),
-            service_id: None,
-            metadata: Default::default(),
+            ..Default::default()
         };
 
         let res = usecase.execute(&ctx).await;
@@ -307,12 +298,9 @@ mod test {
                 start_ts: 500,
                 duration: 800,
                 recurrence: Some(rrule),
-                busy: false,
                 calendar_id: calendar.id.clone(),
                 user: user.clone(),
-                reminders: Vec::new(),
-                service_id: None,
-                metadata: Default::default(),
+                ..Default::default()
             };
 
             let res = usecase.execute(&ctx).await;

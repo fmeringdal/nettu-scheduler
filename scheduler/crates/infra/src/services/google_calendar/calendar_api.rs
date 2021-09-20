@@ -98,7 +98,6 @@ impl GoogleCalendarRestApi {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct GoogleDateTime(String);
 
 impl GoogleDateTime {

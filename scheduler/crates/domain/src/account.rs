@@ -36,7 +36,7 @@ impl PEMKey {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct AccountSettings {
     pub webhook: Option<AccountWebhookSettings>,
 }
@@ -85,12 +85,6 @@ pub struct AccountIntegration {
     pub client_secret: String,
     pub redirect_uri: String,
     pub provider: IntegrationProvider,
-}
-
-impl Default for AccountSettings {
-    fn default() -> Self {
-        Self { webhook: None }
-    }
 }
 
 impl Account {
