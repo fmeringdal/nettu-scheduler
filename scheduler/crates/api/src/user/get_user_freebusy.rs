@@ -25,7 +25,22 @@ pub async fn get_freebusy_controller(
     mut params: web::Path<PathParams>,
     ctx: web::Data<NettuContext>,
 ) -> Result<HttpResponse, NettuError> {
-    let _account = protect_public_account_route(&http_req, &ctx).await?;
+    let account = protect_public_account_route(&http_req, &ctx).await?;
+
+    // Ensure the requested user belongs to the account identified by the request,
+    // otherwise a client could read the free/busy schedule of users in other accounts.
+    if ctx
+        .repos
+        .users
+        .find_by_account_id(&params.user_id, &account.id)
+        .await
+        .is_none()
+    {
+        return Err(NettuError::NotFound(format!(
+            "User with id: {} was not found",
+            params.user_id
+        )));
+    }
 
     let calendar_ids = parse_vec_query_value(&query_params.calendar_ids);
 
